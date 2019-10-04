@@ -117,6 +117,8 @@ struct FeatsPage
     ListBox *Feats;
     TextBox *FeatsDesc;
     ListBox *ChosenFeats;
+    u32 ChosenFeatsIndices[64];
+    u8 usedFeats;
     
     HWND WindowsArray[64];
     u32 numWindows;
@@ -135,6 +137,22 @@ ProgramState State = {};
 
 //TODO: Can I manage to do things using this?
 void *ElementMap[512] = {};
+
+//TODO: Why is this here...
+b32 ArrayContains(u32 *a, u32 v) 
+{ 
+    for(size_t i = 0; i < State.Feats->usedFeats; i++)
+    { if(a[i] == v) { return TRUE; } } 
+    return FALSE; 
+}
+
+//TODO: Why is this here...
+void ArrayRemove(u32 *a, u32 idx)
+{
+    u32 len = State.Feats->usedFeats;
+    ls_memcpy(a + (idx + 1), a + idx, (len - idx)*sizeof(u32));
+    a[len] = u32(-1);
+}
 
 string getText(HWND hwnd)
 {
@@ -179,43 +197,62 @@ void loadAS()
     u8 v = pc.AbilityScores[ABILITY_STR];
     char *a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_STR]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, ASBonusTable[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, ASBonusTableString[v]);
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_DEX];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_DEX]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, ASBonusTable[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, ASBonusTableString[v]);
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_CON];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_CON]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, ASBonusTable[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, ASBonusTableString[v]);
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_INT];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_INT]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, ASBonusTable[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, ASBonusTableString[v]);
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_WIS];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_WIS]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, ASBonusTable[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, ASBonusTableString[v]);
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_CHA];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_CHA]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, ASBonusTable[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, ASBonusTableString[v]);
     ls_free(a);
 }
 
 void UpdateSavingThrows()
 {
-    s32 Fortitude = 0;
+    s32 Fortitude = ClassSavingThrows[pc.Class][0][pc.lvl] + 
+        ASBonusTable[pc.AbilityScores[ABILITY_CON]];
+    
+    s32 Reflex = ClassSavingThrows[pc.Class][1][pc.lvl] + 
+        ASBonusTable[pc.AbilityScores[ABILITY_DEX]];
+    
+    s32 Will = ClassSavingThrows[pc.Class][2][pc.lvl] + 
+        ASBonusTable[pc.AbilityScores[ABILITY_WIS]];
+    
+    char *ST = ls_itoa(Fortitude);
+    Edit_SetText(State.PC->SavingThrows[0]->box, ST);
+    ls_free(ST);
+    
+    ST = ls_itoa(Reflex);
+    Edit_SetText(State.PC->SavingThrows[1]->box, ST);
+    ls_free(ST);
+    
+    ST = ls_itoa(Will);
+    Edit_SetText(State.PC->SavingThrows[2]->box, ST);
+    ls_free(ST);
 }
 
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
@@ -289,6 +326,9 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     Edit_SetText(State.PC->currLevel->box, cStr);
                     ls_free(cStr);
                     
+                    Edit_SetText(State.PC->BaseAttackBonus->box,
+                                 ClassBABString[pc.Class][0][pc.lvl]);
+                    
                     cStr = ls_itoa(pc.xp);
                     Edit_SetText(State.PC->currXP->box, cStr);
                     ls_free(cStr);
@@ -299,6 +339,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     
                     char **xpCurve = XPCurvesArr[State.PC->xpIdx];
                     Edit_SetText(State.PC->nextLevelXP->box, xpCurve[pc.lvl]);
+                    
+                    UpdateSavingThrows();
                     
                 } break;
             }
@@ -350,6 +392,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         pc.Name = newName;
                     }
+                    
                     else if(commandID == State.PC->Player->id)
                     {
                         string newPlayer = getText(handle);
@@ -359,6 +402,79 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         pc.Player = newPlayer;
                     }
+                    
+                    else if(commandID == State.PC->Scores->Box[ABILITY_STR]->id)
+                    {
+                        string s = getText(handle);
+                        u32 v = ls_stoi(s);
+                        pc.AbilityScores[ABILITY_STR] = v;
+                        
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, ASBonusTableString[v]);
+                        UpdateSavingThrows();
+                        
+                        ls_strFree(&s);
+                    }
+                    
+                    else if(commandID == State.PC->Scores->Box[ABILITY_DEX]->id)
+                    {
+                        string s = getText(handle);
+                        u32 v = ls_stoi(s);
+                        pc.AbilityScores[ABILITY_DEX] = v;
+                        
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, ASBonusTableString[v]);
+                        UpdateSavingThrows();
+                        
+                        ls_strFree(&s);
+                    }
+                    
+                    else if(commandID == State.PC->Scores->Box[ABILITY_CON]->id)
+                    {
+                        string s = getText(handle);
+                        u32 v = ls_stoi(s);
+                        pc.AbilityScores[ABILITY_CON] = v;
+                        
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, ASBonusTableString[v]);
+                        UpdateSavingThrows();
+                        
+                        ls_strFree(&s);
+                    }
+                    
+                    else if(commandID == State.PC->Scores->Box[ABILITY_INT]->id)
+                    {
+                        string s = getText(handle);
+                        u32 v = ls_stoi(s);
+                        pc.AbilityScores[ABILITY_INT] = v;
+                        
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, ASBonusTableString[v]);
+                        UpdateSavingThrows();
+                        
+                        ls_strFree(&s);
+                    }
+                    
+                    else if(commandID == State.PC->Scores->Box[ABILITY_WIS]->id)
+                    {
+                        string s = getText(handle);
+                        u32 v = ls_stoi(s);
+                        pc.AbilityScores[ABILITY_WIS] = v;
+                        
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, ASBonusTableString[v]);
+                        UpdateSavingThrows();
+                        
+                        ls_strFree(&s);
+                    }
+                    
+                    else if(commandID == State.PC->Scores->Box[ABILITY_CHA]->id)
+                    {
+                        string s = getText(handle);
+                        u32 v = ls_stoi(s);
+                        pc.AbilityScores[ABILITY_CHA] = v;
+                        
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, ASBonusTableString[v]);
+                        UpdateSavingThrows();
+                        
+                        ls_strFree(&s);
+                    }
+                    
                     else if(commandID == State.PC->currLevel->id)
                     {
                         string s = getText(handle);
@@ -369,6 +485,11 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         char **xpCurve = XPCurvesArr[State.PC->xpIdx];
                         Edit_SetText(State.PC->nextLevelXP->box, xpCurve[currLevel]);
+                        
+                        UpdateSavingThrows();
+                        
+                        Edit_SetText(State.PC->BaseAttackBonus->box,
+                                     ClassBABString[pc.Class][0][pc.lvl]);
                         
                         ls_strFree(&s);
                     }
@@ -414,6 +535,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         GameClass r = getClassFromString(s);
                         pc.Class = r;
                         
+                        UpdateSavingThrows();
+                        
                         ls_strFree(&s);
                     }
                     else if(commandID == State.PC->GenMethod->id)
@@ -443,7 +566,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     
                 } break;
                 
-                case LBN_DBLCLK:
+                case LBN_SELCHANGE:
                 {
                     u32 index = ListBox_GetCurSel(handle);
                     if(index > ArraySize(FeatsDesc)) 
@@ -454,6 +577,36 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     char *Desc = FeatsDesc[index];
                     
                     Edit_SetText(State.Feats->FeatsDesc->box, Desc);
+                    
+                } break;
+                
+                case LBN_DBLCLK:
+                {
+                    if(commandID == State.Feats->Feats->id)
+                    {
+                        u32 index = ListBox_GetCurSel(handle);
+                        if(index > ArraySize(FeatsDesc)) 
+                        { 
+                            ls_printf("Not implemented description of Feat n°%d\n", index);
+                            Assert(FALSE);
+                        }
+                        
+                        if(ArrayContains(State.Feats->ChosenFeatsIndices, index) == TRUE)
+                        { break; }
+                        
+                        ListBox_AddString(State.Feats->ChosenFeats->box, FeatNames[index]);
+                        State.Feats->ChosenFeatsIndices[State.Feats->usedFeats] = index;
+                        State.Feats->usedFeats += 1;
+                    }
+                    else if(commandID == State.Feats->ChosenFeats->id)
+                    {
+                        u32 index = ListBox_GetCurSel(handle);
+                        
+                        ListBox_DeleteString(handle, index);
+                        
+                        ArrayRemove(State.Feats->ChosenFeatsIndices, index);
+                        State.Feats->usedFeats -= 1;
+                    }
                     
                 } break;
                 
@@ -470,38 +623,52 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     if((commandID == State.PC->Scores->Plus1[ABILITY_STR]->id) ||
                        (commandID == State.PC->Scores->Plus10[ABILITY_STR]->id))
                     {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, ASBonusTable[val]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, ASBonusTableString[val]);
+                        
+                        pc.AbilityScores[ABILITY_STR] = val;
                     }
                     else if((commandID == State.PC->Scores->Plus1[ABILITY_DEX]->id) ||
                             (commandID == State.PC->Scores->Plus10[ABILITY_DEX]->id))
                     {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, ASBonusTable[val]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, ASBonusTableString[val]);
+                        
+                        pc.AbilityScores[ABILITY_DEX] = val;
                     }
                     else if((commandID == State.PC->Scores->Plus1[ABILITY_CON]->id) ||
                             (commandID == State.PC->Scores->Plus10[ABILITY_CON]->id))
                     {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, ASBonusTable[val]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, ASBonusTableString[val]);
+                        
+                        pc.AbilityScores[ABILITY_CON] = val;
                     }
                     else if((commandID == State.PC->Scores->Plus1[ABILITY_INT]->id) ||
                             (commandID == State.PC->Scores->Plus10[ABILITY_INT]->id))
                     {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, ASBonusTable[val]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, ASBonusTableString[val]);
+                        
+                        pc.AbilityScores[ABILITY_INT] = val;
                     }
                     else if((commandID == State.PC->Scores->Plus1[ABILITY_WIS]->id) ||
                             (commandID == State.PC->Scores->Plus10[ABILITY_WIS]->id))
                     {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, ASBonusTable[val]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, ASBonusTableString[val]);
+                        
+                        pc.AbilityScores[ABILITY_WIS] = val;
                     }
                     else if((commandID == State.PC->Scores->Plus1[ABILITY_CHA]->id) ||
                             (commandID == State.PC->Scores->Plus10[ABILITY_CHA]->id))
                     {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, ASBonusTable[val]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, ASBonusTableString[val]);
+                        
+                        pc.AbilityScores[ABILITY_CHA] = val;
                     }
                     
                     string newVal = ls_itos(val);
                     ls_nullTerminate(&newVal);
                     
                     BOOL ret = SetWindowTextA(text->box, newVal.data);
+                    
+                    UpdateSavingThrows();
                     
                     ls_strFree(&s);
                     ls_strFree(&newVal);
@@ -648,7 +815,7 @@ HWND AddStaticEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id,
     else { flags |= ES_AUTOHSCROLL; }
     
     HWND Result = CreateWindowExA(0, WC_EDIT, "",
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | flags, 
+                                  WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_BORDER | flags, 
                                   x, y, width, height, 
                                   win, (HMENU)id, MainInstance, 0);
     
@@ -1028,7 +1195,7 @@ void DrawPCTab(HWND WindowHandle, u64 *ElementId)
     
     Page->currLevel = AddNumberBox(WindowHandle, wA, "LvL", LABEL_UP, 
                                    664, 42, 100, 20, (*ElementId)++);
-    Edit_SetText(Page->currLevel, "0");
+    Edit_SetText(Page->currLevel->box, "1");
     
     //
     // XP Info
@@ -1077,14 +1244,14 @@ void DrawFeatsTab(HWND WindowHandle, u64 *ElementId)
     HWND *wA = Page->WindowsArray + Page->numWindows;
     
     Page->Feats = AddSingleSelListBox(WindowHandle, wA, "Feats Table", LABEL_UP,
-                                      24, 48, 640, 506, (*ElementId)++);
+                                      24, 48, 640, 456, (*ElementId)++);
     AddAllListBoxItems(Page->Feats->box, FeatNames, ArraySize(FeatNames));
     wA += 2;
     
     
     
     Page->FeatsDesc = AddStaticTextBox(WindowHandle, wA, "Feat Description", LABEL_UP,
-                                       24, 574, 640, 256, (*ElementId)++, TRUE);
+                                       24, 526, 640, 306, (*ElementId)++, TRUE);
     wA += 2;
     
     Page->ChosenFeats = AddListBox(WindowHandle, wA, "Your Feats", LABEL_UP,
@@ -1112,6 +1279,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     State.Feats = (FeatsPage *)ls_alloc(sizeof(FeatsPage));
     
     u64 ElementId = 0;
+    
+    for(size_t i = 0; i < ArraySize(State.Feats->ChosenFeatsIndices); i++)
+    { State.Feats->ChosenFeatsIndices[i] = u32(-1); }
     
     //
     // Create Tabs

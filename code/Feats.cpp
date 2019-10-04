@@ -231,61 +231,61 @@ char *FeatsDesc[]=
     
     "You  are  skilled  at  attacking  opponents  that  you  cannot clearly perceive.\r\n\r\nBenefit:  In  melee,  every  time  you  miss  because  of concealment  (see  Chapter  8),  you  can  reroll  your  miss chance percentile roll one time to see if you actually hit.An  invisible  attacker  gets  no  advantages  related  to h itting you in melee. That is, you don't lose your Dexterity bonus  to  Armor  Class,  and  the  attacker  doesn't  get  the usual +2 bonus for being invisible. The invisible attacker's bonuses do still apply for ranged attacks, however.You do not need to make Acrobatics skill checks to move at full speed while blinded.\r\n\r\nNormal:  Regular  attack  roll  modifiers  for  invisible attackers  trying  to  hit  you  apply,  and  you  lose  your Dexterity bonus to AC. The speed reduction for darkness and poor visibility also applies.\r\n\r\nSpecial:  The  Blind-Fight  feat  is  of  no  use  against  a character who is the subject of a blink spell.",
     
-    "",
+    "Your critical hits blind your opponents.\r\n\r\nPrerequisites: Critical Focus, base attack bonus +15.\r\n\r\nBenefit:  Whenever  you  score  a  critical  hit,  your opponent  is  permanently  blinded.  A  successful  Fortitude save  reduces  this  to  dazzled  for  1d4  rounds.  The  DC  of this Fortitude save is equal to 10 + your base attack bonus. This  feat  has  no  effect  on  creatures  that  do  not  rely on  eyes  for  sight  or  creatures  with  more  than  two  eyes (although  multiple  critical  hits  might  cause  blindness, at the GM's discretion). Blindness can be cured by heal, regeneration, remove blindness, or similar abilities.\r\n\r\nSpecial: You can only apply the effects of one critical feat to a given critical hit unless you possess Critical Mastery.",
     
-    "",
+    "You can create magic potions.\r\n\r\nPrerequisite: Caster level 3rd.\r\n\r\nBenefit: You can create a potion of any 3rd-level or lower spell that you know and that targets one or more creatures or objects. Brewing a potion takes 2 hours if its base price is 250 gp or less, otherwise brewing a potion takes 1 day for each 1,000 gp in its base price. When you create a potion, you set the caster level, which must be sufficient to cast the spell in question and no higher than your own level. To brew a potion, you must use up raw materials costing one half this base price. See the magic item creation rules in Chapter 15 for more information.When  you  create  a  potion,  you  make  any  choices  that you would normally make when casting the spell. Whoever drinks the potion is the target of the spell.",
     
-    "",
+    "Foes are surprised by your skilled use of unorthodox and improvised weapons.\r\n\r\nBenefit:  You  do  not  suffer  any  penalties  for  using  an improvised melee weapon. Unarmed opponents are flat-footed against any attacks you make with an improvised melee weapon.\r\n\r\nNormal: You take a –4 penalty on attack rolls made with an improvised weapon.",
     
-    "",
+    "You  can  channel  your  divine  energy  through  a  melee weapon you wield.\r\n\r\nPrerequisite: Channel energy class feature.\r\n\r\nBenefit: Before you make a melee attack roll, you can choose  to  spend  one  use  of  your  channel  energy  ability as a swift action. If you channel positive energy and you hit  an  undead  creature,  that  creature  takes  an  amount of additional damage equal to the damage dealt by your channel  positive  energy  ability.  If  you  channel  negative energy and you hit a living creature, that creature takes an amount of additional damage equal to the damage dealt by your channel negative energy ability. Your target can make a  Will  save,  as  normal,  to  halve  this  additional  damage. If  your  attack  misses,  the  channel  energy  ability  is  still expended with no effect.",
     
-    "",
+    "You can strike two adjacent foes with a single swing.\r\n\r\nPrerequisites: Str 13, Power Attack, base attack bonus +1.\r\n\r\nBenefit: As a standard action, you can make a single attack at your full base attack bonus against a foe within reach. If you hit, you deal damage normally and can make an additional attack (using your full base attack bonus) against a foe that is adjacent to the first and also within reach.  You  can  only  make  one  additional  attack  per round with this feat. When you use this feat, you take a –2 penalty to your Armor Class until your next turn.",
     
-    "",
+    "You are adept at spellcasting when threatened or distracted.\r\n\r\nBenefit:  You  get  a  +4  bonus  on  concentration  checks made to cast a spell or use a spell-like ability when casting on the defensive or while grappled.",
     
-    "",
+    "You can increase your defense at the expense of your accuracy.\r\n\r\nPrerequisite: Int 13.\r\n\r\nBenefit: You can choose to take a –1 penalty on melee attack  rolls  and  combat  maneuver  checks  to  gain  a  +1 dodge bonus to your Armor Class. When your base attack bonus  reaches  +4,  and  every  +4  thereafter,  the  penalty increases by –1 and the dodge bonus increases by +1. You can only choose to use this feat when you declare that you are making an attack or a full-attack action with a melee weapon. The effects of this feat last until your next turn.",
     
-    "",
+    "You can make additional attacks of opportunity.\r\n\r\nBenefit: You may make a number of additional attacks of opportunity per round equal to your Dexterity bonus. With this feat, you may also make attacks of opportunity while flat-footed.\r\n\r\nNormal: A character without this feat can make only one attack of opportunity per round and can’t make attacks of opportunity while flat-footed.\r\n\r\nSpecial: The Combat Reflexes feat does not allow a rogue to use her opportunist ability more than once per round.",
     
-    "",
+    "Using  foul  powers  of  necromancy,  you  can  command undead creatures, making them into your servants.\r\n\r\nPrerequisites: Channel negative energy class feature.\r\n\r\nBenefit:  As  a  standard  action,  you  can  use  one  of  your uses of channel negative energy to enslave undead within 30 feet. Undead receive a Will save to negate the effect. The DC for this Will save is equal to 10 + 1/2 your cleric level + your Charisma modifier. Undead that fail their saves fall under your control, obeying your commands to the best of their ability, as if under the effects of control undead. Intelligent undead receive a new saving throw each day to resist your command. You can control any number of undead, so long as their total Hit Dice do not exceed your cleric level. If you use channel energy in this way, it has no other effect (it does not heal or harm nearby creatures). If an undead creature is under the control of another creature, you must make an opposed Charisma check whenever your orders conflict.",
     
-    "",
+    "You can create magic armor, shields, and weapons.\r\n\r\nPrerequisite: Caster level 5th.\r\n\r\nBenefit: You can create magic weapons, armor, or shields. Enhancing a weapon, suit of armor, or shield takes 1 day for  each  1,000  gp  in  the  price  of  its  magical  features.  To enhance a weapon, suit of armor, or shield, you must use up raw materials costing half of this total price. See the magic item creation rules in Chapter 15 for more information.The weapon, armor, or shield to be enhanced must be a masterwork item that you provide. Its cost is not included in the above cost.You can also mend a broken or destroyed magic weapon, suit of armor, or shield if it is one that you could make. Doing so costs half the raw materials and half the time it would take to craft that item in the first place.",
     
-    "",
+    "You can create magic rods.\r\n\r\nPrerequisite: Caster level 9th.\r\n\r\nBenefit:  You  can  create  magic  rods.  Crafting  a  rod takes 1 day for each 1,000 gp in its base price. To craft a rod, you must use up raw materials costing half of its base price. See the magic item creation rules in Chapter 15 for more information.",
     
-    "",
+    "You can create magic staves.\r\n\r\nPrerequisite: Caster level 11th.\r\n\r\nBenefit: You can create any staff whose prerequisites you meet. Crafting a staff takes 1 day for each 1,000 gp in its base price. To craft a staff, you must use up raw materials costing half of its base price. A newly created staff has 10 charges. See the magic item creation rules in Chapter 15 for more information.",
     
-    "",
+    "You can create magic wands.\r\n\r\nPrerequisite: Caster level 5th.\r\n\r\nBenefit: You can create a wand of any 4th-level or lower spell that you know. Crafting a wand takes 1 day for each 1,000 gp in its base price. To craft a wand, you must use up raw materials costing half of this base price. A newly created wand has 50 charges. See the magic item creation rules in Chapter 15 for more information.",
     
-    "",
+    "You can create wondrous items, a type of magic item.\r\n\r\nPrerequisite: Caster level 3rd.\r\n\r\nBenefit: You can create a wide variety of magic wondrous items. Crafting a wondrous item takes 1 day for each 1,000 gp in its price. To create a wondrous item, you must use up raw materials costing half of its base price. See the magic item creation rules in Chapter 15 for more information.You can also mend a broken or destroyed wondrous item if it is one that you could make. Doing so costs half the raw materials and half the time it would take to craft that item.",
     
-    "",
+    "You are trained in the art of causing pain.\r\n\r\nPrerequisites: Base attack bonus +9.\r\n\r\nBenefit: You receive a +4 circumstance bonus on attack rolls made to confirm critical hits.",
     
-    "",
+    "Your critical hits cause two additional effects.\r\n\r\nPrerequisites: Critical Focus, any two critical feats, 14th-level fighter.\r\n\r\nBenefit: When you score a critical hit, you can apply the effects of two critical feats in addition to the damage dealt.\r\n\r\nNormal:  You  can  only apply  the  effects  of  one critical feat to a given critical hit in addition to the damage dealt.",
     
-    "",
+    "Your skill with your favored weapon can frighten enemies.\r\n\r\nPrerequisite:  Weapon  Focus,  proficiency  with  the selected weapon.\r\n\r\nBenefit: While wielding the weapon in which you have Weapon  Focus,  you  can  perform  a  bewildering  show  of prowess as a full-round action. Make an Intimidate check to demoralize all foes within 30 feet who can see your display.",
     
-    "",
+    "You  can  make  exceptionally  deadly  ranged  attacks  by pinpointing a foe’s weak spot, at the expense of making the attack less likely to succeed.\r\n\r\nPrerequisites: Dex 13, base attack bonus +1.\r\n\r\nBenefit:  You  can  choose  to  take  a  –1  penalty  on  all ranged attack rolls to gain a +2 bonus on all ranged damage rolls. When your base attack bonus reaches +4, and every +4 thereafter, the penalty increases by –1 and the bonus to damage increases by +2. You must choose to use this feat before making an attack roll and its effects last until your next turn. The bonus damage does not apply to touch attacks or effects that do not deal hit point damage.",
     
-    "",
+    "With a well-placed strike, you can bring a swift and painful end to most foes.\r\n\r\nPrerequisites: Dazzling Display, Greater Weapon Focus, Shatter  Defenses,  Weapon  Focus,  proficiency  with  the selected weapon, base attack bonus +11.\r\n\r\nBenefit: As a standard action, make a single attack with the weapon for which you have Greater Weapon Focus against a stunned or flat-footed opponent. If you hit, you deal double the normal damage and the target takes 1 point of Constitution bleed (see Appendix 2). The additional damage and bleed is not multiplied on a critical hit.",
     
-    "",
+    "Your critical hits cause enemies to lose their hearing.\r\n\r\nPrerequisites: Critical Focus, base attack bonus +13.\r\n\r\nBenefit:  Whenever  you  score  a  critical  hit  against an  opponent,  the  victim  is  permanently  deafened.  A successful Fortitude save reduces the deafness to 1 round. The DC of this Fortitude save is equal to 10 + your base attack bonus. This feat has no effect on deaf creatures. This  deafness  can  be  cured  by  heal,  regeneration,  remove deafness, or a similar ability.\r\n\r\nSpecial: You can only apply the effects of one critical feat to a given critical hit unless you possess Critical Mastery.",
     
-    "",
+    "You are skilled at deceiving others, both with the spoken word and with physical disguises.\r\n\r\nBenefit: You get a +2 bonus on all Bluff and Disguise skill checks. If you have 10 or more ranks in one of these skills, the bonus increases to +4 for that skill.",
     
-    "",
+    "You  excel  at  defending  yourself  from  all  manner  of combat maneuvers.\r\n\r\nBenefit:  You  treat  your  total  Hit  Dice  as  your base  attack  bonus  when  calculating  your  Combat Maneuver Defense (see Chapter 8). ",
     
-    "",
+    "You  can  knock  arrows  and  other  projectiles  off  course, preventing them from hitting you.\r\n\r\nPrerequisites: Dex 13, Improved Unarmed Strike.\r\n\r\nBenefit: You must have at least one hand free (holding nothing) to use this feat. Once per round when you would normally be hit with an attack from a ranged weapon, you may deflect it so that you take no damage from it. You must be  aware  of  the  attack  and  not  flat-footed.  Attempting to  deflect  a  ranged  attack  doesn’t  count  as  an  action. Unusually massive ranged weapons (such as boulders or ballista  bolts)  and  ranged  attacks  generated  by  natural attacks or spell effects can’t be deflected.",
     
-    "",
+    "You have exceptional manual dexterity.\r\n\r\nBenefit: You get a +2 bonus on Disable Device and Sleight of Hand skill checks. If you have 10 or more ranks in one of these skills, the bonus increases to +4 for that skill.",
     
-    "",
+    "You are especially hard to kill. Not only do your wounds automatically stabilize when grievously injured, but you can remain conscious and continue to act even at death’s door.\r\n\r\nPrerequisite: Endurance.\r\n\r\nBenefit: When your hit point total is below 0, but you are not dead, you automatically stabilize. You do not need to make a Constitution check each round to avoid losing additional hit points. You may choose to act as if you were disabled, rather than dying. You must make this decision as soon as you are reduced to negative hit points (even if it isn’t your turn). If you do not choose to act as if you were disabled, you immediately fall unconscious.When using this feat, you are staggered. You can take a  move  action  without  further  injuring  yourself,  but  if you  perform  any  standard  action  (or  any  other  action deemed as strenuous, including some swift actions, such as casting a quickened spell) you take 1 point of damage after completing the act. If your negative hit points are equal  to  or  greater  than  your  Constitution  score,  you immediately die.\r\n\r\nNormal: A character without this feat who is reduced to negative hit points is unconscious and dying.",
     
-    "",
+    "Your training makes it difficult for enemy spellcasters to safely cast spells near you.\r\n\r\nPrerequisites: 6th-level fighter.\r\n\r\nBenefit: The DC to cast spells defensively increases by +4  for  all  enemies  that  are  within  your  threatened  area. This increase to casting spells defensively only applies if you are aware of the enemy’s location and are capable of taking an attack of opportunity. If you can only take one attack of opportunity per round and have already used that attack, this increase does not apply.",
     
-    "",
+    "Your  training  and  reflexes  allow  you  to  react  swiftly  to avoid an opponents’ attacks.\r\n\r\nPrerequisite: Dex 13.\r\n\r\nBenefit:  You  gain  a  +1  dodge  bonus  to  your AC. A condition that makes you lose your Dex bonus to AC also makes you lose the benefits of this feat.",
     
-    "",
+    "Your  off-hand  weapon  while  dual-wielding  strikes  with greater power.\r\n\r\nPrerequisite: Dex 15, Two-Weapon Fighting.\r\n\r\nBenefit: Add your Strength bonus to damage rolls made with your off-hand weapon.\r\n\r\nNormal: You normally add only half of your Strength modifier to damage rolls made with a weapon wielded in your off-hand.",
     
     "",
     
