@@ -984,7 +984,7 @@ ListBox *AddListBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     
     u32 flags;
     if(isSorted) { flags = LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_SORT; }
-    else { flags = LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_SORT; }
+    else { flags = LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY; }
     
     Result->box = CreateWindowExA(0, WC_LISTBOX, "",
                                   WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | flags, 
@@ -1010,7 +1010,7 @@ ListBox *AddSingleSelListBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     
     u32 flags;
     if(isSorted) { flags = LBS_HASSTRINGS | LBS_NOTIFY | LBS_SORT; }
-    else { flags = LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_SORT; }
+    else { flags = LBS_HASSTRINGS | LBS_NOTIFY; }
     
     Result->box = CreateWindowExA(0, WC_LISTBOX, "",
                                   WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | flags, 
@@ -1254,8 +1254,8 @@ void DrawFeatsTab(HWND WindowHandle, u64 *ElementId)
                                        24, 526, 640, 306, (*ElementId)++, TRUE);
     wA += 2;
     
-    Page->ChosenFeats = AddListBox(WindowHandle, wA, "Your Feats", LABEL_UP,
-                                   684, 48, 640, 786, (*ElementId)++, FALSE);
+    Page->ChosenFeats = AddSingleSelListBox(WindowHandle, wA, "Your Feats", LABEL_UP,
+                                            684, 48, 640, 786, (*ElementId)++, FALSE);
     wA += 2;
     
     Page->numWindows += 6;
