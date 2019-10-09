@@ -18,17 +18,15 @@ enum LabelDir {
 };
 
 #define setFieldAndLabel(f, l, p, d) { \
-    CGSize fR = CGSizeMake(f.frame.size.width/2, (f.frame.size.height/2)); \
-    CGSize lR = CGSizeMake(l.bounds.size.width/2, (l.bounds.size.height/2)); \
-    const float pad = 4; \
-    CGSize t = CGSizeMake(fR.width + lR.width, fR.height + lR.height + pad); \
+    CGSize fR = f.frame.size; \
+    CGSize lR = l.frame.size; \
     CGPoint labelP; \
     switch(d) \
     { \
-        case LABEL_UP: { labelP = CGPointMake(p.x, p.y + t.height); } break; \
-        case LABEL_DOWN: { labelP = CGPointMake(p.x, p.y - t.height); } break; \
-        case LABEL_LEFT: { labelP = CGPointMake(p.x - t.width, p.y); } break; \
-        case LABEL_RIGHT: { labelP = CGPointMake(p.x + t.width, p.y); } break; \
+        case LABEL_UP: { labelP = CGPointMake(p.x, p.y + fR.height); } break; \
+        case LABEL_DOWN: { labelP = CGPointMake(p.x, p.y - fR.height); } break; \
+        case LABEL_LEFT: { labelP = CGPointMake(p.x - lR.width, p.y); } break; \
+        case LABEL_RIGHT: { labelP = CGPointMake(p.x + fR.width, p.y); } break; \
         default: \
         { assert(false); } break; \
     } \
@@ -167,7 +165,7 @@ enum LabelDir {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     [ self initialization ];
-    
+            
     setFieldAndLabel(_NameField, _NameLabel, CGPointMake(65, 810), LABEL_LEFT);
     setFieldAndLabel(_PlayerField, _PlayerLabel, CGPointMake(65, 780), LABEL_LEFT);
                
@@ -194,7 +192,21 @@ enum LabelDir {
     setFieldAndLabel(_XPCurveSel, _XPCurveLabel, CGPointMake(660, 807), LABEL_UP);
     
     setFieldAndLabel(_BABField, _BABLabel, CGPointMake(540, 730), LABEL_LEFT);
+    
+    NSLog(@"Fort Pos: %f, %f", _FortLabel.frame.origin.x, _FortLabel.frame.origin.y);
+    NSLog(@"Fort Size: %f, %f", _FortLabel.frame.size.width, _FortLabel.frame.size.height);
+    NSLog(@"Fort Box Pos: %f, %f", _FortField.frame.origin.x, _FortField.frame.origin.y);
+    NSLog(@"Fort Box Size: %f, %f", _FortField.frame.size.width, _FortField.frame.size.height);
+    
     setFieldAndLabel(_FortField, _FortLabel, CGPointMake(540, 690), LABEL_LEFT);
+    
+    NSLog(@"\n\n");
+    NSLog(@"Fort Pos: %f, %f", _FortLabel.frame.origin.x, _FortLabel.frame.origin.y);
+    NSLog(@"Fort Size: %f, %f", _FortLabel.frame.size.width, _FortLabel.frame.size.height);
+    NSLog(@"Fort Box Pos: %f, %f", _FortField.frame.origin.x, _FortField.frame.origin.y);
+    NSLog(@"Fort Box Size: %f, %f", _FortField.frame.size.width, _FortField.frame.size.height);
+
+    
     setFieldAndLabel(_RefField, _RefLabel, CGPointMake(540, 650), LABEL_LEFT);
     setFieldAndLabel(_WillField, _WillLabel, CGPointMake(540, 610), LABEL_LEFT);
             
