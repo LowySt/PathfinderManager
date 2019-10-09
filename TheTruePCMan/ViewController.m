@@ -35,23 +35,6 @@ enum LabelDir {
 
 #define setField(f, p) [f setFrameOrigin:p]
 
-
-/*void setFieldAndLabelT(NSTextField *f, NSTextField *l, CGPoint p, enum LabelDir d)
-{
-    CGSize fR = CGSizeMake(f.frame.size.width/2, f.frame.size.height/2);
-    CGPoint labelP;
-    switch(d)
-    {
-        case LABEL_UP: { labelP = CGPointMake(p.x, p.y + fR.height); } break;
-        case LABEL_DOWN: { labelP = CGPointMake(p.x, p.y - fR.height); } break;
-        case LABEL_LEFT: { labelP = CGPointMake(p.x - fR.width, p.y); } break;
-        case LABEL_RIGHT: { labelP = CGPointMake(p.x + fR.width, p.y); } break;
-        default:
-        { assert(false); } break;
-    }
-    [f setFrameOrigin:p]; [l setFrameOrigin:labelP];
-}*/
-
 @implementation ViewController
 
 - (void)initialization {
@@ -149,12 +132,12 @@ enum LabelDir {
     [_WISField setAlignment:NSTextAlignmentLeft];
     [_CHAField setAlignment:NSTextAlignmentLeft];
     
-    [_STRBonus setAlignment:NSTextAlignmentLeft];
-    [_DEXBonus setAlignment:NSTextAlignmentLeft];
-    [_CONBonus setAlignment:NSTextAlignmentLeft];
-    [_INTBonus setAlignment:NSTextAlignmentLeft];
-    [_WISBonus setAlignment:NSTextAlignmentLeft];
-    [_CHABonus setAlignment:NSTextAlignmentLeft];
+    [_STRBonus setAlignment:NSTextAlignmentCenter];
+    [_DEXBonus setAlignment:NSTextAlignmentCenter];
+    [_CONBonus setAlignment:NSTextAlignmentCenter];
+    [_INTBonus setAlignment:NSTextAlignmentCenter];
+    [_WISBonus setAlignment:NSTextAlignmentCenter];
+    [_CHABonus setAlignment:NSTextAlignmentCenter];
     
     [_LvlField setAlignment:NSTextAlignmentLeft];
     [_ExpField setAlignment:NSTextAlignmentLeft];
@@ -214,11 +197,13 @@ enum LabelDir {
     NSArray *XPCurves = @[ @"Fast", @"Medium", @"Slow" ];
     [_XPCurveSel addItemsWithObjectValues:XPCurves];
     
+    NSArray *AB = @[ @"-5", @"-5", @"-4", @"-4", @"-3", @"-3", @"-2", @"-2", @"-1", @"-1", @"0", @"0", @"+1", @"+1", @"+2", @"+2", @"+3", @"+3", @"+4", @"+4", @"+5", @"+5", @"+6", @"+6", @"+7", @"+7", @"+8", @"+8", @"+9", @"+9", @"+10", @"+10", @"+11", @"+11", @"+12", @"+12", @"+13", @"+13", @"+14", @"+14", @"+15", @"+15", @"+16", @"+16", @"+17", @"+17"];
+    _AbilityBonus = AB;
+    
 }
 
 - (void)setRepresentedObject:(id)representedObject {
     [super setRepresentedObject:representedObject];
-
     // Update the view, if already loaded.
 }
 

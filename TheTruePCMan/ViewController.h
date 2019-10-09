@@ -12,6 +12,8 @@
 
 @property (strong) IBOutlet NSView *MainView;
 
+@property (strong) NSArray *AbilityBonus;
+
 @property (weak) IBOutlet NSTextField *NameLabel;
 @property (weak) IBOutlet NSTextField *NameField;
 
@@ -75,6 +77,7 @@
 @property (weak) IBOutlet NSTextField *WillField;
 
 @property (weak) IBOutlet NSScrollView *RacialTraitsField;
+
 
 @end
 
