@@ -38,6 +38,7 @@ enum LabelAlign
     LABEL_COUNT
 };
 
+//TODO: Support Unicode in WindowCreation
 struct TextBox
 {
     HWND box;
@@ -322,6 +323,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     ListBox_ResetContent(State.PC->RacialTraits->box);
                     AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
                     
+                    //TODO: Check why lvl is not being update at loading
                     cStr = ls_itoa(pc.lvl);
                     Edit_SetText(State.PC->currLevel->box, cStr);
                     ls_free(cStr);

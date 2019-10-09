@@ -1,3 +1,5 @@
+//TODO: Add Tables to Feats Descriptions.
+
 char *FeatNames[] =
 {
     "Acrobatic",
@@ -323,93 +325,93 @@ char *FeatsDesc[]=
     
     "You can create magic rings.\r\n\r\nPrerequisite: Caster level 7th.\r\n\r\nBenefit:  You  can  create  magic  rings.  Crafting  a  ring takes 1 day for each 1,000 gp in its base price. To craft a ring,  you  must  use  up  raw  materials  costing  half  of  the base price. See the magic item creation rules in Chapter 15 for more information.You can also mend a broken ring if it is one that you could make. Doing so costs half the raw materials and half the time it would take to forge that ring in the first place.",
     
-    "",
+    "With one well-placed blow, you leave your target reeling.\r\n\r\nPrerequisites:  Improved  Unarmed  Strike, Scorpion Style, base attack bonus +6.\r\n\r\nBenefit: As a standard action, make a single unarmed melee attack against a foe whose speed is reduced (such as from Scorpion Style). If the attack hits, you deal damage normally and the target is staggered until the end of your next turn unless it makes a Fortitude saving throw (DC 10 + 1/2 your character level + your Wis modifier). This feat has no effect on targets that are staggered.",
     
-    "",
+    "You can strike many adjacent foes with a single blow.\r\n\r\nPrerequisites: Str 13, Cleave, Power Attack, base attack bonus +4.\r\n\r\nBenefit: As a standard action, you can make a single attack at your full base attack bonus against a foe within reach. If you hit, you deal damage normally and can make an additional attack (using your full base attack bonus) against a foe that is adjacent to the previous foe and also within reach. If you hit, you can continue to make attacks against foes adjacent to the previous foe, so long as they are within your reach. You cannot attack an individual foe more than once during this attack action. When you use this feat, you take a –2 penalty to your Armor Class until your next turn.",
     
-    "",
+    "You are resistant to poisons, diseases, and other maladies.\r\n\r\nBenefit: You get a +2 bonus on all Fortitude saving throws.",
     
-    "",
+    "Your bull rush attacks throw enemies off balance.\r\n\r\nPrerequisites: Improved Bull Rush, Power Attack, base attack bonus +6, Str 13.\r\n\r\nBenefit: You receive a +2 bonus on checks made to bull rush a foe. This bonus stacks with the bonus granted by Improved Bull Rush. Whenever you bull rush an opponent, his movement provokes attacks of opportunity from all of your allies (but not you).\r\n\r\nNormal: Creatures moved by bull rush do not provoke attacks of opportunity.",
     
-    "",
+    "You can knock weapons far from an enemy’s grasp.\r\n\r\nPrerequisites:  Combat  Expertise, Improved Disarm, base attack bonus +6, Int 13.\r\n\r\nBenefit:  You  receive  a  +2  bonus  on  checks  made  to disarm a foe. This bonus stacks with the bonus granted by Improved Disarm. Whenever you successfully disarm an  opponent,  the  weapon  lands  15  feet  away  from  its previous wielder, in a random direction.\r\n\r\nNormal: Disarmed weapons and gear land at the feet of the disarmed creature.",
     
-    "",
+    "You are skilled at making foes overreact to your attacks.\r\n\r\nPrerequisites: Combat Expertise, Improved Feint, base attack bonus +6, Int 13.\r\n\r\nBenefit: Whenever you use feint to cause an opponent to lose his Dexterity bonus, he loses that bonus until the beginning  of  your  next  turn,  in  addition  to  losing  his Dexterity bonus against your next attack.\r\n\r\nNormal: A creature you feint loses its Dexterity bonus against your next attack.",
     
-    "",
+    "Maintaining a grapple is second nature to you.\r\n\r\nPrerequisites:  Improved  Grapple,  Improved  Unarmed Strike, base attack bonus +6, Dex 13.\r\n\r\nBenefit:  You  receive  a  +2  bonus  on  checks  made  to grapple a foe. This bonus stacks with the bonus granted by Improved Grapple. Once you have grappled a creature, maintaining the grapple is a move action. This feat allows you  to  make  two  grapple  checks  each  round  (to  move, harm, or pin your opponent), but you are not required to make two checks. You only need to succeed at one of these checks to maintain the grapple.\r\n\r\nNormal: Maintaining a grapple is a standard action.",
     
-    "",
+    "Enemies must dive to avoid your dangerous move.\r\n\r\nPrerequisites:  Improved  Overrun,  Power  Attack,  base attack bonus +6, Str 13.Benefit:  You  receive  a  +2  bonus  on  checks  made  to overrun a foe. This bonus stacks with the bonus granted by Improved Overrun. Whenever you overrun opponents, they  provoke  attacks  of  opportunity  if  they  are  knocked prone by your overrun.\r\n\r\nNormal: Creatures knocked prone by your overrun do not provoke an attack of opportunity.",
     
-    "",
+    "Your attacks penetrate the defenses of most foes.\r\n\r\nPrerequisites: Penetrating Strike, Weapon Focus, 16th-level fighter.\r\n\r\nBenefit: Your attacks made with weapons selected with Weapon Focus ignore up to 10 points of damage reduction. This amount is reduced to 5 points for damage reduction without a type (such as DR 10/-).",
     
-    "",
+    "You are skilled at deflecting blows with your shield.\r\n\r\nPrerequisites:  Shield  Focus, Shield  Proficiency, 8th-level fighter.\r\n\r\nBenefit: Increase the AC  bonus granted by any shield you are using by 1. This  bonus  stacks  with the bonus granted by Shield Focus.",
     
-    "",
+    "Choose a school of magic to which you have already applied the Spell Focus feat. Any spells you cast of this school are very hard to resist.\r\n\r\nPrerequisite: Spell Focus.\r\n\r\nBenefit: Add  +1  to  the  Difficulty Class for all saving throws against spells from the school of magic you select. This bonus stacks with the bonus from Spell Focus.\r\n\r\nSpecial: You can  gain this feat multiple times. Its effects do not stack. Each time you take the feat, it applies to a new school to which you  already have applied the Spell Focus feat.",
     
-    "",
+    "Your  spells  break  through  spell  resistance  much  more easily than most.\r\n\r\nPrerequisite: Spell Penetration.\r\n\r\nBenefit:  You  get  a  +2  bonus  on  caster  level  checks (1d20 + caster level) made to overcome a creature’s spell resistance.  This  bonus  stacks  with  the  one  from  Spell Penetration.",
     
-    "",
+    "Your  devastating  strikes  cleave  through  weapons  and armor and into their wielders, damaging both item and wielder alike in a single terrific strike.\r\n\r\nPrerequisites:  Improved  Sunder, Power Attack, base attack bonus +6, Str 13.\r\n\r\nBenefit:  You  receive  a  +2  bonus  on  checks  made  to sunder an item. This bonus stacks with the bonus granted by Improved Sunder. Whenever you sunder to destroy a weapon,  shield,  or  suit  of  armor,  any  excess  damage  is applied to the item’s wielder. No damage is transferred if you decide to leave the item with 1 hit point.",
     
-    "",
+    "You can make free attacks on foes that you knock down.\r\n\r\nPrerequisites: Combat  Expertise, Improved Trip, base attack bonus +6, Int 13.\r\n\r\nBenefit: You receive a +2 bonus on checks made to trip a foe. This bonus stacks with the bonus granted by Improved Trip. Whenever  you  successfully  trip  an  opponent,  that opponent provokes attacks of opportunity.\r\n\r\nNormal: Creatures do not provoke attacks of opportunity from being tripped.",
     
-    "",
+    "You are incredibly skilled at fighting with two weapons at the same time.\r\n\r\nPrerequisites: Dex 19, Improved Two-Weapon Fighting, Two-Weapon Fighting, base attack bonus +11.\r\n\r\nBenefit:  You  get  a  third  attack  with  your  off-hand weapon, albeit at a –10 penalty.",
     
-    "",
+    "You can make a single attack that deals incredible damage.\r\n\r\nPrerequisites: Improved Vital Strike, Vital Strike, base attack bonus +16.\r\n\r\nBenefit:  When  you  use  the  attack  action,  you  can make one attack at your highest base attack bonus that deals additional damage. Roll the weapon’s damage dice for the attack four times and add the results together before adding bonuses from Strength, weapon abilities (such as flaming),  precision-based  damage  (such as sneak attack), and other damage bonuses. These extra weapon damage dice are not multiplied on a critical hit, but are added to the total.",
     
-    "",
+    "Choose one type of weapon (including u narmed strike or grapple) for which you have already selected Weapon Focus. You are a master at your chosen weapon.\r\n\r\nPrerequisites: Proficiency  with  selected  weapon, Weapon Focus with selected weapon, 8th-level fighter.\r\n\r\nBenefit: You gain a +1 bonus on attack rolls you make using  the  selected  weapon.  This  bonus  stacks  with other  bonuses  on  attack  rolls,  including  those  from Weapon Focus.\r\n\r\nSpecial: You can gain Greater Weapon Focus multiple times. Its effects do not stack. Each time you take the feat, it applies to a new type of weapon.",
     
-    "",
+    "Choose one type of weapon (including u narmed strike or grapple) for which you possess the Weapon Specialization feat.  Your  attacks  with  the  chosen  weapon  are  more devastating than normal.\r\n\r\nPrerequisites:  Proficiency  with  selected  weapon, Greater  Weapon  Focus  with  selected  weapon,  Weapon Focus with selected weapon, Weapon Specialization with selected weapon, 12th-level fighter.\r\n\r\nBenefit:  You  gain  a  +2  bonus  on  all  damage  rolls  you make using the selected weapon. This bonus to damage stacks with other damage roll bonuses, including any you gain from Weapon Specialization.\r\n\r\nSpecial:  You  can  gain  Greater  Weapon  Specialization multiple times. Its effects do not stack. Each time you take the feat, it applies to a new type of weapon.",
     
-    "",
+    "You can cast spells as if they were a higher level.\r\n\r\nBenefit:  A  heightened  spell  has  a  higher  spell  level than  normal  (up  to  a  maximum  of  9th  level).  Unlike other metamagic feats, Heighten Spell actually increases the effective level of the spell that it modifies. All effects dependent  on  spell  level  (such  as  saving  throw  DCs and  ability  to  penetrate  a  lesser  globe  of  invulnerability) are  calculated  according  to  the  heightened  level.  The heightened  spell  is  as  difficult  to  prepare  and  cast  as  a spell of its effective level. ",
     
-    "",
+    "You are skilled at pushing your foes around.\r\n\r\nPrerequisite: Str 13, Power Attack, base attack bonus +1.\r\n\r\nBenefit:  You  do  not  provoke  an  attack  of  opportunity when  performing  a  bull  rush  combat  maneuver. In addition, you receive a +2 bonus on checks made to bull rush  a  foe.  You  also  receive  a  +2  bonus  to  your  Combat Maneuver  Defense  whenever  an  opponent  tries  to  bull rush you.\r\n\r\nNormal:  You  provoke  an  attack  of  opportunity  when performing a bull rush combat maneuver.",
     
-    "",
+    "Your channeled energy is harder to resist.\r\n\r\nPrerequisite: Channel energy class feature.\r\n\r\nBenefit: Add 2 to the DC of saving throws made to resist the effects of your channel energy ability. ",
     
-    "",
+    "You  are  skilled  at  countering  the  spells  of  others  using similar spells.\r\n\r\nBenefit: When counterspelling, you may use a spell of the  same  school  that  is  one  or  more  spell  levels  higher than the target spell.\r\n\r\nNormal: Without this feat, you may counter a spell only with the same spell or with a spell specifically designated as countering the target spell.",
     
-    "",
+    "Attacks made with your chosen weapon are quite deadly.\r\n\r\nPrerequisite: Proficient with weapon, base attack bonus +8.\r\n\r\nBenefit:  When  using  the  weapon  you  selected,  your threat range is doubled.\r\n\r\nSpecial: You can gain Improved Critical multiple times. The  effects  do  not  stack.  Each  time  you  take  the  feat,  it applies to a new type of weapon. This  effect  doesn’t  stack  with  any  other  effect  that expands the threat range of a weapon.",
     
-    "",
+    "You are skilled at knocking weapons from a foe’s grasp.\r\n\r\nPrerequisite: Int 13, Combat Expertise.\r\n\r\nBenefit:  You  do  not  provoke  an  attack  of  opportunity when performing a disarm combat maneuver. In addition, you receive a +2 bonus on checks made to disarm a foe. You also receive a +2 bonus to your Combat Maneuver Defense whenever an opponent tries to disarm you.\r\n\r\nNormal:  You  provoke  an  attack  of  opportunity  when performing a disarm combat maneuver.",
     
-    "",
+    "This  feat  allows  you  to  acquire  a  powerful  familiar,  but only when you could normally acquire a new familiar.\r\n\r\nPrerequisites:  Ability  to  acquire  a  new  familiar, compatible alignment, sufficiently high level (see below).\r\n\r\nBenefit:  When  choosing  a  familiar,  the  creatures  listed below are also available to you (see the Pathfinder RPG Bestiary for statistics on these creatures). You may choose a familiar with an alignment up to one step away on each alignment axis (lawful through chaotic, good through evil). (TODO: Add Familiar Table). Improved familiars otherwise use the rules for regular familiars,  with  two  exceptions:  if  the  creature’s  type  is something other than animal, its type does not change; and improved familiars do not gain the ability to speak with other creatures of their kind (although many of them already have the ability to communicate).",
     
-    "",
+    "You are skilled at fooling your opponents in combat.\r\n\r\nPrerequisites: Int 13, Combat Expertise.\r\n\r\nBenefit: You can make a Bluff check to feint in combat as a move action.\r\n\r\nNormal: Feinting in combat is a standard action.",
     
-    "",
+    "You are skilled at grappling opponents.\r\n\r\nPrerequisite: Dex 13, Improved Unarmed Strike.\r\n\r\nBenefit:  You  do  not  provoke  an  attack  of  opportunity when performing a grapple combat maneuver. In addition, you receive a +2 bonus on checks made to grapple a foe. You also receive a +2 bonus to your Combat Maneuver Defense whenever an opponent tries to grapple you.\r\n\r\nNormal:  You  provoke  an  attack  of  opportunity  when performing a grapple combat maneuver.",
     
-    "",
+    "You  can  draw  upon  an  inner  reserve  to  resist  diseases, poisons, and other grievous harm.\r\n\r\nPrerequisites: Great Fortitude.\r\n\r\nBenefit: Once per day, you may reroll a Fortitude save. You must decide to use this ability before the results are revealed. You must take the second roll, even if it is worse.",
     
-    "",
+    "Your quick reflexes allow you to react rapidly to danger.\r\n\r\nBenefit: You get a +4 bonus on initiative checks.",
     
-    "",
+    "Your clarity of thought allows you to resist mental attacks.\r\n\r\nPrerequisites: Iron Will.\r\n\r\nBenefit: Once per day, you may reroll a Will save. You must  decide  to  use  this  ability  before  the  results  are revealed. You must take the second roll, even if it is worse.",
     
-    "",
+    "You have a knack for avoiding danger all around you.\r\n\r\nPrerequisites: Lightning Reflexes.\r\n\r\nBenefit:  Once  per  day,  you  may  reroll  a  Reflex  save. You must decide to use this ability before the results are revealed. You must take the second roll, even if it is worse.",
     
-    "",
+    "You are skilled at running down your foes.\r\n\r\nPrerequisite: Str 13, Power Attack, base attack bonus +1.\r\n\r\nBenefit: You do not provoke an attack of opportunity when performing an overrun combat maneuver. In addition, you receive a +2 bonus on checks made to overrrun a foe. You also receive a +2 bonus to your Combat Maneuver Defense whenever an opponent tries to overrun you. Targets of your overrun attempt may not choose to avoid you.\r\n\r\nNormal:  You  provoke  an  attack  of  opportunity  when performing an overrun combat maneuver.",
     
-    "",
+    "Your ranged attacks ignore anything but total concealment and cover.\r\n\r\nPrerequisites:  Dex  19,  Point-Blank  Shot,  Precise  Shot, base attack bonus +11.\r\n\r\nBenefit:  Your  ranged  attacks  ignore  the  AC  bonus g ranted to targets by anything less than total cover, and the miss chance granted to targets by anything less than total  concealment.  Total  cover  and  total  c oncealment provide their normal benefits against your ranged attacks.\r\n\r\nNormal: See the normal rules on the effects of cover and concealment in Chapter 8.",
     
-    "",
+    "You can protect yourself with your shield, even if you use it to attack.\r\n\r\nPrerequisite: Shield Proficiency.\r\n\r\nBenefit: When you perform a shield bash, you may still apply the shield’s shield bonus to your AC.\r\n\r\nNormal: Without this feat, a character that performs a shield bash loses the shield’s shield bonus to AC until his next turn (see Chapter 6).",
     
-    "",
+    "You are skilled at damaging your foes’ weapons and armor.\r\n\r\nPrerequisite: Str 13, Power Attack, base attack bonus +1.\r\n\r\nBenefit: You do not provoke an attack of opportunity when  performing  a  sunder  combat  maneuver. In addition,  you  receive  a  +2  bonus  on  checks  made  to sunder  an  item.  You  also  receive  a  +2  bonus  to  your Combat Maneuver Defense whenever an opponent tries to sunder your gear.\r\n\r\nNormal:  You  provoke  an  attack  of  opportunity  when performing a sunder combat maneuver.",
     
-    "",
+    "You are skilled at sending your opponents to the ground.\r\n\r\nPrerequisite: Int 13, Combat Expertise.\r\n\r\nBenefit: You do not provoke an attack of opportunity when performing a trip combat maneuver. In addition, you receive a +2 bonus on checks made to trip a foe. You also receive a +2 bonus to your Combat Maneuver Defense whenever an opponent tries to trip you.\r\n\r\nNormal:  You  provoke  an  attack  of  opportunity  when performing a trip combat maneuver.",
     
-    "",
+    "You are skilled at fighting with two weapons.\r\n\r\nPrerequisites: Dex 17, Two-Weapon Fighting, base attack bonus +6.\r\n\r\nBenefit: In addition to the standard single extra attack you get with an off-hand weapon, you get a second attack with it, albeit at a –5 penalty.\r\n\r\nNormal:  Without  this  feat,  you  can  only  get  a  single extra attack with an off-hand weapon.",
     
-    "",
+    "You are skilled at fighting while unarmed.\r\n\r\nBenefit:  You  are  considered  to  be  armed  even  when unarmed—you  do  not  provoke  attacks  of  opportunity when  you  attack  foes  while  unarmed.  Your  unarmed strikes can deal lethal or nonlethal damage, at your choice.\r\n\r\nNormal: Without this feat, you are considered unarmed when attacking with an unarmed strike, and you can deal only nonlethal damage with such an attack.",
     
-    "",
+    "You can make a single attack that deals a large amount of damage.\r\n\r\nPrerequisites: Vital Strike, base attack bonus +11.\r\n\r\nBenefit:  When  you  use  the  attack  action,  you  can make  one  attack  at  your  highest  base  attack  bonus  that deals additional damage. Roll the weapon’s damage dice for  the  attack  three  times  and  add  the  results  together before  adding  bonuses  from  Strength,  weapon  abilities (such  as  flaming),  precision-based  damage,  and  other damage bonuses. These extra weapon damage dice are not multiplied on a critical hit, but are added to the total.",
     
-    "",
+    "You can turn nearly any object into a deadly weapon, from a razor-sharp chair leg to a sack of flour.\r\n\r\nPrerequisites:  Catch  Off-Guard  or  Throw  Anything, base attack bonus +8.\r\n\r\nBenefit: You do not suffer any penalties for using an improvised  weapon.  Increase  the  amount  of  damage dealt  by  the  improvised  weapon  by  one  step  (for example, 1d4 becomes 1d6) to a maximum of 1d8 (2d6 if the improvised weapon is two-handed). The improvised weapon  has  a  critical  threat  range  of  19–20,  with  a critical multiplier of ×2.",
     
-    "",
+    "Your physical might is intimidating to others.\r\n\r\nBenefit: Add your Strength modifier to Intimidate skill checks in addition to your Charisma modifier.",
     
-    "",
+    "You are more resistant to mental effects.\r\n\r\nBenefit: You get a +2 bonus on all Will saving throws.",
     
-    "",
+    "You attract followers to your cause and a companion to join you on your adventures.\r\n\r\nPrerequisite: Character level 7th.\r\n\r\nBenefits: This feat enables you to attract a loyal cohort and a number of devoted subordinates who assist you. A cohort is generally an NPC with class levels, while followers are typically lower level NPCs. See Table 5–2 for what level of cohort and how many followers you can recruit.\r\n\r\nLeadership  Modifiers:  Several  factors  can  affect  your Leadership  score,  causing  it  to  vary  from  the  base  score (character level + Cha modifier). Your reputation (from the point of view of the cohort or follower you are trying to attract) raises or lowers your Leadership score: (TODO: Leader Reputation Table).Other  modifiers  may  apply  when  you  try  to  attract  a cohort, as listed below. (TODO: Leader Modifier Table). Followers have different priorities from cohorts. When you try to attract a follower, use the following modifiers.  (TODO: Follower Modifier Table).\r\n\r\nLeadership Score: Your base Leadership score equals your level plus your Charisma modifier. In order to take into account negative Charisma modifiers, this table allows for very low Leadership scores, but you must still be 7th level or  higher  in  order  to  gain  the  Leadership  feat.  Outside factors can affect your Leadership score, as detailed above.\r\n\r\nCohort Level: You can attract a cohort of up to this level. Regardless of your Leadership score, you can only recruit a  cohort  who  is  two  or  more  levels  lower  than  yourself. The  cohort  should  be  equipped  with  gear  appropriate for its level (see Chapter 14). A cohort can be of any race or  class.  The  cohort’s  alignment  may  not  be  opposed  to your alignment on either the law/chaos or good/evil axis, and you take a –1 penalty to your Leadership score if you recruit a cohort of an alignment different from your own.A  cohort  does  not  count  as  a  party  member  when determining  the  party’s  XP.  Instead,  divide  the  cohort’s level  by  your  level.  Multiply  this  result  by  the  total  XP awarded to you, then add that number of experience points to the cohort’s total. If a cohort gains enough XP to bring it to a level one lower  than  your  level,  the  cohort  does  not  gain  the  new level—its new XP total is 1 less than the amount needed to attain the next level.\r\n\r\nNumber of  Followers  by  Level:  You  can  lead  up  to  the indicated number of characters of each level. Followers are similar to cohorts, except they’re generally low-level NPCs. Because they’re usually 5 or more levels behind you, they’re rarely effective in combat. Followers  don’t  earn experience  and  thus  don’t  gain levels.  When  you  gain  a  new  level,  consult  Table  5–2  to determine if you acquire more followers, some of whom may  be  higher  level  than  the  existing  followers. Don’t consult the table to see if your cohort gains levels, however, because cohorts earn experience on their own.",
     
-    "",
+    "You have faster reflexes than normal.\r\n\r\nBenefit: You get a +2 bonus on all Reflex saving throws.",
     
     "",
     
