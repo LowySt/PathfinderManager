@@ -86,12 +86,18 @@ enum LabelDir {
     _WISField.formatter = nf;
     _CHAField.formatter = nf;
     
+    [_RaceSelector setEditable:false];
+    [_ClassSelector setEditable:false];
+    [_GenMethodSel setEditable:false];
+    [_XPCurveSel setEditable:false];
+
     [_STRBonus setEditable:false];
     [_DEXBonus setEditable:false];
     [_CONBonus setEditable:false];
     [_INTBonus setEditable:false];
     [_WISBonus setEditable:false];
     [_CHABonus setEditable:false];
+    
     [_NextXPField setEditable:false];
     [_BABField setEditable:false];
     [_FortField setEditable:false];
@@ -192,21 +198,7 @@ enum LabelDir {
     setFieldAndLabel(_XPCurveSel, _XPCurveLabel, CGPointMake(660, 807), LABEL_UP);
     
     setFieldAndLabel(_BABField, _BABLabel, CGPointMake(540, 730), LABEL_LEFT);
-    
-    NSLog(@"Fort Pos: %f, %f", _FortLabel.frame.origin.x, _FortLabel.frame.origin.y);
-    NSLog(@"Fort Size: %f, %f", _FortLabel.frame.size.width, _FortLabel.frame.size.height);
-    NSLog(@"Fort Box Pos: %f, %f", _FortField.frame.origin.x, _FortField.frame.origin.y);
-    NSLog(@"Fort Box Size: %f, %f", _FortField.frame.size.width, _FortField.frame.size.height);
-    
     setFieldAndLabel(_FortField, _FortLabel, CGPointMake(540, 690), LABEL_LEFT);
-    
-    NSLog(@"\n\n");
-    NSLog(@"Fort Pos: %f, %f", _FortLabel.frame.origin.x, _FortLabel.frame.origin.y);
-    NSLog(@"Fort Size: %f, %f", _FortLabel.frame.size.width, _FortLabel.frame.size.height);
-    NSLog(@"Fort Box Pos: %f, %f", _FortField.frame.origin.x, _FortField.frame.origin.y);
-    NSLog(@"Fort Box Size: %f, %f", _FortField.frame.size.width, _FortField.frame.size.height);
-
-    
     setFieldAndLabel(_RefField, _RefLabel, CGPointMake(540, 650), LABEL_LEFT);
     setFieldAndLabel(_WillField, _WillLabel, CGPointMake(540, 610), LABEL_LEFT);
             
@@ -229,6 +221,5 @@ enum LabelDir {
 
     // Update the view, if already loaded.
 }
-
 
 @end
