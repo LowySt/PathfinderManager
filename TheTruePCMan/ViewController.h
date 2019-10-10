@@ -76,8 +76,7 @@
 @property (weak) IBOutlet NSTextField *WillLabel;
 @property (weak) IBOutlet NSTextField *WillField;
 
-@property (weak) IBOutlet NSScrollView *RacialTraitsField;
-
+@property (weak) IBOutlet NSTextField *RaceTraitsField;
 
 @end
 

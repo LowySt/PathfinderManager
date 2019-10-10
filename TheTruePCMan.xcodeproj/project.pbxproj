@@ -25,6 +25,8 @@
 		9E0FC16C234DF9F10032FD25 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9E0FC16D234DF9F10032FD25 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		9E0FC16F234DF9F10032FD25 /* TheTruePCMan.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TheTruePCMan.entitlements; sourceTree = "<group>"; };
+		9E389F4C234F7942005722CC /* RaceTraits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RaceTraits.h; sourceTree = "<group>"; };
+		9E389F4D234FB32C005722CC /* Class.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Class.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +61,8 @@
 			children = (
 				9E0FC161234DF9F00032FD25 /* AppDelegate.h */,
 				9E0FC162234DF9F00032FD25 /* AppDelegate.m */,
+				9E389F4D234FB32C005722CC /* Class.h */,
+				9E389F4C234F7942005722CC /* RaceTraits.h */,
 				9E0FC164234DF9F00032FD25 /* ViewController.h */,
 				9E0FC165234DF9F00032FD25 /* ViewController.m */,
 				9E0FC167234DF9F10032FD25 /* Assets.xcassets */,

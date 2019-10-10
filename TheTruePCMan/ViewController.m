@@ -55,8 +55,8 @@ enum LabelDir {
     _FortField.autoresizingMask = 0;
     _RefField.autoresizingMask = 0;
     _WillField.autoresizingMask = 0;
-    _RacialTraitsField.autoresizingMask = 0;
-    
+    _RaceTraitsField.autoresizingMask = 0;
+        
     NSNumberFormatter *nf = [[NSNumberFormatter alloc] init];
     [nf setAllowsFloats:false];
     [nf setNumberStyle:NSNumberFormatterNoStyle];
@@ -68,6 +68,17 @@ enum LabelDir {
     _INTField.formatter = nf;
     _WISField.formatter = nf;
     _CHAField.formatter = nf;
+    
+    NSNumber *minLevel = [[NSNumber alloc] initWithInt:1];
+    NSNumber *maxLevel = [[NSNumber alloc] initWithInt:20];
+    NSNumberFormatter *lvlF = [[NSNumberFormatter alloc] init];
+    [lvlF setAllowsFloats:false];
+    [lvlF setNumberStyle:NSNumberFormatterNoStyle];
+    [lvlF setMinimum:minLevel];
+    [lvlF setMaximum:maxLevel];
+    [lvlF setPartialStringValidationEnabled:true];
+       
+    _LvlField.formatter = lvlF;
     
     [_RaceSelector setEditable:false];
     [_ClassSelector setEditable:false];
@@ -86,6 +97,8 @@ enum LabelDir {
     [_FortField setEditable:false];
     [_RefField setEditable:false];
     [_WillField setEditable:false];
+    
+    [_RaceTraitsField setEditable:false];
         
     [ self setAllAlignments ];
     
@@ -111,7 +124,7 @@ enum LabelDir {
     [_FortLabel sizeToFit];
     [_RefLabel sizeToFit];
     [_WillLabel sizeToFit];
-    
+        
     [_RaceSelector removeAllItems];
     [_ClassSelector removeAllItems];
     [_GenMethodSel removeAllItems];
@@ -148,13 +161,15 @@ enum LabelDir {
     [_FortField setAlignment:NSTextAlignmentLeft];
     [_RefField setAlignment:NSTextAlignmentLeft];
     [_WillField setAlignment:NSTextAlignmentLeft];
+    
+    [_RaceTraitsField setAlignment:NSTextAlignmentLeft];
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     [ self initialization ];
-            
+    
     setFieldAndLabel(_NameField, _NameLabel, CGPointMake(65, 810), LABEL_LEFT);
     setFieldAndLabel(_PlayerField, _PlayerLabel, CGPointMake(65, 780), LABEL_LEFT);
                
@@ -185,12 +200,14 @@ enum LabelDir {
     setFieldAndLabel(_RefField, _RefLabel, CGPointMake(540, 650), LABEL_LEFT);
     setFieldAndLabel(_WillField, _WillLabel, CGPointMake(540, 610), LABEL_LEFT);
             
+    setField(_RaceTraitsField, CGPointMake(65, 220));
+    
+    NSArray *Races = @[ @"Dwarf", @"Elf", @"Gnome", @"Half-Elf", @"Half-Orc", @"Halfling", @"Human"];
+    [_RaceSelector addItemsWithObjectValues:Races];
+    
     NSArray *Classes = @[ @"Barbarian", @"Bard", @"Cleric", @"Druid", @"Fighter", @"Monk", @"Paladin", @"Ranger", @"Rogue", @"Sorcerer", @"Wizard" ];
-    [_RaceSelector addItemsWithObjectValues:Classes];
-    
-    NSArray *Races = @[ @"Human", @"Elf", @"Half-Orc", @"Half-Elf", @"Gnome", @"Halfling", @"Dwarf"];
-    [_ClassSelector addItemsWithObjectValues:Races];
-    
+    [_ClassSelector addItemsWithObjectValues:Classes];
+            
     NSArray *GenMethods = @[ @"Classic", @"Dice Pool", @"Heroic", @"Purchase", @"Standard"];
     [_GenMethodSel addItemsWithObjectValues:GenMethods];
 
@@ -200,6 +217,9 @@ enum LabelDir {
     NSArray *AB = @[ @"-5", @"-5", @"-4", @"-4", @"-3", @"-3", @"-2", @"-2", @"-1", @"-1", @"0", @"0", @"+1", @"+1", @"+2", @"+2", @"+3", @"+3", @"+4", @"+4", @"+5", @"+5", @"+6", @"+6", @"+7", @"+7", @"+8", @"+8", @"+9", @"+9", @"+10", @"+10", @"+11", @"+11", @"+12", @"+12", @"+13", @"+13", @"+14", @"+14", @"+15", @"+15", @"+16", @"+16", @"+17", @"+17"];
     _AbilityBonus = AB;
     
+    [_LvlField setStringValue:@"1"];
+    [_ExpField setStringValue:@"0"];
+    [_XPCurveSel selectItemAtIndex:0];
 }
 
 - (void)setRepresentedObject:(id)representedObject {

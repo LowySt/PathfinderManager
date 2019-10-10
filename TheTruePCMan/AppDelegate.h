@@ -8,7 +8,9 @@
 
 #import <Cocoa/Cocoa.h>
 #import "ViewController.h"
+#import "RaceTraits.h"
+#import "Class.h"
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate, NSComboBoxDelegate>
 
 @end
