@@ -11,6 +11,8 @@
 #import "RaceTraits.h"
 #import "Class.h"
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate, NSComboBoxDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate, NSComboBoxDelegate, NSTableViewDataSource, NSTableViewDelegate>
+
+@property (strong) NSArray *nameArray;
 
 @end

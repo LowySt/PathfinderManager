@@ -6,22 +6,25 @@
 //  Copyright © 2019 Lowy. All rights reserved.
 //
 
+#ifndef CLASS_H
+#define CLASS_H
+
 #import <Foundation/Foundation.h>
 #import "ViewController.h"
 
 enum GameClass
 {
     CLASS_BARBARIAN = 0,
-    CLASS_BARD,
-    CLASS_CLERIC,
-    CLASS_DRUID,
-    CLASS_FIGHTER,
-    CLASS_MONK,
-    CLASS_PALADIN,
-    CLASS_RANGER,
-    CLASS_ROGUE,
-    CLASS_SORCERER,
-    CLASS_WIZARD,
+    CLASS_BARD = 1,
+    CLASS_CLERIC = 2,
+    CLASS_DRUID = 3,
+    CLASS_FIGHTER = 4,
+    CLASS_MONK = 5,
+    CLASS_PALADIN = 6,
+    CLASS_RANGER = 7,
+    CLASS_ROGUE = 8,
+    CLASS_SORCERER = 9,
+    CLASS_WIZARD = 10,
     
     CLASS_COUNT
 };
@@ -166,6 +169,12 @@ int ClassSavingThrows[CLASS_COUNT][3][20] =
         {0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6},
         {0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6},
         {2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12}
+    },
+    
+    {
+        {0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6},
+        {0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6},
+        {2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12}
     }
 };
 
@@ -183,3 +192,49 @@ void setClassStats(ViewController *v, enum GameClass c) {
     [v.RefField setIntegerValue:Refl];
     [v.WillField setIntegerValue:Will];
 }
+
+enum XPCurveIdx
+{
+    XP_FAST = 0,
+    XP_MEDIUM,
+    XP_SLOW
+};
+
+int FastXPCurve[] = {
+    0, 1300, 3300, 6000, 10000, 15000, 23000, 34000, 50000, 71000,
+    105000, 145000, 210000, 295000, 425000, 600000, 850000, 1200000,
+    1700000, 2400000, 0
+};
+
+int MediumXPCurve[] =
+{
+    0, 2000, 5000, 9000, 15000, 23000, 35000, 51000, 75000, 105000,
+    155000, 220000, 315000, 445000, 635000, 890000, 1300000, 1800000,
+    2550000, 3600000, 0
+};
+
+int SlowXPCurve[] =
+{
+    0, 3000, 75000, 14000, 23000, 35000, 53000, 77000, 115000, 160000,
+    235000, 330000, 475000, 665000, 955000, 1350000, 1900000, 2700000,
+    3850000, 5350000, 0
+};
+
+void setXPCurve(ViewController *v, enum XPCurveIdx c) {
+    
+    int Lvl = (int)v.LvlField.integerValue;
+    if(Lvl < 0) { Lvl = 0; }
+    if(Lvl > 20) { Lvl = 20; }
+    int xpNeeded;
+    
+    switch(c)
+    {
+        case XP_FAST: xpNeeded = FastXPCurve[Lvl]; break;
+        case XP_MEDIUM: xpNeeded = MediumXPCurve[Lvl]; break;
+        case XP_SLOW: xpNeeded = SlowXPCurve[Lvl]; break;
+    };
+    
+    [v.NextXPField setIntegerValue:xpNeeded];
+}
+
+#endif

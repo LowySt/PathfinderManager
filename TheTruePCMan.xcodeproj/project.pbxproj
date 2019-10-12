@@ -27,6 +27,7 @@
 		9E0FC16F234DF9F10032FD25 /* TheTruePCMan.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TheTruePCMan.entitlements; sourceTree = "<group>"; };
 		9E389F4C234F7942005722CC /* RaceTraits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RaceTraits.h; sourceTree = "<group>"; };
 		9E389F4D234FB32C005722CC /* Class.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Class.h; sourceTree = "<group>"; };
+		9E389F4E235069FD005722CC /* Feats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Feats.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -65,6 +66,7 @@
 				9E389F4C234F7942005722CC /* RaceTraits.h */,
 				9E0FC164234DF9F00032FD25 /* ViewController.h */,
 				9E0FC165234DF9F00032FD25 /* ViewController.m */,
+				9E389F4E235069FD005722CC /* Feats.h */,
 				9E0FC167234DF9F10032FD25 /* Assets.xcassets */,
 				9E0FC169234DF9F10032FD25 /* Main.storyboard */,
 				9E0FC16C234DF9F10032FD25 /* Info.plist */,
