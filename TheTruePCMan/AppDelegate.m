@@ -36,7 +36,7 @@
     { [v.WISBonus setStringValue:ab]; }
     else if(t.identifier == v.CHAField.identifier)
     { [v.CHABonus setStringValue:ab]; }
-        
+    
 }
 
 - (void)controlTextDidEndEditing:(NSNotification *)obj {
@@ -49,7 +49,140 @@
         setClassStats(v, (enum GameClass)[v.ClassSelector indexOfSelectedItem]);
         setXPCurve(v, (enum XPCurveIdx)[v.XPCurveSel indexOfSelectedItem]);
     }
-
+    
+    else if(t.identifier == v.Order1Num.identifier)
+      {
+          int newPos = [v.Order1Num intValue];
+          [v changePos:1 newPos:newPos];
+          [v.Order1Num setStringValue:@"1"];
+      }
+      else if(t.identifier == v.Order2Num.identifier)
+      {
+          int newPos = [v.Order2Num intValue];
+          [v changePos:2 newPos:newPos];
+          [v.Order2Num setStringValue:@"2"];
+      }
+      else if(t.identifier == v.Order3Num.identifier)
+      {
+          int newPos = [v.Order3Num intValue];
+          [v changePos:3 newPos:newPos];
+          [v.Order3Num setStringValue:@"3"];
+      }
+      else if(t.identifier == v.Order4Num.identifier)
+      {
+          int newPos = [v.Order4Num intValue];
+          [v changePos:4 newPos:newPos];
+          [v.Order4Num setStringValue:@"4"];
+      }
+      else if(t.identifier == v.Order5Num.identifier)
+      {
+          int newPos = [v.Order5Num intValue];
+          [v changePos:5 newPos:newPos];
+          [v.Order5Num setStringValue:@"5"];
+      }
+      else if(t.identifier == v.Order6Num.identifier)
+      {
+          int newPos = [v.Order6Num intValue];
+          [v changePos:6 newPos:newPos];
+          [v.Order6Num setStringValue:@"6"];
+      }
+      else if(t.identifier == v.Order7Num.identifier)
+      {
+          int newPos = [v.Order7Num intValue];
+          [v changePos:7 newPos:newPos];
+          [v.Order7Num setStringValue:@"7"];
+      }
+      else if(t.identifier == v.Order8Num.identifier)
+      {
+          int newPos = [v.Order8Num intValue];
+          [v changePos:8 newPos:newPos];
+          [v.Order8Num setStringValue:@"8"];
+      }
+    else if(t.identifier == v.Order9Num.identifier)
+    {
+        int newPos = [v.Order9Num intValue];
+        [v changePos:9 newPos:newPos];
+        [v.Order9Num setStringValue:@"9"];
+    }
+    else if(t.identifier == v.Order10Num.identifier)
+    {
+        int newPos = [v.Order10Num intValue];
+        [v changePos:10 newPos:newPos];
+        [v.Order10Num setStringValue:@"10"];
+    }
+    else if(t.identifier == v.Order11Num.identifier)
+    {
+        int newPos = [v.Order11Num intValue];
+        [v changePos:11 newPos:newPos];
+        [v.Order11Num setStringValue:@"11"];
+    }
+    else if(t.identifier == v.Order12Num.identifier)
+    {
+        int newPos = [v.Order12Num intValue];
+        [v changePos:12 newPos:newPos];
+        [v.Order12Num setStringValue:@"12"];
+    }
+    else if(t.identifier == v.Order13Num.identifier)
+    {
+        int newPos = [v.Order13Num intValue];
+        [v changePos:13 newPos:newPos];
+        [v.Order13Num setStringValue:@"13"];
+    }
+    else if(t.identifier == v.Order14Num.identifier)
+    {
+        int newPos = [v.Order14Num intValue];
+        [v changePos:14 newPos:newPos];
+        [v.Order14Num setStringValue:@"14"];
+    }
+    else if(t.identifier == v.Order15Num.identifier)
+    {
+        int newPos = [v.Order15Num intValue];
+        [v changePos:15 newPos:newPos];
+        [v.Order15Num setStringValue:@"15"];
+    }
+    else if(t.identifier == v.Order16Num.identifier)
+    {
+        int newPos = [v.Order16Num intValue];
+        [v changePos:16 newPos:newPos];
+        [v.Order16Num setStringValue:@"16"];
+    }
+    else if(t.identifier == v.Order17Num.identifier)
+    {
+        int newPos = [v.Order17Num intValue];
+        [v changePos:17 newPos:newPos];
+        [v.Order17Num setStringValue:@"17"];
+    }
+    else if(t.identifier == v.Order18Num.identifier)
+    {
+        int newPos = [v.Order18Num intValue];
+        [v changePos:18 newPos:newPos];
+        [v.Order18Num setStringValue:@"18"];
+    }
+    else if(t.identifier == v.Order19Num.identifier)
+    {
+        int newPos = [v.Order19Num intValue];
+        [v changePos:19 newPos:newPos];
+        [v.Order19Num setStringValue:@"19"];
+    }
+    else if(t.identifier == v.Order20Num.identifier)
+    {
+        int newPos = [v.Order20Num intValue];
+        [v changePos:20 newPos:newPos];
+        [v.Order20Num setStringValue:@"20"];
+    }
+    else if(t.identifier == v.Order21Num.identifier)
+    {
+        int newPos = [v.Order21Num intValue];
+        [v changePos:21 newPos:newPos];
+        [v.Order21Num setStringValue:@"21"];
+    }
+    else if(t.identifier == v.Order22Num.identifier)
+    {
+        int newPos = [v.Order22Num intValue];
+        [v changePos:22 newPos:newPos];
+        [v.Order22Num setStringValue:@"22"];
+    }
+    
 }
 
 - (void)comboBoxSelectionDidChange:(NSNotification *)notification {
@@ -275,6 +408,18 @@
     
     [v.FeatsTable setDelegate:self];
     [v.MobNumberSel setDelegate:self];
+    
+    [v.Order1Num setDelegate:self]; [v.Order2Num setDelegate:self];
+    [v.Order3Num setDelegate:self]; [v.Order4Num setDelegate:self];
+    [v.Order5Num setDelegate:self]; [v.Order6Num setDelegate:self];
+    [v.Order7Num setDelegate:self]; [v.Order8Num setDelegate:self];
+    [v.Order9Num setDelegate:self]; [v.Order10Num setDelegate:self];
+    [v.Order11Num setDelegate:self]; [v.Order12Num setDelegate:self];
+    [v.Order13Num setDelegate:self]; [v.Order14Num setDelegate:self];
+    [v.Order15Num setDelegate:self]; [v.Order16Num setDelegate:self];
+    [v.Order17Num setDelegate:self]; [v.Order18Num setDelegate:self];
+    [v.Order19Num setDelegate:self]; [v.Order20Num setDelegate:self];
+    [v.Order21Num setDelegate:self]; [v.Order22Num setDelegate:self];
 }
 
 

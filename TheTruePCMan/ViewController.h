@@ -8,9 +8,13 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface ViewController : NSViewController
+@interface ViewController : NSViewController {
+
+    int currentTurnIdx;
+}
 
 - (void)hideFields;
+- (void)changePos:(int)oldPos newPos:(int)newPos;
 
 @property (strong) IBOutlet NSView *MainView;
 
@@ -247,7 +251,6 @@
 
 @property (weak) IBOutlet NSButton *AdvanceTurnButton;
 @property (weak) IBOutlet NSTextField *CurrentTurnField;
-
 
 @end
 
