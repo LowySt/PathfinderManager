@@ -21,6 +21,8 @@ enum GameRace
     RACE_COUNT
 };
 
+//Test
+
 NSString *DwarfTraits = @"+2 CON, +2 WIS, -2 CHA\r\n"
 "Medium Size\r\n"
 "Speed: 6m, but don't get encumbered\r\n"
