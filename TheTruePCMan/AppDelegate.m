@@ -239,6 +239,7 @@
     }
     else if(t.identifier == v.MobNumberSel.identifier)
     {
+        [v setCurrentTurnIdx:1];
         NSInteger i = [v.MobNumberSel indexOfSelectedItem];
         
         [v hideFields];
@@ -420,6 +421,27 @@
     [v.Order17Num setDelegate:self]; [v.Order18Num setDelegate:self];
     [v.Order19Num setDelegate:self]; [v.Order20Num setDelegate:self];
     [v.Order21Num setDelegate:self]; [v.Order22Num setDelegate:self];
+    
+    /*
+    DrawView *view = [[DrawView alloc] init];
+    [view setPath];
+    
+    NSWindowController *dw = [[NSStoryboard mainStoryboard] instantiateControllerWithIdentifier:@"DrawWin"];
+    [dw showWindow:self];
+    NSWindow *drawWin = dw.window;
+    [drawWin.contentView addSubview:view];
+    [view.superview setNeedsDisplay:true];
+    
+    [view setTranslatesAutoresizingMaskIntoConstraints:false];
+        
+    NSDictionary *d = @{@"view" : view};
+    
+    [drawWin.contentView addConstraint:[NSLayoutConstraint constraintsWithVisualFormat:@"H: |[view]|"
+    options:NSLayoutFormatAlignmentMask metrics:nil
+    views:d][0]];
+   [drawWin.contentView addConstraint:[NSLayoutConstraint constraintsWithVisualFormat:@"V: |[view]|"
+    options:NSLayoutFormatAlignmentMask metrics:nil
+    views:d][0]];*/
 }
 
 

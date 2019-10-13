@@ -682,6 +682,40 @@
             <point key="canvasLocation" x="-3866" y="-307"/>
         </scene>
         <!--Window Controller-->
+        <scene sceneID="4ox-SD-HDt">
+            <objects>
+                <windowController storyboardIdentifier="DrawWin" id="AVP-TN-Cta" sceneMemberID="viewController">
+                    <window key="window" title="Window" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" frameAutosaveName="" animationBehavior="default" id="8mo-bp-5gU">
+                        <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+                        <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+                        <rect key="contentRect" x="294" y="283" width="480" height="270"/>
+                        <rect key="screenRect" x="0.0" y="0.0" width="1920" height="984"/>
+                        <connections>
+                            <outlet property="delegate" destination="AVP-TN-Cta" id="aSg-bG-BGm"/>
+                        </connections>
+                    </window>
+                    <connections>
+                        <segue destination="xHh-on-EWD" kind="relationship" relationship="window.shadowedContentViewController" id="2oD-T3-Xsm"/>
+                    </connections>
+                </windowController>
+                <customObject id="oI5-7M-W1a" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-2968" y="8"/>
+        </scene>
+        <!--View Controller-->
+        <scene sceneID="9hl-vQ-moR">
+            <objects>
+                <viewController id="xHh-on-EWD" sceneMemberID="viewController">
+                    <view key="view" id="vLg-Ke-kbK">
+                        <rect key="frame" x="0.0" y="0.0" width="480" height="270"/>
+                        <autoresizingMask key="autoresizingMask"/>
+                    </view>
+                </viewController>
+                <customObject id="Ffz-TU-HLF" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="-2968" y="423"/>
+        </scene>
+        <!--Window Controller-->
         <scene sceneID="R2V-B0-nI4">
             <objects>
                 <windowController id="B8D-0N-5wS" sceneMemberID="viewController">

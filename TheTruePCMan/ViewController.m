@@ -49,6 +49,10 @@ struct OrderType
 
 @implementation ViewController
 
+- (void)setCurrentTurnIdx:(int)v {
+    currentTurnIdx = v;
+}
+
 - (void)changePos:(int)oldPos newPos:(int)newPos {
     
     if(oldPos == newPos) { return; }
@@ -57,7 +61,10 @@ struct OrderType
     
     NSInteger num = [_MobNumberSel indexOfSelectedItem] + 6;
     NSMutableArray *order = [[NSMutableArray alloc] init];
-    
+
+    currentTurnIdx += 1;
+    if(currentTurnIdx > num) { currentTurnIdx = 1; }
+        
     struct OrderType h1;
     switch(num)
     {
@@ -262,7 +269,8 @@ struct OrderType
             [_CurrentTurnField setStringValue:s];
             break;
     }
-       
+    
+    [self setCurrentTurn];
 }
 
 - (void)rollInitiative {
@@ -326,7 +334,9 @@ struct OrderType
     NSInteger num = [_MobNumberSel indexOfSelectedItem];
         
     NSMutableArray *order = [[NSMutableArray alloc] init];
-    //DoubleSetNotWorking
+    
+    currentTurnIdx = 1;
+    
     struct OrderType h1;
     h1.name = [_Hero1Label stringValue];
     h1.v = [_Hero1Field integerValue];
@@ -523,12 +533,7 @@ struct OrderType
          
 }
 
-- (void)advanceTurn {
-    NSInteger num = [_MobNumberSel indexOfSelectedItem] + 1 + 6;
-    
-    if(currentTurnIdx == (num - 1))
-    { currentTurnIdx = 1; }
-    else { currentTurnIdx += 1; }
+- (void) setCurrentTurn {
     
     switch(currentTurnIdx)
     {
@@ -578,6 +583,16 @@ struct OrderType
             break;
             
     }
+}
+
+- (void)advanceTurn {
+    NSInteger num = [_MobNumberSel indexOfSelectedItem] + 1 + 6;
+    
+    if(currentTurnIdx == (num - 1))
+    { currentTurnIdx = 1; }
+    else { currentTurnIdx += 1; }
+    
+    [self setCurrentTurn];
 }
 
 - (void)initialization {

@@ -13,6 +13,7 @@
     int currentTurnIdx;
 }
 
+- (void)setCurrentTurnIdx:(int)v;
 - (void)hideFields;
 - (void)changePos:(int)oldPos newPos:(int)newPos;
 

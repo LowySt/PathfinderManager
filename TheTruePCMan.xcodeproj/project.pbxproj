@@ -12,6 +12,7 @@
 		9E0FC168234DF9F10032FD25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9E0FC167234DF9F10032FD25 /* Assets.xcassets */; };
 		9E0FC16B234DF9F10032FD25 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9E0FC169234DF9F10032FD25 /* Main.storyboard */; };
 		9E0FC16E234DF9F10032FD25 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E0FC16D234DF9F10032FD25 /* main.m */; };
+		9E389F5123532499005722CC /* DrawView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E389F5023532499005722CC /* DrawView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,8 @@
 		9E389F4C234F7942005722CC /* RaceTraits.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RaceTraits.h; sourceTree = "<group>"; };
 		9E389F4D234FB32C005722CC /* Class.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Class.h; sourceTree = "<group>"; };
 		9E389F4E235069FD005722CC /* Feats.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Feats.h; sourceTree = "<group>"; };
+		9E389F4F23532499005722CC /* DrawView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DrawView.h; sourceTree = "<group>"; };
+		9E389F5023532499005722CC /* DrawView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DrawView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +65,8 @@
 			children = (
 				9E0FC161234DF9F00032FD25 /* AppDelegate.h */,
 				9E0FC162234DF9F00032FD25 /* AppDelegate.m */,
+				9E389F4F23532499005722CC /* DrawView.h */,
+				9E389F5023532499005722CC /* DrawView.m */,
 				9E389F4D234FB32C005722CC /* Class.h */,
 				9E389F4C234F7942005722CC /* RaceTraits.h */,
 				9E0FC164234DF9F00032FD25 /* ViewController.h */,
@@ -147,6 +152,7 @@
 			files = (
 				9E0FC166234DF9F00032FD25 /* ViewController.m in Sources */,
 				9E0FC16E234DF9F10032FD25 /* main.m in Sources */,
+				9E389F5123532499005722CC /* DrawView.m in Sources */,
 				9E0FC163234DF9F00032FD25 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

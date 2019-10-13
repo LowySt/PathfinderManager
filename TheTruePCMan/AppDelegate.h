@@ -10,9 +10,12 @@
 #import "ViewController.h"
 #import "RaceTraits.h"
 #import "Class.h"
+#import "DrawView.h"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate, NSComboBoxDelegate, NSTableViewDataSource, NSTableViewDelegate>
 
 @property (strong) NSArray *nameArray;
+
+
 
 @end
