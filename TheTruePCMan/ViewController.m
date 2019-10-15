@@ -124,102 +124,36 @@ struct OrderType
 }
 
 - (void)setOrder {
-    NSInteger num = [_MobNumberSel indexOfSelectedItem];
-        
+    NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
+    NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
+    NSInteger num = mobNum + allyNum;
+    
     NSMutableArray *order = [[NSMutableArray alloc] init];
     
     currentTurnIdx = 1;
     
     struct OrderType h1;
-    h1.name = [_Hero1Label stringValue];
-    h1.v = [_Hero1Field integerValue];
-    [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-    h1.name = [_Hero2Label stringValue];
-    h1.v = [_Hero2Field integerValue];
-    [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-    h1.name = [_Hero3Label stringValue];
-    h1.v = [_Hero3Field integerValue];
-    [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-    h1.name = [_Hero4Label stringValue];
-    h1.v = [_Hero4Field integerValue];
-    [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-    h1.name = [_Hero5Label stringValue];
-    h1.v = [_Hero5Field integerValue];
-    [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-    h1.name = [_Hero6Label stringValue];
-    h1.v = [_Hero6Field integerValue];
-    [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-
-        
-    switch (num) {
-            
-        case 16:
-            h1.name = [_Mob16Label stringValue];
-            h1.v = [_Mob16Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 15:
-            h1.name = [_Mob15Label stringValue];
-            h1.v = [_Mob15Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 14:
-            h1.name = [_Mob14Label stringValue];
-            h1.v = [_Mob14Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 13:
-            h1.name = [_Mob13Label stringValue];
-            h1.v = [_Mob13Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 12:
-            h1.name = [_Mob12Label stringValue];
-            h1.v = [_Mob12Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 11:
-            h1.name = [_Mob11Label stringValue];
-            h1.v = [_Mob11Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 10:
-            h1.name = [_Mob10Label stringValue];
-            h1.v = [_Mob10Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 9:
-            h1.name = [_Mob9Label stringValue];
-            h1.v = [_Mob9Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 8:
-            h1.name = [_Mob8Label stringValue];
-            h1.v = [_Mob8Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 7:
-            h1.name = [_Mob7Label stringValue];
-            h1.v = [_Mob7Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 6:
-            h1.name = [_Mob6Label stringValue];
-            h1.v = [_Mob6Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 5:
-            h1.name = [_Mob5Label stringValue];
-            h1.v = [_Mob5Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 4:
-            h1.name = [_Mob4Label stringValue];
-            h1.v = [_Mob4Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 3:
-            h1.name = [_Mob3Label stringValue];
-            h1.v = [_Mob3Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 2:
-            h1.name = [_Mob2Label stringValue];
-            h1.v = [_Mob2Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 1:
-            h1.name = [_Mob1Label stringValue];
-            h1.v = [_Mob1Field integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-            break;
+    for(int i = 0; i < PARTY_SIZE; i++)
+    {
+        h1.name = [HeroLabelArr[i] stringValue];
+        h1.v = [HeroFieldArr[i] integerValue];
+        [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
     }
     
+    for(int i = 0; i < MOB_SIZE; i++)
+    {
+        h1.name = [MobLabelArr[i] stringValue];
+        h1.v = [MobFieldArr[i] integerValue];
+        [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
+    }
+
+    for(int i = 0; i < ALLY_SIZE; i++)
+    {
+        h1.name = [AllyLabelArr[i] stringValue];
+        h1.v = [AllyFieldArr[i] integerValue];
+        [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
+    }
+        
     [order sortUsingComparator:^(id obj1, id obj2) {
         struct OrderType a; [obj1 getValue:&a];
         struct OrderType b; [obj2 getValue:&b];
@@ -236,95 +170,15 @@ struct OrderType
     
     struct OrderType val;
     NSString *s;
-    //TODO: This is wrong right now!
-    switch(num + PARTY_SIZE)
+    for(int i = 0; i < (num + PARTY_SIZE); i++)
     {
-        case 22:
-            [order[21] getValue:&val];
-            s = val.name;
-            [_Order22Field setStringValue:s];
-        case 21:
-            [order[20] getValue:&val];
-            s = val.name;
-            [_Order21Field setStringValue:s];
-        case 20:
-            [order[19] getValue:&val];
-            s = val.name;
-            [_Order20Field setStringValue:s];
-        case 19:
-            [order[18] getValue:&val];
-            s = val.name;
-            [_Order19Field setStringValue:s];
-        case 18:
-            [order[17] getValue:&val];
-            s = val.name;
-            [_Order18Field setStringValue:s];
-        case 17:
-            [order[16] getValue:&val];
-            s = val.name;
-            [_Order17Field setStringValue:s];
-        case 16:
-            [order[15] getValue:&val];
-            s = val.name;
-            [_Order16Field setStringValue:s];
-        case 15:
-            [order[14] getValue:&val];
-            s = val.name;
-            [_Order15Field setStringValue:s];
-        case 14:
-            [order[13] getValue:&val];
-            s = val.name;
-            [_Order14Field setStringValue:s];
-        case 13:
-            [order[12] getValue:&val];
-            s = val.name;
-            [_Order13Field setStringValue:s];
-        case 12:
-            [order[11] getValue:&val];
-            s = val.name;
-            [_Order12Field setStringValue:s];
-        case 11:
-            [order[10] getValue:&val];
-            s = val.name;
-            [_Order11Field setStringValue:s];
-        case 10:
-            [order[9] getValue:&val];
-            s = val.name;
-            [_Order10Field setStringValue:s];
-        case 9:
-            [order[8] getValue:&val];
-            s = val.name;
-            [_Order9Field setStringValue:s];
-        case 8:
-            [order[7] getValue:&val];
-            s = val.name;
-            [_Order8Field setStringValue:s];
-        case 7:
-            [order[6] getValue:&val];
-            s = val.name;
-            [_Order7Field setStringValue:s];
-            [order[5] getValue:&val];
-            s = val.name;
-            [_Order6Field setStringValue:s];
-            [order[4] getValue:&val];
-            s = val.name;
-            [_Order5Field setStringValue:s];
-            [order[3] getValue:&val];
-            s = val.name;
-            [_Order4Field setStringValue:s];
-            [order[2] getValue:&val];
-            s = val.name;
-            [_Order3Field setStringValue:s];
-            [order[1] getValue:&val];
-            s = val.name;
-            [_Order2Field setStringValue:s];
-            [order[0] getValue:&val];
-            s = val.name;
-            [_Order1Field setStringValue:s];
-            [_CurrentTurnField setStringValue:s];
-            break;
+        [order[i] getValue:&val];
+        s = val.name;
+        [OrderFieldArr[i] setStringValue:s];
+        
+        if(i == 0) { [_CurrentTurnField setStringValue:s]; }
     }
-         
+             
 }
 
 - (void)setCurrentTurn {
@@ -349,6 +203,9 @@ struct OrderType
 - (void)initialization {
     
     PARTY_SIZE = 8;
+    MOB_SIZE = 16;
+    ALLY_SIZE = 4;
+    ORDER_SIZE = 28;
     
     OrderFieldArr[0] = _Order1Field; OrderFieldArr[1] = _Order2Field;
     OrderFieldArr[2] = _Order3Field; OrderFieldArr[3] = _Order4Field;
@@ -902,7 +759,6 @@ struct OrderType
     setField(_RaceTraitsField, CGPointMake(65, 220));
     
     int yPos = 810;
-    const int ORDER_SIZE = 28;
     for(int i = 0; i < ORDER_SIZE; i++)
     {
         setField(OrderNumArr[i], CGPointMake(640, yPos));

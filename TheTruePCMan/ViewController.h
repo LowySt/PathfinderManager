@@ -13,6 +13,9 @@
     int currentTurnIdx;
     
     @public int PARTY_SIZE;
+    @public int MOB_SIZE;
+    @public int ALLY_SIZE;
+    @public int ORDER_SIZE;
     
     @public NSTextField * __strong MobLabelArr[16];
     @public NSTextField * __strong MobFieldArr[16];
