@@ -9,6 +9,7 @@
 #import "ViewController.h"
 #import "Feats.h"
 #import <stdlib.h>
+#import <objc/runtime.h>
 
 enum LabelDir {
     LABEL_UP = 0,
@@ -535,54 +536,9 @@ struct OrderType
 
 - (void) setCurrentTurn {
     
-    switch(currentTurnIdx)
-    {
-        case 22: [_CurrentTurnField          setStringValue:[_Order22Field stringValue]];
-            break;
-        case 21: [_CurrentTurnField          setStringValue:[_Order21Field stringValue]];
-            break;
-        case 20: [_CurrentTurnField          setStringValue:[_Order20Field stringValue]];
-                break;
-        case 19: [_CurrentTurnField          setStringValue:[_Order19Field stringValue]];
-                break;
-        case 18: [_CurrentTurnField          setStringValue:[_Order18Field stringValue]];
-                break;
-        case 17: [_CurrentTurnField          setStringValue:[_Order17Field stringValue]];
-                break;
-        case 16: [_CurrentTurnField          setStringValue:[_Order16Field stringValue]];
-                break;
-        case 15: [_CurrentTurnField          setStringValue:[_Order15Field stringValue]];
-                break;
-        case 14: [_CurrentTurnField          setStringValue:[_Order14Field stringValue]];
-                break;
-        case 13: [_CurrentTurnField          setStringValue:[_Order13Field stringValue]];
-                break;
-        case 12: [_CurrentTurnField          setStringValue:[_Order12Field stringValue]];
-                break;
-        case 11: [_CurrentTurnField          setStringValue:[_Order11Field stringValue]];
-                break;
-        case 10: [_CurrentTurnField          setStringValue:[_Order10Field stringValue]];
-                break;
-        case 9: [_CurrentTurnField setStringValue:[_Order9Field stringValue]];
-                break;
-        case 8: [_CurrentTurnField setStringValue:[_Order8Field stringValue]];
-                break;
-        case 7: [_CurrentTurnField setStringValue:[_Order7Field stringValue]];
-                break;
-        case 6: [_CurrentTurnField setStringValue:[_Order6Field stringValue]];
-                break;
-        case 5: [_CurrentTurnField setStringValue:[_Order5Field stringValue]];
-                break;
-        case 4: [_CurrentTurnField setStringValue:[_Order4Field stringValue]];
-                break;
-        case 3: [_CurrentTurnField setStringValue:[_Order3Field stringValue]];
-            break;
-        case 2: [_CurrentTurnField setStringValue:[_Order2Field stringValue]];
-            break;
-        case 1: [_CurrentTurnField setStringValue:[_Order1Field stringValue]];
-            break;
-            
-    }
+    //TODO: Convert currentTurnIdx to be in the range 0..n-1 instead of 0..n
+    NSTextField *f = OrderArr[currentTurnIdx - 1];
+    [_CurrentTurnField setStringValue:[f stringValue]];
 }
 
 - (void)advanceTurn {
@@ -596,6 +552,21 @@ struct OrderType
 }
 
 - (void)initialization {
+    
+    size_t tfs = sizeof(NSTextField *);
+
+    OrderArr = (NSTextField * __strong*)malloc(tfs*22);
+    OrderArr[0] = _Order1Field; OrderArr[1] = _Order2Field;
+    OrderArr[2] = _Order3Field; OrderArr[3] = _Order4Field;
+    OrderArr[4] = _Order5Field; OrderArr[5] = _Order6Field;
+    OrderArr[6] = _Order7Field; OrderArr[7] = _Order8Field;
+    OrderArr[8] = _Order9Field; OrderArr[9] = _Order10Field;
+    OrderArr[10] = _Order11Field; OrderArr[11] = _Order12Field;
+    OrderArr[12] = _Order13Field; OrderArr[13] = _Order14Field;
+    OrderArr[14] = _Order15Field; OrderArr[15] = _Order16Field;
+    OrderArr[16] = _Order17Field; OrderArr[17] = _Order18Field;
+    OrderArr[18] = _Order19Field; OrderArr[19] = _Order20Field;
+    OrderArr[20] = _Order21Field; OrderArr[21] = _Order22Field;
     
     currentTurnIdx = 1;
     

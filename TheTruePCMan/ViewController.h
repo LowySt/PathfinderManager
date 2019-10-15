@@ -11,6 +11,7 @@
 @interface ViewController : NSViewController {
 
     int currentTurnIdx;
+    NSTextField * __strong* OrderArr;
 }
 
 - (void)setCurrentTurnIdx:(int)v;
