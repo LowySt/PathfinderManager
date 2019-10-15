@@ -278,56 +278,10 @@ struct OrderType
     NSInteger num = [_MobNumberSel indexOfSelectedItem];
     int newRand;
     
-    switch(num)
+    for(int i = 0; i < num; i++)
     {
-        case 16:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob16Field setIntValue:(newRand + [_Mob16Bonus intValue])];
-        case 15:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob15Field setIntValue:(newRand + [_Mob15Bonus intValue])];
-        case 14:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob14Field setIntValue:(newRand + [_Mob14Bonus intValue])];
-        case 13:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob13Field setIntValue:(newRand + [_Mob13Bonus intValue])];
-        case 12:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob12Field setIntValue:(newRand + [_Mob12Bonus intValue])];
-        case 11:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob11Field setIntValue:(newRand + [_Mob11Bonus intValue])];
-        case 10:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob10Field setIntValue:(newRand + [_Mob10Bonus intValue])];
-        case 9:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob9Field setIntValue:(newRand + [_Mob9Bonus intValue])];
-        case 8:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob8Field setIntValue:(newRand + [_Mob8Bonus intValue])];
-        case 7:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob7Field setIntValue:(newRand + [_Mob7Bonus intValue])];
-        case 6:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob6Field setIntValue:(newRand + [_Mob6Bonus intValue])];
-        case 5:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob5Field setIntValue:(newRand + [_Mob5Bonus intValue])];
-        case 4:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob4Field setIntValue:(newRand + [_Mob4Bonus intValue])];
-        case 3:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob3Field setIntValue:(newRand + [_Mob3Bonus intValue])];
-        case 2:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob2Field setIntValue:(newRand + [_Mob2Bonus intValue])];
-        case 1:
-            newRand = arc4random_uniform(20) + 1;
-            [_Mob1Field setIntValue:(newRand + [_Mob1Bonus intValue])];
+        newRand = arc4random_uniform(20) + 1;
+        [MobFieldArr[i] setIntValue:(newRand + [MobBonusArr[i] intValue])];
     }
 }
 
