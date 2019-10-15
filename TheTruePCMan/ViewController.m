@@ -534,10 +534,10 @@ struct OrderType
          
 }
 
-- (void) setCurrentTurn {
+- (void)setCurrentTurn {
     
     //TODO: Convert currentTurnIdx to be in the range 0..n-1 instead of 0..n
-    NSTextField *f = OrderArr[currentTurnIdx - 1];
+    NSTextField *f = OrderFieldArr[currentTurnIdx - 1];
     [_CurrentTurnField setStringValue:[f stringValue]];
 }
 
@@ -553,20 +553,64 @@ struct OrderType
 
 - (void)initialization {
     
-    size_t tfs = sizeof(NSTextField *);
-
-    OrderArr = (NSTextField * __strong*)malloc(tfs*22);
-    OrderArr[0] = _Order1Field; OrderArr[1] = _Order2Field;
-    OrderArr[2] = _Order3Field; OrderArr[3] = _Order4Field;
-    OrderArr[4] = _Order5Field; OrderArr[5] = _Order6Field;
-    OrderArr[6] = _Order7Field; OrderArr[7] = _Order8Field;
-    OrderArr[8] = _Order9Field; OrderArr[9] = _Order10Field;
-    OrderArr[10] = _Order11Field; OrderArr[11] = _Order12Field;
-    OrderArr[12] = _Order13Field; OrderArr[13] = _Order14Field;
-    OrderArr[14] = _Order15Field; OrderArr[15] = _Order16Field;
-    OrderArr[16] = _Order17Field; OrderArr[17] = _Order18Field;
-    OrderArr[18] = _Order19Field; OrderArr[19] = _Order20Field;
-    OrderArr[20] = _Order21Field; OrderArr[21] = _Order22Field;
+    OrderFieldArr[0] = _Order1Field; OrderFieldArr[1] = _Order2Field;
+    OrderFieldArr[2] = _Order3Field; OrderFieldArr[3] = _Order4Field;
+    OrderFieldArr[4] = _Order5Field; OrderFieldArr[5] = _Order6Field;
+    OrderFieldArr[6] = _Order7Field; OrderFieldArr[7] = _Order8Field;
+    OrderFieldArr[8] = _Order9Field; OrderFieldArr[9] = _Order10Field;
+    OrderFieldArr[10] = _Order11Field; OrderFieldArr[11] = _Order12Field;
+    OrderFieldArr[12] = _Order13Field; OrderFieldArr[13] = _Order14Field;
+    OrderFieldArr[14] = _Order15Field; OrderFieldArr[15] = _Order16Field;
+    OrderFieldArr[16] = _Order17Field; OrderFieldArr[17] = _Order18Field;
+    OrderFieldArr[18] = _Order19Field; OrderFieldArr[19] = _Order20Field;
+    OrderFieldArr[20] = _Order21Field; OrderFieldArr[21] = _Order22Field;
+        
+    OrderNumArr[0] = _Order1Num; OrderNumArr[1] = _Order2Num;
+    OrderNumArr[2] = _Order3Num; OrderNumArr[3] = _Order4Num;
+    OrderNumArr[4] = _Order5Num; OrderNumArr[5] = _Order6Num;
+    OrderNumArr[6] = _Order7Num; OrderNumArr[7] = _Order8Num;
+    OrderNumArr[8] = _Order9Num; OrderNumArr[9] = _Order10Num;
+    OrderNumArr[10] = _Order11Num; OrderNumArr[11] = _Order12Num;
+    OrderNumArr[12] = _Order13Num; OrderNumArr[13] = _Order14Num;
+    OrderNumArr[14] = _Order15Num; OrderNumArr[15] = _Order16Num;
+    OrderNumArr[16] = _Order17Num; OrderNumArr[17] = _Order18Num;
+    OrderNumArr[18] = _Order19Num; OrderNumArr[19] = _Order20Num;
+    OrderNumArr[20] = _Order21Num; OrderNumArr[21] = _Order22Num;
+        
+    MobLabelArr[0] = _Mob1Label; MobLabelArr[1] = _Mob2Label;
+    MobLabelArr[2] = _Mob3Label; MobLabelArr[3] = _Mob4Label;
+    MobLabelArr[4] = _Mob5Label; MobLabelArr[5] = _Mob6Label;
+    MobLabelArr[6] = _Mob7Label; MobLabelArr[7] = _Mob8Label;
+    MobLabelArr[8] = _Mob9Label; MobLabelArr[9] = _Mob10Label;
+    MobLabelArr[10] = _Mob11Label; MobLabelArr[11] = _Mob12Label;
+    MobLabelArr[12] = _Mob13Label; MobLabelArr[13] = _Mob14Label;
+    MobLabelArr[14] = _Mob15Label; MobLabelArr[15] = _Mob16Label;
+        
+    MobFieldArr[0] = _Mob1Field; MobFieldArr[1] = _Mob2Field;
+    MobFieldArr[2] = _Mob3Field; MobFieldArr[3] = _Mob4Field;
+    MobFieldArr[4] = _Mob5Field; MobFieldArr[5] = _Mob6Field;
+    MobFieldArr[6] = _Mob7Field; MobFieldArr[7] = _Mob8Field;
+    MobFieldArr[8] = _Mob9Field; MobFieldArr[9] = _Mob10Field;
+    MobFieldArr[10] = _Mob11Field; MobFieldArr[11] = _Mob12Field;
+    MobFieldArr[12] = _Mob13Field; MobFieldArr[13] = _Mob14Field;
+    MobFieldArr[14] = _Mob15Field; MobFieldArr[15] = _Mob16Field;
+        
+    MobBonusArr[0] = _Mob1Bonus; MobBonusArr[1] = _Mob2Bonus;
+    MobBonusArr[2] = _Mob3Bonus; MobBonusArr[3] = _Mob4Bonus;
+    MobBonusArr[4] = _Mob5Bonus; MobBonusArr[5] = _Mob6Bonus;
+    MobBonusArr[6] = _Mob7Bonus; MobBonusArr[7] = _Mob8Bonus;
+    MobBonusArr[8] = _Mob9Bonus; MobBonusArr[9] = _Mob10Bonus;
+    MobBonusArr[10] = _Mob11Bonus; MobBonusArr[11] = _Mob12Bonus;
+    MobBonusArr[12] = _Mob13Bonus; MobBonusArr[13] = _Mob14Bonus;
+    MobBonusArr[14] = _Mob15Bonus; MobBonusArr[15] = _Mob16Bonus;
+    
+    HeroLabelArr[0] = _Hero1Label; HeroLabelArr[1] = _Hero2Label;
+    HeroLabelArr[2] = _Hero3Label; HeroLabelArr[3] = _Hero4Label;
+    HeroLabelArr[4] = _Hero5Label; HeroLabelArr[5] = _Hero6Label;
+        
+    HeroFieldArr[0] = _Hero1Field; HeroFieldArr[1] = _Hero2Field;
+    HeroFieldArr[2] = _Hero3Field; HeroFieldArr[3] = _Hero4Field;
+    HeroFieldArr[4] = _Hero5Field; HeroFieldArr[5] = _Hero6Field;
     
     currentTurnIdx = 1;
     

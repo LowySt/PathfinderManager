@@ -11,7 +11,16 @@
 @interface ViewController : NSViewController {
 
     int currentTurnIdx;
-    NSTextField * __strong* OrderArr;
+    
+    NSTextField * __strong MobLabelArr[16];
+    NSTextField * __strong MobFieldArr[16];
+    NSTextField * __strong MobBonusArr[16];
+    
+    NSTextField * __strong HeroLabelArr[6];
+    NSTextField * __strong HeroFieldArr[6];
+    
+    NSTextField * __strong OrderNumArr[22];
+    NSTextField * __strong OrderFieldArr[22];
 }
 
 - (void)setCurrentTurnIdx:(int)v;
