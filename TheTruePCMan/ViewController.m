@@ -67,94 +67,12 @@ struct OrderType
     if(currentTurnIdx > num) { currentTurnIdx = 1; }
         
     struct OrderType h1;
-    switch(num)
+    for(int i = 0; i < num; i++)
     {
-        case 22:
-            h1.name = [_Order22Field stringValue];
-            h1.v = [_Order22Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 21:
-            h1.name = [_Order21Field stringValue];
-            h1.v = [_Order21Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 20:
-            h1.name = [_Order20Field stringValue];
-            h1.v = [_Order20Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 19:
-            h1.name = [_Order19Field stringValue];
-            h1.v = [_Order19Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 18:
-            h1.name = [_Order18Field stringValue];
-            h1.v = [_Order18Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 17:
-            h1.name = [_Order17Field stringValue];
-            h1.v = [_Order17Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 16:
-            h1.name = [_Order16Field stringValue];
-            h1.v = [_Order16Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 15:
-            h1.name = [_Order15Field stringValue];
-            h1.v = [_Order15Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 14:
-            h1.name = [_Order14Field stringValue];
-            h1.v = [_Order14Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 13:
-            h1.name = [_Order13Field stringValue];
-            h1.v = [_Order13Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 12:
-            h1.name = [_Order12Field stringValue];
-            h1.v = [_Order12Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 11:
-            h1.name = [_Order11Field stringValue];
-            h1.v = [_Order11Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 10:
-            h1.name = [_Order10Field stringValue];
-            h1.v = [_Order10Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 9:
-            h1.name = [_Order9Field stringValue];
-            h1.v = [_Order9Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 8:
-            h1.name = [_Order8Field stringValue];
-            h1.v = [_Order8Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-        case 7:
-            h1.name = [_Order7Field stringValue];
-            h1.v = [_Order7Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-            h1.name = [_Order6Field stringValue];
-            h1.v = [_Order6Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-            h1.name = [_Order5Field stringValue];
-            h1.v = [_Order5Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-            h1.name = [_Order4Field stringValue];
-            h1.v = [_Order4Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-            h1.name = [_Order3Field stringValue];
-            h1.v = [_Order3Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-            h1.name = [_Order2Field stringValue];
-            h1.v = [_Order2Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-            h1.name = [_Order1Field stringValue];
-            h1.v = [_Order1Num integerValue];
-            [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
-            break;
+        h1.name = [OrderFieldArr[i] stringValue];
+        h1.v = [OrderNumArr[i] integerValue];
+        [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
     }
-    
-    order = [[[order reverseObjectEnumerator] allObjects] mutableCopy];
     
     int currIdx = newPos - 1;
     int newIdx = oldPos - 1;
@@ -183,94 +101,13 @@ struct OrderType
     
     struct OrderType val;
     NSString *s;
-    switch(num)
+    for(int i = 0; i < num; i++)
     {
-        case 22:
-            [order[21] getValue:&val];
-            s = val.name;
-            [_Order22Field setStringValue:s];
-        case 21:
-            [order[20] getValue:&val];
-            s = val.name;
-            [_Order21Field setStringValue:s];
-        case 20:
-            [order[19] getValue:&val];
-            s = val.name;
-            [_Order20Field setStringValue:s];
-        case 19:
-            [order[18] getValue:&val];
-            s = val.name;
-            [_Order19Field setStringValue:s];
-        case 18:
-            [order[17] getValue:&val];
-            s = val.name;
-            [_Order18Field setStringValue:s];
-        case 17:
-            [order[16] getValue:&val];
-            s = val.name;
-            [_Order17Field setStringValue:s];
-        case 16:
-            [order[15] getValue:&val];
-            s = val.name;
-            [_Order16Field setStringValue:s];
-        case 15:
-            [order[14] getValue:&val];
-            s = val.name;
-            [_Order15Field setStringValue:s];
-        case 14:
-            [order[13] getValue:&val];
-            s = val.name;
-            [_Order14Field setStringValue:s];
-        case 13:
-            [order[12] getValue:&val];
-            s = val.name;
-            [_Order13Field setStringValue:s];
-        case 12:
-            [order[11] getValue:&val];
-            s = val.name;
-            [_Order12Field setStringValue:s];
-        case 11:
-            [order[10] getValue:&val];
-            s = val.name;
-            [_Order11Field setStringValue:s];
-        case 10:
-            [order[9] getValue:&val];
-            s = val.name;
-            [_Order10Field setStringValue:s];
-        case 9:
-            [order[8] getValue:&val];
-            s = val.name;
-            [_Order9Field setStringValue:s];
-        case 8:
-            [order[7] getValue:&val];
-            s = val.name;
-            [_Order8Field setStringValue:s];
-        case 7:
-            [order[6] getValue:&val];
-            s = val.name;
-            [_Order7Field setStringValue:s];
-            [order[5] getValue:&val];
-            s = val.name;
-            [_Order6Field setStringValue:s];
-            [order[4] getValue:&val];
-            s = val.name;
-            [_Order5Field setStringValue:s];
-            [order[3] getValue:&val];
-            s = val.name;
-            [_Order4Field setStringValue:s];
-            [order[2] getValue:&val];
-            s = val.name;
-            [_Order3Field setStringValue:s];
-            [order[1] getValue:&val];
-            s = val.name;
-            [_Order2Field setStringValue:s];
-            [order[0] getValue:&val];
-            s = val.name;
-            [_Order1Field setStringValue:s];
-            [_CurrentTurnField setStringValue:s];
-            break;
+        [order[i] getValue:&val];
+        s = val.name;
+        [OrderFieldArr[i] setStringValue:s];
     }
-    
+ 
     [self setCurrentTurn];
 }
 
