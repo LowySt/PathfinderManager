@@ -240,112 +240,37 @@
     else if(t.identifier == v.MobNumberSel.identifier)
     {
         [v setCurrentTurnIdx:1];
-        NSInteger i = [v.MobNumberSel indexOfSelectedItem];
+        NSInteger num = [v.MobNumberSel indexOfSelectedItem];
         
-        [v hideFields];
+        [v hideMobs];
         
-        switch (i) {
-
-            case 16:
-                [v.Mob16Field setHidden:false];
-                [v.Mob16Bonus setHidden:false];
-                [v.Mob16Label setHidden:false];
-                [v.Order22Num setHidden:false];
-                [v.Order22Field setHidden:false];
-            case 15:
-                [v.Mob15Field setHidden:false];
-                [v.Mob15Bonus setHidden:false];
-                [v.Mob15Label setHidden:false];
-                [v.Order21Num setHidden:false];
-                [v.Order21Field setHidden:false];
-            case 14:
-                [v.Mob14Field setHidden:false];
-                [v.Mob14Bonus setHidden:false];
-                [v.Mob14Label setHidden:false];
-                [v.Order20Num setHidden:false];
-                [v.Order20Field setHidden:false];
-            case 13:
-                [v.Mob13Field setHidden:false];
-                [v.Mob13Bonus setHidden:false];
-                [v.Mob13Label setHidden:false];
-                [v.Order19Num setHidden:false];
-                [v.Order19Field setHidden:false];
-            case 12:
-                [v.Mob12Field setHidden:false];
-                [v.Mob12Bonus setHidden:false];
-                [v.Mob12Label setHidden:false];
-                [v.Order18Num setHidden:false];
-                [v.Order18Field setHidden:false];
-            case 11:
-                [v.Mob11Field setHidden:false];
-                [v.Mob11Bonus setHidden:false];
-                [v.Mob11Label setHidden:false];
-                [v.Order17Num setHidden:false];
-                [v.Order17Field setHidden:false];
-            case 10:
-                [v.Mob10Field setHidden:false];
-                [v.Mob10Bonus setHidden:false];
-                [v.Mob10Label setHidden:false];
-                [v.Order16Num setHidden:false];
-                [v.Order16Field setHidden:false];
-            case 9:
-                [v.Mob9Field setHidden:false];
-                [v.Mob9Bonus setHidden:false];
-                [v.Mob9Label setHidden:false];
-                [v.Order15Num setHidden:false];
-                [v.Order15Field setHidden:false];
-            case 8:
-                [v.Mob8Field setHidden:false];
-                [v.Mob8Bonus setHidden:false];
-                [v.Mob8Label setHidden:false];
-                [v.Order14Num setHidden:false];
-                [v.Order14Field setHidden:false];
-            case 7:
-                [v.Mob7Field setHidden:false];
-                [v.Mob7Bonus setHidden:false];
-                [v.Mob7Label setHidden:false];
-                [v.Order13Num setHidden:false];
-                [v.Order13Field setHidden:false];
-            case 6:
-                [v.Mob6Field setHidden:false];
-                [v.Mob6Bonus setHidden:false];
-                [v.Mob6Label setHidden:false];
-                [v.Order12Num setHidden:false];
-                [v.Order12Field setHidden:false];
-            case 5:
-                [v.Mob5Field setHidden:false];
-                [v.Mob5Bonus setHidden:false];
-                [v.Mob5Label setHidden:false];
-                [v.Order11Num setHidden:false];
-                [v.Order11Field setHidden:false];
-            case 4:
-                [v.Mob4Field setHidden:false];
-                [v.Mob4Bonus setHidden:false];
-                [v.Mob4Label setHidden:false];
-                [v.Order10Num setHidden:false];
-                [v.Order10Field setHidden:false];
-            case 3:
-                [v.Mob3Field setHidden:false];
-                [v.Mob3Bonus setHidden:false];
-                [v.Mob3Label setHidden:false];
-                [v.Order9Num setHidden:false];
-                [v.Order9Field setHidden:false];
-            case 2:
-                [v.Mob2Field setHidden:false];
-                [v.Mob2Bonus setHidden:false];
-                [v.Mob2Label setHidden:false];
-                [v.Order8Num setHidden:false];
-                [v.Order8Field setHidden:false];
-            case 1:
-                [v.Mob1Field setHidden:false];
-                [v.Mob1Bonus setHidden:false];
-                [v.Mob1Label setHidden:false];
-                [v.Order7Num setHidden:false];
-                [v.Order7Field setHidden:false];
-                break;
-            case 0:
-                break;
+        for(int i = 0; i < num; i++)
+        {
+            [v->MobFieldArr[i] setHidden:false];
+            [v->MobBonusArr[i] setHidden:false];
+            [v->MobLabelArr[i] setHidden:false];
         }
+        
+        NSInteger allyNum = [v.AllyNumberSel indexOfSelectedItem];
+        
+        [v showOrderFields:(num + allyNum)];
+    }
+    else if(t.identifier == v.AllyNumberSel.identifier)
+    {
+        [v setCurrentTurnIdx:1];
+        NSInteger num = [v.AllyNumberSel indexOfSelectedItem];
+        
+        [v hideAllies];
+        
+        for(int i = 0; i < num; i++)
+        {
+            [v->AllyFieldArr[i] setHidden:false];
+            [v->AllyLabelArr[i] setHidden:false];
+        }
+        
+        NSInteger mobNum = [v.MobNumberSel indexOfSelectedItem];
+        
+        [v showOrderFields:(num + mobNum)];
     }
 
 }
@@ -409,18 +334,12 @@
     
     [v.FeatsTable setDelegate:self];
     [v.MobNumberSel setDelegate:self];
+    [v.AllyNumberSel setDelegate:self];
     
-    [v.Order1Num setDelegate:self]; [v.Order2Num setDelegate:self];
-    [v.Order3Num setDelegate:self]; [v.Order4Num setDelegate:self];
-    [v.Order5Num setDelegate:self]; [v.Order6Num setDelegate:self];
-    [v.Order7Num setDelegate:self]; [v.Order8Num setDelegate:self];
-    [v.Order9Num setDelegate:self]; [v.Order10Num setDelegate:self];
-    [v.Order11Num setDelegate:self]; [v.Order12Num setDelegate:self];
-    [v.Order13Num setDelegate:self]; [v.Order14Num setDelegate:self];
-    [v.Order15Num setDelegate:self]; [v.Order16Num setDelegate:self];
-    [v.Order17Num setDelegate:self]; [v.Order18Num setDelegate:self];
-    [v.Order19Num setDelegate:self]; [v.Order20Num setDelegate:self];
-    [v.Order21Num setDelegate:self]; [v.Order22Num setDelegate:self];
+    const int ORDER_SIZE = 28;
+    for(int i = 0; i < ORDER_SIZE; i++)
+    { [v->OrderNumArr[i] setDelegate:self]; }
+       
     
     /*
     DrawView *view = [[DrawView alloc] init];

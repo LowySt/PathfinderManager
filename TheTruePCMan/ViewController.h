@@ -12,19 +12,27 @@
 
     int currentTurnIdx;
     
-    NSTextField * __strong MobLabelArr[16];
-    NSTextField * __strong MobFieldArr[16];
-    NSTextField * __strong MobBonusArr[16];
+    @public int PARTY_SIZE;
     
-    NSTextField * __strong HeroLabelArr[6];
-    NSTextField * __strong HeroFieldArr[6];
+    @public NSTextField * __strong MobLabelArr[16];
+    @public NSTextField * __strong MobFieldArr[16];
+    @public NSTextField * __strong MobBonusArr[16];
     
-    NSTextField * __strong OrderNumArr[22];
-    NSTextField * __strong OrderFieldArr[22];
+    @public NSTextField * __strong HeroLabelArr[8];
+    @public NSTextField * __strong HeroFieldArr[8];
+    
+    @public NSTextField * __strong AllyLabelArr[4];
+    @public NSTextField * __strong AllyFieldArr[4];
+    
+    @public NSTextField * __strong OrderNumArr[28];
+    @public NSTextField * __strong OrderFieldArr[28];
 }
 
+- (void)showOrderFields:(NSInteger)num;
 - (void)setCurrentTurnIdx:(int)v;
 - (void)hideFields;
+- (void)hideAllies;
+- (void)hideMobs;
 - (void)changePos:(int)oldPos newPos:(int)newPos;
 
 @property (strong) IBOutlet NSView *MainView;
@@ -107,6 +115,9 @@
 
 @property (weak) IBOutlet NSTextField *MobNumberLabel;
 @property (weak) IBOutlet NSComboBox *MobNumberSel;
+
+@property (weak) IBOutlet NSTextField *AllyNumberLabel;
+@property (weak) IBOutlet NSComboBox *AllyNumberSel;
 
 @property (weak) IBOutlet NSButton *InitiativeRollButton;
 
@@ -192,6 +203,24 @@
 @property (weak) IBOutlet NSTextField *Hero6Label;
 @property (weak) IBOutlet NSTextField *Hero6Field;
 
+@property (weak) IBOutlet NSTextField *Hero7Label;
+@property (weak) IBOutlet NSTextField *Hero7Field;
+
+@property (weak) IBOutlet NSTextField *Hero8Label;
+@property (weak) IBOutlet NSTextField *Hero8Field;
+
+@property (weak) IBOutlet NSTextField *Ally1Label;
+@property (weak) IBOutlet NSTextField *Ally1Field;
+
+@property (weak) IBOutlet NSTextField *Ally2Label;
+@property (weak) IBOutlet NSTextField *Ally2Field;
+
+@property (weak) IBOutlet NSTextField *Ally3Label;
+@property (weak) IBOutlet NSTextField *Ally3Field;
+
+@property (weak) IBOutlet NSTextField *Ally4Label;
+@property (weak) IBOutlet NSTextField *Ally4Field;
+
 @property (weak) IBOutlet NSTextField *Order1Num;
 @property (weak) IBOutlet NSTextField *Order1Field;
 
@@ -257,6 +286,24 @@
 
 @property (weak) IBOutlet NSTextField *Order22Num;
 @property (weak) IBOutlet NSTextField *Order22Field;
+
+@property (weak) IBOutlet NSTextField *Order23Num;
+@property (weak) IBOutlet NSTextField *Order23Field;
+
+@property (weak) IBOutlet NSTextField *Order24Num;
+@property (weak) IBOutlet NSTextField *Order24Field;
+
+@property (weak) IBOutlet NSTextField *Order25Num;
+@property (weak) IBOutlet NSTextField *Order25Field;
+
+@property (weak) IBOutlet NSTextField *Order26Num;
+@property (weak) IBOutlet NSTextField *Order26Field;
+
+@property (weak) IBOutlet NSTextField *Order27Num;
+@property (weak) IBOutlet NSTextField *Order27Field;
+
+@property (weak) IBOutlet NSTextField *Order28Num;
+@property (weak) IBOutlet NSTextField *Order28Field;
 
 @property (weak) IBOutlet NSButton *SetOrderButton;
 

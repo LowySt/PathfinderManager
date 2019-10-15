@@ -58,9 +58,10 @@ struct OrderType
     
     if(oldPos == newPos) { return; }
     if(newPos > 22) { return; }
-    if(newPos > [_MobNumberSel indexOfSelectedItem] + 6) { return; }
-    
-    NSInteger num = [_MobNumberSel indexOfSelectedItem] + 6;
+       
+    NSInteger num = [_MobNumberSel indexOfSelectedItem] + PARTY_SIZE;
+    if(newPos > num) { return; }
+
     NSMutableArray *order = [[NSMutableArray alloc] init];
 
     currentTurnIdx += 1;
@@ -235,7 +236,8 @@ struct OrderType
     
     struct OrderType val;
     NSString *s;
-    switch(num+6)
+    //TODO: This is wrong right now!
+    switch(num + PARTY_SIZE)
     {
         case 22:
             [order[21] getValue:&val];
@@ -333,7 +335,9 @@ struct OrderType
 }
 
 - (void)advanceTurn {
-    NSInteger num = [_MobNumberSel indexOfSelectedItem] + 1 + 6;
+    //TODO: 0 based index?
+    //TODO: Needs allies
+    NSInteger num = [_MobNumberSel indexOfSelectedItem] + 1 + PARTY_SIZE;
     
     if(currentTurnIdx == (num - 1))
     { currentTurnIdx = 1; }
@@ -343,6 +347,8 @@ struct OrderType
 }
 
 - (void)initialization {
+    
+    PARTY_SIZE = 8;
     
     OrderFieldArr[0] = _Order1Field; OrderFieldArr[1] = _Order2Field;
     OrderFieldArr[2] = _Order3Field; OrderFieldArr[3] = _Order4Field;
@@ -355,7 +361,10 @@ struct OrderType
     OrderFieldArr[16] = _Order17Field; OrderFieldArr[17] = _Order18Field;
     OrderFieldArr[18] = _Order19Field; OrderFieldArr[19] = _Order20Field;
     OrderFieldArr[20] = _Order21Field; OrderFieldArr[21] = _Order22Field;
-        
+    OrderFieldArr[22] = _Order23Field; OrderFieldArr[23] = _Order24Field;
+    OrderFieldArr[24] = _Order25Field; OrderFieldArr[25] = _Order26Field;
+    OrderFieldArr[26] = _Order27Field; OrderFieldArr[27] = _Order28Field;
+    
     OrderNumArr[0] = _Order1Num; OrderNumArr[1] = _Order2Num;
     OrderNumArr[2] = _Order3Num; OrderNumArr[3] = _Order4Num;
     OrderNumArr[4] = _Order5Num; OrderNumArr[5] = _Order6Num;
@@ -367,6 +376,9 @@ struct OrderType
     OrderNumArr[16] = _Order17Num; OrderNumArr[17] = _Order18Num;
     OrderNumArr[18] = _Order19Num; OrderNumArr[19] = _Order20Num;
     OrderNumArr[20] = _Order21Num; OrderNumArr[21] = _Order22Num;
+    OrderNumArr[22] = _Order23Num; OrderNumArr[23] = _Order24Num;
+    OrderNumArr[24] = _Order25Num; OrderNumArr[25] = _Order26Num;
+    OrderNumArr[26] = _Order27Num; OrderNumArr[27] = _Order28Num;
         
     MobLabelArr[0] = _Mob1Label; MobLabelArr[1] = _Mob2Label;
     MobLabelArr[2] = _Mob3Label; MobLabelArr[3] = _Mob4Label;
@@ -398,10 +410,18 @@ struct OrderType
     HeroLabelArr[0] = _Hero1Label; HeroLabelArr[1] = _Hero2Label;
     HeroLabelArr[2] = _Hero3Label; HeroLabelArr[3] = _Hero4Label;
     HeroLabelArr[4] = _Hero5Label; HeroLabelArr[5] = _Hero6Label;
+    HeroLabelArr[6] = _Hero7Label; HeroLabelArr[7] = _Hero8Label;
         
     HeroFieldArr[0] = _Hero1Field; HeroFieldArr[1] = _Hero2Field;
     HeroFieldArr[2] = _Hero3Field; HeroFieldArr[3] = _Hero4Field;
     HeroFieldArr[4] = _Hero5Field; HeroFieldArr[5] = _Hero6Field;
+    HeroFieldArr[6] = _Hero7Field; HeroFieldArr[7] = _Hero8Field;
+    
+    AllyLabelArr[0] = _Ally1Label; AllyLabelArr[1] = _Ally2Label;
+    AllyLabelArr[2] = _Ally3Label; AllyLabelArr[3] = _Ally4Label;
+
+    AllyFieldArr[0] = _Ally1Field; AllyFieldArr[1] = _Ally2Field;
+    AllyFieldArr[2] = _Ally3Field; AllyFieldArr[3] = _Ally4Field;
     
     currentTurnIdx = 1;
     
@@ -417,13 +437,18 @@ struct OrderType
     setICF(_MobNumberSel, _MobNumberLabel, "Enemy Count",
            CGPointMake(315, 840), LABEL_UP);
     
-    setICF(_Hero1Field, _Hero1Label, "Gremag", CGPointMake(525, 810), LABEL_LEFT);
-    setICF(_Hero2Field, _Hero2Label, "Ken Shiro", CGPointMake(525, 780), LABEL_LEFT);
-    setICF(_Hero3Field, _Hero3Label, "Sirion", CGPointMake(525, 750), LABEL_LEFT);
-    setICF(_Hero4Field, _Hero4Label, "Albion", CGPointMake(525, 720), LABEL_LEFT);
-    setICF(_Hero5Field, _Hero5Label, "Zakkhyr", CGPointMake(525, 690), LABEL_LEFT);
-    setICF(_Hero6Field, _Hero6Label, "Zoddak", CGPointMake(525, 660), LABEL_LEFT);
+    setICF(_AllyNumberSel, _AllyNumberLabel, "Ally Count",
+           CGPointMake(500, 840), LABEL_UP);
     
+    setICF(_Hero1Field, _Hero1Label, "Gremag", CGPointMake(525, 810), LABEL_LEFT);
+    setICF(_Hero2Field, _Hero2Label, "Federico", CGPointMake(525, 780), LABEL_LEFT);
+    setICF(_Hero3Field, _Hero3Label, "Ken Shiro", CGPointMake(525, 750), LABEL_LEFT);
+    setICF(_Hero4Field, _Hero4Label, "Sirion", CGPointMake(525, 720), LABEL_LEFT);
+    setICF(_Hero5Field, _Hero5Label, "Albion", CGPointMake(525, 690), LABEL_LEFT);
+    setICF(_Hero6Field, _Hero6Label, "Sdentato", CGPointMake(525, 660), LABEL_LEFT);
+    setICF(_Hero7Field, _Hero7Label, "Zakkhyr", CGPointMake(525, 630), LABEL_LEFT);
+    setICF(_Hero8Field, _Hero8Label, "Zoddak", CGPointMake(525, 600), LABEL_LEFT);
+       
     setICF(_Mob1Bonus, _Mob1Label, "Enemy 1", CGPointMake(365, 810), LABEL_LEFT);
     setICF(_Mob2Bonus, _Mob2Label, "Enemy 2", CGPointMake(365, 780), LABEL_LEFT);
     setICF(_Mob3Bonus, _Mob3Label, "Enemy 3", CGPointMake(365, 750), LABEL_LEFT);
@@ -441,6 +466,11 @@ struct OrderType
     setICF(_Mob15Bonus, _Mob15Label, "Enemy 15", CGPointMake(365, 390), LABEL_LEFT);
     setICF(_Mob16Bonus, _Mob16Label, "Enemy 16", CGPointMake(365, 360), LABEL_LEFT);
 
+    setICF(_Ally1Field, _Ally1Label, "Ally 1", CGPointMake(525, 560), LABEL_LEFT);
+    setICF(_Ally2Field, _Ally2Label, "Ally 2", CGPointMake(525, 530), LABEL_LEFT);
+    setICF(_Ally3Field, _Ally3Label, "Ally 3", CGPointMake(525, 500), LABEL_LEFT);
+    setICF(_Ally4Field, _Ally4Label, "Ally 4", CGPointMake(525, 470), LABEL_LEFT);
+    
     setField(_Mob1Field, CGPointMake(405, 810));
     setField(_Mob2Field, CGPointMake(405, 780));
     setField(_Mob3Field, CGPointMake(405, 750));
@@ -457,7 +487,6 @@ struct OrderType
     setField(_Mob14Field, CGPointMake(405, 420));
     setField(_Mob15Field, CGPointMake(405, 390));
     setField(_Mob16Field, CGPointMake(405, 360));
-
     
     mask0(_RaceSelector); mask0(_ClassSelector); mask0(_GenMethodSel);
     mask0(_STRBonus); mask0(_DEXBonus); mask0(_CONBonus); mask0(_INTBonus);
@@ -468,15 +497,20 @@ struct OrderType
     mask0(_RaceTraitsField);
 
     mask0(_MobNumberSel); mask0(_InitiativeRollButton);
+    mask0(_AllyNumberSel);
     
     mask0(_Mob1Field); mask0(_Mob2Field); mask0(_Mob3Field); mask0(_Mob4Field);
     mask0(_Mob5Field); mask0(_Mob6Field); mask0(_Mob7Field); mask0(_Mob8Field);
-    mask0(_Mob9Field); mask0(_Mob10Field); mask0(_Mob11Field); mask0(_Mob12Field);
-    mask0(_Mob13Field); mask0(_Mob14Field); mask0(_Mob15Field); mask0(_Mob16Field);
+    mask0(_Mob9Field); mask0(_Mob10Field); mask0(_Mob11Field);
+    mask0(_Mob12Field); mask0(_Mob13Field); mask0(_Mob14Field);
+    mask0(_Mob15Field); mask0(_Mob16Field);
     
-    mask0(_Hero1Field); mask0(_Hero2Field); mask0(_Hero3Field); mask0(_Hero4Field);
-    mask0(_Hero5Field); mask0(_Hero6Field);
-       
+    mask0(_Hero1Field); mask0(_Hero2Field); mask0(_Hero3Field);
+    mask0(_Hero4Field); mask0(_Hero5Field); mask0(_Hero6Field);
+    
+    mask0(_Ally1Field); mask0(_Ally2Field);
+    mask0(_Ally3Field); mask0(_Ally4Field);
+    
     NSNumberFormatter *nf = [[NSNumberFormatter alloc] init];
     [nf setAllowsFloats:false];
     [nf setNumberStyle:NSNumberFormatterNoStyle];
@@ -498,15 +532,23 @@ struct OrderType
     mask0andFormat(_Mob13Bonus, nf); mask0andFormat(_Mob14Bonus, nf);
     mask0andFormat(_Mob15Bonus, nf); mask0andFormat(_Mob16Bonus, nf);
     
-    mask0andFormat(_Order1Field, nf); mask0andFormat(_Order2Field, nf); mask0andFormat(_Order3Field, nf);
-    mask0andFormat(_Order4Field, nf); mask0andFormat(_Order5Field, nf); mask0andFormat(_Order6Field, nf);
-    mask0andFormat(_Order7Field, nf); mask0andFormat(_Order8Field, nf); mask0andFormat(_Order9Field, nf);
-    mask0andFormat(_Order10Field, nf); mask0andFormat(_Order11Field, nf); mask0andFormat(_Order12Field, nf);
-    mask0andFormat(_Order13Field, nf); mask0andFormat(_Order14Field, nf); mask0andFormat(_Order15Field, nf);
-    mask0andFormat(_Order16Field, nf); mask0andFormat(_Order17Field, nf); mask0andFormat(_Order18Field, nf);
-    mask0andFormat(_Order19Field, nf); mask0andFormat(_Order20Field, nf); mask0andFormat(_Order21Field, nf);
-    mask0andFormat(_Order22Field, nf);
-        
+    mask0andFormat(_Order1Field, nf); mask0andFormat(_Order2Field, nf);
+    mask0andFormat(_Order3Field, nf); mask0andFormat(_Order4Field, nf);
+    mask0andFormat(_Order5Field, nf); mask0andFormat(_Order6Field, nf);
+    mask0andFormat(_Order7Field, nf); mask0andFormat(_Order8Field, nf);
+    mask0andFormat(_Order9Field, nf); mask0andFormat(_Order10Field, nf);
+    mask0andFormat(_Order11Field, nf); mask0andFormat(_Order12Field, nf);
+    mask0andFormat(_Order13Field, nf); mask0andFormat(_Order14Field, nf);
+    mask0andFormat(_Order15Field, nf); mask0andFormat(_Order16Field, nf);
+    mask0andFormat(_Order17Field, nf); mask0andFormat(_Order18Field, nf);
+    mask0andFormat(_Order19Field, nf); mask0andFormat(_Order20Field, nf);
+    mask0andFormat(_Order21Field, nf); mask0andFormat(_Order22Field, nf);
+    mask0andFormat(_Order23Field, nf); mask0andFormat(_Order24Field, nf);
+    mask0andFormat(_Order25Field, nf); mask0andFormat(_Order26Field, nf);
+    mask0andFormat(_Order27Field, nf); mask0andFormat(_Order28Field, nf);
+    //NOTE: This is the solution to fullscreen correct positioning.
+    //[_Order1Field setAutoresizingMask:NSViewMinXMargin];
+    
     NSNumber *minLevel = [[NSNumber alloc] initWithInt:1];
     NSNumber *maxLevel = [[NSNumber alloc] initWithInt:20];
     NSNumberFormatter *lvlF = [[NSNumberFormatter alloc] init];
@@ -549,6 +591,7 @@ struct OrderType
     [_GenMethodSel removeAllItems];
     [_XPCurveSel removeAllItems];
     [_MobNumberSel removeAllItems];
+    [_AllyNumberSel removeAllItems];
      
 }
 
@@ -630,6 +673,12 @@ struct OrderType
     [_Order20Num setAlignment:NSTextAlignmentLeft];
     [_Order21Num setAlignment:NSTextAlignmentLeft];
     [_Order22Num setAlignment:NSTextAlignmentLeft];
+    [_Order23Num setAlignment:NSTextAlignmentLeft];
+    [_Order24Num setAlignment:NSTextAlignmentLeft];
+    [_Order25Num setAlignment:NSTextAlignmentLeft];
+    [_Order26Num setAlignment:NSTextAlignmentLeft];
+    [_Order27Num setAlignment:NSTextAlignmentLeft];
+    [_Order28Num setAlignment:NSTextAlignmentLeft];
     
     [_Mob1Field setAlignment:NSTextAlignmentLeft];
     [_Mob2Field setAlignment:NSTextAlignmentLeft];
@@ -671,6 +720,12 @@ struct OrderType
     [_Hero4Field setAlignment:NSTextAlignmentLeft];
     [_Hero5Field setAlignment:NSTextAlignmentLeft];
     [_Hero6Field setAlignment:NSTextAlignmentLeft];
+    
+    [_Ally1Field setAlignment:NSTextAlignmentLeft];
+    [_Ally2Field setAlignment:NSTextAlignmentLeft];
+    [_Ally3Field setAlignment:NSTextAlignmentLeft];
+    [_Ally4Field setAlignment:NSTextAlignmentLeft];
+
 }
 
 - (void)setAllUneditable {
@@ -716,8 +771,22 @@ struct OrderType
     [_Order20Field setEditable:false];
     [_Order21Field setEditable:false];
     [_Order22Field setEditable:false];
+    [_Order23Field setEditable:false];
+    [_Order24Field setEditable:false];
+    [_Order25Field setEditable:false];
+    [_Order26Field setEditable:false];
+    [_Order27Field setEditable:false];
+    [_Order28Field setEditable:false];
     
     [_CurrentTurnField setEditable:false];
+}
+
+- (void)showOrderFields:(NSInteger)num {
+    for(int i = 0; i < num + PARTY_SIZE; i++)
+    {
+        [OrderNumArr[i] setHidden:false];
+        [OrderFieldArr[i] setHidden:false];
+    }
 }
 
 - (void)hideFields {
@@ -747,9 +816,7 @@ struct OrderType
     [_Mob14Field setHidden:true]; [_Mob14Label setHidden:true];
     [_Mob15Field setHidden:true]; [_Mob15Label setHidden:true];
     [_Mob16Field setHidden:true]; [_Mob16Label setHidden:true];
-        
-    [_Order7Num setHidden:true]; [_Order7Field setHidden:true];
-    [_Order8Num setHidden:true]; [_Order8Field setHidden:true];
+
     [_Order9Num setHidden:true]; [_Order9Field setHidden:true];
     [_Order10Num setHidden:true]; [_Order10Field setHidden:true];
     [_Order11Num setHidden:true]; [_Order11Field setHidden:true];
@@ -764,7 +831,36 @@ struct OrderType
     [_Order20Num setHidden:true]; [_Order20Field setHidden:true];
     [_Order21Num setHidden:true]; [_Order21Field setHidden:true];
     [_Order22Num setHidden:true]; [_Order22Field setHidden:true];
-        
+    [_Order23Num setHidden:true]; [_Order23Field setHidden:true];
+    [_Order24Num setHidden:true]; [_Order24Field setHidden:true];
+    [_Order25Num setHidden:true]; [_Order25Field setHidden:true];
+    [_Order26Num setHidden:true]; [_Order26Field setHidden:true];
+    [_Order27Num setHidden:true]; [_Order27Field setHidden:true];
+    [_Order28Num setHidden:true]; [_Order28Field setHidden:true];
+    
+    [_Ally1Field setHidden:true]; [_Ally2Field setHidden:true];
+    [_Ally3Field setHidden:true]; [_Ally4Field setHidden:true];
+    [_Ally1Label setHidden:true]; [_Ally2Label setHidden:true];
+    [_Ally3Label setHidden:true]; [_Ally4Label setHidden:true];
+    
+}
+
+- (void)hideAllies {
+    const int ALLIES_NUM = 4;
+    for(int i = 0; i < ALLIES_NUM; i++)
+    {
+        [AllyLabelArr[i] setHidden:true];
+        [AllyFieldArr[i] setHidden:true];
+    }
+}
+
+- (void)hideMobs {
+    const int MOB_NUM = 16;
+    for(int i = 0; i < MOB_NUM; i++)
+    {
+        [MobLabelArr[i] setHidden:true];
+        [MobFieldArr[i] setHidden:true];
+    }
 }
 
 - (void)viewDidLoad {
@@ -805,50 +901,14 @@ struct OrderType
     [_RaceTraitsField setFrameSize:NSMakeSize(960, 320)];
     setField(_RaceTraitsField, CGPointMake(65, 220));
     
-    setField(_Order1Num, CGPointMake(640, 810));
-    setField(_Order1Field, CGPointMake(680, 810));
-    setField(_Order2Num, CGPointMake(640, 780));
-    setField(_Order2Field, CGPointMake(680, 780));
-    setField(_Order3Num, CGPointMake(640, 750));
-    setField(_Order3Field, CGPointMake(680, 750));
-    setField(_Order4Num, CGPointMake(640, 720));
-    setField(_Order4Field, CGPointMake(680, 720));
-    setField(_Order5Num, CGPointMake(640, 690));
-    setField(_Order5Field, CGPointMake(680, 690));
-    setField(_Order6Num, CGPointMake(640, 660));
-    setField(_Order6Field, CGPointMake(680, 660));
-    setField(_Order7Num, CGPointMake(640, 630));
-    setField(_Order7Field, CGPointMake(680, 630));
-    setField(_Order8Num, CGPointMake(640, 600));
-    setField(_Order8Field, CGPointMake(680, 600));
-    setField(_Order9Num, CGPointMake(640, 570));
-    setField(_Order9Field, CGPointMake(680, 570));
-    setField(_Order10Num, CGPointMake(640, 540));
-    setField(_Order10Field, CGPointMake(680, 540));
-    setField(_Order11Num, CGPointMake(640, 510));
-    setField(_Order11Field, CGPointMake(680, 510));
-    setField(_Order12Num, CGPointMake(640, 480));
-    setField(_Order12Field, CGPointMake(680, 480));
-    setField(_Order13Num, CGPointMake(640, 450));
-    setField(_Order13Field, CGPointMake(680, 450));
-    setField(_Order14Num, CGPointMake(640, 420));
-    setField(_Order14Field, CGPointMake(680, 420));
-    setField(_Order15Num, CGPointMake(640, 390));
-    setField(_Order15Field, CGPointMake(680, 390));
-    setField(_Order16Num, CGPointMake(640, 360));
-    setField(_Order16Field, CGPointMake(680, 360));
-    setField(_Order17Num, CGPointMake(640, 330));
-    setField(_Order17Field, CGPointMake(680, 330));
-    setField(_Order18Num, CGPointMake(640, 300));
-    setField(_Order18Field, CGPointMake(680, 300));
-    setField(_Order19Num, CGPointMake(640, 270));
-    setField(_Order19Field, CGPointMake(680, 270));
-    setField(_Order20Num, CGPointMake(640, 240));
-    setField(_Order20Field, CGPointMake(680, 240));
-    setField(_Order21Num, CGPointMake(640, 210));
-    setField(_Order21Field, CGPointMake(680, 210));
-    setField(_Order22Num, CGPointMake(640, 180));
-    setField(_Order22Field, CGPointMake(680, 180));
+    int yPos = 810;
+    const int ORDER_SIZE = 28;
+    for(int i = 0; i < ORDER_SIZE; i++)
+    {
+        setField(OrderNumArr[i], CGPointMake(640, yPos));
+        setField(OrderFieldArr[i], CGPointMake(680, yPos));
+        yPos -= 25;
+    }
     
     setField(_SetOrderButton, CGPointMake(730, 840));
     setField(_AdvanceTurnButton, CGPointMake(970, 840));
@@ -870,6 +930,9 @@ struct OrderType
     
     NSArray *EnemyCount = @[ @"No Enemies", @"1 Enemy", @"2 Enemies", @"3 Enemies", @"4 Enemies", @"5 Enemies", @"6 Enemies", @"7 Enemies", @"8 Enemies", @"9 Enemies", @"10 Enemies", @"11 Enemies", @"12 Enemies", @"13 Enemies", @"14 Enemies", @"15 Enemies", @"16 Enemies"];
     [_MobNumberSel addItemsWithObjectValues:EnemyCount];
+    
+    NSArray *AllyCount = @[@"No Allies", @"1 Ally", @"2 Allies", @"3 Allies", @"4 Allies"];
+    [_AllyNumberSel addItemsWithObjectValues:AllyCount];
         
     NSArray *AB = @[ @"-5", @"-5", @"-4", @"-4", @"-3", @"-3", @"-2", @"-2", @"-1", @"-1", @"0", @"0", @"+1", @"+1", @"+2", @"+2", @"+3", @"+3", @"+4", @"+4", @"+5", @"+5", @"+6", @"+6", @"+7", @"+7", @"+8", @"+8", @"+9", @"+9", @"+10", @"+10", @"+11", @"+11", @"+12", @"+12", @"+13", @"+13", @"+14", @"+14", @"+15", @"+15", @"+16", @"+16", @"+17", @"+17"];
     _AbilityBonus = AB;
@@ -878,6 +941,7 @@ struct OrderType
     [_ClassSelector selectItemAtIndex:0];
     [_GenMethodSel selectItemAtIndex:0];
     [_MobNumberSel selectItemAtIndex:0];
+    [_AllyNumberSel selectItemAtIndex:0];
     
     [_LvlField setStringValue:@"1"];
     [_ExpField setStringValue:@"0"];
@@ -908,6 +972,9 @@ struct OrderType
     [_Order17Num setIntegerValue:17]; [_Order18Num setIntegerValue:18];
     [_Order19Num setIntegerValue:19]; [_Order20Num setIntegerValue:20];
     [_Order21Num setIntegerValue:21]; [_Order22Num setIntegerValue:22];
+    [_Order23Num setIntegerValue:23]; [_Order24Num setIntegerValue:24];
+    [_Order25Num setIntegerValue:25]; [_Order26Num setIntegerValue:26];
+    [_Order27Num setIntegerValue:27]; [_Order28Num setIntegerValue:28];
 }
 
 - (void)setRepresentedObject:(id)representedObject {
