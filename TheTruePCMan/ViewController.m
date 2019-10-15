@@ -113,13 +113,20 @@ struct OrderType
 }
 
 - (void)rollInitiative {
-    NSInteger num = [_MobNumberSel indexOfSelectedItem];
+    NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
+    NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
     int newRand;
     
-    for(int i = 0; i < num; i++)
+    for(int i = 0; i < mobNum; i++)
     {
         newRand = arc4random_uniform(20) + 1;
         [MobFieldArr[i] setIntValue:(newRand + [MobBonusArr[i] intValue])];
+    }
+    
+    for(int i = 0; i < allyNum; i++)
+    {
+        newRand = arc4random_uniform(20) + 1;
+        [AllyFieldArr[i] setIntValue:(newRand + [AllyBonusArr[i] intValue])];
     }
 }
 
@@ -191,9 +198,11 @@ struct OrderType
 - (void)advanceTurn {
     //TODO: 0 based index?
     //TODO: Needs allies
-    NSInteger num = [_MobNumberSel indexOfSelectedItem] + 1 + PARTY_SIZE;
+    NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
+    NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
+    NSInteger num = mobNum + allyNum + PARTY_SIZE;
     
-    if(currentTurnIdx == (num - 1))
+    if(currentTurnIdx == num)
     { currentTurnIdx = 1; }
     else { currentTurnIdx += 1; }
     
@@ -280,6 +289,9 @@ struct OrderType
     AllyFieldArr[0] = _Ally1Field; AllyFieldArr[1] = _Ally2Field;
     AllyFieldArr[2] = _Ally3Field; AllyFieldArr[3] = _Ally4Field;
     
+    AllyBonusArr[0] = _Ally1Bonus; AllyBonusArr[1] = _Ally2Bonus;
+    AllyBonusArr[2] = _Ally3Bonus; AllyBonusArr[3] = _Ally4Bonus;
+    
     currentTurnIdx = 1;
     
     [[_TabController tabViewItemAtIndex:0] setLabel:@"PC"];
@@ -322,11 +334,6 @@ struct OrderType
     setICF(_Mob14Bonus, _Mob14Label, "Enemy 14", CGPointMake(365, 420), LABEL_LEFT);
     setICF(_Mob15Bonus, _Mob15Label, "Enemy 15", CGPointMake(365, 390), LABEL_LEFT);
     setICF(_Mob16Bonus, _Mob16Label, "Enemy 16", CGPointMake(365, 360), LABEL_LEFT);
-
-    setICF(_Ally1Field, _Ally1Label, "Ally 1", CGPointMake(525, 560), LABEL_LEFT);
-    setICF(_Ally2Field, _Ally2Label, "Ally 2", CGPointMake(525, 530), LABEL_LEFT);
-    setICF(_Ally3Field, _Ally3Label, "Ally 3", CGPointMake(525, 500), LABEL_LEFT);
-    setICF(_Ally4Field, _Ally4Label, "Ally 4", CGPointMake(525, 470), LABEL_LEFT);
     
     setField(_Mob1Field, CGPointMake(405, 810));
     setField(_Mob2Field, CGPointMake(405, 780));
@@ -344,6 +351,16 @@ struct OrderType
     setField(_Mob14Field, CGPointMake(405, 420));
     setField(_Mob15Field, CGPointMake(405, 390));
     setField(_Mob16Field, CGPointMake(405, 360));
+
+    setICF(_Ally1Bonus, _Ally1Label, "Ally 1", CGPointMake(525, 560), LABEL_LEFT);
+    setICF(_Ally2Bonus, _Ally2Label, "Ally 2", CGPointMake(525, 530), LABEL_LEFT);
+    setICF(_Ally3Bonus, _Ally3Label, "Ally 3", CGPointMake(525, 500), LABEL_LEFT);
+    setICF(_Ally4Bonus, _Ally4Label, "Ally 4", CGPointMake(525, 470), LABEL_LEFT);
+    
+    setField(_Ally1Field, CGPointMake(565, 560));
+    setField(_Ally2Field, CGPointMake(565, 530));
+    setField(_Ally3Field, CGPointMake(565, 500));
+    setField(_Ally4Field, CGPointMake(565, 470));
     
     mask0(_RaceSelector); mask0(_ClassSelector); mask0(_GenMethodSel);
     mask0(_STRBonus); mask0(_DEXBonus); mask0(_CONBonus); mask0(_INTBonus);
@@ -582,6 +599,11 @@ struct OrderType
     [_Ally2Field setAlignment:NSTextAlignmentLeft];
     [_Ally3Field setAlignment:NSTextAlignmentLeft];
     [_Ally4Field setAlignment:NSTextAlignmentLeft];
+    
+    [_Ally1Bonus setAlignment:NSTextAlignmentLeft];
+    [_Ally2Bonus setAlignment:NSTextAlignmentLeft];
+    [_Ally3Bonus setAlignment:NSTextAlignmentLeft];
+    [_Ally4Bonus setAlignment:NSTextAlignmentLeft];
 
 }
 
@@ -699,21 +721,22 @@ struct OrderType
     [_Ally3Field setHidden:true]; [_Ally4Field setHidden:true];
     [_Ally1Label setHidden:true]; [_Ally2Label setHidden:true];
     [_Ally3Label setHidden:true]; [_Ally4Label setHidden:true];
+    [_Ally1Bonus setHidden:true]; [_Ally2Bonus setHidden:true];
+    [_Ally3Bonus setHidden:true]; [_Ally4Bonus setHidden:true];
     
 }
 
 - (void)hideAllies {
-    const int ALLIES_NUM = 4;
-    for(int i = 0; i < ALLIES_NUM; i++)
+    for(int i = 0; i < ALLY_SIZE; i++)
     {
         [AllyLabelArr[i] setHidden:true];
+        [AllyBonusArr[i] setHidden:true];
         [AllyFieldArr[i] setHidden:true];
     }
 }
 
 - (void)hideMobs {
-    const int MOB_NUM = 16;
-    for(int i = 0; i < MOB_NUM; i++)
+    for(int i = 0; i < MOB_SIZE; i++)
     {
         [MobLabelArr[i] setHidden:true];
         [MobFieldArr[i] setHidden:true];
@@ -817,20 +840,11 @@ struct OrderType
     [_Mob13Bonus setIntegerValue:0]; [_Mob14Bonus setIntegerValue:0];
     [_Mob15Bonus setIntegerValue:0]; [_Mob16Bonus setIntegerValue:0];
     
-    [_Order1Num setIntegerValue:1]; [_Order2Num setIntegerValue:2];
-    [_Order3Num setIntegerValue:3]; [_Order4Num setIntegerValue:4];
-    [_Order5Num setIntegerValue:5]; [_Order6Num setIntegerValue:6];
-    [_Order7Num setIntegerValue:7]; [_Order8Num setIntegerValue:8];
-    [_Order9Num setIntegerValue:9]; [_Order10Num setIntegerValue:10];
-    [_Order11Num setIntegerValue:11]; [_Order12Num setIntegerValue:12];
-    [_Order13Num setIntegerValue:13]; [_Order14Num setIntegerValue:14];
-    [_Order15Num setIntegerValue:15]; [_Order16Num setIntegerValue:16];
-    [_Order17Num setIntegerValue:17]; [_Order18Num setIntegerValue:18];
-    [_Order19Num setIntegerValue:19]; [_Order20Num setIntegerValue:20];
-    [_Order21Num setIntegerValue:21]; [_Order22Num setIntegerValue:22];
-    [_Order23Num setIntegerValue:23]; [_Order24Num setIntegerValue:24];
-    [_Order25Num setIntegerValue:25]; [_Order26Num setIntegerValue:26];
-    [_Order27Num setIntegerValue:27]; [_Order28Num setIntegerValue:28];
+    [_Ally1Bonus setIntegerValue:0]; [_Ally2Bonus setIntegerValue:0];
+    [_Ally3Bonus setIntegerValue:0]; [_Ally4Bonus setIntegerValue:0];
+    
+    for(int i = 0; i < ORDER_SIZE; i++)
+    { [OrderNumArr[i] setIntegerValue:(i+1)]; }
 }
 
 - (void)setRepresentedObject:(id)representedObject {

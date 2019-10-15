@@ -25,6 +25,7 @@
     @public NSTextField * __strong HeroFieldArr[8];
     
     @public NSTextField * __strong AllyLabelArr[4];
+    @public NSTextField * __strong AllyBonusArr[4];
     @public NSTextField * __strong AllyFieldArr[4];
     
     @public NSTextField * __strong OrderNumArr[28];
@@ -213,15 +214,19 @@
 @property (weak) IBOutlet NSTextField *Hero8Field;
 
 @property (weak) IBOutlet NSTextField *Ally1Label;
+@property (weak) IBOutlet NSTextField *Ally1Bonus;
 @property (weak) IBOutlet NSTextField *Ally1Field;
 
 @property (weak) IBOutlet NSTextField *Ally2Label;
+@property (weak) IBOutlet NSTextField *Ally2Bonus;
 @property (weak) IBOutlet NSTextField *Ally2Field;
 
 @property (weak) IBOutlet NSTextField *Ally3Label;
+@property (weak) IBOutlet NSTextField *Ally3Bonus;
 @property (weak) IBOutlet NSTextField *Ally3Field;
 
 @property (weak) IBOutlet NSTextField *Ally4Label;
+@property (weak) IBOutlet NSTextField *Ally4Bonus;
 @property (weak) IBOutlet NSTextField *Ally4Field;
 
 @property (weak) IBOutlet NSTextField *Order1Num;

@@ -265,6 +265,7 @@
         for(int i = 0; i < num; i++)
         {
             [v->AllyFieldArr[i] setHidden:false];
+            [v->AllyBonusArr[i] setHidden:false];
             [v->AllyLabelArr[i] setHidden:false];
         }
         
