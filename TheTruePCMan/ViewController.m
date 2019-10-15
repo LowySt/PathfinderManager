@@ -59,7 +59,9 @@ struct OrderType
     if(oldPos == newPos) { return; }
     if(newPos > 22) { return; }
        
-    NSInteger num = [_MobNumberSel indexOfSelectedItem] + PARTY_SIZE;
+    NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
+    NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
+    NSInteger num = mobNum + allyNum + PARTY_SIZE;
     if(newPos > num) { return; }
 
     NSMutableArray *order = [[NSMutableArray alloc] init];
@@ -189,7 +191,6 @@ struct OrderType
 }
 
 - (void)setCurrentTurn {
-    
     //TODO: Convert currentTurnIdx to be in the range 0..n-1 instead of 0..n
     NSTextField *f = OrderFieldArr[currentTurnIdx - 1];
     [_CurrentTurnField setStringValue:[f stringValue]];
@@ -197,7 +198,6 @@ struct OrderType
 
 - (void)advanceTurn {
     //TODO: 0 based index?
-    //TODO: Needs allies
     NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
     NSInteger num = mobNum + allyNum + PARTY_SIZE;
