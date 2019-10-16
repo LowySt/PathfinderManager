@@ -20,6 +20,7 @@
     @public NSTextField * __strong MobLabelArr[16];
     @public NSTextField * __strong MobFieldArr[16];
     @public NSTextField * __strong MobBonusArr[16];
+    @public NSButton * __strong SymbolCheckArr[1][16];
     
     @public NSTextField * __strong HeroLabelArr[8];
     @public NSTextField * __strong HeroFieldArr[8];
@@ -128,66 +129,82 @@
 @property (weak) IBOutlet NSTextField *Mob1Label;
 @property (weak) IBOutlet NSTextField *Mob1Field;
 @property (weak) IBOutlet NSTextField *Mob1Bonus;
+@property (weak) IBOutlet NSButton *Star1Check;
 
 @property (weak) IBOutlet NSTextField *Mob2Label;
 @property (weak) IBOutlet NSTextField *Mob2Field;
 @property (weak) IBOutlet NSTextField *Mob2Bonus;
+@property (weak) IBOutlet NSButton *Star2Check;
 
 @property (weak) IBOutlet NSTextField *Mob3Label;
 @property (weak) IBOutlet NSTextField *Mob3Field;
 @property (weak) IBOutlet NSTextField *Mob3Bonus;
+@property (weak) IBOutlet NSButton *Star3Check;
 
 @property (weak) IBOutlet NSTextField *Mob4Label;
 @property (weak) IBOutlet NSTextField *Mob4Field;
 @property (weak) IBOutlet NSTextField *Mob4Bonus;
+@property (weak) IBOutlet NSButton *Star4Check;
 
 @property (weak) IBOutlet NSTextField *Mob5Label;
 @property (weak) IBOutlet NSTextField *Mob5Field;
 @property (weak) IBOutlet NSTextField *Mob5Bonus;
+@property (weak) IBOutlet NSButton *Star5Check;
 
 @property (weak) IBOutlet NSTextField *Mob6Label;
 @property (weak) IBOutlet NSTextField *Mob6Field;
 @property (weak) IBOutlet NSTextField *Mob6Bonus;
+@property (weak) IBOutlet NSButton *Star6Check;
 
 @property (weak) IBOutlet NSTextField *Mob7Label;
 @property (weak) IBOutlet NSTextField *Mob7Field;
 @property (weak) IBOutlet NSTextField *Mob7Bonus;
+@property (weak) IBOutlet NSButton *Star7Check;
 
 @property (weak) IBOutlet NSTextField *Mob8Label;
 @property (weak) IBOutlet NSTextField *Mob8Field;
 @property (weak) IBOutlet NSTextField *Mob8Bonus;
+@property (weak) IBOutlet NSButton *Star8Check;
 
 @property (weak) IBOutlet NSTextField *Mob9Label;
 @property (weak) IBOutlet NSTextField *Mob9Field;
 @property (weak) IBOutlet NSTextField *Mob9Bonus;
+@property (weak) IBOutlet NSButton *Star9Check;
 
 @property (weak) IBOutlet NSTextField *Mob10Label;
 @property (weak) IBOutlet NSTextField *Mob10Field;
 @property (weak) IBOutlet NSTextField *Mob10Bonus;
+@property (weak) IBOutlet NSButton *Star10Check;
 
 @property (weak) IBOutlet NSTextField *Mob11Label;
 @property (weak) IBOutlet NSTextField *Mob11Field;
 @property (weak) IBOutlet NSTextField *Mob11Bonus;
+@property (weak) IBOutlet NSButton *Star11Check;
 
 @property (weak) IBOutlet NSTextField *Mob12Label;
 @property (weak) IBOutlet NSTextField *Mob12Field;
 @property (weak) IBOutlet NSTextField *Mob12Bonus;
+@property (weak) IBOutlet NSButton *Star12Check;
 
 @property (weak) IBOutlet NSTextField *Mob13Label;
 @property (weak) IBOutlet NSTextField *Mob13Field;
 @property (weak) IBOutlet NSTextField *Mob13Bonus;
+@property (weak) IBOutlet NSButton *Star13Check;
 
 @property (weak) IBOutlet NSTextField *Mob14Label;
 @property (weak) IBOutlet NSTextField *Mob14Field;
 @property (weak) IBOutlet NSTextField *Mob14Bonus;
+@property (weak) IBOutlet NSButton *Star14Check;
 
 @property (weak) IBOutlet NSTextField *Mob15Label;
 @property (weak) IBOutlet NSTextField *Mob15Field;
 @property (weak) IBOutlet NSTextField *Mob15Bonus;
+@property (weak) IBOutlet NSButton *Star15Check;
 
 @property (weak) IBOutlet NSTextField *Mob16Label;
 @property (weak) IBOutlet NSTextField *Mob16Field;
 @property (weak) IBOutlet NSTextField *Mob16Bonus;
+@property (weak) IBOutlet NSButton *Star16Check;
 
 @property (weak) IBOutlet NSTextField *Hero1Label;
 @property (weak) IBOutlet NSTextField *Hero1Field;

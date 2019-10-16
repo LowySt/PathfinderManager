@@ -249,6 +249,7 @@
             [v->MobFieldArr[i] setHidden:false];
             [v->MobBonusArr[i] setHidden:false];
             [v->MobLabelArr[i] setHidden:false];
+            [v->SymbolCheckArr[0][i] setHidden:false];
         }
         
         NSInteger allyNum = [v.AllyNumberSel indexOfSelectedItem];

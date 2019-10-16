@@ -41,6 +41,12 @@ enum LabelDir {
 #define mask0andFormat(f, t) mask0(f); f.formatter = t
 #define setICF(f, l, n, p, lp) [l setStringValue:@n]; \
 [l sizeToFit]; setFieldAndLabel(f, l, p, lp)
+#define setCheck(f, s, p) [f setImagePosition:NSImageBelow]; \
+[f setImageHugsTitle:true]; \
+[f setFrameSize:NSMakeSize(20, 30)]; \
+[f setState:NSControlStateValueOff]; \
+[f setTitle:@s]; \
+setField(f, p);
 
 struct OrderType
 {
@@ -273,6 +279,15 @@ struct OrderType
     MobBonusArr[12] = _Mob13Bonus; MobBonusArr[13] = _Mob14Bonus;
     MobBonusArr[14] = _Mob15Bonus; MobBonusArr[15] = _Mob16Bonus;
     
+    SymbolCheckArr[0][0] = _Star1Check; SymbolCheckArr[0][1] = _Star2Check;
+    SymbolCheckArr[0][2] = _Star3Check; SymbolCheckArr[0][3] = _Star4Check;
+    SymbolCheckArr[0][4] = _Star5Check; SymbolCheckArr[0][5] = _Star6Check;
+    SymbolCheckArr[0][6] = _Star7Check; SymbolCheckArr[0][7] = _Star8Check;
+    SymbolCheckArr[0][8] = _Star9Check; SymbolCheckArr[0][9] = _Star10Check;
+    SymbolCheckArr[0][10] = _Star11Check; SymbolCheckArr[0][11] = _Star12Check;
+    SymbolCheckArr[0][12] = _Star13Check; SymbolCheckArr[0][13] = _Star14Check;
+    SymbolCheckArr[0][14] = _Star15Check; SymbolCheckArr[0][15] = _Star16Check;
+    
     HeroLabelArr[0] = _Hero1Label; HeroLabelArr[1] = _Hero2Label;
     HeroLabelArr[2] = _Hero3Label; HeroLabelArr[3] = _Hero4Label;
     HeroLabelArr[4] = _Hero5Label; HeroLabelArr[5] = _Hero6Label;
@@ -301,6 +316,14 @@ struct OrderType
     [_InitiativeRollButton setTitle:@"Roll"];
     [_SetOrderButton setTitle:@"Set"];
     [_AdvanceTurnButton setTitle:@"Next"];
+    
+    int yPos = 810;
+    for(int i = 0; i < MOB_SIZE; i++)
+    {
+        setCheck(SymbolCheckArr[0][i], "✩", CGPointMake(275, yPos));
+        yPos -= 30;
+    }
+    
     setField(_InitiativeRollButton, CGPointMake(420, 836));
         
     setICF(_MobNumberSel, _MobNumberLabel, "Enemy Count",
@@ -670,31 +693,8 @@ struct OrderType
 
 - (void)hideFields {
     
-    [_Mob1Bonus setHidden:true]; [_Mob2Bonus setHidden:true];
-    [_Mob3Bonus setHidden:true]; [_Mob4Bonus setHidden:true];
-    [_Mob5Bonus setHidden:true]; [_Mob6Bonus setHidden:true];
-    [_Mob7Bonus setHidden:true]; [_Mob8Bonus setHidden:true];
-    [_Mob9Bonus setHidden:true]; [_Mob10Bonus setHidden:true];
-    [_Mob11Bonus setHidden:true]; [_Mob12Bonus setHidden:true];
-    [_Mob13Bonus setHidden:true]; [_Mob14Bonus setHidden:true];
-    [_Mob15Bonus setHidden:true]; [_Mob16Bonus setHidden:true];
-        
-    [_Mob1Field setHidden:true]; [_Mob1Label setHidden:true];
-    [_Mob2Field setHidden:true]; [_Mob2Label setHidden:true];
-    [_Mob3Field setHidden:true]; [_Mob3Label setHidden:true];
-    [_Mob4Field setHidden:true]; [_Mob4Label setHidden:true];
-    [_Mob5Field setHidden:true]; [_Mob5Label setHidden:true];
-    [_Mob6Field setHidden:true]; [_Mob6Label setHidden:true];
-    [_Mob7Field setHidden:true]; [_Mob7Label setHidden:true];
-    [_Mob8Field setHidden:true]; [_Mob8Label setHidden:true];
-    [_Mob9Field setHidden:true]; [_Mob9Label setHidden:true];
-    [_Mob10Field setHidden:true]; [_Mob10Label setHidden:true];
-    [_Mob11Field setHidden:true]; [_Mob11Label setHidden:true];
-    [_Mob12Field setHidden:true]; [_Mob12Label setHidden:true];
-    [_Mob13Field setHidden:true]; [_Mob13Label setHidden:true];
-    [_Mob14Field setHidden:true]; [_Mob14Label setHidden:true];
-    [_Mob15Field setHidden:true]; [_Mob15Label setHidden:true];
-    [_Mob16Field setHidden:true]; [_Mob16Label setHidden:true];
+    [self hideMobs];
+    [self hideAllies];
 
     [_Order9Num setHidden:true]; [_Order9Field setHidden:true];
     [_Order10Num setHidden:true]; [_Order10Field setHidden:true];
@@ -716,14 +716,7 @@ struct OrderType
     [_Order26Num setHidden:true]; [_Order26Field setHidden:true];
     [_Order27Num setHidden:true]; [_Order27Field setHidden:true];
     [_Order28Num setHidden:true]; [_Order28Field setHidden:true];
-    
-    [_Ally1Field setHidden:true]; [_Ally2Field setHidden:true];
-    [_Ally3Field setHidden:true]; [_Ally4Field setHidden:true];
-    [_Ally1Label setHidden:true]; [_Ally2Label setHidden:true];
-    [_Ally3Label setHidden:true]; [_Ally4Label setHidden:true];
-    [_Ally1Bonus setHidden:true]; [_Ally2Bonus setHidden:true];
-    [_Ally3Bonus setHidden:true]; [_Ally4Bonus setHidden:true];
-    
+          
 }
 
 - (void)hideAllies {
@@ -739,7 +732,9 @@ struct OrderType
     for(int i = 0; i < MOB_SIZE; i++)
     {
         [MobLabelArr[i] setHidden:true];
+        [MobBonusArr[i] setHidden:true];
         [MobFieldArr[i] setHidden:true];
+        [SymbolCheckArr[0][i] setHidden:true];
     }
 }
 
