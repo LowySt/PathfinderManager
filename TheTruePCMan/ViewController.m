@@ -145,6 +145,15 @@ struct OrderType
     
     NSMutableArray *order = [[NSMutableArray alloc] init];
     
+    turnsInRound = (int)num + PARTY_SIZE;
+    numberOfTurns1 = 0;
+    [_Counter1Name setStringValue:@""]; [_Counter1Value setStringValue:@""];
+    numberOfTurns2 = 0;
+    [_Counter2Name setStringValue:@""]; [_Counter2Value setStringValue:@""];
+    numberOfTurns3 = 0;
+    [_Counter3Name setStringValue:@""]; [_Counter3Value setStringValue:@""];
+    numberOfTurns4 = 0;
+    [_Counter4Name setStringValue:@""]; [_Counter4Value setStringValue:@""];
     currentTurnIdx = 1;
     
     struct OrderType h1;
@@ -155,20 +164,30 @@ struct OrderType
         [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
     }
     
-    for(int i = 0; i < MOB_SIZE; i++)
+    for(int i = 0; i < mobNum; i++)
     {
-        h1.name = [MobLabelArr[i] stringValue];
+        //FUCKED!
+        /*
+        if(SymbolCheckArr[0][i].state == NSControlStateValueOn)
+        {
+            h1.name = [[MobLabelArr[i] stringValue]
+                       stringByAppendingFormat:@"%@",
+                       SymbolCheckArr[0][i].title];
+        }
+        else {*/
+            h1.name = [MobLabelArr[i] stringValue];
+        //}
         h1.v = [MobFieldArr[i] integerValue];
         [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
     }
 
-    for(int i = 0; i < ALLY_SIZE; i++)
+    for(int i = 0; i < allyNum; i++)
     {
         h1.name = [AllyLabelArr[i] stringValue];
         h1.v = [AllyFieldArr[i] integerValue];
         [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
     }
-        
+    
     [order sortUsingComparator:^(id obj1, id obj2) {
         struct OrderType a; [obj1 getValue:&a];
         struct OrderType b; [obj2 getValue:&b];
@@ -212,7 +231,68 @@ struct OrderType
     { currentTurnIdx = 1; }
     else { currentTurnIdx += 1; }
     
+    if(isCounter1Counting == true) {
+        numberOfTurns1 += 1;
+        if(numberOfTurns1 == turnsInRound)
+        { numberOfTurns1 = 0; [self advanceTimer:_Counter1Name v:_Counter1Value i:1]; }
+    }
+    
+    if(isCounter2Counting == true) {
+        numberOfTurns2 += 1;
+        if(numberOfTurns2 == turnsInRound)
+        { numberOfTurns2 = 0; [self advanceTimer:_Counter2Name v:_Counter2Value i:2]; }
+    }
+
+    if(isCounter3Counting == true) {
+        numberOfTurns3 += 1;
+        if(numberOfTurns3 == turnsInRound)
+        { numberOfTurns3 = 0; [self advanceTimer:_Counter3Name v:_Counter3Value i:3]; }
+    }
+
+    if(isCounter4Counting == true) {
+        numberOfTurns4 += 1;
+        if(numberOfTurns4 == turnsInRound)
+        { numberOfTurns4 = 0; [self advanceTimer:_Counter4Name v:_Counter4Value i:4]; }
+    }
+
+    
     [self setCurrentTurn];
+}
+
+- (void)advanceTimer:(NSTextField *)f v:(NSTextField *)v i:(int)i{
+    int currValue = [v intValue];
+    currValue -= 1;
+    
+    if(currValue == 0) {
+        switch(i) {
+            case 1: isCounter1Counting = false; break;
+            case 2: isCounter2Counting = false; break;
+            case 3: isCounter3Counting = false; break;
+            case 4: isCounter4Counting = false; break;
+        }
+        
+        [f setStringValue:@""];
+        [v setStringValue:@""];
+    }
+    else {
+        [v setIntValue:currValue];
+    }
+}
+
+- (void)counter1Button {
+    isCounter1Counting = true;
+}
+
+- (void)counter2Button {
+    isCounter2Counting = true;
+}
+
+- (void)counter3Button {
+    isCounter3Counting = true;
+}
+
+- (void)counter4Button {
+    isCounter4Counting = true;
 }
 
 - (void)initialization {
@@ -221,6 +301,16 @@ struct OrderType
     MOB_SIZE = 16;
     ALLY_SIZE = 4;
     ORDER_SIZE = 28;
+    
+    numberOfTurns1 = 0;
+    numberOfTurns2 = 0;
+    numberOfTurns3 = 0;
+    numberOfTurns4 = 0;
+    turnsInRound = 0;
+    isCounter1Counting = false;
+    isCounter2Counting = false;
+    isCounter3Counting = false;
+    isCounter4Counting = false;
     
     OrderFieldArr[0] = _Order1Field; OrderFieldArr[1] = _Order2Field;
     OrderFieldArr[2] = _Order3Field; OrderFieldArr[3] = _Order4Field;
@@ -316,6 +406,10 @@ struct OrderType
     [_InitiativeRollButton setTitle:@"Roll"];
     [_SetOrderButton setTitle:@"Set"];
     [_AdvanceTurnButton setTitle:@"Next"];
+    [_Counter1Button setTitle:@"Go"];
+    [_Counter2Button setTitle:@"Go"];
+    [_Counter3Button setTitle:@"Go"];
+    [_Counter4Button setTitle:@"Go"];
     
     int yPos = 810;
     for(int i = 0; i < MOB_SIZE; i++)
@@ -325,7 +419,25 @@ struct OrderType
     }
     
     setField(_InitiativeRollButton, CGPointMake(420, 836));
-        
+    setField(_Counter1Button, CGPointMake(180, 803));
+    setField(_Counter2Button, CGPointMake(180, 763));
+    setField(_Counter3Button, CGPointMake(180, 723));
+    setField(_Counter4Button, CGPointMake(180, 683));
+    
+    setField(_Counter1Value, CGPointMake(145, 810));
+    setICF(_Counter1Name, _Counter1Label, "Counter 1",
+           CGPointMake(45, 810), LABEL_UP);
+    setField(_Counter2Value, CGPointMake(145, 770));
+    setICF(_Counter2Name, _Counter2Label, "Counter 2",
+           CGPointMake(45, 770), LABEL_UP);
+    setField(_Counter3Value, CGPointMake(145, 730));
+    setICF(_Counter3Name, _Counter3Label, "Counter 3",
+           CGPointMake(45, 730), LABEL_UP);
+    setField(_Counter4Value, CGPointMake(145, 690));
+    setICF(_Counter4Name, _Counter4Label, "Counter 4",
+           CGPointMake(45, 690), LABEL_UP);
+
+    
     setICF(_MobNumberSel, _MobNumberLabel, "Enemy Count",
            CGPointMake(315, 840), LABEL_UP);
     
@@ -374,12 +486,12 @@ struct OrderType
     setField(_Mob14Field, CGPointMake(405, 420));
     setField(_Mob15Field, CGPointMake(405, 390));
     setField(_Mob16Field, CGPointMake(405, 360));
-
-    setICF(_Ally1Bonus, _Ally1Label, "Ally 1", CGPointMake(525, 560), LABEL_LEFT);
-    setICF(_Ally2Bonus, _Ally2Label, "Ally 2", CGPointMake(525, 530), LABEL_LEFT);
-    setICF(_Ally3Bonus, _Ally3Label, "Ally 3", CGPointMake(525, 500), LABEL_LEFT);
-    setICF(_Ally4Bonus, _Ally4Label, "Ally 4", CGPointMake(525, 470), LABEL_LEFT);
     
+    setICF(_Ally1Bonus, _Ally1Label, "Ally 1      ", CGPointMake(525, 560), LABEL_LEFT);
+    setICF(_Ally2Bonus, _Ally2Label, "Ally 2      ", CGPointMake(525, 530), LABEL_LEFT);
+    setICF(_Ally3Bonus, _Ally3Label, "Ally 3      ", CGPointMake(525, 500), LABEL_LEFT);
+    setICF(_Ally4Bonus, _Ally4Label, "Ally 4      ", CGPointMake(525, 470), LABEL_LEFT);
+        
     setField(_Ally1Field, CGPointMake(565, 560));
     setField(_Ally2Field, CGPointMake(565, 530));
     setField(_Ally3Field, CGPointMake(565, 500));
@@ -394,7 +506,9 @@ struct OrderType
     mask0(_RaceTraitsField);
 
     mask0(_MobNumberSel); mask0(_InitiativeRollButton);
-    mask0(_AllyNumberSel);
+    mask0(_AllyNumberSel); mask0(_Counter1Button);
+    mask0(_Counter2Button); mask0(_Counter3Button);
+    mask0(_Counter4Button);
     
     mask0(_Mob1Field); mask0(_Mob2Field); mask0(_Mob3Field); mask0(_Mob4Field);
     mask0(_Mob5Field); mask0(_Mob6Field); mask0(_Mob7Field); mask0(_Mob8Field);
@@ -548,86 +662,93 @@ struct OrderType
     [_Order21Field setAlignment:NSTextAlignmentLeft];
     [_Order22Field setAlignment:NSTextAlignmentLeft];
     
-    [_Order1Num setAlignment:NSTextAlignmentLeft];
-    [_Order2Num setAlignment:NSTextAlignmentLeft];
-    [_Order3Num setAlignment:NSTextAlignmentLeft];
-    [_Order4Num setAlignment:NSTextAlignmentLeft];
-    [_Order5Num setAlignment:NSTextAlignmentLeft];
-    [_Order6Num setAlignment:NSTextAlignmentLeft];
-    [_Order7Num setAlignment:NSTextAlignmentLeft];
-    [_Order8Num setAlignment:NSTextAlignmentLeft];
-    [_Order9Num setAlignment:NSTextAlignmentLeft];
-    [_Order10Num setAlignment:NSTextAlignmentLeft];
-    [_Order11Num setAlignment:NSTextAlignmentLeft];
-    [_Order12Num setAlignment:NSTextAlignmentLeft];
-    [_Order13Num setAlignment:NSTextAlignmentLeft];
-    [_Order14Num setAlignment:NSTextAlignmentLeft];
-    [_Order15Num setAlignment:NSTextAlignmentLeft];
-    [_Order16Num setAlignment:NSTextAlignmentLeft];
-    [_Order17Num setAlignment:NSTextAlignmentLeft];
-    [_Order18Num setAlignment:NSTextAlignmentLeft];
-    [_Order19Num setAlignment:NSTextAlignmentLeft];
-    [_Order20Num setAlignment:NSTextAlignmentLeft];
-    [_Order21Num setAlignment:NSTextAlignmentLeft];
-    [_Order22Num setAlignment:NSTextAlignmentLeft];
-    [_Order23Num setAlignment:NSTextAlignmentLeft];
-    [_Order24Num setAlignment:NSTextAlignmentLeft];
-    [_Order25Num setAlignment:NSTextAlignmentLeft];
-    [_Order26Num setAlignment:NSTextAlignmentLeft];
-    [_Order27Num setAlignment:NSTextAlignmentLeft];
-    [_Order28Num setAlignment:NSTextAlignmentLeft];
+    [_Order1Num setAlignment:NSTextAlignmentCenter];
+    [_Order2Num setAlignment:NSTextAlignmentCenter];
+    [_Order3Num setAlignment:NSTextAlignmentCenter];
+    [_Order4Num setAlignment:NSTextAlignmentCenter];
+    [_Order5Num setAlignment:NSTextAlignmentCenter];
+    [_Order6Num setAlignment:NSTextAlignmentCenter];
+    [_Order7Num setAlignment:NSTextAlignmentCenter];
+    [_Order8Num setAlignment:NSTextAlignmentCenter];
+    [_Order9Num setAlignment:NSTextAlignmentCenter];
+    [_Order10Num setAlignment:NSTextAlignmentCenter];
+    [_Order11Num setAlignment:NSTextAlignmentCenter];
+    [_Order12Num setAlignment:NSTextAlignmentCenter];
+    [_Order13Num setAlignment:NSTextAlignmentCenter];
+    [_Order14Num setAlignment:NSTextAlignmentCenter];
+    [_Order15Num setAlignment:NSTextAlignmentCenter];
+    [_Order16Num setAlignment:NSTextAlignmentCenter];
+    [_Order17Num setAlignment:NSTextAlignmentCenter];
+    [_Order18Num setAlignment:NSTextAlignmentCenter];
+    [_Order19Num setAlignment:NSTextAlignmentCenter];
+    [_Order20Num setAlignment:NSTextAlignmentCenter];
+    [_Order21Num setAlignment:NSTextAlignmentCenter];
+    [_Order22Num setAlignment:NSTextAlignmentCenter];
+    [_Order23Num setAlignment:NSTextAlignmentCenter];
+    [_Order24Num setAlignment:NSTextAlignmentCenter];
+    [_Order25Num setAlignment:NSTextAlignmentCenter];
+    [_Order26Num setAlignment:NSTextAlignmentCenter];
+    [_Order27Num setAlignment:NSTextAlignmentCenter];
+    [_Order28Num setAlignment:NSTextAlignmentCenter];
     
-    [_Mob1Field setAlignment:NSTextAlignmentLeft];
-    [_Mob2Field setAlignment:NSTextAlignmentLeft];
-    [_Mob3Field setAlignment:NSTextAlignmentLeft];
-    [_Mob4Field setAlignment:NSTextAlignmentLeft];
-    [_Mob5Field setAlignment:NSTextAlignmentLeft];
-    [_Mob6Field setAlignment:NSTextAlignmentLeft];
-    [_Mob7Field setAlignment:NSTextAlignmentLeft];
-    [_Mob8Field setAlignment:NSTextAlignmentLeft];
-    [_Mob9Field setAlignment:NSTextAlignmentLeft];
-    [_Mob10Field setAlignment:NSTextAlignmentLeft];
-    [_Mob11Field setAlignment:NSTextAlignmentLeft];
-    [_Mob12Field setAlignment:NSTextAlignmentLeft];
-    [_Mob13Field setAlignment:NSTextAlignmentLeft];
-    [_Mob14Field setAlignment:NSTextAlignmentLeft];
-    [_Mob15Field setAlignment:NSTextAlignmentLeft];
-    [_Mob16Field setAlignment:NSTextAlignmentLeft];
+    [_Mob1Field setAlignment:NSTextAlignmentCenter];
+    [_Mob2Field setAlignment:NSTextAlignmentCenter];
+    [_Mob3Field setAlignment:NSTextAlignmentCenter];
+    [_Mob4Field setAlignment:NSTextAlignmentCenter];
+    [_Mob5Field setAlignment:NSTextAlignmentCenter];
+    [_Mob6Field setAlignment:NSTextAlignmentCenter];
+    [_Mob7Field setAlignment:NSTextAlignmentCenter];
+    [_Mob8Field setAlignment:NSTextAlignmentCenter];
+    [_Mob9Field setAlignment:NSTextAlignmentCenter];
+    [_Mob10Field setAlignment:NSTextAlignmentCenter];
+    [_Mob11Field setAlignment:NSTextAlignmentCenter];
+    [_Mob12Field setAlignment:NSTextAlignmentCenter];
+    [_Mob13Field setAlignment:NSTextAlignmentCenter];
+    [_Mob14Field setAlignment:NSTextAlignmentCenter];
+    [_Mob15Field setAlignment:NSTextAlignmentCenter];
+    [_Mob16Field setAlignment:NSTextAlignmentCenter];
     
-    [_Mob1Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob2Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob3Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob4Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob5Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob6Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob7Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob8Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob9Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob10Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob11Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob12Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob13Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob14Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob15Bonus setAlignment:NSTextAlignmentLeft];
-    [_Mob16Bonus setAlignment:NSTextAlignmentLeft];
+    [_Mob1Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob2Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob3Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob4Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob5Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob6Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob7Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob8Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob9Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob10Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob11Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob12Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob13Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob14Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob15Bonus setAlignment:NSTextAlignmentCenter];
+    [_Mob16Bonus setAlignment:NSTextAlignmentCenter];
     
-    [_Hero1Field setAlignment:NSTextAlignmentLeft];
-    [_Hero2Field setAlignment:NSTextAlignmentLeft];
-    [_Hero3Field setAlignment:NSTextAlignmentLeft];
-    [_Hero4Field setAlignment:NSTextAlignmentLeft];
-    [_Hero5Field setAlignment:NSTextAlignmentLeft];
-    [_Hero6Field setAlignment:NSTextAlignmentLeft];
+    [_Hero1Field setAlignment:NSTextAlignmentCenter];
+    [_Hero2Field setAlignment:NSTextAlignmentCenter];
+    [_Hero3Field setAlignment:NSTextAlignmentCenter];
+    [_Hero4Field setAlignment:NSTextAlignmentCenter];
+    [_Hero5Field setAlignment:NSTextAlignmentCenter];
+    [_Hero6Field setAlignment:NSTextAlignmentCenter];
+    [_Hero7Field setAlignment:NSTextAlignmentCenter];
+    [_Hero8Field setAlignment:NSTextAlignmentCenter];
     
-    [_Ally1Field setAlignment:NSTextAlignmentLeft];
-    [_Ally2Field setAlignment:NSTextAlignmentLeft];
-    [_Ally3Field setAlignment:NSTextAlignmentLeft];
-    [_Ally4Field setAlignment:NSTextAlignmentLeft];
+    [_Ally1Field setAlignment:NSTextAlignmentCenter];
+    [_Ally2Field setAlignment:NSTextAlignmentCenter];
+    [_Ally3Field setAlignment:NSTextAlignmentCenter];
+    [_Ally4Field setAlignment:NSTextAlignmentCenter];
     
-    [_Ally1Bonus setAlignment:NSTextAlignmentLeft];
-    [_Ally2Bonus setAlignment:NSTextAlignmentLeft];
-    [_Ally3Bonus setAlignment:NSTextAlignmentLeft];
-    [_Ally4Bonus setAlignment:NSTextAlignmentLeft];
+    [_Ally1Bonus setAlignment:NSTextAlignmentCenter];
+    [_Ally2Bonus setAlignment:NSTextAlignmentCenter];
+    [_Ally3Bonus setAlignment:NSTextAlignmentCenter];
+    [_Ally4Bonus setAlignment:NSTextAlignmentCenter];
 
+    [_Counter1Name setAlignment:NSTextAlignmentLeft];
+    [_Counter1Value setAlignment:NSTextAlignmentCenter];
+    [_Counter2Value setAlignment:NSTextAlignmentCenter];
+    [_Counter3Value setAlignment:NSTextAlignmentCenter];
+    [_Counter4Value setAlignment:NSTextAlignmentCenter];
 }
 
 - (void)setAllUneditable {
@@ -684,6 +805,28 @@ struct OrderType
 }
 
 - (void)showOrderFields:(NSInteger)num {
+    
+    [_Order9Num setHidden:true]; [_Order9Field setHidden:true];
+    [_Order10Num setHidden:true]; [_Order10Field setHidden:true];
+    [_Order11Num setHidden:true]; [_Order11Field setHidden:true];
+    [_Order12Num setHidden:true]; [_Order12Field setHidden:true];
+    [_Order13Num setHidden:true]; [_Order13Field setHidden:true];
+    [_Order14Num setHidden:true]; [_Order14Field setHidden:true];
+    [_Order15Num setHidden:true]; [_Order15Field setHidden:true];
+    [_Order16Num setHidden:true]; [_Order16Field setHidden:true];
+    [_Order17Num setHidden:true]; [_Order17Field setHidden:true];
+    [_Order18Num setHidden:true]; [_Order18Field setHidden:true];
+    [_Order19Num setHidden:true]; [_Order19Field setHidden:true];
+    [_Order20Num setHidden:true]; [_Order20Field setHidden:true];
+    [_Order21Num setHidden:true]; [_Order21Field setHidden:true];
+    [_Order22Num setHidden:true]; [_Order22Field setHidden:true];
+    [_Order23Num setHidden:true]; [_Order23Field setHidden:true];
+    [_Order24Num setHidden:true]; [_Order24Field setHidden:true];
+    [_Order25Num setHidden:true]; [_Order25Field setHidden:true];
+    [_Order26Num setHidden:true]; [_Order26Field setHidden:true];
+    [_Order27Num setHidden:true]; [_Order27Field setHidden:true];
+    [_Order28Num setHidden:true]; [_Order28Field setHidden:true];
+    
     for(int i = 0; i < num + PARTY_SIZE; i++)
     {
         [OrderNumArr[i] setHidden:false];
@@ -736,6 +879,33 @@ struct OrderType
         [MobFieldArr[i] setHidden:true];
         [SymbolCheckArr[0][i] setHidden:true];
     }
+}
+
+- (void)setMobLabels {
+    
+    [_Mob1Label setStringValue:@"Enemy 1"];
+    [_Mob2Label setStringValue:@"Enemy 2"];
+    [_Mob3Label setStringValue:@"Enemy 3"];
+    [_Mob4Label setStringValue:@"Enemy 4"];
+    [_Mob5Label setStringValue:@"Enemy 5"];
+    [_Mob6Label setStringValue:@"Enemy 6"];
+    [_Mob7Label setStringValue:@"Enemy 7"];
+    [_Mob8Label setStringValue:@"Enemy 8"];
+    [_Mob9Label setStringValue:@"Enemy 9"];
+    [_Mob10Label setStringValue:@"Enemy 10"];
+    [_Mob11Label setStringValue:@"Enemy 11"];
+    [_Mob12Label setStringValue:@"Enemy 12"];
+    [_Mob13Label setStringValue:@"Enemy 13"];
+    [_Mob14Label setStringValue:@"Enemy 14"];
+    [_Mob15Label setStringValue:@"Enemy 15"];
+    [_Mob16Label setStringValue:@"Enemy 16"];
+}
+
+- (void)setAllyLabels {
+    [_Ally1Label setStringValue:@"Ally 1"];
+    [_Ally2Label setStringValue:@"Ally 2"];
+    [_Ally3Label setStringValue:@"Ally 3"];
+    [_Ally4Label setStringValue:@"Ally 4"];
 }
 
 - (void)viewDidLoad {
@@ -821,10 +991,18 @@ struct OrderType
     [_ExpField setStringValue:@"0"];
     [_NextXPField setIntegerValue:1300];
     [_XPCurveSel selectItemAtIndex:0];
-        
+    
     [_InitiativeRollButton setAction:NSSelectorFromString(@"rollInitiative")];
     [_SetOrderButton setAction:NSSelectorFromString(@"setOrder")];
     [_AdvanceTurnButton setAction:NSSelectorFromString(@"advanceTurn")];
+    [_Counter1Button setAction:NSSelectorFromString(@"counter1Button")];
+    [_Counter2Button setAction:NSSelectorFromString(@"counter2Button")];
+    [_Counter3Button setAction:NSSelectorFromString(@"counter3Button")];
+    [_Counter4Button setAction:NSSelectorFromString(@"counter4Button")];
+    
+    /*
+    for(int i = 0; i < MOB_SIZE; i++)
+    { [SymbolCheckArr[0][i] setAction:@selector(setSymbol:)]; }*/
     
     [_Mob1Bonus setIntegerValue:0]; [_Mob2Bonus setIntegerValue:0];
     [_Mob3Bonus setIntegerValue:0]; [_Mob4Bonus setIntegerValue:0];

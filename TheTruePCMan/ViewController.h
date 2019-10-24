@@ -11,6 +11,16 @@
 @interface ViewController : NSViewController {
 
     int currentTurnIdx;
+    int turnsInRound;
+    
+    bool isCounter1Counting;
+    int numberOfTurns1;
+    bool isCounter2Counting;
+    int numberOfTurns2;
+    bool isCounter3Counting;
+    int numberOfTurns3;
+    bool isCounter4Counting;
+    int numberOfTurns4;
     
     @public int PARTY_SIZE;
     @public int MOB_SIZE;
@@ -38,6 +48,8 @@
 - (void)hideFields;
 - (void)hideAllies;
 - (void)hideMobs;
+- (void)setMobLabels;
+- (void)setAllyLabels;
 - (void)changePos:(int)oldPos newPos:(int)newPos;
 
 @property (strong) IBOutlet NSView *MainView;
@@ -334,6 +346,27 @@
 
 @property (weak) IBOutlet NSButton *AdvanceTurnButton;
 @property (weak) IBOutlet NSTextField *CurrentTurnField;
+
+@property (weak) IBOutlet NSTextField *Counter1Label;
+@property (weak) IBOutlet NSTextField *Counter1Name;
+@property (weak) IBOutlet NSTextField *Counter1Value;
+@property (weak) IBOutlet NSButton *Counter1Button;
+
+@property (weak) IBOutlet NSTextField *Counter2Label;
+@property (weak) IBOutlet NSTextField *Counter2Name;
+@property (weak) IBOutlet NSTextField *Counter2Value;
+@property (weak) IBOutlet NSButton *Counter2Button;
+
+@property (weak) IBOutlet NSTextField *Counter3Label;
+@property (weak) IBOutlet NSTextField *Counter3Name;
+@property (weak) IBOutlet NSTextField *Counter3Value;
+@property (weak) IBOutlet NSButton *Counter3Button;
+
+@property (weak) IBOutlet NSTextField *Counter4Label;
+@property (weak) IBOutlet NSTextField *Counter4Name;
+@property (weak) IBOutlet NSTextField *Counter4Value;
+@property (weak) IBOutlet NSButton *Counter4Button;
+
 
 @end
 

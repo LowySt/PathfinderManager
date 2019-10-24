@@ -14,6 +14,44 @@
 
 @implementation AppDelegate
 
+- (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector {
+    
+    ViewController *v = (ViewController *) NSApplication.sharedApplication.orderedWindows.firstObject.contentViewController;
+    
+    if (commandSelector == @selector(insertNewline:)) {
+        // Do something against ENTER key
+        NSInteger allyNum = [v.AllyNumberSel indexOfSelectedItem];
+        NSInteger mobNum = [v.MobNumberSel indexOfSelectedItem];
+        
+        for(int i = 0; i < allyNum; i++) {
+            
+            //NOTE: WHAT THE ACTUAL FUCK!?
+            if([control.identifier isEqual:v->AllyLabelArr[i].identifier]) {
+                if((i + 1) == allyNum) { return YES; }
+                [v->AllyLabelArr[i+1] setStringValue:@""];
+                [control.window makeFirstResponder:v->AllyLabelArr[i+1]];
+                return YES;
+            }
+        }
+
+        for(int i = 0; i < mobNum; i++) {
+            
+            if(control.identifier == v->MobLabelArr[i].identifier) {
+                if((i + 1) == mobNum) { return YES; }
+                [v->MobLabelArr[i+1] setStringValue:@""];
+                [control.window makeFirstResponder:v->MobLabelArr[i+1]];
+                return YES;
+            }
+        }
+        
+        [control.window makeFirstResponder:control.window];
+        return YES;
+    }
+    
+    // return true if the action was handled; otherwise false
+    return NO;
+}
+
 - (void)controlTextDidChange:(NSNotification *)obj {
    ViewController *v = (ViewController *) NSApplication.sharedApplication.orderedWindows.firstObject.contentViewController;
     
@@ -36,7 +74,7 @@
     { [v.WISBonus setStringValue:ab]; }
     else if(t.identifier == v.CHAField.identifier)
     { [v.CHABonus setStringValue:ab]; }
-    
+
 }
 
 - (void)controlTextDidEndEditing:(NSNotification *)obj {
@@ -243,6 +281,7 @@
         NSInteger num = [v.MobNumberSel indexOfSelectedItem];
         
         [v hideMobs];
+        [v setMobLabels];
         
         for(int i = 0; i < num; i++)
         {
@@ -262,6 +301,7 @@
         NSInteger num = [v.AllyNumberSel indexOfSelectedItem];
         
         [v hideAllies];
+        [v setAllyLabels];
         
         for(int i = 0; i < num; i++)
         {
@@ -337,9 +377,14 @@
     [v.FeatsTable setDelegate:self];
     [v.MobNumberSel setDelegate:self];
     [v.AllyNumberSel setDelegate:self];
+        
+    for(int i = 0; i < v->MOB_SIZE; i++)
+    { [v->MobLabelArr[i] setDelegate:self]; }
     
-    const int ORDER_SIZE = 28;
-    for(int i = 0; i < ORDER_SIZE; i++)
+    for(int i = 0; i < v->ALLY_SIZE; i++)
+    { [v->AllyLabelArr[i] setDelegate:self]; }
+    
+    for(int i = 0; i < v->ORDER_SIZE; i++)
     { [v->OrderNumArr[i] setDelegate:self]; }
        
     
