@@ -41,6 +41,7 @@
     
     @public NSTextField * __strong OrderNumArr[28];
     @public NSTextField * __strong OrderFieldArr[28];
+    @public NSButton * __strong OrderRemoveArr[28];
 }
 
 - (void)showOrderFields:(NSInteger)num;
@@ -260,87 +261,115 @@
 
 @property (weak) IBOutlet NSTextField *Order1Num;
 @property (weak) IBOutlet NSTextField *Order1Field;
+@property (weak) IBOutlet NSButton *Order1Remove;
 
 @property (weak) IBOutlet NSTextField *Order2Num;
 @property (weak) IBOutlet NSTextField *Order2Field;
+@property (weak) IBOutlet NSButton *Order2Remove;
 
 @property (weak) IBOutlet NSTextField *Order3Num;
 @property (weak) IBOutlet NSTextField *Order3Field;
+@property (weak) IBOutlet NSButton *Order3Remove;
 
 @property (weak) IBOutlet NSTextField *Order4Num;
 @property (weak) IBOutlet NSTextField *Order4Field;
+@property (weak) IBOutlet NSButton *Order4Remove;
 
 @property (weak) IBOutlet NSTextField *Order5Num;
 @property (weak) IBOutlet NSTextField *Order5Field;
+@property (weak) IBOutlet NSButton *Order5Remove;
 
 @property (weak) IBOutlet NSTextField *Order6Num;
 @property (weak) IBOutlet NSTextField *Order6Field;
+@property (weak) IBOutlet NSButton *Order6Remove;
 
 @property (weak) IBOutlet NSTextField *Order7Num;
 @property (weak) IBOutlet NSTextField *Order7Field;
+@property (weak) IBOutlet NSButton *Order7Remove;
 
 @property (weak) IBOutlet NSTextField *Order8Num;
 @property (weak) IBOutlet NSTextField *Order8Field;
+@property (weak) IBOutlet NSButton *Order8Remove;
 
 @property (weak) IBOutlet NSTextField *Order9Num;
 @property (weak) IBOutlet NSTextField *Order9Field;
+@property (weak) IBOutlet NSButton *Order9Remove;
 
 @property (weak) IBOutlet NSTextField *Order10Num;
 @property (weak) IBOutlet NSTextField *Order10Field;
+@property (weak) IBOutlet NSButton *Order10Remove;
 
 @property (weak) IBOutlet NSTextField *Order11Num;
 @property (weak) IBOutlet NSTextField *Order11Field;
+@property (weak) IBOutlet NSButton *Order11Remove;
 
 @property (weak) IBOutlet NSTextField *Order12Num;
 @property (weak) IBOutlet NSTextField *Order12Field;
+@property (weak) IBOutlet NSButton *Order12Remove;
 
 @property (weak) IBOutlet NSTextField *Order13Num;
 @property (weak) IBOutlet NSTextField *Order13Field;
+@property (weak) IBOutlet NSButton *Order13Remove;
 
 @property (weak) IBOutlet NSTextField *Order14Num;
 @property (weak) IBOutlet NSTextField *Order14Field;
+@property (weak) IBOutlet NSButton *Order14Remove;
 
 @property (weak) IBOutlet NSTextField *Order15Num;
 @property (weak) IBOutlet NSTextField *Order15Field;
+@property (weak) IBOutlet NSButton *Order15Remove;
 
 @property (weak) IBOutlet NSTextField *Order16Num;
 @property (weak) IBOutlet NSTextField *Order16Field;
+@property (weak) IBOutlet NSButton *Order16Remove;
 
 @property (weak) IBOutlet NSTextField *Order17Num;
 @property (weak) IBOutlet NSTextField *Order17Field;
+@property (weak) IBOutlet NSButton *Order17Remove;
 
 @property (weak) IBOutlet NSTextField *Order18Num;
 @property (weak) IBOutlet NSTextField *Order18Field;
+@property (weak) IBOutlet NSButton *Order18Remove;
 
 @property (weak) IBOutlet NSTextField *Order19Num;
 @property (weak) IBOutlet NSTextField *Order19Field;
+@property (weak) IBOutlet NSButton *Order19Remove;
 
 @property (weak) IBOutlet NSTextField *Order20Num;
 @property (weak) IBOutlet NSTextField *Order20Field;
+@property (weak) IBOutlet NSButton *Order20Remove;
 
 @property (weak) IBOutlet NSTextField *Order21Num;
 @property (weak) IBOutlet NSTextField *Order21Field;
+@property (weak) IBOutlet NSButton *Order21Remove;
 
 @property (weak) IBOutlet NSTextField *Order22Num;
 @property (weak) IBOutlet NSTextField *Order22Field;
+@property (weak) IBOutlet NSButton *Order22Remove;
 
 @property (weak) IBOutlet NSTextField *Order23Num;
 @property (weak) IBOutlet NSTextField *Order23Field;
+@property (weak) IBOutlet NSButton *Order23Remove;
 
 @property (weak) IBOutlet NSTextField *Order24Num;
 @property (weak) IBOutlet NSTextField *Order24Field;
+@property (weak) IBOutlet NSButton *Order24Remove;
 
 @property (weak) IBOutlet NSTextField *Order25Num;
 @property (weak) IBOutlet NSTextField *Order25Field;
+@property (weak) IBOutlet NSButton *Order25Remove;
 
 @property (weak) IBOutlet NSTextField *Order26Num;
 @property (weak) IBOutlet NSTextField *Order26Field;
+@property (weak) IBOutlet NSButton *Order26Remove;
 
 @property (weak) IBOutlet NSTextField *Order27Num;
 @property (weak) IBOutlet NSTextField *Order27Field;
+@property (weak) IBOutlet NSButton *Order27Remove;
 
 @property (weak) IBOutlet NSTextField *Order28Num;
 @property (weak) IBOutlet NSTextField *Order28Field;
+@property (weak) IBOutlet NSButton *Order28Remove;
 
 @property (weak) IBOutlet NSButton *SetOrderButton;
 

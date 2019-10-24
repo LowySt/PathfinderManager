@@ -295,6 +295,15 @@ struct OrderType
     isCounter4Counting = true;
 }
 
+- (void)removeFromOrder:(NSButton *)button {
+    for(int i = 0; i < ORDER_SIZE; i++) {
+        
+        if([button.identifier isEqual:OrderRemoveArr[i].identifier]) {
+            NSLog(@"Remove Button number: %d\n", i);
+        }
+    }
+}
+
 - (void)initialization {
     
     PARTY_SIZE = 8;
@@ -341,6 +350,21 @@ struct OrderType
     OrderNumArr[22] = _Order23Num; OrderNumArr[23] = _Order24Num;
     OrderNumArr[24] = _Order25Num; OrderNumArr[25] = _Order26Num;
     OrderNumArr[26] = _Order27Num; OrderNumArr[27] = _Order28Num;
+    
+    OrderRemoveArr[0] = _Order1Remove; OrderRemoveArr[1] = _Order2Remove;
+    OrderRemoveArr[2] = _Order3Remove; OrderRemoveArr[3] = _Order4Remove;
+    OrderRemoveArr[4] = _Order5Remove; OrderRemoveArr[5] = _Order6Remove;
+    OrderRemoveArr[6] = _Order7Remove; OrderRemoveArr[7] = _Order8Remove;
+    OrderRemoveArr[8] = _Order9Remove; OrderRemoveArr[9] = _Order10Remove;
+    OrderRemoveArr[10] = _Order11Remove; OrderRemoveArr[11] = _Order12Remove;
+    OrderRemoveArr[12] = _Order13Remove; OrderRemoveArr[13] = _Order14Remove;
+    OrderRemoveArr[14] = _Order15Remove; OrderRemoveArr[15] = _Order16Remove;
+    OrderRemoveArr[16] = _Order17Remove; OrderRemoveArr[17] = _Order18Remove;
+    OrderRemoveArr[18] = _Order19Remove; OrderRemoveArr[19] = _Order20Remove;
+    OrderRemoveArr[20] = _Order21Remove; OrderRemoveArr[21] = _Order22Remove;
+    OrderRemoveArr[22] = _Order23Remove; OrderRemoveArr[23] = _Order24Remove;
+    OrderRemoveArr[24] = _Order25Remove; OrderRemoveArr[25] = _Order26Remove;
+    OrderRemoveArr[26] = _Order27Remove; OrderRemoveArr[27] = _Order28Remove;
         
     MobLabelArr[0] = _Mob1Label; MobLabelArr[1] = _Mob2Label;
     MobLabelArr[2] = _Mob3Label; MobLabelArr[3] = _Mob4Label;
@@ -411,7 +435,16 @@ struct OrderType
     [_Counter3Button setTitle:@"Go"];
     [_Counter4Button setTitle:@"Go"];
     
-    int yPos = 810;
+    int yPos = 812;
+    for(int i = 0; i < ORDER_SIZE; i++) {
+    
+        [OrderRemoveArr[i] setTitle:@"X"];
+        [OrderRemoveArr[i] setBordered:false];
+        setField(OrderRemoveArr[i], CGPointMake(625, yPos));
+        yPos -= 25;
+    }
+    
+    yPos = 810;
     for(int i = 0; i < MOB_SIZE; i++)
     {
         setCheck(SymbolCheckArr[0][i], "✩", CGPointMake(275, yPos));
@@ -806,31 +839,20 @@ struct OrderType
 
 - (void)showOrderFields:(NSInteger)num {
     
-    [_Order9Num setHidden:true]; [_Order9Field setHidden:true];
-    [_Order10Num setHidden:true]; [_Order10Field setHidden:true];
-    [_Order11Num setHidden:true]; [_Order11Field setHidden:true];
-    [_Order12Num setHidden:true]; [_Order12Field setHidden:true];
-    [_Order13Num setHidden:true]; [_Order13Field setHidden:true];
-    [_Order14Num setHidden:true]; [_Order14Field setHidden:true];
-    [_Order15Num setHidden:true]; [_Order15Field setHidden:true];
-    [_Order16Num setHidden:true]; [_Order16Field setHidden:true];
-    [_Order17Num setHidden:true]; [_Order17Field setHidden:true];
-    [_Order18Num setHidden:true]; [_Order18Field setHidden:true];
-    [_Order19Num setHidden:true]; [_Order19Field setHidden:true];
-    [_Order20Num setHidden:true]; [_Order20Field setHidden:true];
-    [_Order21Num setHidden:true]; [_Order21Field setHidden:true];
-    [_Order22Num setHidden:true]; [_Order22Field setHidden:true];
-    [_Order23Num setHidden:true]; [_Order23Field setHidden:true];
-    [_Order24Num setHidden:true]; [_Order24Field setHidden:true];
-    [_Order25Num setHidden:true]; [_Order25Field setHidden:true];
-    [_Order26Num setHidden:true]; [_Order26Field setHidden:true];
-    [_Order27Num setHidden:true]; [_Order27Field setHidden:true];
-    [_Order28Num setHidden:true]; [_Order28Field setHidden:true];
+    for(int i = PARTY_SIZE; i < ORDER_SIZE; i++)
+    { [OrderFieldArr[i] setHidden:true]; }
     
+    for(int i = PARTY_SIZE; i < ORDER_SIZE; i++)
+    { [OrderNumArr[i] setHidden:true]; }
+        
+    for(int i = PARTY_SIZE; i < ORDER_SIZE; i++)
+    { [OrderRemoveArr[i] setHidden:true]; }
+
     for(int i = 0; i < num + PARTY_SIZE; i++)
     {
         [OrderNumArr[i] setHidden:false];
         [OrderFieldArr[i] setHidden:false];
+        [OrderRemoveArr[i] setHidden:false];
     }
 }
 
@@ -839,26 +861,14 @@ struct OrderType
     [self hideMobs];
     [self hideAllies];
 
-    [_Order9Num setHidden:true]; [_Order9Field setHidden:true];
-    [_Order10Num setHidden:true]; [_Order10Field setHidden:true];
-    [_Order11Num setHidden:true]; [_Order11Field setHidden:true];
-    [_Order12Num setHidden:true]; [_Order12Field setHidden:true];
-    [_Order13Num setHidden:true]; [_Order13Field setHidden:true];
-    [_Order14Num setHidden:true]; [_Order14Field setHidden:true];
-    [_Order15Num setHidden:true]; [_Order15Field setHidden:true];
-    [_Order16Num setHidden:true]; [_Order16Field setHidden:true];
-    [_Order17Num setHidden:true]; [_Order17Field setHidden:true];
-    [_Order18Num setHidden:true]; [_Order18Field setHidden:true];
-    [_Order19Num setHidden:true]; [_Order19Field setHidden:true];
-    [_Order20Num setHidden:true]; [_Order20Field setHidden:true];
-    [_Order21Num setHidden:true]; [_Order21Field setHidden:true];
-    [_Order22Num setHidden:true]; [_Order22Field setHidden:true];
-    [_Order23Num setHidden:true]; [_Order23Field setHidden:true];
-    [_Order24Num setHidden:true]; [_Order24Field setHidden:true];
-    [_Order25Num setHidden:true]; [_Order25Field setHidden:true];
-    [_Order26Num setHidden:true]; [_Order26Field setHidden:true];
-    [_Order27Num setHidden:true]; [_Order27Field setHidden:true];
-    [_Order28Num setHidden:true]; [_Order28Field setHidden:true];
+    for(int i = PARTY_SIZE; i < ORDER_SIZE; i++)
+    { [OrderFieldArr[i] setHidden:true]; }
+    
+    for(int i = PARTY_SIZE; i < ORDER_SIZE; i++)
+    { [OrderNumArr[i] setHidden:true]; }
+        
+    for(int i = PARTY_SIZE; i < ORDER_SIZE; i++)
+    { [OrderRemoveArr[i] setHidden:true]; }
           
 }
 
@@ -999,6 +1009,9 @@ struct OrderType
     [_Counter2Button setAction:NSSelectorFromString(@"counter2Button")];
     [_Counter3Button setAction:NSSelectorFromString(@"counter3Button")];
     [_Counter4Button setAction:NSSelectorFromString(@"counter4Button")];
+    
+    for(int i = 0; i < ORDER_SIZE; i++)
+    { [OrderRemoveArr[i] setAction:@selector(removeFromOrder:)]; }
     
     /*
     for(int i = 0; i < MOB_SIZE; i++)
