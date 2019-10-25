@@ -143,9 +143,13 @@ struct OrderType
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
     NSInteger num = mobNum + allyNum;
     
+    [self showOrderFields:num];
+    
     NSMutableArray *order = [[NSMutableArray alloc] init];
     
     turnsInRound = (int)num + PARTY_SIZE;
+    removeSize = 0;
+    
     numberOfTurns1 = 0;
     [_Counter1Name setStringValue:@""]; [_Counter1Value setStringValue:@""];
     numberOfTurns2 = 0;
@@ -216,7 +220,7 @@ struct OrderType
 }
 
 - (void)setCurrentTurn {
-    //TODO: Convert currentTurnIdx to be in the range 0..n-1 instead of 0..n
+    //TODO: Convert currentTurnIdx to be in the range 0..n-1 instead of 1..n
     NSTextField *f = OrderFieldArr[currentTurnIdx - 1];
     [_CurrentTurnField setStringValue:[f stringValue]];
 }
@@ -225,7 +229,7 @@ struct OrderType
     //TODO: 0 based index?
     NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
-    NSInteger num = mobNum + allyNum + PARTY_SIZE;
+    NSInteger num = mobNum + allyNum + PARTY_SIZE - removeSize;
     
     if(currentTurnIdx == num)
     { currentTurnIdx = 1; }
@@ -296,10 +300,34 @@ struct OrderType
 }
 
 - (void)removeFromOrder:(NSButton *)button {
+    NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
+    NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
+    NSInteger orderNum = mobNum + allyNum + PARTY_SIZE - removeSize;
+    
     for(int i = 0; i < ORDER_SIZE; i++) {
         
         if([button.identifier isEqual:OrderRemoveArr[i].identifier]) {
-            NSLog(@"Remove Button number: %d\n", i);
+            if(currentTurnIdx == i+1)
+            {
+                if(i == orderNum-1) {
+                    [_CurrentTurnField setStringValue:[OrderFieldArr[0] stringValue]];
+                    currentTurnIdx = 1;
+                }
+                else
+                {
+                    [_CurrentTurnField setStringValue:[OrderFieldArr[i+1] stringValue]];
+                }
+            }
+            
+            if(currentTurnIdx > i+1) { currentTurnIdx -= 1; }
+            
+            for(int j = i; j < orderNum; j++) {
+                [OrderFieldArr[j] setStringValue:[OrderFieldArr[j+1] stringValue]];
+            }
+            [OrderFieldArr[orderNum-1] setHidden:true];
+            [OrderNumArr[orderNum-1] setHidden:true];
+            [OrderRemoveArr[orderNum-1] setHidden:true];
+            removeSize += 1;
         }
     }
 }

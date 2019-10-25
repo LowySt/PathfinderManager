@@ -12,6 +12,7 @@
 
     int currentTurnIdx;
     int turnsInRound;
+    int removeSize;
     
     bool isCounter1Counting;
     int numberOfTurns1;
