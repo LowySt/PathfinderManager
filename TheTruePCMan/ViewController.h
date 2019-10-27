@@ -13,6 +13,7 @@
     int currentTurnIdx;
     int turnsInRound;
     int removeSize;
+    int notInBattle;
     
     bool isCounter1Counting;
     int numberOfTurns1;

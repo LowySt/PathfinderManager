@@ -63,11 +63,11 @@ struct OrderType
 - (void)changePos:(int)oldPos newPos:(int)newPos {
     
     if(oldPos == newPos) { return; }
-    if(newPos > 22) { return; }
+    if(newPos > ORDER_SIZE) { return; }
        
     NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
-    NSInteger num = mobNum + allyNum + PARTY_SIZE;
+    NSInteger num = mobNum + allyNum + PARTY_SIZE - removeSize - notInBattle;
     if(newPos > num) { return; }
 
     NSMutableArray *order = [[NSMutableArray alloc] init];
@@ -142,12 +142,19 @@ struct OrderType
     NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
     NSInteger num = mobNum + allyNum;
-    
+
     [self showOrderFields:num];
     
     NSMutableArray *order = [[NSMutableArray alloc] init];
+
+    notInBattle = 0;
+    for(int i = 0; i < PARTY_SIZE; i++) {
+        if([HeroActiveArr[i] state] == NSControlStateValueOff) {
+            notInBattle += 1;
+        }
+    }
     
-    turnsInRound = (int)num + PARTY_SIZE;
+    turnsInRound = (int)num + PARTY_SIZE - notInBattle;
     removeSize = 0;
     
     numberOfTurns1 = 0;
@@ -163,6 +170,8 @@ struct OrderType
     struct OrderType h1;
     for(int i = 0; i < PARTY_SIZE; i++)
     {
+        if([HeroActiveArr[i] state] == NSControlStateValueOff) { continue; }
+        
         h1.name = [HeroLabelArr[i] stringValue];
         h1.v = [HeroFieldArr[i] integerValue];
         [order addObject:[NSValue valueWithBytes:&h1 objCType:@encode(struct OrderType)]];
@@ -208,7 +217,7 @@ struct OrderType
     
     struct OrderType val;
     NSString *s;
-    for(int i = 0; i < (num + PARTY_SIZE); i++)
+    for(int i = 0; i < (num + PARTY_SIZE - notInBattle); i++)
     {
         [order[i] getValue:&val];
         s = val.name;
@@ -229,7 +238,7 @@ struct OrderType
     //TODO: 0 based index?
     NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
-    NSInteger num = mobNum + allyNum + PARTY_SIZE - removeSize;
+    NSInteger num = mobNum + allyNum + PARTY_SIZE - removeSize -  notInBattle;
     
     if(currentTurnIdx == num)
     { currentTurnIdx = 1; }
