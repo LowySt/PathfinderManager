@@ -440,6 +440,11 @@ struct OrderType
     HeroFieldArr[4] = _Hero5Field; HeroFieldArr[5] = _Hero6Field;
     HeroFieldArr[6] = _Hero7Field; HeroFieldArr[7] = _Hero8Field;
     
+    HeroActiveArr[0] = _Hero1Active; HeroActiveArr[1] = _Hero2Active;
+    HeroActiveArr[2] = _Hero3Active; HeroActiveArr[3] = _Hero4Active;
+    HeroActiveArr[4] = _Hero5Active; HeroActiveArr[5] = _Hero6Active;
+    HeroActiveArr[6] = _Hero7Active; HeroActiveArr[7] = _Hero8Active;
+    
     AllyLabelArr[0] = _Ally1Label; AllyLabelArr[1] = _Ally2Label;
     AllyLabelArr[2] = _Ally3Label; AllyLabelArr[3] = _Ally4Label;
 
@@ -472,31 +477,40 @@ struct OrderType
         yPos -= 25;
     }
     
+    yPos = 812;
+    for(int i = 0; i < PARTY_SIZE; i++) {
+    
+        [HeroActiveArr[i] setTitle:@""];
+        [HeroActiveArr[i] setBordered:false];
+        setField(HeroActiveArr[i], CGPointMake(565, yPos));
+        yPos -= 30;
+    }
+    
     yPos = 810;
     for(int i = 0; i < MOB_SIZE; i++)
     {
-        setCheck(SymbolCheckArr[0][i], "✩", CGPointMake(275, yPos));
+        setCheck(SymbolCheckArr[0][i], "✩", CGPointMake(250, yPos));
         yPos -= 30;
     }
     
     setField(_InitiativeRollButton, CGPointMake(420, 836));
-    setField(_Counter1Button, CGPointMake(180, 803));
-    setField(_Counter2Button, CGPointMake(180, 763));
-    setField(_Counter3Button, CGPointMake(180, 723));
-    setField(_Counter4Button, CGPointMake(180, 683));
+    setField(_Counter1Button, CGPointMake(160, 803));
+    setField(_Counter2Button, CGPointMake(160, 763));
+    setField(_Counter3Button, CGPointMake(160, 723));
+    setField(_Counter4Button, CGPointMake(160, 683));
     
-    setField(_Counter1Value, CGPointMake(145, 810));
+    setField(_Counter1Value, CGPointMake(125, 810));
     setICF(_Counter1Name, _Counter1Label, "Counter 1",
-           CGPointMake(45, 810), LABEL_UP);
-    setField(_Counter2Value, CGPointMake(145, 770));
+           CGPointMake(25, 810), LABEL_UP);
+    setField(_Counter2Value, CGPointMake(125, 770));
     setICF(_Counter2Name, _Counter2Label, "Counter 2",
-           CGPointMake(45, 770), LABEL_UP);
-    setField(_Counter3Value, CGPointMake(145, 730));
+           CGPointMake(25, 770), LABEL_UP);
+    setField(_Counter3Value, CGPointMake(125, 730));
     setICF(_Counter3Name, _Counter3Label, "Counter 3",
-           CGPointMake(45, 730), LABEL_UP);
-    setField(_Counter4Value, CGPointMake(145, 690));
+           CGPointMake(25, 730), LABEL_UP);
+    setField(_Counter4Value, CGPointMake(125, 690));
     setICF(_Counter4Name, _Counter4Label, "Counter 4",
-           CGPointMake(45, 690), LABEL_UP);
+           CGPointMake(25, 690), LABEL_UP);
 
     
     setICF(_MobNumberSel, _MobNumberLabel, "Enemy Count",
@@ -514,22 +528,22 @@ struct OrderType
     setICF(_Hero7Field, _Hero7Label, "Zakkhyr", CGPointMake(525, 630), LABEL_LEFT);
     setICF(_Hero8Field, _Hero8Label, "Zoddak", CGPointMake(525, 600), LABEL_LEFT);
        
-    setICF(_Mob1Bonus, _Mob1Label, "Enemy 1", CGPointMake(365, 810), LABEL_LEFT);
-    setICF(_Mob2Bonus, _Mob2Label, "Enemy 2", CGPointMake(365, 780), LABEL_LEFT);
-    setICF(_Mob3Bonus, _Mob3Label, "Enemy 3", CGPointMake(365, 750), LABEL_LEFT);
-    setICF(_Mob4Bonus, _Mob4Label, "Enemy 4", CGPointMake(365, 720), LABEL_LEFT);
-    setICF(_Mob5Bonus, _Mob5Label, "Enemy 5", CGPointMake(365, 690), LABEL_LEFT);
-    setICF(_Mob6Bonus, _Mob6Label, "Enemy 6", CGPointMake(365, 660), LABEL_LEFT);
-    setICF(_Mob7Bonus, _Mob7Label, "Enemy 7", CGPointMake(365, 630), LABEL_LEFT);
-    setICF(_Mob8Bonus, _Mob8Label, "Enemy 8", CGPointMake(365, 600), LABEL_LEFT);
-    setICF(_Mob9Bonus, _Mob9Label, "Enemy 9", CGPointMake(365, 570), LABEL_LEFT);
-    setICF(_Mob10Bonus, _Mob10Label, "Enemy 10", CGPointMake(365, 540), LABEL_LEFT);
-    setICF(_Mob11Bonus, _Mob11Label, "Enemy 11", CGPointMake(365, 510), LABEL_LEFT);
-    setICF(_Mob12Bonus, _Mob12Label, "Enemy 12", CGPointMake(365, 480), LABEL_LEFT);
-    setICF(_Mob13Bonus, _Mob13Label, "Enemy 13", CGPointMake(365, 450), LABEL_LEFT);
-    setICF(_Mob14Bonus, _Mob14Label, "Enemy 14", CGPointMake(365, 420), LABEL_LEFT);
-    setICF(_Mob15Bonus, _Mob15Label, "Enemy 15", CGPointMake(365, 390), LABEL_LEFT);
-    setICF(_Mob16Bonus, _Mob16Label, "Enemy 16", CGPointMake(365, 360), LABEL_LEFT);
+    setICF(_Mob1Bonus, _Mob1Label, "Enemy 1       ", CGPointMake(365, 810), LABEL_LEFT);
+    setICF(_Mob2Bonus, _Mob2Label, "Enemy 2       ", CGPointMake(365, 780), LABEL_LEFT);
+    setICF(_Mob3Bonus, _Mob3Label, "Enemy 3       ", CGPointMake(365, 750), LABEL_LEFT);
+    setICF(_Mob4Bonus, _Mob4Label, "Enemy 4       ", CGPointMake(365, 720), LABEL_LEFT);
+    setICF(_Mob5Bonus, _Mob5Label, "Enemy 5       ", CGPointMake(365, 690), LABEL_LEFT);
+    setICF(_Mob6Bonus, _Mob6Label, "Enemy 6       ", CGPointMake(365, 660), LABEL_LEFT);
+    setICF(_Mob7Bonus, _Mob7Label, "Enemy 7       ", CGPointMake(365, 630), LABEL_LEFT);
+    setICF(_Mob8Bonus, _Mob8Label, "Enemy 8       ", CGPointMake(365, 600), LABEL_LEFT);
+    setICF(_Mob9Bonus, _Mob9Label, "Enemy 9       ", CGPointMake(365, 570), LABEL_LEFT);
+    setICF(_Mob10Bonus, _Mob10Label, "Enemy 10       ", CGPointMake(365, 540), LABEL_LEFT);
+    setICF(_Mob11Bonus, _Mob11Label, "Enemy 11       ", CGPointMake(365, 510), LABEL_LEFT);
+    setICF(_Mob12Bonus, _Mob12Label, "Enemy 12       ", CGPointMake(365, 480), LABEL_LEFT);
+    setICF(_Mob13Bonus, _Mob13Label, "Enemy 13       ", CGPointMake(365, 450), LABEL_LEFT);
+    setICF(_Mob14Bonus, _Mob14Label, "Enemy 14       ", CGPointMake(365, 420), LABEL_LEFT);
+    setICF(_Mob15Bonus, _Mob15Label, "Enemy 15       ", CGPointMake(365, 390), LABEL_LEFT);
+    setICF(_Mob16Bonus, _Mob16Label, "Enemy 16       ", CGPointMake(365, 360), LABEL_LEFT);
     
     setField(_Mob1Field, CGPointMake(405, 810));
     setField(_Mob2Field, CGPointMake(405, 780));

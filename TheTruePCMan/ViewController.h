@@ -35,6 +35,7 @@
     
     @public NSTextField * __strong HeroLabelArr[8];
     @public NSTextField * __strong HeroFieldArr[8];
+    @public NSButton * __strong HeroActiveArr[8];
     
     @public NSTextField * __strong AllyLabelArr[4];
     @public NSTextField * __strong AllyBonusArr[4];
@@ -222,27 +223,35 @@
 
 @property (weak) IBOutlet NSTextField *Hero1Label;
 @property (weak) IBOutlet NSTextField *Hero1Field;
+@property (weak) IBOutlet NSButton *Hero1Active;
 
 @property (weak) IBOutlet NSTextField *Hero2Label;
 @property (weak) IBOutlet NSTextField *Hero2Field;
+@property (weak) IBOutlet NSButton *Hero2Active;
 
 @property (weak) IBOutlet NSTextField *Hero3Label;
 @property (weak) IBOutlet NSTextField *Hero3Field;
+@property (weak) IBOutlet NSButton *Hero3Active;
 
 @property (weak) IBOutlet NSTextField *Hero4Label;
 @property (weak) IBOutlet NSTextField *Hero4Field;
+@property (weak) IBOutlet NSButton *Hero4Active;
 
 @property (weak) IBOutlet NSTextField *Hero5Label;
 @property (weak) IBOutlet NSTextField *Hero5Field;
+@property (weak) IBOutlet NSButton *Hero5Active;
 
 @property (weak) IBOutlet NSTextField *Hero6Label;
 @property (weak) IBOutlet NSTextField *Hero6Field;
+@property (weak) IBOutlet NSButton *Hero6Active;
 
 @property (weak) IBOutlet NSTextField *Hero7Label;
 @property (weak) IBOutlet NSTextField *Hero7Field;
+@property (weak) IBOutlet NSButton *Hero7Active;
 
 @property (weak) IBOutlet NSTextField *Hero8Label;
 @property (weak) IBOutlet NSTextField *Hero8Field;
+@property (weak) IBOutlet NSButton *Hero8Active;
 
 @property (weak) IBOutlet NSTextField *Ally1Label;
 @property (weak) IBOutlet NSTextField *Ally1Bonus;
