@@ -3057,14 +3057,6 @@
                                                         <font key="font" metaFont="system"/>
                                                     </buttonCell>
                                                 </button>
-                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eD8-qK-tYh">
-                                                    <rect key="frame" x="421" y="867" width="81" height="32"/>
-                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                                    <buttonCell key="cell" type="push" title="Button" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="sd3-q6-QM7">
-                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
-                                                        <font key="font" metaFont="system"/>
-                                                    </buttonCell>
-                                                </button>
                                                 <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="z3X-ty-Ovl">
                                                     <rect key="frame" x="1185" y="881" width="32" height="21"/>
                                                     <autoresizingMask key="autoresizingMask"/>
@@ -3074,6 +3066,22 @@
                                                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                                     </textFieldCell>
                                                 </textField>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="OYm-1F-a9U">
+                                                    <rect key="frame" x="92" y="873" width="81" height="32"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="push" title="Button" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="Ty2-yb-wrb">
+                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                </button>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eD8-qK-tYh">
+                                                    <rect key="frame" x="11" y="874" width="81" height="32"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="push" title="Button" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="sd3-q6-QM7">
+                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                </button>
                                             </subviews>
                                         </view>
                                     </tabViewItem>
@@ -3165,6 +3173,7 @@
                         <outlet property="LvlField" destination="ups-s5-6vn" id="Z7C-mY-vzt"/>
                         <outlet property="LvlLabel" destination="M2R-1I-3t3" id="vef-sB-fGF"/>
                         <outlet property="MainView" destination="m2S-Jp-Qdl" id="8PQ-Ue-N78"/>
+                        <outlet property="MapButton" destination="OYm-1F-a9U" id="IJX-j9-ijH"/>
                         <outlet property="Mob10Bonus" destination="w1X-XF-6KW" id="Tsn-72-IJo"/>
                         <outlet property="Mob10Field" destination="f1q-1W-ryb" id="e6u-FD-gJP"/>
                         <outlet property="Mob10Label" destination="gZ2-FY-exR" id="KaK-Xe-q7M"/>

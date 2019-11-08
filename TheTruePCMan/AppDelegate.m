@@ -455,6 +455,15 @@
    [drawWin.contentView addConstraint:[NSLayoutConstraint constraintsWithVisualFormat:@"V: |[view]|"
     options:NSLayoutFormatAlignmentMask metrics:nil
     views:d][0]];*/
+    
+    NSRect frame = NSMakeRect(600, 400, 640, 360);
+    v->battleWindow  = [[NSWindow alloc]
+                          initWithContentRect:frame
+                          styleMask:(NSWindowStyleMaskTitled | NSWindowStyleMaskMiniaturizable)
+                          backing:NSBackingStoreBuffered defer:NO];
+    [v->battleWindow setBackgroundColor:[NSColor blackColor]];
+    //[v->battleWindow makeKeyAndOrderFront:NSApp];
+    //[newWindow close];
 }
 
 

@@ -45,6 +45,9 @@
     @public NSTextField * __strong OrderNumArr[28];
     @public NSTextField * __strong OrderFieldArr[28];
     @public NSButton * __strong OrderRemoveArr[28];
+    
+    @public NSWindow __strong *battleWindow;
+    bool isBattleWindowOpen;
 }
 
 - (void)showOrderFields:(NSInteger)num;
@@ -142,6 +145,7 @@
 
 @property (weak) IBOutlet NSButton *InitiativeRollButton;
 @property (weak) IBOutlet NSButton *ResetButton;
+@property (weak) IBOutlet NSButton *MapButton;
 
 @property (weak) IBOutlet NSTextField *RoundCount;
 

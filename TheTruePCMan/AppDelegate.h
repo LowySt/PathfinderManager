@@ -12,7 +12,10 @@
 #import "Class.h"
 #import "DrawView.h"
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate, NSComboBoxDelegate, NSTableViewDataSource, NSTableViewDelegate>
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate, NSComboBoxDelegate, NSTableViewDataSource, NSTableViewDelegate> {
+    
+    NSWindow __strong *newWindow;
+}
 
 @property (strong) NSArray *nameArray;
 

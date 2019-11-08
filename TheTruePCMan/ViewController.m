@@ -376,6 +376,12 @@ struct OrderType
     [_RoundCount setStringValue:@""];
 }
 
+- (void)showMap {
+    if(isBattleWindowOpen == false)
+    { [battleWindow makeKeyAndOrderFront:NSApp]; isBattleWindowOpen = true; }
+    else { [battleWindow orderOut:NSApp]; isBattleWindowOpen = false; }
+}
+
 - (void)removeFromOrder:(NSButton *)button {
     NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
@@ -425,6 +431,8 @@ struct OrderType
     isCounter2Counting = false;
     isCounter3Counting = false;
     isCounter4Counting = false;
+    
+    isBattleWindowOpen = false;
     
     OrderFieldArr[0] = _Order1Field; OrderFieldArr[1] = _Order2Field;
     OrderFieldArr[2] = _Order3Field; OrderFieldArr[3] = _Order4Field;
@@ -541,6 +549,7 @@ struct OrderType
     [_SetOrderButton setTitle:@"Set"];
     [_AdvanceTurnButton setTitle:@"Next"];
     [_ResetButton setTitle:@"Reset"];
+    [_MapButton setTitle:@"Map"];
     [_Counter1Button setTitle:@"Go"];
     [_Counter2Button setTitle:@"Go"];
     [_Counter3Button setTitle:@"Go"];
@@ -575,6 +584,7 @@ struct OrderType
     
     setField(_InitiativeRollButton, CGPointMake(420, 836));
     setField(_ResetButton, CGPointMake(20, 870));
+    setField(_MapButton, CGPointMake(100, 870));
     setField(_Counter1Button, CGPointMake(160, 803));
     setField(_Counter2Button, CGPointMake(160, 763));
     setField(_Counter3Button, CGPointMake(160, 723));
@@ -1132,6 +1142,7 @@ struct OrderType
     [_SetOrderButton setAction:NSSelectorFromString(@"setOrder")];
     [_AdvanceTurnButton setAction:NSSelectorFromString(@"advanceTurn")];
     [_ResetButton setAction:NSSelectorFromString(@"resetInitiative")];
+    [_MapButton setAction:NSSelectorFromString(@"showMap")];
     [_Counter1Button setAction:NSSelectorFromString(@"counter1Button")];
     [_Counter2Button setAction:NSSelectorFromString(@"counter2Button")];
     [_Counter3Button setAction:NSSelectorFromString(@"counter3Button")];
