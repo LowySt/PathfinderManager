@@ -32,14 +32,52 @@
                 [control.window makeFirstResponder:v->AllyLabelArr[i+1]];
                 return YES;
             }
+            
+            if([control.identifier isEqual:v->AllyBonusArr[i].identifier]) {
+                if((i + 1) == allyNum) { return YES; }
+                [v->AllyBonusArr[i+1] setStringValue:@""];
+                [control.window makeFirstResponder:v->AllyBonusArr[i+1]];
+                return YES;
+            }
+            
+            if([control.identifier isEqual:v->AllyFieldArr[i].identifier]) {
+                if((i + 1) == allyNum) { return YES; }
+                [v->AllyFieldArr[i+1] setStringValue:@""];
+                [control.window makeFirstResponder:v->AllyFieldArr[i+1]];
+                return YES;
+            }
         }
 
         for(int i = 0; i < mobNum; i++) {
             
-            if(control.identifier == v->MobLabelArr[i].identifier) {
+            if([control.identifier isEqual:v->MobLabelArr[i].identifier]) {
                 if((i + 1) == mobNum) { return YES; }
                 [v->MobLabelArr[i+1] setStringValue:@""];
                 [control.window makeFirstResponder:v->MobLabelArr[i+1]];
+                return YES;
+            }
+            
+            if([control.identifier isEqual:v->MobBonusArr[i].identifier]) {
+                if((i + 1) == mobNum) { return YES; }
+                [v->MobBonusArr[i+1] setStringValue:@""];
+                [control.window makeFirstResponder:v->MobBonusArr[i+1]];
+                return YES;
+            }
+            
+            if([control.identifier isEqual:v->MobFieldArr[i].identifier]) {
+                if((i + 1) == mobNum) { return YES; }
+                [v->MobFieldArr[i+1] setStringValue:@""];
+                [control.window makeFirstResponder:v->MobFieldArr[i+1]];
+                return YES;
+            }
+
+        }
+        
+        for(int i = 0; i < v->PARTY_SIZE; i++) {
+            
+            if([control.identifier isEqual:v->HeroFieldArr[i].identifier]) {
+                if((i + 1) == v->PARTY_SIZE) { return YES; }
+                [control.window makeFirstResponder:v->HeroFieldArr[i+1]];
                 return YES;
             }
         }
@@ -378,11 +416,20 @@
     [v.MobNumberSel setDelegate:self];
     [v.AllyNumberSel setDelegate:self];
         
-    for(int i = 0; i < v->MOB_SIZE; i++)
-    { [v->MobLabelArr[i] setDelegate:self]; }
+    for(int i = 0; i < v->MOB_SIZE; i++) {
+        [v->MobLabelArr[i] setDelegate:self];
+        [v->MobBonusArr[i] setDelegate:self];
+        [v->MobFieldArr[i] setDelegate:self];
+    }
     
-    for(int i = 0; i < v->ALLY_SIZE; i++)
-    { [v->AllyLabelArr[i] setDelegate:self]; }
+    for(int i = 0; i < v->ALLY_SIZE; i++) {
+        [v->AllyLabelArr[i] setDelegate:self];
+        [v->AllyBonusArr[i] setDelegate:self];
+        [v->AllyFieldArr[i] setDelegate:self];
+    }
+    
+    for(int i = 0; i < v->PARTY_SIZE; i++)
+    { [v->HeroFieldArr[i] setDelegate:self]; }
     
     for(int i = 0; i < v->ORDER_SIZE; i++)
     { [v->OrderNumArr[i] setDelegate:self]; }

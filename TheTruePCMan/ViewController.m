@@ -155,6 +155,7 @@ struct OrderType
     }
     
     turnsInRound = (int)num + PARTY_SIZE - notInBattle;
+    [_RoundCount setStringValue:@"0"];
     removeSize = 0;
     
     numberOfTurns1 = 0;
@@ -240,10 +241,15 @@ struct OrderType
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
     NSInteger num = mobNum + allyNum + PARTY_SIZE - removeSize -  notInBattle;
     
-    if(currentTurnIdx == num)
-    { currentTurnIdx = 1; }
-    else { currentTurnIdx += 1; }
+    if(mobNum == 0 && allyNum == 0) { return; }
     
+    if(currentTurnIdx == num)
+    {
+        currentTurnIdx = 1;
+        [_RoundCount setIntValue:([_RoundCount intValue]+1)];
+    } else
+    { currentTurnIdx += 1; }
+        
     if(isCounter1Counting == true) {
         numberOfTurns1 += 1;
         if(numberOfTurns1 == turnsInRound)
@@ -306,6 +312,68 @@ struct OrderType
 
 - (void)counter4Button {
     isCounter4Counting = true;
+}
+
+- (void)resetInitiative {
+    
+    currentTurnIdx = 1;
+    turnsInRound = 0;
+    removeSize = 0;
+    notInBattle = 0;
+    
+    isCounter1Counting = false;
+    numberOfTurns1 = 0;
+    isCounter2Counting = false;
+    numberOfTurns2 = 0;
+    isCounter3Counting = false;
+    numberOfTurns3 = 0;
+    isCounter4Counting = false;
+    numberOfTurns4 = 0;
+
+    [_Counter1Name setStringValue:@""];
+    [_Counter1Value setStringValue:@""];
+    [_Counter2Name setStringValue:@""];
+    [_Counter2Value setStringValue:@""];
+    [_Counter3Name setStringValue:@""];
+    [_Counter3Value setStringValue:@""];
+    [_Counter4Name setStringValue:@""];
+    [_Counter4Value setStringValue:@""];
+    
+    [_MobNumberSel selectItemAtIndex:0];
+    [_AllyNumberSel selectItemAtIndex:0];
+    
+    for(int i = 0; i < PARTY_SIZE; i++) {
+        [HeroFieldArr[i] setStringValue:@""];
+        [HeroActiveArr[i] setState:NSControlStateValueOn];
+    }
+
+    for(int i = 0; i < ALLY_SIZE; i++) {
+        [AllyFieldArr[i] setStringValue:@""];
+    }
+    [self setAllyLabels];
+    
+    for(int i = 0; i < MOB_SIZE; i++) {
+        [MobFieldArr[i] setStringValue:@""];
+        [MobBonusArr[i] setStringValue:@"0"];
+        [SymbolCheckArr[0][i] setState:NSControlStateValueOff];
+    }
+    [self setMobLabels];
+    
+    for(int i = 0; i < ORDER_SIZE; i++) {
+        [OrderFieldArr[i] setStringValue:@""];
+    }
+    
+    [self hideFields];
+    
+    for(int i = 0; i < PARTY_SIZE; i++)
+    {
+        [OrderNumArr[i] setHidden:false];
+        [OrderFieldArr[i] setHidden:false];
+        [OrderRemoveArr[i] setHidden:false];
+    }
+    
+    [_CurrentTurnField setStringValue:@""];
+    [_RoundCount setStringValue:@""];
 }
 
 - (void)removeFromOrder:(NSButton *)button {
@@ -472,6 +540,7 @@ struct OrderType
     [_InitiativeRollButton setTitle:@"Roll"];
     [_SetOrderButton setTitle:@"Set"];
     [_AdvanceTurnButton setTitle:@"Next"];
+    [_ResetButton setTitle:@"Reset"];
     [_Counter1Button setTitle:@"Go"];
     [_Counter2Button setTitle:@"Go"];
     [_Counter3Button setTitle:@"Go"];
@@ -502,7 +571,10 @@ struct OrderType
         yPos -= 30;
     }
     
+    setField(_RoundCount, CGPointMake(1160, 880));
+    
     setField(_InitiativeRollButton, CGPointMake(420, 836));
+    setField(_ResetButton, CGPointMake(20, 870));
     setField(_Counter1Button, CGPointMake(160, 803));
     setField(_Counter2Button, CGPointMake(160, 763));
     setField(_Counter3Button, CGPointMake(160, 723));
@@ -534,9 +606,9 @@ struct OrderType
     setICF(_Hero4Field, _Hero4Label, "Sirion", CGPointMake(525, 720), LABEL_LEFT);
     setICF(_Hero5Field, _Hero5Label, "Albion", CGPointMake(525, 690), LABEL_LEFT);
     setICF(_Hero6Field, _Hero6Label, "Sdentato", CGPointMake(525, 660), LABEL_LEFT);
-    setICF(_Hero7Field, _Hero7Label, "Zakkhyr", CGPointMake(525, 630), LABEL_LEFT);
+    setICF(_Hero7Field, _Hero7Label, "Dresdam", CGPointMake(525, 630), LABEL_LEFT);
     setICF(_Hero8Field, _Hero8Label, "Zoddak", CGPointMake(525, 600), LABEL_LEFT);
-       
+    
     setICF(_Mob1Bonus, _Mob1Label, "Enemy 1       ", CGPointMake(365, 810), LABEL_LEFT);
     setICF(_Mob2Bonus, _Mob2Label, "Enemy 2       ", CGPointMake(365, 780), LABEL_LEFT);
     setICF(_Mob3Bonus, _Mob3Label, "Enemy 3       ", CGPointMake(365, 750), LABEL_LEFT);
@@ -833,6 +905,8 @@ struct OrderType
     [_Counter2Value setAlignment:NSTextAlignmentCenter];
     [_Counter3Value setAlignment:NSTextAlignmentCenter];
     [_Counter4Value setAlignment:NSTextAlignmentCenter];
+    
+    [_RoundCount setAlignment:NSTextAlignmentCenter];
 }
 
 - (void)setAllUneditable {
@@ -886,6 +960,7 @@ struct OrderType
     [_Order28Field setEditable:false];
     
     [_CurrentTurnField setEditable:false];
+    [_RoundCount setEditable:false];
 }
 
 - (void)showOrderFields:(NSInteger)num {
@@ -1056,6 +1131,7 @@ struct OrderType
     [_InitiativeRollButton setAction:NSSelectorFromString(@"rollInitiative")];
     [_SetOrderButton setAction:NSSelectorFromString(@"setOrder")];
     [_AdvanceTurnButton setAction:NSSelectorFromString(@"advanceTurn")];
+    [_ResetButton setAction:NSSelectorFromString(@"resetInitiative")];
     [_Counter1Button setAction:NSSelectorFromString(@"counter1Button")];
     [_Counter2Button setAction:NSSelectorFromString(@"counter2Button")];
     [_Counter3Button setAction:NSSelectorFromString(@"counter3Button")];

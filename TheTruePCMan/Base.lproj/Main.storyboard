@@ -3057,6 +3057,23 @@
                                                         <font key="font" metaFont="system"/>
                                                     </buttonCell>
                                                 </button>
+                                                <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="eD8-qK-tYh">
+                                                    <rect key="frame" x="421" y="867" width="81" height="32"/>
+                                                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                                    <buttonCell key="cell" type="push" title="Button" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="sd3-q6-QM7">
+                                                        <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                                        <font key="font" metaFont="system"/>
+                                                    </buttonCell>
+                                                </button>
+                                                <textField verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="z3X-ty-Ovl">
+                                                    <rect key="frame" x="1185" y="881" width="32" height="21"/>
+                                                    <autoresizingMask key="autoresizingMask"/>
+                                                    <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" borderStyle="bezel" drawsBackground="YES" id="i2A-JW-3bp">
+                                                        <font key="font" metaFont="system"/>
+                                                        <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
+                                                        <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
+                                                    </textFieldCell>
+                                                </textField>
                                             </subviews>
                                         </view>
                                     </tabViewItem>
@@ -3293,6 +3310,8 @@
                         <outlet property="RaceTraitsField" destination="9vP-6S-693" id="fdf-Ev-xq0"/>
                         <outlet property="RefField" destination="wr3-mo-Agf" id="xQJ-S8-7zp"/>
                         <outlet property="RefLabel" destination="VAu-Ks-MMf" id="cNY-Be-4L6"/>
+                        <outlet property="ResetButton" destination="eD8-qK-tYh" id="jlt-MP-YS6"/>
+                        <outlet property="RoundCount" destination="z3X-ty-Ovl" id="Sgh-AQ-2L6"/>
                         <outlet property="STRBonus" destination="O3d-vX-oaT" id="vRL-92-BbR"/>
                         <outlet property="STRField" destination="m9x-71-7dZ" id="oVB-Fe-oD9"/>
                         <outlet property="STRLabel" destination="gMJ-YV-GBa" id="Qp5-AY-hEP"/>

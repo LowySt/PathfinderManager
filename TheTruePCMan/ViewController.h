@@ -141,6 +141,9 @@
 @property (weak) IBOutlet NSComboBox *AllyNumberSel;
 
 @property (weak) IBOutlet NSButton *InitiativeRollButton;
+@property (weak) IBOutlet NSButton *ResetButton;
+
+@property (weak) IBOutlet NSTextField *RoundCount;
 
 @property (weak) IBOutlet NSTextField *Mob1Label;
 @property (weak) IBOutlet NSTextField *Mob1Field;
