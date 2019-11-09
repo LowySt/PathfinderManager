@@ -462,8 +462,23 @@
                           styleMask:(NSWindowStyleMaskTitled | NSWindowStyleMaskMiniaturizable)
                           backing:NSBackingStoreBuffered defer:NO];
     [v->battleWindow setBackgroundColor:[NSColor blackColor]];
-    //[v->battleWindow makeKeyAndOrderFront:NSApp];
-    //[newWindow close];
+    //[[v->battleWindow contentView] setWantsLayer:true];
+    
+
+//    NSURL *whatthefuckisthisshit = [[NSURL alloc] initFileURLWithPath:@"/Users/lowy/test2.bmp"];
+    Image = [[NSImage alloc] initWithContentsOfFile:@"/Users/lowy/test.png"];
+   
+    
+    ImageView = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, 640, 360)];
+    [ImageView setImage:Image];
+    [v->battleWindow setContentSize:NSMakeSize(640, 360)];
+    //[v->battleWindow setContentView:ImageView];
+    [[v->battleWindow contentView] addSubview:ImageView];
+    
+    //TODO: Create an NSImageView, set it to the battleWindow
+    //Then create an NSImage, load my image into that, load that into NSImageView
+    //Then profit?
+
 }
 
 

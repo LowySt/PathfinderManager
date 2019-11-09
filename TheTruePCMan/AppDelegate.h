@@ -14,7 +14,8 @@
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate, NSComboBoxDelegate, NSTableViewDataSource, NSTableViewDelegate> {
     
-    NSWindow __strong *newWindow;
+    NSImage __strong *Image;
+    NSImageView __strong *ImageView;
 }
 
 @property (strong) NSArray *nameArray;
