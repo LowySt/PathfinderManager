@@ -48,6 +48,9 @@
     
     @public NSWindow __strong *battleWindow;
     bool isBattleWindowOpen;
+    
+    @public NSImage __strong *Image;
+    @public NSImageView __strong *ImageView;
 }
 
 - (void)showOrderFields:(NSInteger)num;

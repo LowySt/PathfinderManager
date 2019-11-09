@@ -13,9 +13,7 @@
 #import "DrawView.h"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate, NSTextFieldDelegate, NSComboBoxDelegate, NSTableViewDataSource, NSTableViewDelegate> {
-    
-    NSImage __strong *Image;
-    NSImageView __strong *ImageView;
+       
 }
 
 @property (strong) NSArray *nameArray;

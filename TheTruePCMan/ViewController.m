@@ -378,8 +378,49 @@ struct OrderType
 
 - (void)showMap {
     if(isBattleWindowOpen == false)
-    { [battleWindow makeKeyAndOrderFront:NSApp]; isBattleWindowOpen = true; }
-    else { [battleWindow orderOut:NSApp]; isBattleWindowOpen = false; }
+    {
+        //NOTE: What is this? Everything still works. Do I care?
+        //      Error Domain=PlugInKit Code=13 "query cancelled"
+        //          UserInfo={NSLocalizedDescription=query cancelled}
+        
+        //NOTE: Had to disable "Sandboxing" to allow this. What the actual fuck...
+        //NOTE: This seems to be happening either in another thread, or at another time...
+        //       Everything has to happen inside the completionHandler block itself.
+        NSOpenPanel *mapChoice = [NSOpenPanel openPanel];
+        [mapChoice setReleasedWhenClosed:true];
+        
+        [mapChoice beginWithCompletionHandler:^(NSModalResponse result) {
+            if (result == NSModalResponseOK) {
+                NSURL *file = [mapChoice URLs][0];
+                
+                //self->Image = [[NSImage alloc] initWithContentsOfURL:file];
+                NSImage *fileImage = [[NSImage alloc] initWithContentsOfURL:file];
+                NSLog(@"%f, %f\n", [fileImage size].width, [fileImage size].height);
+                
+                self->Image = [[NSImage alloc] initWithSize:NSMakeSize(640, 360)];
+                
+                [self->Image lockFocus];
+                
+                [fileImage drawInRect:NSMakeRect(0, 0, 640, 360) fromRect:NSZeroRect operation:NSCompositingOperationCopy fraction:1.0 respectFlipped:false hints:NULL];
+                
+                [self->Image unlockFocus];
+                
+                self->ImageView = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, 640, 360)];
+                [self->ImageView setImage:self->Image];
+                [self->battleWindow setContentSize:NSMakeSize(640, 360)];
+                [[self->battleWindow contentView] addSubview:self->ImageView];
+                [self->battleWindow makeKeyAndOrderFront:NSApp];
+                self->isBattleWindowOpen = true;
+            }
+        }];
+        
+    }
+    else
+    {
+        [battleWindow orderOut:NSApp];
+        isBattleWindowOpen = false;
+        
+    }
 }
 
 - (void)removeFromOrder:(NSButton *)button {
