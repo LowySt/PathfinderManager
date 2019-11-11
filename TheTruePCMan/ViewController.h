@@ -417,6 +417,59 @@
 @property (weak) IBOutlet NSTextField *Counter4Value;
 @property (weak) IBOutlet NSButton *Counter4Button;
 
+//
+// Party Tab
+//
+
+@property (weak) IBOutlet NSComboBox *HeroPicker;
+
+@property (weak) IBOutlet NSTextField *HeroNameLabel;
+@property (weak) IBOutlet NSTextField *HeroNameField;
+
+@property (weak) IBOutlet NSTextField *HeroPlayerLabel;
+@property (weak) IBOutlet NSTextField *HeroPlayerField;
+
+@property (weak) IBOutlet NSTextField *HeroRaceLabel;
+@property (weak) IBOutlet NSTextField *HeroRaceField;
+
+@property (weak) IBOutlet NSTextField *HeroClassLabel;
+@property (weak) IBOutlet NSTextField *HeroClassField;
+
+@property (weak) IBOutlet NSTextField *HeroSTRLabel;
+@property (weak) IBOutlet NSTextField *HeroSTRField;
+@property (weak) IBOutlet NSTextField *HeroSTRBonus;
+
+@property (weak) IBOutlet NSTextField *HeroDEXLabel;
+@property (weak) IBOutlet NSTextField *HeroDEXField;
+@property (weak) IBOutlet NSTextField *HeroDEXBonus;
+
+@property (weak) IBOutlet NSTextField *HeroCONLabel;
+@property (weak) IBOutlet NSTextField *HeroCONField;
+@property (weak) IBOutlet NSTextField *HeroCONBonus;
+
+@property (weak) IBOutlet NSTextField *HeroINTLabel;
+@property (weak) IBOutlet NSTextField *HeroINTField;
+@property (weak) IBOutlet NSTextField *HeroINTBonus;
+
+@property (weak) IBOutlet NSTextField *HeroWISLabel;
+@property (weak) IBOutlet NSTextField *HeroWISField;
+@property (weak) IBOutlet NSTextField *HeroWISBonus;
+
+@property (weak) IBOutlet NSTextField *HeroCHALabel;
+@property (weak) IBOutlet NSTextField *HeroCHAField;
+@property (weak) IBOutlet NSTextField *HeroCHABonus;
+
+@property (weak) IBOutlet NSTextField *HeroBABLabel;
+@property (weak) IBOutlet NSTextField *HeroBABField;
+
+@property (weak) IBOutlet NSTextField *HeroFortLabel;
+@property (weak) IBOutlet NSTextField *HeroFortField;
+
+@property (weak) IBOutlet NSTextField *HeroReflLabel;
+@property (weak) IBOutlet NSTextField *HeroReflField;
+
+@property (weak) IBOutlet NSTextField *HeroWillLabel;
+@property (weak) IBOutlet NSTextField *HeroWillField;
 
 @end
 

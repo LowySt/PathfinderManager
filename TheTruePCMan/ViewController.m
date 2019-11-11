@@ -243,34 +243,39 @@ struct OrderType
     
     if(mobNum == 0 && allyNum == 0) { return; }
     
+    //TODO: Possible bug when removing from order and currentTurnIdx ends up > than num?
+    //      Probably not because currentTurnIdx gets managed when removing from order
     if(currentTurnIdx == num)
     {
         currentTurnIdx = 1;
         [_RoundCount setIntValue:([_RoundCount intValue]+1)];
     } else
     { currentTurnIdx += 1; }
-        
+
+    //NOTE: We need numberOfTurnsI >= turnsInRound, rather then ==, because if
+    //      turnsInRound was modified while the counter was on the boundary, it
+    //      ends up in a wrong state!
     if(isCounter1Counting == true) {
         numberOfTurns1 += 1;
-        if(numberOfTurns1 == turnsInRound)
+        if(numberOfTurns1 >= turnsInRound)
         { numberOfTurns1 = 0; [self advanceTimer:_Counter1Name v:_Counter1Value i:1]; }
     }
     
     if(isCounter2Counting == true) {
         numberOfTurns2 += 1;
-        if(numberOfTurns2 == turnsInRound)
+        if(numberOfTurns2 >= turnsInRound)
         { numberOfTurns2 = 0; [self advanceTimer:_Counter2Name v:_Counter2Value i:2]; }
     }
 
     if(isCounter3Counting == true) {
         numberOfTurns3 += 1;
-        if(numberOfTurns3 == turnsInRound)
+        if(numberOfTurns3 >= turnsInRound)
         { numberOfTurns3 = 0; [self advanceTimer:_Counter3Name v:_Counter3Value i:3]; }
     }
 
     if(isCounter4Counting == true) {
         numberOfTurns4 += 1;
-        if(numberOfTurns4 == turnsInRound)
+        if(numberOfTurns4 >= turnsInRound)
         { numberOfTurns4 = 0; [self advanceTimer:_Counter4Name v:_Counter4Value i:4]; }
     }
 
@@ -427,6 +432,10 @@ struct OrderType
     NSInteger mobNum = [_MobNumberSel indexOfSelectedItem];
     NSInteger allyNum = [_AllyNumberSel indexOfSelectedItem];
     NSInteger orderNum = mobNum + allyNum + PARTY_SIZE - removeSize;
+    
+    //NOTE: things like counters depend on turnsInRound, so it has to be updated
+    // accordingly.
+    turnsInRound -= 1;
     
     for(int i = 0; i < ORDER_SIZE; i++) {
         
@@ -585,6 +594,7 @@ struct OrderType
     [[_TabController tabViewItemAtIndex:0] setLabel:@"PC"];
     [[_TabController tabViewItemAtIndex:1] setLabel:@"Feats"];
     [[_TabController tabViewItemAtIndex:2] setLabel:@"Init"];
+    [[_TabController tabViewItemAtIndex:3] setLabel:@"Party"];
     
     [_InitiativeRollButton setTitle:@"Roll"];
     [_SetOrderButton setTitle:@"Set"];
@@ -729,6 +739,8 @@ struct OrderType
     mask0(_Ally1Field); mask0(_Ally2Field);
     mask0(_Ally3Field); mask0(_Ally4Field);
     
+    mask0(_HeroPicker);
+    
     NSNumberFormatter *nf = [[NSNumberFormatter alloc] init];
     [nf setAllowsFloats:false];
     [nf setNumberStyle:NSNumberFormatterNoStyle];
@@ -764,6 +776,18 @@ struct OrderType
     mask0andFormat(_Order23Field, nf); mask0andFormat(_Order24Field, nf);
     mask0andFormat(_Order25Field, nf); mask0andFormat(_Order26Field, nf);
     mask0andFormat(_Order27Field, nf); mask0andFormat(_Order28Field, nf);
+    
+    mask0andFormat(_HeroSTRField, nf); mask0andFormat(_HeroDEXField, nf);
+    mask0andFormat(_HeroCONField, nf); mask0andFormat(_HeroINTField, nf);
+    mask0andFormat(_HeroWISField, nf); mask0andFormat(_HeroCHAField, nf);
+    
+    mask0andFormat(_HeroSTRBonus, nf); mask0andFormat(_HeroDEXBonus, nf);
+    mask0andFormat(_HeroCONBonus, nf); mask0andFormat(_HeroINTBonus, nf);
+    mask0andFormat(_HeroWISBonus, nf); mask0andFormat(_HeroCHABonus, nf);
+    
+    mask0andFormat(_HeroBABField, nf); mask0andFormat(_HeroFortField, nf);
+    mask0andFormat(_HeroReflField, nf); mask0andFormat(_HeroWillField, nf);
+    
     //NOTE: This is the solution to fullscreen correct positioning.
     //[_Order1Field setAutoresizingMask:NSViewMinXMargin];
     
@@ -786,6 +810,11 @@ struct OrderType
     [_RaceLabel sizeToFit];
     [_ClassLabel sizeToFit];
     
+    [_HeroNameLabel sizeToFit];
+    [_HeroPlayerLabel sizeToFit];
+    [_HeroRaceLabel sizeToFit];
+    [_HeroClassLabel sizeToFit];
+    
     [_GenMethodLabel sizeToFit];
     [_STRLabel sizeToFit];
     [_DEXLabel sizeToFit];
@@ -793,6 +822,13 @@ struct OrderType
     [_INTLabel sizeToFit];
     [_WISLabel sizeToFit];
     [_CHALabel sizeToFit];
+    
+    [_HeroSTRLabel sizeToFit];
+    [_HeroDEXLabel sizeToFit];
+    [_HeroCONLabel sizeToFit];
+    [_HeroINTLabel sizeToFit];
+    [_HeroWISLabel sizeToFit];
+    [_HeroCHALabel sizeToFit];
     
     [_LvlLabel sizeToFit];
     [_ExpLabel sizeToFit];
@@ -803,6 +839,11 @@ struct OrderType
     [_FortLabel sizeToFit];
     [_RefLabel sizeToFit];
     [_WillLabel sizeToFit];
+    
+    [_HeroBABLabel sizeToFit];
+    [_HeroFortLabel sizeToFit];
+    [_HeroReflLabel sizeToFit];
+    [_HeroWillLabel sizeToFit];
         
     [_RaceSelector removeAllItems];
     [_ClassSelector removeAllItems];
@@ -810,6 +851,7 @@ struct OrderType
     [_XPCurveSel removeAllItems];
     [_MobNumberSel removeAllItems];
     [_AllyNumberSel removeAllItems];
+    [_HeroPicker removeAllItems];
      
 }
 
@@ -820,12 +862,24 @@ struct OrderType
     [_ClassSelector setAlignment:NSTextAlignmentLeft];
     [_GenMethodSel setAlignment:NSTextAlignmentLeft];
     
+    [_HeroNameField setAlignment:NSTextAlignmentLeft];
+    [_HeroPlayerField setAlignment:NSTextAlignmentLeft];
+    [_HeroRaceField setAlignment:NSTextAlignmentLeft];
+    [_HeroClassField setAlignment:NSTextAlignmentLeft];
+    
     [_STRField setAlignment:NSTextAlignmentLeft];
     [_DEXField setAlignment:NSTextAlignmentLeft];
     [_CONField setAlignment:NSTextAlignmentLeft];
     [_INTField setAlignment:NSTextAlignmentLeft];
     [_WISField setAlignment:NSTextAlignmentLeft];
     [_CHAField setAlignment:NSTextAlignmentLeft];
+    
+    [_HeroSTRField setAlignment:NSTextAlignmentLeft];
+    [_HeroDEXField setAlignment:NSTextAlignmentLeft];
+    [_HeroCONField setAlignment:NSTextAlignmentLeft];
+    [_HeroINTField setAlignment:NSTextAlignmentLeft];
+    [_HeroWISField setAlignment:NSTextAlignmentLeft];
+    [_HeroCHAField setAlignment:NSTextAlignmentLeft];
     
     [_STRBonus setAlignment:NSTextAlignmentCenter];
     [_DEXBonus setAlignment:NSTextAlignmentCenter];
@@ -834,15 +888,27 @@ struct OrderType
     [_WISBonus setAlignment:NSTextAlignmentCenter];
     [_CHABonus setAlignment:NSTextAlignmentCenter];
     
+    [_HeroSTRBonus setAlignment:NSTextAlignmentCenter];
+    [_HeroDEXBonus setAlignment:NSTextAlignmentCenter];
+    [_HeroCONBonus setAlignment:NSTextAlignmentCenter];
+    [_HeroINTBonus setAlignment:NSTextAlignmentCenter];
+    [_HeroWISBonus setAlignment:NSTextAlignmentCenter];
+    [_HeroCHABonus setAlignment:NSTextAlignmentCenter];
+    
     [_LvlField setAlignment:NSTextAlignmentLeft];
     [_ExpField setAlignment:NSTextAlignmentLeft];
     [_NextXPField setAlignment:NSTextAlignmentLeft];
     [_XPCurveSel setAlignment:NSTextAlignmentLeft];
     
-    [_BABField setAlignment:NSTextAlignmentLeft];
-    [_FortField setAlignment:NSTextAlignmentLeft];
-    [_RefField setAlignment:NSTextAlignmentLeft];
-    [_WillField setAlignment:NSTextAlignmentLeft];
+    [_BABField setAlignment:NSTextAlignmentCenter];
+    [_FortField setAlignment:NSTextAlignmentCenter];
+    [_RefField setAlignment:NSTextAlignmentCenter];
+    [_WillField setAlignment:NSTextAlignmentCenter];
+    
+    [_HeroBABField setAlignment:NSTextAlignmentCenter];
+    [_HeroFortField setAlignment:NSTextAlignmentCenter];
+    [_HeroReflField setAlignment:NSTextAlignmentCenter];
+    [_HeroWillField setAlignment:NSTextAlignmentCenter];
     
     [_RaceTraitsField setAlignment:NSTextAlignmentLeft];
     
@@ -1129,9 +1195,32 @@ struct OrderType
     setFieldAndLabel(_FortField, _FortLabel, CGPointMake(540, 690), LABEL_LEFT);
     setFieldAndLabel(_RefField, _RefLabel, CGPointMake(540, 650), LABEL_LEFT);
     setFieldAndLabel(_WillField, _WillLabel, CGPointMake(540, 610), LABEL_LEFT);
-         
+    
     [_RaceTraitsField setFrameSize:NSMakeSize(960, 320)];
     setField(_RaceTraitsField, CGPointMake(65, 220));
+    
+    setFieldAndLabel(_HeroNameField, _HeroNameLabel, CGPointMake(65, 810), LABEL_LEFT);
+    setFieldAndLabel(_HeroPlayerField, _HeroPlayerLabel, CGPointMake(65, 780), LABEL_LEFT);
+    setFieldAndLabel(_HeroRaceField, _HeroRaceLabel, CGPointMake(65, 750), LABEL_LEFT);
+    setFieldAndLabel(_HeroClassField, _HeroClassLabel, CGPointMake(65, 720), LABEL_LEFT);
+    
+    setFieldAndLabel(_HeroSTRField, _HeroSTRLabel, CGPointMake(300, 810), LABEL_UP);
+    setFieldAndLabel(_HeroDEXField, _HeroDEXLabel, CGPointMake(300, 770), LABEL_UP);
+    setFieldAndLabel(_HeroCONField, _HeroCONLabel, CGPointMake(300, 730), LABEL_UP);
+    setFieldAndLabel(_HeroINTField, _HeroINTLabel, CGPointMake(300, 690), LABEL_UP);
+    setFieldAndLabel(_HeroWISField, _HeroWISLabel, CGPointMake(300, 650), LABEL_UP);
+    setFieldAndLabel(_HeroCHAField, _HeroCHALabel, CGPointMake(300, 610), LABEL_UP);
+    setField(_HeroSTRBonus, CGPointMake(400, 810));
+    setField(_HeroDEXBonus, CGPointMake(400, 770));
+    setField(_HeroCONBonus, CGPointMake(400, 730));
+    setField(_HeroINTBonus, CGPointMake(400, 690));
+    setField(_HeroWISBonus, CGPointMake(400, 650));
+    setField(_HeroCHABonus, CGPointMake(400, 610));
+    
+    setFieldAndLabel(_HeroBABField, _HeroBABLabel, CGPointMake(540, 730), LABEL_LEFT);
+    setFieldAndLabel(_HeroFortField, _HeroFortLabel, CGPointMake(540, 690), LABEL_LEFT);
+    setFieldAndLabel(_HeroReflField, _HeroReflLabel, CGPointMake(540, 650), LABEL_LEFT);
+    setFieldAndLabel(_HeroWillField, _HeroWillLabel, CGPointMake(540, 610), LABEL_LEFT);
     
     int yPos = 810;
     for(int i = 0; i < ORDER_SIZE; i++)

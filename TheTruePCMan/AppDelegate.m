@@ -434,28 +434,6 @@
     for(int i = 0; i < v->ORDER_SIZE; i++)
     { [v->OrderNumArr[i] setDelegate:self]; }
        
-    
-    /*
-    DrawView *view = [[DrawView alloc] init];
-    [view setPath];
-    
-    NSWindowController *dw = [[NSStoryboard mainStoryboard] instantiateControllerWithIdentifier:@"DrawWin"];
-    [dw showWindow:self];
-    NSWindow *drawWin = dw.window;
-    [drawWin.contentView addSubview:view];
-    [view.superview setNeedsDisplay:true];
-    
-    [view setTranslatesAutoresizingMaskIntoConstraints:false];
-        
-    NSDictionary *d = @{@"view" : view};
-    
-    [drawWin.contentView addConstraint:[NSLayoutConstraint constraintsWithVisualFormat:@"H: |[view]|"
-    options:NSLayoutFormatAlignmentMask metrics:nil
-    views:d][0]];
-   [drawWin.contentView addConstraint:[NSLayoutConstraint constraintsWithVisualFormat:@"V: |[view]|"
-    options:NSLayoutFormatAlignmentMask metrics:nil
-    views:d][0]];*/
-    
     NSRect frame = NSMakeRect(600, 400, 640, 360);
     v->battleWindow  = [[NSWindow alloc]
                           initWithContentRect:frame
