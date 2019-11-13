@@ -12,6 +12,7 @@
 		9EC9534E237C554600C857B0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9EC9534D237C554600C857B0 /* Assets.xcassets */; };
 		9EC95351237C554600C857B0 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9EC9534F237C554600C857B0 /* Main.storyboard */; };
 		9EC95354237C554600C857B0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC95353237C554600C857B0 /* main.m */; };
+		9EC9535D237C875100C857B0 /* LabeledTextBox.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC9535C237C875100C857B0 /* LabeledTextBox.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,6 +26,8 @@
 		9EC95352237C554600C857B0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9EC95353237C554600C857B0 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		9EC95355237C554600C857B0 /* HyperPCMan.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = HyperPCMan.entitlements; sourceTree = "<group>"; };
+		9EC9535B237C875100C857B0 /* LabeledTextBox.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = LabeledTextBox.h; sourceTree = "<group>"; };
+		9EC9535C237C875100C857B0 /* LabeledTextBox.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = LabeledTextBox.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,6 +62,8 @@
 			children = (
 				9EC95347237C554400C857B0 /* AppDelegate.h */,
 				9EC95348237C554400C857B0 /* AppDelegate.m */,
+				9EC9535B237C875100C857B0 /* LabeledTextBox.h */,
+				9EC9535C237C875100C857B0 /* LabeledTextBox.m */,
 				9EC9534A237C554400C857B0 /* ViewController.h */,
 				9EC9534B237C554400C857B0 /* ViewController.m */,
 				9EC9534D237C554600C857B0 /* Assets.xcassets */,
@@ -141,6 +146,7 @@
 			files = (
 				9EC9534C237C554400C857B0 /* ViewController.m in Sources */,
 				9EC95354237C554600C857B0 /* main.m in Sources */,
+				9EC9535D237C875100C857B0 /* LabeledTextBox.m in Sources */,
 				9EC95349237C554400C857B0 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

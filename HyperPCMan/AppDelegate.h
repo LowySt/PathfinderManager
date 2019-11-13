@@ -8,7 +8,12 @@
 
 #import <Cocoa/Cocoa.h>
 
-@interface AppDelegate : NSObject <NSApplicationDelegate>
+#import "ViewController.h"
+#import "LabeledTextBox.h"
+
+@interface AppDelegate : NSObject <NSApplicationDelegate> {
+    ViewController *mainViewController;
+};
 
 
 @end
