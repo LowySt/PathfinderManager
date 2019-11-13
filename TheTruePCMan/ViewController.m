@@ -8,8 +8,6 @@
 
 #import "ViewController.h"
 #import "Feats.h"
-#import <stdlib.h>
-#import <objc/runtime.h>
 
 enum LabelDir {
     LABEL_UP = 0,
