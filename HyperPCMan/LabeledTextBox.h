@@ -24,10 +24,7 @@ enum LabelDir {
     
     @public NSTextField __strong *Label;
     @public NSTextField __strong *Box;
-    
-    enum LabelDir labelDir;
-    bool editable;
-    
+
 };
 
 - (LabeledTextBox *) initLabeled:(NSString *)label labelDir:(enum LabelDir)labelDir p:(CGPoint)p isEditable:(BOOL)isEditable;
