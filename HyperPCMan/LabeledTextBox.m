@@ -26,7 +26,6 @@
       case LABEL_LEFT: { labelP = CGPointMake(p.x - lR.width, p.y); } break;
       case LABEL_RIGHT: { labelP = CGPointMake(p.x + fR.width, p.y); } break;
       default: { assert(false); } break;
-            
     }
     
     [Box setFrameOrigin:p]; [Label setFrameOrigin:labelP];
@@ -55,7 +54,6 @@
       case LABEL_LEFT: { labelP = CGPointMake(p.x - lR.width, p.y); } break;
       case LABEL_RIGHT: { labelP = CGPointMake(p.x + fR.width, p.y); } break;
       default: { assert(false); } break;
-            
     }
     
     [Box setFrameOrigin:p]; [Label setFrameOrigin:labelP];

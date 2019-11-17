@@ -8,6 +8,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import "LabeledTextBox.h"
+#import "OrderField.h"
 
 @interface ViewController : NSViewController {
     
@@ -17,11 +18,20 @@
     @public LabeledTextBox * __strong Heros[8];
     @public int PARTY_SIZE;
 
-    @public LabeledTextBox * __strong Allies[16];
+    @public LabeledTextBox * __strong Allies[4];
     @public int ALLY_SIZE;
     
     @public LabeledTextBox * __strong Mobs[16];
     @public int MOB_SIZE;
+    
+    @public OrderField * __strong Order[28];
+    @public int ORDER_SIZE;
+    
+    @public NSButton __strong *Reset;
+    @public NSButton __strong *Map;
+    @public NSButton __strong *Roll;
+    @public NSButton __strong *Set;
+    @public NSButton __strong *Next;
 };
 
 @end

@@ -25,46 +25,61 @@
     int yPos = 750;
     for(int i = 0; i < mainViewController->PARTY_SIZE; i++) {
     
-    LabeledTextBox *Hero = [[LabeledTextBox alloc]
+        LabeledTextBox *Hero = [[LabeledTextBox alloc]
                             initLabeled:HeroNames[i] labelDir:LABEL_LEFT
                             p:CGPointMake(525, yPos) isEditable:true];
-    [Hero->Box setFrameSize:NSMakeSize(30, 20)];
+        [Hero->Box setFrameSize:NSMakeSize(30, 20)];
     
-    [[item view] addSubview:Hero->Box];
-    [[item view] addSubview:Hero->Label];
-    mainViewController->Heros[i] = Hero;
-    yPos -= 30;
-        
+        [[item view] addSubview:Hero->Box];
+        [[item view] addSubview:Hero->Label];
+        mainViewController->Heros[i] = Hero;
+        yPos -= 30;
     }
         
     for(int i = 0; i < mainViewController->ALLY_SIZE; i++) {
     
-    LabeledTextBox *Ally = [[LabeledTextBox alloc]
+        LabeledTextBox *Ally = [[LabeledTextBox alloc]
                             initEditableLabel:AllyNames[i] labelDir:LABEL_LEFT
                             frame:NSMakeRect(525, yPos, 70, 20) isEditable:true
                             boxSize:NSMakeSize(30, 20)];
            
-    [[item view] addSubview:Ally->Box];
-    [[item view] addSubview:Ally->Label];
-    mainViewController->Allies[i] = Ally;
-    yPos -= 30;
-        
+        [[item view] addSubview:Ally->Box];
+    	[[item view] addSubview:Ally->Label];
+        mainViewController->Allies[i] = Ally;
+        yPos -= 30;
     }
  
     yPos = 750;
     for(int i = 0; i < mainViewController->MOB_SIZE; i++) {
     
-    LabeledTextBox *Mob = [[LabeledTextBox alloc]
+        LabeledTextBox *Mob = [[LabeledTextBox alloc]
                             initEditableLabel:EnemyNames[i] labelDir:LABEL_LEFT
                            frame:NSMakeRect(365, yPos, 70, 20) isEditable:true
                            boxSize:NSMakeSize(30, 20)];
         
-    [[item view] addSubview:Mob->Box];
-    [[item view] addSubview:Mob->Label];
-    mainViewController->Mobs[i] = Mob;
-    yPos -= 30;
-        
+        [[item view] addSubview:Mob->Box];
+        [[item view] addSubview:Mob->Label];
+        mainViewController->Mobs[i] = Mob;
+        yPos -= 30;
     }
+    
+    yPos = 750;
+    for(int i = 0; i < mainViewController->ORDER_SIZE; i++) {
+        OrderField *Order = [[OrderField alloc]
+                             initOrder:CGPointMake(680, yPos) num:i+1];
+        
+        [[item view] addSubview:Order->Name];
+        [[item view] addSubview:Order->Num];
+        mainViewController->Order[i] = Order;
+        yPos -= 22;
+    }
+    
+    NSButton *ResetButt = [[NSButton alloc]
+                           initWithFrame:NSMakeRect(20, 760, 80, 20)];
+    [ResetButt setStringValue:@"Reset"];
+    
+    [[item view] addSubview:ResetButt];
+    mainViewController->Reset = ResetButt;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
@@ -74,6 +89,7 @@
     mainViewController->PARTY_SIZE = 8;
     mainViewController->ALLY_SIZE  = 4;
     mainViewController->MOB_SIZE   = 16;
+    mainViewController->ORDER_SIZE = 28;
     
     NSWindow *MainWindow = [NSApp windows][0];
     [MainWindow setFrame:NSMakeRect(300, 160, 1280, 960) display:true];
