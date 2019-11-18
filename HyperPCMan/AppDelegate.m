@@ -73,13 +73,13 @@
         mainViewController->Order[i] = Order;
         yPos -= 22;
     }
+       
+    ActionButton *test = [[ActionButton alloc] initWithAction:NSMakeRect(20, 760, 80, 20) name:@"Test" blk:^void(){
+        NSLog(@"Testing this button!");
+    }];
     
-    NSButton *ResetButt = [[NSButton alloc]
-                           initWithFrame:NSMakeRect(20, 760, 80, 20)];
-    [ResetButt setStringValue:@"Reset"];
-    
-    [[item view] addSubview:ResetButt];
-    mainViewController->Reset = ResetButt;
+    [[item view] addSubview:test->Button];
+    mainViewController->Test = test;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {

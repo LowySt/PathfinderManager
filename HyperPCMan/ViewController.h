@@ -9,6 +9,7 @@
 #import <Cocoa/Cocoa.h>
 #import "LabeledTextBox.h"
 #import "OrderField.h"
+#import "ActionButton.h"
 
 @interface ViewController : NSViewController {
     
@@ -27,11 +28,14 @@
     @public OrderField * __strong Order[28];
     @public int ORDER_SIZE;
     
+    @public ActionButton __strong *Test;
+    
+    /*
     @public NSButton __strong *Reset;
     @public NSButton __strong *Map;
     @public NSButton __strong *Roll;
     @public NSButton __strong *Set;
-    @public NSButton __strong *Next;
+    @public NSButton __strong *Next;*/
 };
 
 @end

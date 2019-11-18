@@ -11,8 +11,14 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @interface ActionButton : NSButton {
+    @public NSButton __strong *Button;
     
+    void(^Action)(void);
 };
+
+- (void)DoAction;
+
+- (ActionButton *)initWithAction:(NSRect)frame name:(NSString *)name blk:(void(^)(void))blk;
 
 @end
 

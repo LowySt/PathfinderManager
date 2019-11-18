@@ -10,6 +10,7 @@
 
 #import "ViewController.h"
 #import "LabeledTextBox.h"
+#import "ActionButton.h"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
     ViewController *mainViewController;
