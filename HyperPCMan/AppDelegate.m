@@ -73,13 +73,46 @@
         mainViewController->Order[i] = Order;
         yPos -= 22;
     }
-       
-    ActionButton *test = [[ActionButton alloc] initWithAction:NSMakeRect(20, 760, 80, 20) name:@"Test" blk:^void(){
-        NSLog(@"Testing this button!");
+    
+    /*setField(_InitiativeRollButton, CGPointMake(420, 836));
+    setField(_ResetButton, CGPointMake(20, 870));
+    setField(_MapButton, CGPointMake(100, 870));
+    setField(_Counter1Button, CGPointMake(160, 803));
+    setField(_Counter2Button, CGPointMake(160, 763));
+    setField(_Counter3Button, CGPointMake(160, 723));
+    setField(_Counter4Button, CGPointMake(160, 683));**/
+    
+    ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 810, 80, 20) name:@"Reset" blk:^void(){
+        NSLog(@"Reset Button!");
+    }];
+        
+    ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, 810, 80, 20) name:@"Map" blk:^void(){
+        NSLog(@"Map Button!");
+    }];
+        
+    ActionButton *Roll = [[ActionButton alloc] initWithAction:NSMakeRect(420, 780, 80, 20) name:@"Roll" blk:^void(){
+        NSLog(@"Roll Button!");
     }];
     
-    [[item view] addSubview:test->Button];
-    mainViewController->Test = test;
+    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(730, 780, 80, 20) name:@"Set" blk:^void(){
+        NSLog(@"Set Button!");
+    }];
+    
+    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(900, 780, 80, 20) name:@"Next" blk:^void(){
+        NSLog(@"Next Button!");
+    }];
+    
+    [[item view] addSubview:Reset->Button];
+    [[item view] addSubview:Map->Button];
+    [[item view] addSubview:Roll->Button];
+    [[item view] addSubview:Set->Button];
+    [[item view] addSubview:Next->Button];
+    mainViewController->Reset = Reset;
+    mainViewController->Map = Map;
+    mainViewController->Roll = Roll;
+    mainViewController->Set = Set;
+    mainViewController->Next = Next;
+
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {

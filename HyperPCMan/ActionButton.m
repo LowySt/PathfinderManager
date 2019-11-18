@@ -20,7 +20,7 @@
     
     Button = [NSButton buttonWithTitle:name target:self action:NSSelectorFromString(@"DoAction")];
     [Button setFrame:frame];
-      
+
     return self;
 }
 

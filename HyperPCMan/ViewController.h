@@ -28,14 +28,11 @@
     @public OrderField * __strong Order[28];
     @public int ORDER_SIZE;
     
-    @public ActionButton __strong *Test;
-    
-    /*
-    @public NSButton __strong *Reset;
-    @public NSButton __strong *Map;
-    @public NSButton __strong *Roll;
-    @public NSButton __strong *Set;
-    @public NSButton __strong *Next;*/
+    @public ActionButton __strong *Reset;
+    @public ActionButton __strong *Map;
+    @public ActionButton __strong *Roll;
+    @public ActionButton __strong *Set;
+    @public ActionButton __strong *Next;
 };
 
 @end
