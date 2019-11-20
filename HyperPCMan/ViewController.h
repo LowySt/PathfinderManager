@@ -10,6 +10,7 @@
 #import "LabeledTextBox.h"
 #import "OrderField.h"
 #import "ActionButton.h"
+#import "Counter.h"
 
 @interface ViewController : NSViewController {
     
@@ -33,6 +34,9 @@
     @public ActionButton __strong *Roll;
     @public ActionButton __strong *Set;
     @public ActionButton __strong *Next;
+    
+    @public Counter * __strong Counters[4];
+    @public int COUNTER_SIZE;
 };
 
 @end

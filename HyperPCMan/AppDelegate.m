@@ -74,31 +74,23 @@
         yPos -= 22;
     }
     
-    /*setField(_InitiativeRollButton, CGPointMake(420, 836));
-    setField(_ResetButton, CGPointMake(20, 870));
-    setField(_MapButton, CGPointMake(100, 870));
-    setField(_Counter1Button, CGPointMake(160, 803));
-    setField(_Counter2Button, CGPointMake(160, 763));
-    setField(_Counter3Button, CGPointMake(160, 723));
-    setField(_Counter4Button, CGPointMake(160, 683));**/
-    
-    ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 810, 80, 20) name:@"Reset" blk:^void(){
+    ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 810, 80, 24) name:@"Reset" blk:^void(){
         NSLog(@"Reset Button!");
     }];
         
-    ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, 810, 80, 20) name:@"Map" blk:^void(){
+    ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, 810, 80, 24) name:@"Map" blk:^void(){
         NSLog(@"Map Button!");
     }];
         
-    ActionButton *Roll = [[ActionButton alloc] initWithAction:NSMakeRect(420, 780, 80, 20) name:@"Roll" blk:^void(){
+    ActionButton *Roll = [[ActionButton alloc] initWithAction:NSMakeRect(420, 780, 80, 24) name:@"Roll" blk:^void(){
         NSLog(@"Roll Button!");
     }];
     
-    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(730, 780, 80, 20) name:@"Set" blk:^void(){
+    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(730, 780, 80, 24) name:@"Set" blk:^void(){
         NSLog(@"Set Button!");
     }];
     
-    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(900, 780, 80, 20) name:@"Next" blk:^void(){
+    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(900, 780, 80, 24) name:@"Next" blk:^void(){
         NSLog(@"Next Button!");
     }];
     
@@ -112,6 +104,22 @@
     mainViewController->Roll = Roll;
     mainViewController->Set = Set;
     mainViewController->Next = Next;
+    
+    NSArray *counterNames = @[@"Counter 1", @"Counter 2",
+                              @"Counter 3", @"Counter 4"];
+    yPos = 760;
+    for(int i = 0; i < mainViewController->COUNTER_SIZE; i++) {
+        
+        Counter *C = [[Counter alloc] initWithFrame:NSMakeRect(20, yPos, 80, 20) name:counterNames[i]];
+        [[item view] addSubview:C->Field->Box];
+        [[item view] addSubview:C->Field->Label];
+        [[item view] addSubview:C->Count];
+        [[item view] addSubview:C->SetButton->Button];
+        
+        mainViewController->Counters[i] = C;
+        
+        yPos -= 40;
+    }
 
 }
 
@@ -123,6 +131,7 @@
     mainViewController->ALLY_SIZE  = 4;
     mainViewController->MOB_SIZE   = 16;
     mainViewController->ORDER_SIZE = 28;
+    mainViewController->COUNTER_SIZE = 4;
     
     NSWindow *MainWindow = [NSApp windows][0];
     [MainWindow setFrame:NSMakeRect(300, 160, 1280, 960) display:true];
