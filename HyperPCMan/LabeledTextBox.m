@@ -57,7 +57,7 @@
     }
     
     [Box setFrameOrigin:p]; [Label setFrameOrigin:labelP];
-       
+    
     if(!isEditable) { [Box setEditable:false]; }
     
     return self;

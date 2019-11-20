@@ -12,6 +12,7 @@
 #import "LabeledTextBox.h"
 #import "ActionButton.h"
 #import "Counter.h"
+#import "BattleEntity.h"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
     ViewController *mainViewController;

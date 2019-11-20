@@ -25,10 +25,18 @@
     int yPos = 750;
     for(int i = 0; i < mainViewController->PARTY_SIZE; i++) {
     
+        //TODO: Remove the formatter from hero. Maybe make it a BattleEntity
+        //      as well?
+        NSNumberFormatter *nf = [[NSNumberFormatter alloc] init];
+        [nf setAllowsFloats:false];
+        [nf setNumberStyle:NSNumberFormatterNoStyle];
+        [nf setPartialStringValidationEnabled:true];
+        
         LabeledTextBox *Hero = [[LabeledTextBox alloc]
                             initLabeled:HeroNames[i] labelDir:LABEL_LEFT
                             p:CGPointMake(525, yPos) isEditable:true];
         [Hero->Box setFrameSize:NSMakeSize(30, 20)];
+        Hero->Box.formatter = nf;
     
         [[item view] addSubview:Hero->Box];
         [[item view] addSubview:Hero->Label];
@@ -38,27 +46,22 @@
         
     for(int i = 0; i < mainViewController->ALLY_SIZE; i++) {
     
-        LabeledTextBox *Ally = [[LabeledTextBox alloc]
-                            initEditableLabel:AllyNames[i] labelDir:LABEL_LEFT
-                            frame:NSMakeRect(525, yPos, 70, 20) isEditable:true
-                            boxSize:NSMakeSize(30, 20)];
-           
-        [[item view] addSubview:Ally->Box];
-    	[[item view] addSubview:Ally->Label];
+        BattleEntity *Ally = [[BattleEntity alloc] initWithFrame:NSMakeRect(525, yPos, 70, 20) name:AllyNames[i]];
+                   
+        [[item view] addSubview:Ally->Box->Box];
+    	[[item view] addSubview:Ally->Box->Label];
+        [[item view] addSubview:Ally->Init];
         mainViewController->Allies[i] = Ally;
         yPos -= 30;
     }
  
     yPos = 750;
     for(int i = 0; i < mainViewController->MOB_SIZE; i++) {
-    
-        LabeledTextBox *Mob = [[LabeledTextBox alloc]
-                            initEditableLabel:EnemyNames[i] labelDir:LABEL_LEFT
-                           frame:NSMakeRect(365, yPos, 70, 20) isEditable:true
-                           boxSize:NSMakeSize(30, 20)];
-        
-        [[item view] addSubview:Mob->Box];
-        [[item view] addSubview:Mob->Label];
+
+        BattleEntity *Mob = [[BattleEntity alloc] initWithFrame:NSMakeRect(365, yPos, 70, 20) name:EnemyNames[i]];
+        [[item view] addSubview:Mob->Box->Box];
+        [[item view] addSubview:Mob->Box->Label];
+        [[item view] addSubview:Mob->Init];
         mainViewController->Mobs[i] = Mob;
         yPos -= 30;
     }

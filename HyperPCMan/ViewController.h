@@ -11,6 +11,7 @@
 #import "OrderField.h"
 #import "ActionButton.h"
 #import "Counter.h"
+#import "BattleEntity.h"
 
 @interface ViewController : NSViewController {
     
@@ -20,10 +21,10 @@
     @public LabeledTextBox * __strong Heros[8];
     @public int PARTY_SIZE;
 
-    @public LabeledTextBox * __strong Allies[4];
+    @public BattleEntity * __strong Allies[4];
     @public int ALLY_SIZE;
     
-    @public LabeledTextBox * __strong Mobs[16];
+    @public BattleEntity * __strong Mobs[16];
     @public int MOB_SIZE;
     
     @public OrderField * __strong Order[28];

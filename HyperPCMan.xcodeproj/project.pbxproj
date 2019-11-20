@@ -16,6 +16,7 @@
 		9EC95360238168F900C857B0 /* OrderField.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC9535F238168F900C857B0 /* OrderField.m */; };
 		9EC95363238192BC00C857B0 /* ActionButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC95362238192BC00C857B0 /* ActionButton.m */; };
 		9EC95366238311E100C857B0 /* Counter.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC95365238311E100C857B0 /* Counter.m */; };
+		9EC953692385A33E00C857B0 /* BattleEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC953682385A33E00C857B0 /* BattleEntity.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,8 @@
 		9EC95362238192BC00C857B0 /* ActionButton.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ActionButton.m; sourceTree = "<group>"; };
 		9EC95364238311E100C857B0 /* Counter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Counter.h; sourceTree = "<group>"; };
 		9EC95365238311E100C857B0 /* Counter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Counter.m; sourceTree = "<group>"; };
+		9EC953672385A33E00C857B0 /* BattleEntity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BattleEntity.h; sourceTree = "<group>"; };
+		9EC953682385A33E00C857B0 /* BattleEntity.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = BattleEntity.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +82,8 @@
 				9EC9534B237C554400C857B0 /* ViewController.m */,
 				9EC95364238311E100C857B0 /* Counter.h */,
 				9EC95365238311E100C857B0 /* Counter.m */,
+				9EC953672385A33E00C857B0 /* BattleEntity.h */,
+				9EC953682385A33E00C857B0 /* BattleEntity.m */,
 				9EC9535E238168F900C857B0 /* OrderField.h */,
 				9EC9535F238168F900C857B0 /* OrderField.m */,
 				9EC9534D237C554600C857B0 /* Assets.xcassets */,
@@ -161,6 +166,7 @@
 			files = (
 				9EC95360238168F900C857B0 /* OrderField.m in Sources */,
 				9EC9534C237C554400C857B0 /* ViewController.m in Sources */,
+				9EC953692385A33E00C857B0 /* BattleEntity.m in Sources */,
 				9EC95354237C554600C857B0 /* main.m in Sources */,
 				9EC9535D237C875100C857B0 /* LabeledTextBox.m in Sources */,
 				9EC95349237C554400C857B0 /* AppDelegate.m in Sources */,
