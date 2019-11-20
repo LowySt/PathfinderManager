@@ -18,6 +18,9 @@
     // ---------------- //
     //  Initiative Tab  //
     // ---------------- //
+    @public NSComboBox __strong *MobSelector;
+    @public NSComboBox __strong *AllySelector;
+    
     @public LabeledTextBox * __strong Heros[8];
     @public int PARTY_SIZE;
 
@@ -29,6 +32,9 @@
     
     @public OrderField * __strong Order[28];
     @public int ORDER_SIZE;
+    
+    @public NSTextField __strong *CurrentInTurn;
+    @public NSTextField __strong *RoundCount;
     
     @public ActionButton __strong *Reset;
     @public ActionButton __strong *Map;

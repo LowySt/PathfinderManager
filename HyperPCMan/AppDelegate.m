@@ -22,6 +22,9 @@
     
     NSArray *EnemyNames = @[ @"Enemy 1", @"Enemy 2", @"Enemy 3", @"Enemy 4", @"Enemy 5", @"Enemy 6", @"Enemy 7", @"Enemy 8", @"Enemy 9", @"Enemy 10", @"Enemy 11", @"Enemy 12", @"Enemy 13", @"Enemy 14", @"Enemy 15", @"Enemy 16"];
     
+    NSArray *counterNames = @[@"Counter 1", @"Counter 2",
+                              @"Counter 3", @"Counter 4"];
+            
     int yPos = 750;
     for(int i = 0; i < mainViewController->PARTY_SIZE; i++) {
     
@@ -77,6 +80,16 @@
         yPos -= 22;
     }
     
+    mainViewController->CurrentInTurn = [[NSTextField alloc] initWithFrame:NSMakeRect(820, 750, 120, 20)];
+    [mainViewController->CurrentInTurn setAlignment:NSTextAlignmentCenter];
+    [mainViewController->CurrentInTurn setEditable:false];
+    [[item view] addSubview:mainViewController->CurrentInTurn];
+    
+    mainViewController->RoundCount = [[NSTextField alloc] initWithFrame:NSMakeRect(1200, 820, 30, 20)];
+    [mainViewController->RoundCount setAlignment:NSTextAlignmentCenter];
+    [mainViewController->RoundCount setEditable:false];
+    [[item view] addSubview:mainViewController->RoundCount];
+    
     ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 810, 80, 24) name:@"Reset" blk:^void(){
         NSLog(@"Reset Button!");
     }];
@@ -89,27 +102,21 @@
         NSLog(@"Roll Button!");
     }];
     
-    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(730, 780, 80, 24) name:@"Set" blk:^void(){
+    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(695, 780, 80, 24) name:@"Set" blk:^void(){
         NSLog(@"Set Button!");
     }];
     
-    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(900, 780, 80, 24) name:@"Next" blk:^void(){
+    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(840, 780, 80, 24) name:@"Next" blk:^void(){
         NSLog(@"Next Button!");
     }];
     
-    [[item view] addSubview:Reset->Button];
-    [[item view] addSubview:Map->Button];
-    [[item view] addSubview:Roll->Button];
-    [[item view] addSubview:Set->Button];
+    [[item view] addSubview:Reset->Button]; [[item view] addSubview:Map->Button];
+    [[item view] addSubview:Roll->Button]; [[item view] addSubview:Set->Button];
     [[item view] addSubview:Next->Button];
-    mainViewController->Reset = Reset;
-    mainViewController->Map = Map;
-    mainViewController->Roll = Roll;
-    mainViewController->Set = Set;
+    mainViewController->Reset = Reset; mainViewController->Map = Map;
+    mainViewController->Roll = Roll; mainViewController->Set = Set;
     mainViewController->Next = Next;
     
-    NSArray *counterNames = @[@"Counter 1", @"Counter 2",
-                              @"Counter 3", @"Counter 4"];
     yPos = 760;
     for(int i = 0; i < mainViewController->COUNTER_SIZE; i++) {
         
@@ -124,6 +131,19 @@
         yPos -= 40;
     }
 
+    NSArray *MobSelValues = @[@"No Enemies", @"1 Enemy", @"2 Enemies", @"3 Enemies", @"4 Enemies", @"5 Enemies", @"6 Enemies", @"7 Enemies", @"8 Enemies", @"9 Enemies", @"10 Enemies", @"11 Enemies", @"12 Enemies", @"13 Enemies", @"14 Enemies", @"15 Enemies", @"16 Enemies"];
+    NSComboBox *MobSel = [[NSComboBox alloc] initWithFrame:NSMakeRect(315, 780, 100, 25)];
+    [MobSel addItemsWithObjectValues:MobSelValues];
+    [MobSel selectItemAtIndex:0];
+    [[item view] addSubview:MobSel];
+    mainViewController->MobSelector = MobSel;
+    
+    NSArray *AllySelValues = @[@"No Allies", @"1 Ally", @"2 Allies", @"3 Allies", @"4 Allies"];
+    NSComboBox *AllySel = [[NSComboBox alloc] initWithFrame:NSMakeRect(500, 780, 100, 25)];
+    [AllySel addItemsWithObjectValues:AllySelValues];
+    [AllySel selectItemAtIndex:0];
+    [[item view] addSubview:AllySel];
+    mainViewController->AllySelector = AllySel;
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
