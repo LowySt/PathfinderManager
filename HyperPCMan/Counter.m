@@ -34,6 +34,19 @@
     return self;
 }
 
+- (void)tick {
+    elapsedTurns = 0;
+    int currCount = [Count intValue];
+    currCount -= 1;
+    
+    if(currCount == 0) {
+        isCounting = false;
+        [Count setStringValue:@""];
+        [Field->Box setStringValue:@""];
+    }
+    else { [Count setIntValue:currCount]; }
+}
+
 /*
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];

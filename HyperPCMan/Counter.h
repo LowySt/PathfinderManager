@@ -18,9 +18,12 @@ NS_ASSUME_NONNULL_BEGIN
     @public ActionButton __strong *SetButton;
     
     bool isCounting;
+    int  elapsedTurns;
 };
 
 - (Counter *)initWithFrame:(NSRect)frame name:(NSString *)name;
+
+- (void)tick;
 
 @end
 

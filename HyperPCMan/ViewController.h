@@ -31,6 +31,8 @@
         
     @public NSTextField __strong *CurrentInTurn;
     @public NSTextField __strong *RoundCount;
+    @public int currentTurnIdx;
+    @public int turnsInRound;
     
     @public ActionButton __strong *Reset;
     @public ActionButton __strong *Map;
@@ -38,7 +40,7 @@
     @public ActionButton __strong *Set;
     @public ActionButton __strong *Next;
     
-    @public Counter * __strong Counters[4];
+    @public Counter * __strong Counters[COUNTER_SIZE];
 };
 
 - (void)resetMobs;

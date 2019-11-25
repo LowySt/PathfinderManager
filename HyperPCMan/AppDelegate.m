@@ -20,7 +20,7 @@
     
     if(t.identifier == mainVC->MobSelector.identifier)
     {
-        //[v setCurrentTurnIdx:1];
+        mainVC->currentTurnIdx = 0;
         
         NSInteger num = [mainVC->MobSelector indexOfSelectedItem];
         [mainVC resetMobs];
@@ -33,6 +33,8 @@
     }
     else if(t.identifier == mainVC->AllySelector.identifier)
     {
+        mainVC->currentTurnIdx = 0;
+
         NSInteger num = [mainVC->AllySelector indexOfSelectedItem];
         [mainVC resetAllies];
         for(int i = 0; i < num; i++) { [mainVC->Allies[i] show]; }
@@ -140,6 +142,9 @@
         NSInteger allyNum = [self->mainVC->AllySelector indexOfSelectedItem];
         NSInteger orderNum = PARTY_SIZE + mobNum + allyNum;
         
+        self->mainVC->currentTurnIdx = 0;
+        [self->mainVC->RoundCount setStringValue:@""];
+       
         NSMutableArray *orderArr = [[NSMutableArray alloc] init];
         for(int i = 0; i < PARTY_SIZE; i++) {
             [orderArr addObject:self->mainVC->Heros[i]];
@@ -193,7 +198,37 @@
     }];
     
     ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(840, 780, 80, 24) name:@"Next" blk:^void(){
-        NSLog(@"Next Button!");
+        
+        NSInteger mobNum = [self->mainVC->MobSelector indexOfSelectedItem];
+        NSInteger allyNum = [self->mainVC->AllySelector indexOfSelectedItem];
+        NSInteger num = mobNum + allyNum + PARTY_SIZE;// - removeSize -  notInBattle;
+        
+        if(mobNum == 0 && allyNum == 0) { return; }
+        
+        //TODO: Maybe bug when removing from order and currentTurnIdx gets >= than num?
+        //      Probably not because currentTurnIdx gets managed when removing from order
+        if(self->mainVC->currentTurnIdx == (num-1)) {
+            self->mainVC->currentTurnIdx = 0;
+            [self->mainVC->RoundCount setIntValue:([self->mainVC->RoundCount intValue]+1)];
+        } else
+        { self->mainVC->currentTurnIdx += 1; }
+
+        //NOTE: We need numberOfTurnsI >= turnsInRound, rather then ==, because if
+        //      turnsInRound was modified while the counter was on the boundary, it
+        //      ends up in a wrong state!
+        for(int i = 0; i < COUNTER_SIZE; i++) {
+            Counter *curr = self->mainVC->Counters[i];
+            if(curr->isCounting == true) {
+                curr->elapsedTurns += 1;
+                if(curr->elapsedTurns >= self->mainVC->turnsInRound) {
+                    [curr tick];
+                }
+            }
+        }
+        
+        [self->mainVC->CurrentInTurn
+         setStringValue:
+         [self->mainVC->Order[self->mainVC->currentTurnIdx]->Name stringValue]];
     }];
     
     [[item view] addSubview:Reset->Button]; [[item view] addSubview:Map->Button];
@@ -239,6 +274,8 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
     mainVC = (ViewController *) NSApplication.sharedApplication.orderedWindows.firstObject.contentViewController;
+    
+    mainVC->currentTurnIdx = 0;
     
     NSWindow *MainWindow = [NSApp windows][0];
     [MainWindow setFrame:NSMakeRect(300, 160, 1280, 960) display:true];
