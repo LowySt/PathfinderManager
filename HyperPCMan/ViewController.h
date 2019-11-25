@@ -12,6 +12,7 @@
 #import "ActionButton.h"
 #import "Counter.h"
 #import "BattleEntity.h"
+#import "CheckButton.h"
 
 @interface ViewController : NSViewController {
     
@@ -23,6 +24,7 @@
     
     @public LabeledTextBox * __strong Heros[8];
     @public int PARTY_SIZE;
+    @public CheckButton * __strong InBattle[8];
 
     @public BattleEntity * __strong Allies[4];
     @public int ALLY_SIZE;

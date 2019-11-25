@@ -41,9 +41,13 @@
         [Hero->Box setFrameSize:NSMakeSize(30, 20)];
         Hero->Box.formatter = nf;
     
+        CheckButton *InBattle = [[CheckButton alloc] initWithState:true frame:NSMakeRect(560, yPos, 20, 20)];
+        
         [[item view] addSubview:Hero->Box];
         [[item view] addSubview:Hero->Label];
+        [[item view] addSubview:InBattle->Button];
         mainViewController->Heros[i] = Hero;
+        mainViewController->InBattle[i] = InBattle;
         yPos -= 30;
     }
         

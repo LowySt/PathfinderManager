@@ -13,6 +13,7 @@
 #import "ActionButton.h"
 #import "Counter.h"
 #import "BattleEntity.h"
+#import "CheckButton.h"
 
 @interface AppDelegate : NSObject <NSApplicationDelegate> {
     ViewController *mainViewController;
