@@ -11,6 +11,12 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#define PARTY_SIZE   9
+#define ALLY_SIZE    4
+#define MOB_SIZE     16
+#define ORDER_SIZE   29
+#define COUNTER_SIZE 4
+
 @interface BattleEntity : NSObject {
   
     @public LabeledTextBox __strong *Box;

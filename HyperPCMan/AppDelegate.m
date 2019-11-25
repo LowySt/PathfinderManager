@@ -16,7 +16,7 @@
 
 - (void)SetupInitTab:(NSTabViewItem *)item {
     
-    NSArray *HeroNames = @[ @"Gremag", @"Federico", @"Ken Shiro", @"Sirion", @"Albion", @"Sdentato", @"Dresdam", @"Zoddak"];
+    NSArray *HeroNames = @[ @"Gremag", @"Federico", @"Ken Shiro", @"Sirion", @"Israfel", @"Juliet", @"Dubhe", @"Dresdam", @"Zoddak"];
            
     NSArray *AllyNames = @[@"Ally 1", @"Ally 2", @"Ally 3", @"Ally 4"];
     
@@ -26,7 +26,7 @@
                               @"Counter 3", @"Counter 4"];
             
     int yPos = 750;
-    for(int i = 0; i < mainViewController->PARTY_SIZE; i++) {
+    for(int i = 0; i < PARTY_SIZE; i++) {
     
         //TODO: Remove the formatter from hero. Maybe make it a BattleEntity
         //      as well?
@@ -51,7 +51,7 @@
         yPos -= 30;
     }
         
-    for(int i = 0; i < mainViewController->ALLY_SIZE; i++) {
+    for(int i = 0; i < ALLY_SIZE; i++) {
     
         BattleEntity *Ally = [[BattleEntity alloc] initWithFrame:NSMakeRect(525, yPos, 70, 20) name:AllyNames[i]];
                    
@@ -63,7 +63,7 @@
     }
  
     yPos = 750;
-    for(int i = 0; i < mainViewController->MOB_SIZE; i++) {
+    for(int i = 0; i < MOB_SIZE; i++) {
 
         BattleEntity *Mob = [[BattleEntity alloc] initWithFrame:NSMakeRect(365, yPos, 70, 20) name:EnemyNames[i]];
         [[item view] addSubview:Mob->Box->Box];
@@ -74,7 +74,7 @@
     }
     
     yPos = 750;
-    for(int i = 0; i < mainViewController->ORDER_SIZE; i++) {
+    for(int i = 0; i < ORDER_SIZE; i++) {
         OrderField *Order = [[OrderField alloc]
                              initOrder:CGPointMake(680, yPos) num:i+1];
         
@@ -129,7 +129,7 @@
     mainViewController->Next = Next;
     
     yPos = 760;
-    for(int i = 0; i < mainViewController->COUNTER_SIZE; i++) {
+    for(int i = 0; i < COUNTER_SIZE; i++) {
         
         Counter *C = [[Counter alloc] initWithFrame:NSMakeRect(20, yPos, 80, 20) name:counterNames[i]];
         [[item view] addSubview:C->Field->Box];
@@ -160,12 +160,6 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
     mainViewController = (ViewController *) NSApplication.sharedApplication.orderedWindows.firstObject.contentViewController;
-    
-    mainViewController->PARTY_SIZE = 8;
-    mainViewController->ALLY_SIZE  = 4;
-    mainViewController->MOB_SIZE   = 16;
-    mainViewController->ORDER_SIZE = 28;
-    mainViewController->COUNTER_SIZE = 4;
     
     NSWindow *MainWindow = [NSApp windows][0];
     [MainWindow setFrame:NSMakeRect(300, 160, 1280, 960) display:true];
