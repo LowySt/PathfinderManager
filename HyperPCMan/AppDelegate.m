@@ -51,21 +51,12 @@
     
         //TODO: Remove the formatter from hero. Maybe make it a BattleEntity
         //      as well?
-        NSNumberFormatter *nf = [[NSNumberFormatter alloc] init];
-        [nf setAllowsFloats:false];
-        [nf setNumberStyle:NSNumberFormatterNoStyle];
-        [nf setPartialStringValidationEnabled:true];
-        
-        LabeledTextBox *Hero = [[LabeledTextBox alloc]
-                            initLabeled:HeroNames[i] labelDir:LABEL_LEFT
-                            p:CGPointMake(525, yPos) isEditable:true];
-        [Hero->Box setFrameSize:NSMakeSize(30, 20)];
-        Hero->Box.formatter = nf;
-    
+        BattleEntity *Hero = [[BattleEntity alloc]initHero:NSMakeRect(525, yPos, 30, 20) name:HeroNames[i]];
+           
         CheckButton *InBattle = [[CheckButton alloc] initWithState:true frame:NSMakeRect(560, yPos, 20, 20)];
         
-        [[item view] addSubview:Hero->Box];
-        [[item view] addSubview:Hero->Label];
+        [[item view] addSubview:Hero->Box->Box];
+        [[item view] addSubview:Hero->Box->Label];
         [[item view] addSubview:InBattle->Button];
         mainVC->Heros[i] = Hero;
         mainVC->InBattle[i] = InBattle;
@@ -144,7 +135,61 @@
     }];
     
     ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(695, 780, 80, 24) name:@"Set" blk:^void(){
-        NSLog(@"Set Button!");
+        
+        NSInteger mobNum  = [self->mainVC->MobSelector indexOfSelectedItem];
+        NSInteger allyNum = [self->mainVC->AllySelector indexOfSelectedItem];
+        NSInteger orderNum = PARTY_SIZE + mobNum + allyNum;
+        
+        NSMutableArray *orderArr = [[NSMutableArray alloc] init];
+        for(int i = 0; i < PARTY_SIZE; i++) {
+            [orderArr addObject:self->mainVC->Heros[i]];
+        }
+        for(int i = 0; i < mobNum; i++) {
+            [orderArr addObject:self->mainVC->Mobs[i]];
+        }
+        for(int i = 0; i < allyNum; i++) {
+            [orderArr addObject:self->mainVC->Allies[i]];
+        }
+        
+        [orderArr sortUsingComparator:^(BattleEntity *a, BattleEntity *b) {
+            if(a->isHero == true) {
+                if(b->isHero == true) {
+                    if([a->Box->Box intValue] > [b->Box->Box intValue])
+                    { return (NSComparisonResult)NSOrderedAscending; }
+                    if([a->Box->Box intValue] < [b->Box->Box intValue])
+                    { return (NSComparisonResult)NSOrderedDescending; }
+                    return (NSComparisonResult)NSOrderedSame;
+                }
+                if([a->Box->Box intValue] > [b->Init intValue])
+                { return (NSComparisonResult)NSOrderedAscending; }
+                if([a->Box->Box intValue] < [b->Init intValue])
+                { return (NSComparisonResult)NSOrderedDescending; }
+                return (NSComparisonResult)NSOrderedSame;
+            }
+            if(b->isHero == true) {
+                if([b->Box->Box intValue] > [a->Init intValue])
+                { return (NSComparisonResult)NSOrderedAscending; }
+                if([b->Box->Box intValue] < [a->Init intValue])
+                { return (NSComparisonResult)NSOrderedDescending; }
+                return (NSComparisonResult)NSOrderedSame;
+            }
+            if([a->Init intValue] > [b->Init intValue])
+            { return (NSComparisonResult)NSOrderedAscending; }
+            if([a->Init intValue] < [b->Init intValue])
+            { return (NSComparisonResult)NSOrderedDescending; }
+            return (NSComparisonResult)NSOrderedSame;
+        }];
+        
+        for(int i = 0; i < orderNum; i++) {
+            BattleEntity *b = orderArr[i];
+            [self->mainVC->Order[i]->Name setStringValue:[b->Box->Label stringValue]];
+            [self->mainVC->Order[i]->Num setIntValue:(i+1)];
+            
+            if(i == 0) {
+                [self->mainVC->CurrentInTurn
+                 setStringValue:[b->Box->Label stringValue]];
+            }
+        }
     }];
     
     ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(840, 780, 80, 24) name:@"Next" blk:^void(){

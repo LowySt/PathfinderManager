@@ -28,7 +28,7 @@
     
     Action = blk;
     
-    Button = [NSButton buttonWithTitle:@"X" target:self action:NSSelectorFromString(@"DoAction")];
+    Button = [NSButton buttonWithTitle:@"x" target:self action:NSSelectorFromString(@"DoAction")];
     [Button setBordered:false];
     [Button setFrame:frame];
     

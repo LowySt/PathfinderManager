@@ -22,7 +22,7 @@
     @public NSComboBox __strong *MobSelector;
     @public NSComboBox __strong *AllySelector;
     
-    @public LabeledTextBox * __strong Heros[PARTY_SIZE];
+    @public BattleEntity * __strong Heros[PARTY_SIZE];
     @public CheckButton * __strong InBattle[PARTY_SIZE];
 
     @public BattleEntity * __strong Allies[ALLY_SIZE];

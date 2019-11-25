@@ -13,7 +13,7 @@
 - (OrderField *)initOrder:(CGPoint)p num:(int)num {
     
     Name = [[NSTextField alloc] initWithFrame:NSMakeRect(400, 400, 120, 20)];
-    [Name setAlignment:NSTextAlignmentLeft];
+    [Name setAlignment:NSTextAlignmentCenter];
     [Name setStringValue:@""];
     
     Num  = [[NSTextField alloc] initWithFrame:NSMakeRect(400, 400, 30, 20)];

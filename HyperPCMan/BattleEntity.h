@@ -30,9 +30,12 @@ NSString static *_Nonnull __strong counterNames[COUNTER_SIZE] = {@"Counter 1", @
     @public LabeledTextBox __strong *Box;
     @public NSTextField __strong *Init;
     
+    @public bool isHero;
 };
 
 - (BattleEntity *)initWithFrame:(NSRect)frame name:(NSString *)name;
+
+- (BattleEntity *)initHero:(NSRect)frame name:(NSString *)name;
 
 - (void)hide;
 - (void)show;
