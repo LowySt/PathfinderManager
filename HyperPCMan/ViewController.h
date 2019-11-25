@@ -32,6 +32,7 @@
     
     @public OrderField * __strong Order[28];
     @public int ORDER_SIZE;
+    @public ActionButton * __strong RemoveOrder[28];
     
     @public NSTextField __strong *CurrentInTurn;
     @public NSTextField __strong *RoundCount;

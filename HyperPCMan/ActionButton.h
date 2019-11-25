@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (ActionButton *)initWithAction:(NSRect)frame name:(NSString *)name blk:(void(^)(void))blk;
 
+- (ActionButton *)initXWithAction:(NSRect)frame blk:(void(^)(void))blk;
+
 @end
 
 NS_ASSUME_NONNULL_END

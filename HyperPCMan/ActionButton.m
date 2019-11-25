@@ -24,6 +24,17 @@
     return self;
 }
 
+- (ActionButton *)initXWithAction:(NSRect)frame blk:(void(^)(void))blk {
+    
+    Action = blk;
+    
+    Button = [NSButton buttonWithTitle:@"X" target:self action:NSSelectorFromString(@"DoAction")];
+    [Button setBordered:false];
+    [Button setFrame:frame];
+    
+    return self;
+}
+
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];
     

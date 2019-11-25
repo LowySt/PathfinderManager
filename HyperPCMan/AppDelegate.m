@@ -74,9 +74,16 @@
         OrderField *Order = [[OrderField alloc]
                              initOrder:CGPointMake(680, yPos) num:i+1];
         
+        //NOTE:TODO: Something fucky happening. Slowdown HERE!
+        ActionButton *RemoveB = [[ActionButton alloc] initXWithAction:NSMakeRect(620, yPos, 20, 20) blk:^void(){
+            NSLog(@"RemoveB");
+        }];
+        
         [[item view] addSubview:Order->Name];
         [[item view] addSubview:Order->Num];
+        [[item view] addSubview:RemoveB->Button];
         mainViewController->Order[i] = Order;
+        mainViewController->RemoveOrder[i] = RemoveB;
         yPos -= 22;
     }
     
