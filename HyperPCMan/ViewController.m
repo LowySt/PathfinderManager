@@ -10,6 +10,25 @@
 
 @implementation ViewController
 
+- (void)resetMobs {
+    for(int i = 0; i < MOB_SIZE; i++) {
+        [Mobs[i] hide];
+        [Mobs[i] setName:EnemyNames[i]];
+    }
+}
+
+- (void)resetAllies {
+    for(int i = 0; i < ALLY_SIZE; i++) {
+        [Allies[i] hide];
+        [Allies[i] setName:AllyNames[i]];
+    }
+}
+
+- (void)resetOrder {
+    for(int i = 0; i < PARTY_SIZE; i++) { [Order[i] show]; }
+    for(int i = PARTY_SIZE; i < ORDER_SIZE; i++) { [Order[i] hide]; }
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
 

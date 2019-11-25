@@ -22,16 +22,13 @@
     @public NSComboBox __strong *MobSelector;
     @public NSComboBox __strong *AllySelector;
     
-    @public LabeledTextBox * __strong Heros[9];
-    @public CheckButton * __strong InBattle[9];
+    @public LabeledTextBox * __strong Heros[PARTY_SIZE];
+    @public CheckButton * __strong InBattle[PARTY_SIZE];
 
-    @public BattleEntity * __strong Allies[4];
+    @public BattleEntity * __strong Allies[ALLY_SIZE];
+    @public BattleEntity * __strong Mobs[MOB_SIZE];
+    @public OrderField * __strong Order[ORDER_SIZE];
         
-    @public BattleEntity * __strong Mobs[16];
-        
-    @public OrderField * __strong Order[28];
-    @public ActionButton * __strong RemoveOrder[28];
-    
     @public NSTextField __strong *CurrentInTurn;
     @public NSTextField __strong *RoundCount;
     
@@ -43,6 +40,10 @@
     
     @public Counter * __strong Counters[4];
 };
+
+- (void)resetMobs;
+- (void)resetAllies;
+- (void)resetOrder;
 
 @end
 

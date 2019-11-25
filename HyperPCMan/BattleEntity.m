@@ -27,7 +27,29 @@
     Init.formatter = nf;
     [Init setAlignment:NSTextAlignmentCenter];
     
+    [Box->Box setHidden:true];
+    [Box->Label setHidden:true];
+    [Init setHidden:true];
+    
     return self;
 }
+
+- (void)hide {
+    [Box->Box setHidden:true];
+    [Box->Label setHidden:true];
+    [Init setHidden:true];
+}
+
+- (void)show {
+    [Box->Box setHidden:false];
+    [Box->Label setHidden:false];
+    [Init setHidden:false];
+}
+
+//NOTE: I hate ""OOP"" languages...
+- (void)setName:(NSString *)name {
+    [Box->Label setStringValue:name];
+}
+
 
 @end

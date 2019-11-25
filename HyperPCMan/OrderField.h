@@ -7,6 +7,7 @@
 //
 
 #import <Cocoa/Cocoa.h>
+#import "ActionButton.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -14,9 +15,14 @@ NS_ASSUME_NONNULL_BEGIN
 
     @public NSTextField __strong *Name;
     @public NSTextField __strong *Num;
+    
+    @public ActionButton __strong *Remove;
 };
 
 - (OrderField *)initOrder:(CGPoint)p num:(int)num;
+
+- (void)hide;
+- (void)show;
 
 @end
 

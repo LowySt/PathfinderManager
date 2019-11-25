@@ -14,17 +14,38 @@
 
 @implementation AppDelegate
 
+- (void)comboBoxSelectionDidChange:(NSNotification *)notification {
+    
+    NSComboBox *t = notification.object;
+    
+    if(t.identifier == mainVC->MobSelector.identifier)
+    {
+        //[v setCurrentTurnIdx:1];
+        
+        NSInteger num = [mainVC->MobSelector indexOfSelectedItem];
+        [mainVC resetMobs];
+        for(int i = 0; i < num; i++) { [mainVC->Mobs[i] show]; }
+
+        NSInteger allyNum = [mainVC->AllySelector indexOfSelectedItem];
+        for(int i = 0; i < ORDER_SIZE; i++) { [mainVC->Order[i] hide]; }
+        for(int i = 0; i < num + allyNum + PARTY_SIZE; i++)
+        { [mainVC->Order[i] show]; }
+    }
+    else if(t.identifier == mainVC->AllySelector.identifier)
+    {
+        NSInteger num = [mainVC->AllySelector indexOfSelectedItem];
+        [mainVC resetAllies];
+        for(int i = 0; i < num; i++) { [mainVC->Allies[i] show]; }
+        
+        NSInteger mobNum = [mainVC->MobSelector indexOfSelectedItem];
+        for(int i = 0; i < ORDER_SIZE; i++) { [mainVC->Order[i] hide]; }
+        for(int i = 0; i < num + mobNum + PARTY_SIZE; i++)
+        { [mainVC->Order[i] show]; }
+    }
+}
+
 - (void)SetupInitTab:(NSTabViewItem *)item {
-    
-    NSArray *HeroNames = @[ @"Gremag", @"Federico", @"Ken Shiro", @"Sirion", @"Israfel", @"Juliet", @"Dubhe", @"Dresdam", @"Zoddak"];
-           
-    NSArray *AllyNames = @[@"Ally 1", @"Ally 2", @"Ally 3", @"Ally 4"];
-    
-    NSArray *EnemyNames = @[ @"Enemy 1", @"Enemy 2", @"Enemy 3", @"Enemy 4", @"Enemy 5", @"Enemy 6", @"Enemy 7", @"Enemy 8", @"Enemy 9", @"Enemy 10", @"Enemy 11", @"Enemy 12", @"Enemy 13", @"Enemy 14", @"Enemy 15", @"Enemy 16"];
-    
-    NSArray *counterNames = @[@"Counter 1", @"Counter 2",
-                              @"Counter 3", @"Counter 4"];
-            
+                
     int yPos = 750;
     for(int i = 0; i < PARTY_SIZE; i++) {
     
@@ -46,8 +67,8 @@
         [[item view] addSubview:Hero->Box];
         [[item view] addSubview:Hero->Label];
         [[item view] addSubview:InBattle->Button];
-        mainViewController->Heros[i] = Hero;
-        mainViewController->InBattle[i] = InBattle;
+        mainVC->Heros[i] = Hero;
+        mainVC->InBattle[i] = InBattle;
         yPos -= 30;
     }
         
@@ -58,7 +79,7 @@
         [[item view] addSubview:Ally->Box->Box];
     	[[item view] addSubview:Ally->Box->Label];
         [[item view] addSubview:Ally->Init];
-        mainViewController->Allies[i] = Ally;
+        mainVC->Allies[i] = Ally;
         yPos -= 30;
     }
  
@@ -69,37 +90,32 @@
         [[item view] addSubview:Mob->Box->Box];
         [[item view] addSubview:Mob->Box->Label];
         [[item view] addSubview:Mob->Init];
-        mainViewController->Mobs[i] = Mob;
+        mainVC->Mobs[i] = Mob;
         yPos -= 30;
     }
     
     yPos = 750;
     for(int i = 0; i < ORDER_SIZE; i++) {
+         //NOTE:TODO: Something fucky happening. Slowdown HERE! In button creation
         OrderField *Order = [[OrderField alloc]
                              initOrder:CGPointMake(680, yPos) num:i+1];
-        
-        //NOTE:TODO: Something fucky happening. Slowdown HERE!
-        ActionButton *RemoveB = [[ActionButton alloc] initXWithAction:NSMakeRect(620, yPos, 20, 20) blk:^void(){
-            NSLog(@"RemoveB");
-        }];
-        
+                
         [[item view] addSubview:Order->Name];
         [[item view] addSubview:Order->Num];
-        [[item view] addSubview:RemoveB->Button];
-        mainViewController->Order[i] = Order;
-        mainViewController->RemoveOrder[i] = RemoveB;
+        [[item view] addSubview:Order->Remove->Button];
+        mainVC->Order[i] = Order;
         yPos -= 22;
     }
     
-    mainViewController->CurrentInTurn = [[NSTextField alloc] initWithFrame:NSMakeRect(820, 750, 120, 20)];
-    [mainViewController->CurrentInTurn setAlignment:NSTextAlignmentCenter];
-    [mainViewController->CurrentInTurn setEditable:false];
-    [[item view] addSubview:mainViewController->CurrentInTurn];
+    mainVC->CurrentInTurn = [[NSTextField alloc] initWithFrame:NSMakeRect(820, 750, 120, 20)];
+    [mainVC->CurrentInTurn setAlignment:NSTextAlignmentCenter];
+    [mainVC->CurrentInTurn setEditable:false];
+    [[item view] addSubview:mainVC->CurrentInTurn];
     
-    mainViewController->RoundCount = [[NSTextField alloc] initWithFrame:NSMakeRect(1200, 820, 30, 20)];
-    [mainViewController->RoundCount setAlignment:NSTextAlignmentCenter];
-    [mainViewController->RoundCount setEditable:false];
-    [[item view] addSubview:mainViewController->RoundCount];
+    mainVC->RoundCount = [[NSTextField alloc] initWithFrame:NSMakeRect(1200, 820, 30, 20)];
+    [mainVC->RoundCount setAlignment:NSTextAlignmentCenter];
+    [mainVC->RoundCount setEditable:false];
+    [[item view] addSubview:mainVC->RoundCount];
     
     ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 810, 80, 24) name:@"Reset" blk:^void(){
         NSLog(@"Reset Button!");
@@ -110,7 +126,21 @@
     }];
         
     ActionButton *Roll = [[ActionButton alloc] initWithAction:NSMakeRect(420, 780, 80, 24) name:@"Roll" blk:^void(){
-        NSLog(@"Roll Button!");
+        NSInteger mobNum = [self->mainVC->MobSelector indexOfSelectedItem];
+        NSInteger allyNum = [self->mainVC->AllySelector indexOfSelectedItem];
+        int newRand;
+        
+        for(int i = 0; i < mobNum; i++)
+        {
+            newRand = arc4random_uniform(20) + 1;
+            [self->mainVC->Mobs[i]->Init setIntValue:(newRand + [self->mainVC->Mobs[i]->Box->Box intValue])];
+        }
+        
+        for(int i = 0; i < allyNum; i++)
+        {
+            newRand = arc4random_uniform(20) + 1;
+            [self->mainVC->Allies[i]->Init setIntValue:(newRand + [self->mainVC->Allies[i]->Box->Box intValue])];
+        }
     }];
     
     ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(695, 780, 80, 24) name:@"Set" blk:^void(){
@@ -124,9 +154,9 @@
     [[item view] addSubview:Reset->Button]; [[item view] addSubview:Map->Button];
     [[item view] addSubview:Roll->Button]; [[item view] addSubview:Set->Button];
     [[item view] addSubview:Next->Button];
-    mainViewController->Reset = Reset; mainViewController->Map = Map;
-    mainViewController->Roll = Roll; mainViewController->Set = Set;
-    mainViewController->Next = Next;
+    mainVC->Reset = Reset; mainVC->Map = Map;
+    mainVC->Roll = Roll; mainVC->Set = Set;
+    mainVC->Next = Next;
     
     yPos = 760;
     for(int i = 0; i < COUNTER_SIZE; i++) {
@@ -137,7 +167,7 @@
         [[item view] addSubview:C->Count];
         [[item view] addSubview:C->SetButton->Button];
         
-        mainViewController->Counters[i] = C;
+        mainVC->Counters[i] = C;
         
         yPos -= 40;
     }
@@ -146,20 +176,24 @@
     NSComboBox *MobSel = [[NSComboBox alloc] initWithFrame:NSMakeRect(315, 780, 100, 25)];
     [MobSel addItemsWithObjectValues:MobSelValues];
     [MobSel selectItemAtIndex:0];
+    MobSel.identifier = @"MobSel";
     [[item view] addSubview:MobSel];
-    mainViewController->MobSelector = MobSel;
+    mainVC->MobSelector = MobSel;
+    [mainVC->MobSelector setDelegate:self];
     
     NSArray *AllySelValues = @[@"No Allies", @"1 Ally", @"2 Allies", @"3 Allies", @"4 Allies"];
     NSComboBox *AllySel = [[NSComboBox alloc] initWithFrame:NSMakeRect(500, 780, 100, 25)];
     [AllySel addItemsWithObjectValues:AllySelValues];
     [AllySel selectItemAtIndex:0];
+    AllySel.identifier = @"AllySel";
     [[item view] addSubview:AllySel];
-    mainViewController->AllySelector = AllySel;
+    mainVC->AllySelector = AllySel;
+    [mainVC->AllySelector setDelegate:self];
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
-    mainViewController = (ViewController *) NSApplication.sharedApplication.orderedWindows.firstObject.contentViewController;
+    mainVC = (ViewController *) NSApplication.sharedApplication.orderedWindows.firstObject.contentViewController;
     
     NSWindow *MainWindow = [NSApp windows][0];
     [MainWindow setFrame:NSMakeRect(300, 160, 1280, 960) display:true];
@@ -175,6 +209,7 @@
     [item3 setLabel:@"Party"];
 
     [self SetupInitTab:item2];
+    [mainVC resetOrder];
     
     NSArray *tabViewItems = [[NSArray alloc] initWithObjects:item0, item1, item2, item3, nil];
     [MainTabView setTabViewItems:tabViewItems];

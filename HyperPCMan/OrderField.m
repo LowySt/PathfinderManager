@@ -24,7 +24,29 @@
     
     [Name setFrameOrigin:p]; [Num setFrameOrigin:numP];
     
+    //NOTE:TODO: Something fucky happening. Slowdown HERE!
+    NSRect buttonFrame = NSMakeRect(p.x - 60, p.y, 20, 20);
+    Remove = [[ActionButton alloc] initXWithAction:buttonFrame blk:^void(){
+        NSLog(@"Remove This Order!");
+    }];
+    
+    [Name setHidden:true];
+    [Num setHidden:true];
+    [Remove->Button setHidden:true];
+    
     return self;
+}
+
+- (void)hide {
+    [Name setHidden:true];
+    [Num setHidden:true];
+    [Remove->Button setHidden:true];
+}
+
+- (void)show {
+    [Name setHidden:false];
+    [Num setHidden:false];
+    [Remove->Button setHidden:false];
 }
 
 - (void)drawRect:(NSRect)dirtyRect {
