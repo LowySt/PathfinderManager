@@ -25,11 +25,9 @@
         NSInteger num = [mainVC->MobSelector indexOfSelectedItem];
         [mainVC resetMobs];
         for(int i = 0; i < num; i++) { [mainVC->Mobs[i] show]; }
-
+               
         NSInteger allyNum = [mainVC->AllySelector indexOfSelectedItem];
-        for(int i = 0; i < ORDER_SIZE; i++) { [mainVC->Order[i] hide]; }
-        for(int i = 0; i < num + allyNum + PARTY_SIZE; i++)
-        { [mainVC->Order[i] show]; }
+        [mainVC showNOrder:(num + allyNum + PARTY_SIZE - mainVC->notInBattle)];
     }
     else if(t.identifier == mainVC->AllySelector.identifier)
     {
@@ -40,9 +38,7 @@
         for(int i = 0; i < num; i++) { [mainVC->Allies[i] show]; }
         
         NSInteger mobNum = [mainVC->MobSelector indexOfSelectedItem];
-        for(int i = 0; i < ORDER_SIZE; i++) { [mainVC->Order[i] hide]; }
-        for(int i = 0; i < num + mobNum + PARTY_SIZE; i++)
-        { [mainVC->Order[i] show]; }
+        [mainVC showNOrder:(num + mobNum + PARTY_SIZE - mainVC->notInBattle)];
     }
 }
 
@@ -55,7 +51,19 @@
         //      as well?
         BattleEntity *Hero = [[BattleEntity alloc]initHero:NSMakeRect(525, yPos, 30, 20) name:HeroNames[i]];
            
-        CheckButton *InBattle = [[CheckButton alloc] initWithState:true frame:NSMakeRect(560, yPos, 20, 20)];
+        CheckButton *InBattle = [[CheckButton alloc] initWithAction:NSMakeRect(560, yPos, 20, 20) blk:^void(CheckButton *s){
+            ViewController *vc = self->mainVC;
+            NSInteger mobs = [vc->MobSelector indexOfSelectedItem];
+            NSInteger allies = [vc->AllySelector indexOfSelectedItem];
+            if([s->Button state] == NSControlStateValueOff) {
+                vc->notInBattle += 1;
+                [vc showNOrder:(mobs + allies + PARTY_SIZE - vc->notInBattle)];
+            }
+            else if([s->Button state] == NSControlStateValueOn) {
+                self->mainVC->notInBattle -= 1;
+                [vc showNOrder:(mobs + allies + PARTY_SIZE - vc->notInBattle)];
+            }
+        }];
         
         [[item view] addSubview:Hero->Box->Box];
         [[item view] addSubview:Hero->Box->Label];
@@ -116,12 +124,14 @@
         [vc->MobSelector selectItemAtIndex:0];
         [vc->AllySelector selectItemAtIndex:0];
         [vc->RoundCount setStringValue:@""];
-        vc->currentTurnIdx = 0;
+        [vc->CurrentInTurn setStringValue:@""];
+        vc->currentTurnIdx = 0; vc->notInBattle = 0; vc->removed = 0;
         for(int i = 0; i < COUNTER_SIZE; i++) { [vc->Counters[i] reset]; }
         for(int i = 0; i < PARTY_SIZE; i++) {
             [vc->Heros[i]->Box->Box setStringValue:@""];
             [vc->InBattle[i]->Button setState:NSControlStateValueOn];
         }
+        [vc resetOrder];
     }];
         
     ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, 810, 80, 24) name:@"Map" blk:^void(){
@@ -147,28 +157,24 @@
     }];
     
     ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(695, 780, 80, 24) name:@"Set" blk:^void(){
+        ViewController *vc = self->mainVC;
         
-        NSInteger mobNum  = [self->mainVC->MobSelector indexOfSelectedItem];
-        NSInteger allyNum = [self->mainVC->AllySelector indexOfSelectedItem];
+        NSInteger mobNum  = [vc->MobSelector indexOfSelectedItem];
+        NSInteger allyNum = [vc->AllySelector indexOfSelectedItem];
         NSInteger orderNum = PARTY_SIZE + mobNum + allyNum;
         
-        self->mainVC->currentTurnIdx = 0;
-        self->mainVC->turnsInRound = (int)orderNum;
-        [self->mainVC->RoundCount setStringValue:@""];
+        vc->currentTurnIdx = 0;
+        vc->turnsInRound = orderNum - vc->notInBattle;
+        [vc->RoundCount setStringValue:@""];
        
         NSMutableArray *orderArr = [[NSMutableArray alloc] init];
         for(int i = 0; i < PARTY_SIZE; i++) {
-            //TODO: notInBattle!
-            if([self->mainVC->InBattle[i]->Button state] == NSControlStateValueOn) {
-                [orderArr addObject:self->mainVC->Heros[i]];
+            if([vc->InBattle[i]->Button state] == NSControlStateValueOn) {
+                [orderArr addObject:vc->Heros[i]];
             }
         }
-        for(int i = 0; i < mobNum; i++) {
-            [orderArr addObject:self->mainVC->Mobs[i]];
-        }
-        for(int i = 0; i < allyNum; i++) {
-            [orderArr addObject:self->mainVC->Allies[i]];
-        }
+        for(int i = 0; i < mobNum; i++) { [orderArr addObject:vc->Mobs[i]]; }
+        for(int i = 0; i < allyNum; i++) { [orderArr addObject:vc->Allies[i]]; }
         
         [orderArr sortUsingComparator:^(BattleEntity *a, BattleEntity *b) {
             if(a->isHero == true) {
@@ -201,48 +207,48 @@
         
         for(int i = 0; i < orderNum; i++) {
             BattleEntity *b = orderArr[i];
-            [self->mainVC->Order[i]->Name setStringValue:[b->Box->Label stringValue]];
-            [self->mainVC->Order[i]->Num setIntValue:(i+1)];
+            [vc->Order[i]->Name setStringValue:[b->Box->Label stringValue]];
+            [vc->Order[i]->Num setIntValue:(i+1)];
             
             if(i == 0) {
-                [self->mainVC->CurrentInTurn
+                [vc->CurrentInTurn
                  setStringValue:[b->Box->Label stringValue]];
             }
         }
     }];
     
     ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(840, 780, 80, 24) name:@"Next" blk:^void(){
-        
-        NSInteger mobNum = [self->mainVC->MobSelector indexOfSelectedItem];
-        NSInteger allyNum = [self->mainVC->AllySelector indexOfSelectedItem];
-        NSInteger num = mobNum + allyNum + PARTY_SIZE;// - removeSize -  notInBattle;
+        ViewController *vc = self->mainVC;
+        NSInteger mobNum = [vc->MobSelector indexOfSelectedItem];
+        NSInteger allyNum = [vc->AllySelector indexOfSelectedItem];
+        NSInteger num = mobNum + allyNum + PARTY_SIZE - vc->notInBattle;// - removeSize;
         
         if(mobNum == 0 && allyNum == 0) { return; }
         
         //TODO: Maybe bug when removing from order and currentTurnIdx gets >= than num?
         //      Probably not because currentTurnIdx gets managed when removing from order
-        if(self->mainVC->currentTurnIdx == (num-1)) {
-            self->mainVC->currentTurnIdx = 0;
-            [self->mainVC->RoundCount setIntValue:([self->mainVC->RoundCount intValue]+1)];
-        } else
-        { self->mainVC->currentTurnIdx += 1; }
+        if(vc->currentTurnIdx == (num-1)) {
+            vc->currentTurnIdx = 0;
+            [vc->RoundCount setIntValue:([vc->RoundCount intValue]+1)];
+        } else {
+            vc->currentTurnIdx += 1;
+        }
 
         //NOTE: We need numberOfTurnsI >= turnsInRound, rather then ==, because if
         //      turnsInRound was modified while the counter was on the boundary, it
         //      ends up in a wrong state!
         for(int i = 0; i < COUNTER_SIZE; i++) {
-            Counter *curr = self->mainVC->Counters[i];
+            Counter *curr = vc->Counters[i];
             if(curr->isCounting == true) {
                 curr->elapsedTurns += 1;
-                if(curr->elapsedTurns >= self->mainVC->turnsInRound) {
+                if(curr->elapsedTurns >= vc->turnsInRound) {
                     [curr tick];
                 }
             }
         }
         
-        [self->mainVC->CurrentInTurn
-         setStringValue:
-         [self->mainVC->Order[self->mainVC->currentTurnIdx]->Name stringValue]];
+        [vc->CurrentInTurn
+         setStringValue:[vc->Order[vc->currentTurnIdx]->Name stringValue]];
     }];
     
     [[item view] addSubview:Reset->Button]; [[item view] addSubview:Map->Button];

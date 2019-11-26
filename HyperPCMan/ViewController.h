@@ -24,15 +24,17 @@
     
     @public BattleEntity * __strong Heros[PARTY_SIZE];
     @public CheckButton * __strong InBattle[PARTY_SIZE];
-
+    @public NSInteger notInBattle;
+    @public NSInteger removed;
+    
     @public BattleEntity * __strong Allies[ALLY_SIZE];
     @public BattleEntity * __strong Mobs[MOB_SIZE];
     @public OrderField * __strong Order[ORDER_SIZE];
         
     @public NSTextField __strong *CurrentInTurn;
     @public NSTextField __strong *RoundCount;
-    @public int currentTurnIdx;
-    @public int turnsInRound;
+    @public NSInteger currentTurnIdx;
+    @public NSInteger turnsInRound;
     
     @public ActionButton __strong *Reset;
     @public ActionButton __strong *Map;
@@ -46,6 +48,7 @@
 - (void)resetMobs;
 - (void)resetAllies;
 - (void)resetOrder;
+- (void)showNOrder:(NSInteger)n;
 
 @end
 

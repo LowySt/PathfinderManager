@@ -10,6 +10,10 @@
 
 @implementation CheckButton
 
+- (void)DoAction {
+    Action(self);
+}
+
 - (CheckButton *)initWithState:(bool)state frame:(NSRect)frame {
     
     Button = [NSButton checkboxWithTitle:@"" target:self action:NULL];
@@ -19,6 +23,17 @@
     else {
         [Button setState:NSControlStateValueOff];
     }
+    [Button setFrame:frame];
+    
+    return self;
+}
+
+- (CheckButton *)initWithAction:(NSRect)frame blk:(void(^)(CheckButton *s))blk {
+    
+    Action = blk;
+    
+    Button = [NSButton checkboxWithTitle:@"" target:self action:NSSelectorFromString(@"DoAction")];
+    [Button setState:NSControlStateValueOn];
     [Button setFrame:frame];
     
     return self;

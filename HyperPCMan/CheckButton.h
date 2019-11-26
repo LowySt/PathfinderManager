@@ -12,10 +12,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface CheckButton : NSButton {
     @public NSButton __strong *Button;
+    
+    void(^Action)(CheckButton *s);
 };
+- (void)DoAction;
 
 - (CheckButton *)initWithState:(bool)state frame:(NSRect)frame;
-
+- (CheckButton *)initWithAction:(NSRect)frame blk:(void(^)(CheckButton *))blk;
 @end
 
 NS_ASSUME_NONNULL_END

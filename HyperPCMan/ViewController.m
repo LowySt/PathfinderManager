@@ -36,6 +36,13 @@
     }
 }
 
+- (void)showNOrder:(NSInteger)n {
+    for(int i = 0; i < ORDER_SIZE; i++) {
+        if(i < n) { [Order[i] show]; }
+        else { [Order[i] hide]; }
+    }
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
 
