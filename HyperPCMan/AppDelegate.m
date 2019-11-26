@@ -111,7 +111,17 @@
     [[item view] addSubview:mainVC->RoundCount];
     
     ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 810, 80, 24) name:@"Reset" blk:^void(){
-        NSLog(@"Reset Button!");
+        ViewController *vc = self->mainVC;
+        [vc resetMobs]; [vc resetAllies]; [vc resetOrder];
+        [vc->MobSelector selectItemAtIndex:0];
+        [vc->AllySelector selectItemAtIndex:0];
+        [vc->RoundCount setStringValue:@""];
+        vc->currentTurnIdx = 0;
+        for(int i = 0; i < COUNTER_SIZE; i++) { [vc->Counters[i] reset]; }
+        for(int i = 0; i < PARTY_SIZE; i++) {
+            [vc->Heros[i]->Box->Box setStringValue:@""];
+            [vc->InBattle[i]->Button setState:NSControlStateValueOn];
+        }
     }];
         
     ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, 810, 80, 24) name:@"Map" blk:^void(){
@@ -143,11 +153,15 @@
         NSInteger orderNum = PARTY_SIZE + mobNum + allyNum;
         
         self->mainVC->currentTurnIdx = 0;
+        self->mainVC->turnsInRound = (int)orderNum;
         [self->mainVC->RoundCount setStringValue:@""];
        
         NSMutableArray *orderArr = [[NSMutableArray alloc] init];
         for(int i = 0; i < PARTY_SIZE; i++) {
-            [orderArr addObject:self->mainVC->Heros[i]];
+            //TODO: notInBattle!
+            if([self->mainVC->InBattle[i]->Button state] == NSControlStateValueOn) {
+                [orderArr addObject:self->mainVC->Heros[i]];
+            }
         }
         for(int i = 0; i < mobNum; i++) {
             [orderArr addObject:self->mainVC->Mobs[i]];

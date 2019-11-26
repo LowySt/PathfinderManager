@@ -47,6 +47,13 @@
     else { [Count setIntValue:currCount]; }
 }
 
+- (void)reset {
+    elapsedTurns = 0;
+    isCounting = false;
+    [Count setStringValue:@""];
+    [Field->Box setStringValue:@""];
+}
+
 /*
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];

@@ -24,6 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (Counter *)initWithFrame:(NSRect)frame name:(NSString *)name;
 
 - (void)tick;
+- (void)reset;
 
 @end
 
