@@ -50,5 +50,7 @@
 - (void)resetOrder;
 - (void)showNOrder:(NSInteger)n;
 
+- (void)changePos:(NSInteger)p newPos:(NSInteger)newP;
+
 @end
 

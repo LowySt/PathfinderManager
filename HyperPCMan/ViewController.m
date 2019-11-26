@@ -43,6 +43,47 @@
     }
 }
 
+- (void)changePos:(NSInteger)p newPos:(NSInteger)newP {
+        
+    NSInteger mobNum = [MobSelector indexOfSelectedItem];
+    NSInteger allyNum = [AllySelector indexOfSelectedItem];
+    NSInteger num = mobNum + allyNum + PARTY_SIZE  - notInBattle - removed;
+    
+    if(p == newP) { return; }
+    if(newP > num) { return; }
+
+    NSInteger currIdx = p - 1;
+    NSInteger newIdx = currIdx - 1;
+    NSInteger range;
+    NSString *moved = [Order[currIdx]->Name stringValue];
+    
+    if(newP > p) {
+        NSInteger untouched = newP - p - 1;
+        range = num - untouched;
+        if(currentTurnIdx <= (p-1) || currentTurnIdx >= (newP - 1)) {
+            currentTurnIdx += 1;
+            if(currentTurnIdx > num) { currentTurnIdx = 1; }
+        }
+    } else {
+        range = p - newP + 1;
+        if(currentTurnIdx <= (p-1) && currentTurnIdx >= (newP - 1)) {
+            currentTurnIdx += 1;
+            if(currentTurnIdx > num) { currentTurnIdx = 1; }
+        }
+    }
+    
+    for(NSInteger i = range; i > 0; i--) {
+        if(newIdx < 0) { newIdx = num - 1; }
+        [Order[currIdx]->Name setStringValue:[Order[newIdx]->Name stringValue]];
+        if(currIdx - 1 < 0) { currIdx = num - 1; }
+        else { currIdx -= 1; }
+        newIdx = currIdx - 1;
+    }
+    [Order[newP-1]->Name setStringValue:moved];
+   
+    [CurrentInTurn setStringValue:[Order[currentTurnIdx]->Name stringValue]];
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
 

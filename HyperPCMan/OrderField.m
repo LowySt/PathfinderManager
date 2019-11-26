@@ -13,11 +13,21 @@
 
 - (OrderField *)initOrder:(CGPoint)p num:(int)num vc:(ViewController *)vc {
     
+    NSNumberFormatter *nf = [[NSNumberFormatter alloc] init];
+    [nf setAllowsFloats:false];
+    [nf setNumberStyle:NSNumberFormatterNoStyle];
+    [nf setPartialStringValidationEnabled:true];
+    
+    NSNumber *min = [[NSNumber alloc] initWithInt:1];
+    [nf setMinimum:min];
+    
     Name = [[NSTextField alloc] initWithFrame:NSMakeRect(400, 400, 120, 20)];
     [Name setAlignment:NSTextAlignmentCenter];
     [Name setStringValue:@""];
+    [Name setEditable:false];
     
     Num  = [[NSTextField alloc] initWithFrame:NSMakeRect(400, 400, 30, 20)];
+    Num.formatter = nf;
     [Num setIntValue:num];
     [Num setAlignment:NSTextAlignmentCenter];
         

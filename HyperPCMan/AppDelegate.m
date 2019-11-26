@@ -93,6 +93,25 @@
     return NO;
 }
   
+- (void)controlTextDidEndEditing:(NSNotification *)obj {
+    ViewController *v = mainVC;
+    NSTextField *t = obj.object;
+    void *tp = (__bridge void *)t;
+    
+    NSInteger mobs = [v->MobSelector indexOfSelectedItem];
+    NSInteger allies = [v->AllySelector indexOfSelectedItem];
+    NSInteger num = mobs + allies + PARTY_SIZE - v->notInBattle - v->removed;
+    
+    for(NSInteger i = 0; i < num; i++) {
+        if(tp == (__bridge void *)v->Order[i]->Num)
+        {
+            NSInteger newPos = [v->Order[i]->Num integerValue];
+            [v changePos:(i+1) newPos:newPos];
+            [v->Order[i]->Num setIntegerValue:(i+1)];
+        }
+    }
+}
+
 - (void)comboBoxSelectionDidChange:(NSNotification *)notification {
     
     NSComboBox *t = notification.object;
@@ -188,6 +207,7 @@
         OrderField *Order = [[OrderField alloc]
                              initOrder:CGPointMake(680, yPos) num:i+1 vc:mainVC];
                 
+        [Order->Num setDelegate:self];
         [[item view] addSubview:Order->Name];
         [[item view] addSubview:Order->Num];
         [[item view] addSubview:Order->Remove->Button];
