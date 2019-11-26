@@ -14,6 +14,85 @@
 
 @implementation AppDelegate
 
+- (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)commandSelector {
+    ViewController *v = mainVC;
+    
+    if (commandSelector == @selector(insertNewline:)) {
+    // Do something against ENTER key
+    NSInteger allyNum = [v->AllySelector indexOfSelectedItem];
+    NSInteger mobNum = [v->MobSelector indexOfSelectedItem];
+    
+        for(int i = 0; i < allyNum; i++) {
+            void *LabelField = (__bridge void *)(v->Allies[i]->Box->Label);
+            void *BonusField = (__bridge void *)(v->Allies[i]->Box->Box);
+            void *InitField = (__bridge void *)(v->Allies[i]->Init);
+            
+            if((__bridge void *)control == LabelField) {
+                if((i+1) == allyNum) { return YES; }
+                [v->Allies[i+1]->Box->Label setStringValue:@""];
+                [control.window makeFirstResponder:v->Allies[i+1]->Box->Label];
+                return YES;
+            }
+            
+            if((__bridge void *)control == BonusField) {
+                if((i+1) == allyNum) { return YES; }
+                [v->Allies[i+1]->Box->Box setStringValue:@""];
+                [control.window makeFirstResponder:v->Allies[i+1]->Box->Box];
+                return YES;
+            }
+
+            if((__bridge void *)control == InitField) {
+                if((i+1) == allyNum) { return YES; }
+                [v->Allies[i+1]->Init setStringValue:@""];
+                [control.window makeFirstResponder:v->Allies[i+1]->Init];
+                return YES;
+            }
+        }
+        
+        for(int i = 0; i < mobNum; i++) {
+            void *LabelField = (__bridge void *)(v->Mobs[i]->Box->Label);
+            void *BonusField = (__bridge void *)(v->Mobs[i]->Box->Box);
+            void *InitField = (__bridge void *)(v->Mobs[i]->Init);
+            
+            if((__bridge void *)control == LabelField) {
+                if((i+1) == mobNum) { return YES; }
+                [v->Mobs[i+1]->Box->Label setStringValue:@""];
+                [control.window makeFirstResponder:v->Mobs[i+1]->Box->Label];
+                return YES;
+            }
+            
+            if((__bridge void *)control == BonusField) {
+                if((i+1) == mobNum) { return YES; }
+                [v->Mobs[i+1]->Box->Box setStringValue:@""];
+                [control.window makeFirstResponder:v->Mobs[i+1]->Box->Box];
+                return YES;
+            }
+
+            if((__bridge void *)control == InitField) {
+                if((i+1) == mobNum) { return YES; }
+                [v->Mobs[i+1]->Init setStringValue:@""];
+                [control.window makeFirstResponder:v->Mobs[i+1]->Init];
+                return YES;
+            }
+        }
+        
+        for(int i = 0; i < PARTY_SIZE; i++) {
+            void *InitField = (__bridge void *)(v->Heros[i]->Box->Box);
+            if((__bridge void *)control == InitField) {
+                if((i + 1) == PARTY_SIZE) { return YES; }
+                [control.window makeFirstResponder:v->Heros[i+1]->Box->Box];
+                return YES;
+            }
+        }
+        
+        [control.window makeFirstResponder:control.window];
+        return YES;
+    }
+    
+    // return true if the action was handled; otherwise false
+    return NO;
+}
+  
 - (void)comboBoxSelectionDidChange:(NSNotification *)notification {
     
     NSComboBox *t = notification.object;
@@ -50,7 +129,7 @@
         //TODO: Remove the formatter from hero. Maybe make it a BattleEntity
         //      as well?
         BattleEntity *Hero = [[BattleEntity alloc]initHero:NSMakeRect(525, yPos, 30, 20) name:HeroNames[i]];
-           
+                   
         CheckButton *InBattle = [[CheckButton alloc] initWithAction:NSMakeRect(560, yPos, 20, 20) blk:^void(CheckButton *s){
             ViewController *vc = self->mainVC;
             NSInteger mobs = [vc->MobSelector indexOfSelectedItem];
@@ -65,6 +144,7 @@
             }
         }];
         
+        [Hero->Box->Box setDelegate:self];
         [[item view] addSubview:Hero->Box->Box];
         [[item view] addSubview:Hero->Box->Label];
         [[item view] addSubview:InBattle->Button];
@@ -77,6 +157,9 @@
     
         BattleEntity *Ally = [[BattleEntity alloc] initWithFrame:NSMakeRect(525, yPos, 70, 20) name:AllyNames[i]];
                    
+        [Ally->Box->Label setDelegate:self];
+        [Ally->Box->Box setDelegate:self];
+        [Ally->Init setDelegate:self];
         [[item view] addSubview:Ally->Box->Box];
     	[[item view] addSubview:Ally->Box->Label];
         [[item view] addSubview:Ally->Init];
@@ -88,6 +171,10 @@
     for(int i = 0; i < MOB_SIZE; i++) {
 
         BattleEntity *Mob = [[BattleEntity alloc] initWithFrame:NSMakeRect(365, yPos, 70, 20) name:EnemyNames[i]];
+        
+        [Mob->Box->Label setDelegate:self];
+        [Mob->Box->Box setDelegate:self];
+        [Mob->Init setDelegate:self];
         [[item view] addSubview:Mob->Box->Box];
         [[item view] addSubview:Mob->Box->Label];
         [[item view] addSubview:Mob->Init];

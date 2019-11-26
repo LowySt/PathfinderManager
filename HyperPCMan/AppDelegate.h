@@ -15,7 +15,7 @@
 #import "BattleEntity.h"
 #import "CheckButton.h"
 
-@interface AppDelegate : NSObject <NSApplicationDelegate, NSComboBoxDelegate> {
+@interface AppDelegate : NSObject <NSApplicationDelegate, NSComboBoxDelegate, NSTextFieldDelegate> {
     ViewController *mainVC;
 };
 
