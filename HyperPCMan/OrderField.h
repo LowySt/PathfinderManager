@@ -9,6 +9,8 @@
 #import <Cocoa/Cocoa.h>
 #import "ActionButton.h"
 
+@class ViewController;
+
 NS_ASSUME_NONNULL_BEGIN
 
 @interface OrderField : NSTextField {
@@ -19,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
     @public ActionButton __strong *Remove;
 };
 
-- (OrderField *)initOrder:(CGPoint)p num:(int)num;
+- (OrderField *)initOrder:(CGPoint)p num:(int)num vc:(ViewController *)vc;
 
 - (void)hide;
 - (void)show;

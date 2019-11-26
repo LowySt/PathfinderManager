@@ -186,7 +186,7 @@
     for(int i = 0; i < ORDER_SIZE; i++) {
          //NOTE:TODO: Something fucky happening. Slowdown HERE! In button creation
         OrderField *Order = [[OrderField alloc]
-                             initOrder:CGPointMake(680, yPos) num:i+1];
+                             initOrder:CGPointMake(680, yPos) num:i+1 vc:mainVC];
                 
         [[item view] addSubview:Order->Name];
         [[item view] addSubview:Order->Num];
@@ -251,6 +251,7 @@
         NSInteger orderNum = PARTY_SIZE + mobNum + allyNum;
         
         vc->currentTurnIdx = 0;
+        vc->removed = 0;
         vc->turnsInRound = orderNum - vc->notInBattle;
         [vc->RoundCount setStringValue:@""];
        
@@ -308,7 +309,7 @@
         ViewController *vc = self->mainVC;
         NSInteger mobNum = [vc->MobSelector indexOfSelectedItem];
         NSInteger allyNum = [vc->AllySelector indexOfSelectedItem];
-        NSInteger num = mobNum + allyNum + PARTY_SIZE - vc->notInBattle;// - removeSize;
+        NSInteger num = mobNum + allyNum + PARTY_SIZE - vc->notInBattle - vc->removed;
         
         if(mobNum == 0 && allyNum == 0) { return; }
         
