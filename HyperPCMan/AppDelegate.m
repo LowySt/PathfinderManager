@@ -170,11 +170,11 @@
         mainVC->InBattle[i] = InBattle;
         yPos -= 30;
     }
-        
+    
     for(int i = 0; i < ALLY_SIZE; i++) {
     
         BattleEntity *Ally = [[BattleEntity alloc] initWithFrame:NSMakeRect(525, yPos, 70, 20) name:AllyNames[i]];
-                   
+        
         [Ally->Box->Label setDelegate:self];
         [Ally->Box->Box setDelegate:self];
         [Ally->Init setDelegate:self];
@@ -383,6 +383,41 @@
     [mainVC->AllySelector setDelegate:self];
 }
 
+- (void)SetupPartyTab:(NSTabViewItem *)item {
+    NSString *sourcePath = @"/Users/lowy/Desktop/test";
+    NSError *err;
+    NSArray* dirs = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:sourcePath error:&err];
+    //TODO: I don't like loading N files. Also, is there a better way to load these files?
+    NSMutableArray *pcFiles = [[NSMutableArray alloc] init];
+    NSMutableArray *pcNames = [[NSMutableArray alloc] init];
+    [dirs enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        NSString *filename = (NSString *)obj;
+        NSString *extension = [[filename pathExtension] lowercaseString];
+        if ([extension isEqualToString:@"pc"]) {
+            [pcFiles addObject:[sourcePath stringByAppendingPathComponent:filename]];
+            [pcNames addObject:[obj stringByDeletingPathExtension]];
+        }
+    }];
+    assert([pcNames count] > 0);
+    NSComboBox *pcs = [[NSComboBox alloc] initWithFrame:NSMakeRect(40, 810, 100, 26)];
+    [pcs removeAllItems];
+    [pcs addItemsWithObjectValues:pcNames];
+    [pcs selectItemAtIndex:0];
+    [[item view] addSubview:pcs];
+    mainVC->PCSelector = pcs;
+    
+    int yPos = 780;
+    for(NSInteger i = 0; i < STATS_NUM; i++) {
+        StatField *f = [[StatField alloc] initWithLabel:Stat[i] frame:NSMakeRect(40, yPos, 40, 20)];
+        yPos -= 30;
+        
+        [[item view] addSubview:f->Box->Box];
+        [[item view] addSubview:f->Box->Label];
+        [[item view] addSubview:f->Bonus];
+        mainVC->Stats[i] = f;
+    }
+}
+
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
     mainVC = (ViewController *) NSApplication.sharedApplication.orderedWindows.firstObject.contentViewController;
@@ -405,9 +440,11 @@
     [self SetupInitTab:item2];
     [mainVC resetOrder];
     
+    [self SetupPartyTab:item3];
+    
     NSArray *tabViewItems = [[NSArray alloc] initWithObjects:item0, item1, item2, item3, nil];
     [MainTabView setTabViewItems:tabViewItems];
-    [MainTabView selectTabViewItemAtIndex:2];
+    [MainTabView selectTabViewItemAtIndex:3];
     [[MainWindow contentView] addSubview:MainTabView];
 }
 

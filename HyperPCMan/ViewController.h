@@ -13,6 +13,7 @@
 #import "Counter.h"
 #import "BattleEntity.h"
 #import "CheckButton.h"
+#import "StatField.h"
 
 @interface ViewController : NSViewController {
     
@@ -47,6 +48,13 @@
     @public ActionButton __strong *Next;
     
     @public Counter * __strong Counters[COUNTER_SIZE];
+    
+    // ----------- //
+    //  Party Tab  //
+    // ----------- //
+    
+    @public NSComboBox __strong *PCSelector;
+    @public StatField * __strong Stats[STATS_NUM];
 };
 
 - (void)resetMobs;

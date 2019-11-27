@@ -27,7 +27,7 @@ enum LabelDir {
 
 };
 
-- (LabeledTextBox *) initLabeled:(NSString *)label labelDir:(enum LabelDir)labelDir p:(CGPoint)p isEditable:(BOOL)isEditable;
+- (LabeledTextBox *) initLabeled:(NSString *)label labelDir:(enum LabelDir)labelDir frame:(NSRect)frame isEditable:(BOOL)isEditable;
 
 -(LabeledTextBox *) initEditableLabel:(NSString *)label labelDir:(enum LabelDir)labelDir frame:(NSRect)frame isEditable:(BOOL)isEditable boxSize:(NSSize)size;
 

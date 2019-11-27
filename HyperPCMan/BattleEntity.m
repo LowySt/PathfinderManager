@@ -38,8 +38,7 @@
 
 - (BattleEntity *)initHero:(NSRect)frame name:(NSString *)name {
     
-    CGPoint pos = CGPointMake(frame.origin.x, frame.origin.y);
-    Box = [[LabeledTextBox alloc] initLabeled:name labelDir:LABEL_LEFT p:pos isEditable:true];
+    Box = [[LabeledTextBox alloc] initLabeled:name labelDir:LABEL_LEFT frame:frame isEditable:true];
     [Box->Box setAlignment:NSTextAlignmentCenter];
     
     NSNumberFormatter *nf = [[NSNumberFormatter alloc] init];

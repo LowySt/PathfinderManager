@@ -10,14 +10,15 @@
 
 @implementation LabeledTextBox
 
-- (LabeledTextBox *)initLabeled:(NSString *)label labelDir:(enum LabelDir)labelDir p:(CGPoint)p isEditable:(BOOL)isEditable {
+- (LabeledTextBox *)initLabeled:(NSString *)label labelDir:(enum LabelDir)labelDir frame:(NSRect)frame isEditable:(BOOL)isEditable {
         
-    Box   = [[NSTextField alloc] initWithFrame:NSMakeRect(400, 400, 80, 20)];
+    Box   = [[NSTextField alloc] initWithFrame:frame];
     Label = [NSTextField labelWithString:label];
     [Label sizeToFit];
         
     CGSize fR = Box.frame.size;
     CGSize lR = Label.frame.size;
+    CGPoint p = CGPointMake(frame.origin.x, frame.origin.y);
     CGPoint labelP;
     switch(labelDir)
     {

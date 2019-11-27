@@ -12,11 +12,8 @@
 
 - (Counter *)initWithFrame:(NSRect)frame name:(NSString *)name {
     
-    //TODO: Not using frame size right now!
     isCounting = false;
-    
-    CGPoint pos = CGPointMake(frame.origin.x, frame.origin.y);
-    Field = [[LabeledTextBox alloc] initLabeled:name labelDir:LABEL_UP p:pos isEditable:true];
+    Field = [[LabeledTextBox alloc] initLabeled:name labelDir:LABEL_UP frame:frame isEditable:true];
     Count = [[NSTextField alloc] initWithFrame:NSMakeRect(frame.origin.x + 84, frame.origin.y, 40, 20)];
     
     [Count setAlignment:NSTextAlignmentCenter];
