@@ -44,10 +44,8 @@
 }
 
 - (void)changePos:(NSInteger)p newPos:(NSInteger)newP {
-        
-    NSInteger mobNum = [MobSelector indexOfSelectedItem];
-    NSInteger allyNum = [AllySelector indexOfSelectedItem];
-    NSInteger num = mobNum + allyNum + PARTY_SIZE  - notInBattle - removed;
+       
+    NSInteger num = orderNum - notInBattle - removed;
     
     if(p == newP) { return; }
     if(newP > num) { return; }

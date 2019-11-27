@@ -31,6 +31,10 @@
     @public BattleEntity * __strong Mobs[MOB_SIZE];
     @public OrderField * __strong Order[ORDER_SIZE];
         
+    @public NSInteger mobNum;
+    @public NSInteger allyNum;
+    @public NSInteger orderNum;
+    
     @public NSTextField __strong *CurrentInTurn;
     @public NSTextField __strong *RoundCount;
     @public NSInteger currentTurnIdx;

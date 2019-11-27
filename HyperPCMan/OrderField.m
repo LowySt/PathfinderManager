@@ -39,9 +39,7 @@
     NSRect buttonFrame = NSMakeRect(p.x - 60, p.y, 20, 20);
     Remove = [[ActionButton alloc] initXWithAction:buttonFrame blk:^void(){
         NSInteger arrIdx = [self->Num integerValue] - 1;
-        NSInteger mobs = [vc->MobSelector indexOfSelectedItem];
-        NSInteger allies = [vc->AllySelector indexOfSelectedItem];
-        NSInteger num = mobs + allies + PARTY_SIZE - vc->notInBattle - vc->removed;
+        NSInteger num = vc->orderNum - vc->notInBattle - vc->removed;
         
         for(NSInteger i = arrIdx; i < num-1; i++) {
             NSString *new = [vc->Order[i+1]->Name stringValue];
