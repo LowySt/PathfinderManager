@@ -14,6 +14,7 @@
 #import "BattleEntity.h"
 #import "CheckButton.h"
 #import "StatField.h"
+#import "Entity.h"
 
 @interface ViewController : NSViewController {
     
@@ -54,7 +55,13 @@
     // ----------- //
     
     @public NSComboBox __strong *PCSelector;
+    @public Entity * __strong Party[PARTY_SIZE];
     @public StatField * __strong Stats[STATS_NUM];
+    @public LabeledTextBox * __strong SavingThrows[ST_NUM];
+    @public LabeledTextBox __strong *BAB;
+    @public LabeledTextBox __strong *CMB;
+    @public LabeledTextBox __strong *CMD;
+    @public LabeledTextBox * __strong Skills[SKILL_NUM];
 };
 
 - (void)resetMobs;

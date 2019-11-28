@@ -19,4 +19,8 @@
     return self;
 }
 
+- (void)setIntValue:(int)v {
+    [Box->Box setIntValue:v];
+}
+
 @end

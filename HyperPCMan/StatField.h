@@ -22,6 +22,8 @@ static NSString * _Nonnull __strong Stat[STATS_NUM] = {@"STR", @"DEX", @"CON", @
     
 - (StatField *)initWithLabel:(NSString *)label frame:(NSRect)frame;
 
+- (void)setIntValue:(int)v;
+
 @end
 
 NS_ASSUME_NONNULL_END

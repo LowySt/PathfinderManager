@@ -19,6 +19,7 @@
 		9EC953692385A33E00C857B0 /* BattleEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC953682385A33E00C857B0 /* BattleEntity.m */; };
 		9EC9536C238C4EA600C857B0 /* CheckButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC9536B238C4EA600C857B0 /* CheckButton.m */; };
 		9EC9536F238EAB7B00C857B0 /* StatField.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC9536E238EAB7B00C857B0 /* StatField.m */; };
+		9EC95372238EECF900C857B0 /* Entity.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC95371238EECF900C857B0 /* Entity.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +47,8 @@
 		9EC9536B238C4EA600C857B0 /* CheckButton.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CheckButton.m; sourceTree = "<group>"; };
 		9EC9536D238EAB7B00C857B0 /* StatField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StatField.h; sourceTree = "<group>"; };
 		9EC9536E238EAB7B00C857B0 /* StatField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StatField.m; sourceTree = "<group>"; };
+		9EC95370238EECF900C857B0 /* Entity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Entity.h; sourceTree = "<group>"; };
+		9EC95371238EECF900C857B0 /* Entity.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Entity.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +89,8 @@
 				9EC9536B238C4EA600C857B0 /* CheckButton.m */,
 				9EC95364238311E100C857B0 /* Counter.h */,
 				9EC95365238311E100C857B0 /* Counter.m */,
+				9EC95370238EECF900C857B0 /* Entity.h */,
+				9EC95371238EECF900C857B0 /* Entity.m */,
 				9EC9535B237C875100C857B0 /* LabeledTextBox.h */,
 				9EC9535C237C875100C857B0 /* LabeledTextBox.m */,
 				9EC9536D238EAB7B00C857B0 /* StatField.h */,
@@ -184,6 +189,7 @@
 				9EC95366238311E100C857B0 /* Counter.m in Sources */,
 				9EC9536C238C4EA600C857B0 /* CheckButton.m in Sources */,
 				9EC95363238192BC00C857B0 /* ActionButton.m in Sources */,
+				9EC95372238EECF900C857B0 /* Entity.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
