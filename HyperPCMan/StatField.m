@@ -15,6 +15,7 @@
     Box = [[LabeledTextBox alloc] initLabeled:label labelDir:LABEL_LEFT frame:frame isEditable:false];
     Bonus = [[NSTextField alloc] initWithFrame:NSMakeRect(frame.origin.x + 40, frame.origin.y, 30, 20)];
     [Bonus setEditable:false];
+    [Bonus setAlignment:NSTextAlignmentCenter];
     
     return self;
 }

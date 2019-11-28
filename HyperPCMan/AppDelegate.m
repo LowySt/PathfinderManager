@@ -144,7 +144,18 @@
         for(NSInteger i = 0; i < STATS_NUM; i++) {
             int v = mainVC->Party[index]->Stats[i];
             [mainVC->Stats[i] setIntValue:v];
+            [mainVC->Stats[i]->Bonus setIntValue:ASBonus[v]];
         }
+        for(NSInteger i = 0; i < ST_NUM; i++) {
+            [mainVC->SavingThrows[i]->Box setIntValue:mainVC->Party[index]->SavingThrows[i]];
+        }
+        for(NSInteger i = 0; i < SKILL_NUM; i++) {
+            [mainVC->Skills[i]->Box setIntValue:mainVC->Party[index]->Skills[i].Value];
+        }
+        //TODO: Account for multiple bonuses
+        [mainVC->miscAttack[0]->Box setIntValue:mainVC->Party[index]->AttackBonus.Bonus[0]];
+        [mainVC->miscAttack[1]->Box setIntValue:mainVC->Party[index]->CMB];
+        [mainVC->miscAttack[2]->Box setIntValue:mainVC->Party[index]->CMD];
     }
 }
 
@@ -394,7 +405,14 @@
     NSString *sourcePath = @"/Users/lowy/Desktop/test";
     NSError *err;
     NSArray* dirs = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:sourcePath error:&err];
+    
     NSInteger __block partyIdx = 0;
+    NSString * __strong *Stat = nil;
+    NSString * __strong *STNames = nil;
+    NSString * __strong *SkillNames = nil;
+    NSString * __strong *miscNames = nil;
+    int __block language = 99;
+    
     //TODO: I don't like loading N files. Also, is there a better way to load these files?
     NSMutableArray *pcFiles = [[NSMutableArray alloc] init];
     NSMutableArray *pcNames = [[NSMutableArray alloc] init];
@@ -414,6 +432,12 @@
             Entity *e = [[Entity alloc] init];
             e->name = [[NSString alloc] initWithString:name];
             
+            if((language == 0 && data[dataIdx] == 1) ||
+               (language == 1 && data[dataIdx] == 0)) {
+                //TODO: Report Error!!!
+            }
+            language = data[dataIdx++];
+            
             for(NSInteger j = 0; j < STATS_NUM; j++) { e->Stats[j] = data[dataIdx++]; }
             for(NSInteger j = 0; j < ST_NUM; j++) { e->SavingThrows[j] = data[dataIdx++]; }
             
@@ -423,14 +447,12 @@
             }
             e->CMB = data[dataIdx++]; e->CMD = data[dataIdx++];
             
-            for(NSInteger j = 0; j < SKILL_NUM; j++) {
-                e->Skills[j].Value = data[dataIdx++]; e->Skills[j].Extra = data[dataIdx++];
-            }
-            
+            for(NSInteger j = 0; j < SKILL_NUM; j++) { e->Skills[j].Value = data[dataIdx++]; }
             mainVC->Party[partyIdx] = e; partyIdx += 1;
         }
     }];
-    assert([pcNames count] > 0);
+    //TODO: Report Error! assert([pcNames count] > 0);
+    
     NSComboBox *pcs = [[NSComboBox alloc] initWithFrame:NSMakeRect(40, 810, 100, 26)];
     [pcs setDelegate:self];
     [pcs removeAllItems];
@@ -438,6 +460,21 @@
     [pcs selectItemAtIndex:0];
     [[item view] addSubview:pcs];
     mainVC->PCSelector = pcs;
+    
+    switch(language) {
+        case 0: {
+            Stat = StatENG;
+            STNames = STNamesENG;
+            miscNames = miscNamesENG;
+            SkillNames = SkillNamesENG;
+        } break;
+        case 1: {
+            Stat = StatIT;
+            STNames = STNamesIT;
+            miscNames = miscNamesIT;
+            SkillNames = SkillNamesIT;
+        } break;
+    }
     
     int yPos = 780;
     for(NSInteger i = 0; i < STATS_NUM; i++) {
@@ -453,46 +490,30 @@
     for(NSInteger i = 0; i < ST_NUM; i++) {
         LabeledTextBox *st = [[LabeledTextBox alloc] initLabeled:STNames[i] labelDir:LABEL_LEFT frame:NSMakeRect(60, yPos, 40, 20) isEditable:false];
         yPos -= 30;
+        [st->Box setAlignment:NSTextAlignmentCenter];
         
         [[item view] addSubview:st->Box];
         [[item view] addSubview:st->Label];
         mainVC->SavingThrows[i] = st;
     }
-    LabeledTextBox *BAB = [[LabeledTextBox alloc] initLabeled:@"BAB" labelDir:LABEL_LEFT frame:NSMakeRect(60, yPos, 40, 20) isEditable:false];
-    yPos -= 30;
     
-    LabeledTextBox *CMB = [[LabeledTextBox alloc] initLabeled:@"CMB" labelDir:LABEL_LEFT frame:NSMakeRect(60, yPos, 40, 20) isEditable:false];
-    yPos -= 30;
-
-    LabeledTextBox *CMD = [[LabeledTextBox alloc] initLabeled:@"CMD" labelDir:LABEL_LEFT frame:NSMakeRect(60, yPos, 40, 20) isEditable:false];
-    
-    [[item view] addSubview:BAB->Box]; [[item view] addSubview:BAB->Label];
-    [[item view] addSubview:CMB->Box]; [[item view] addSubview:CMB->Label];
-    [[item view] addSubview:CMD->Box]; [[item view] addSubview:CMD->Label];
-    
+    for(NSInteger i = 0; i < MISC_NUM; i++) {
+        LabeledTextBox *m = [[LabeledTextBox alloc] initLabeled:miscNames[i] labelDir:LABEL_LEFT frame:NSMakeRect(60, yPos, 40, 20) isEditable:false];
+        yPos -= 30;
+        [m->Box setAlignment:NSTextAlignmentCenter];
+        [[item view] addSubview:m->Box]; [[item view] addSubview:m->Label];
+        mainVC->miscAttack[i] = m;
+    }
+         
     yPos = 780;
     for(NSInteger i = 0; i < SKILL_NUM; i++) {
         LabeledTextBox *Skill = [[LabeledTextBox alloc] initLabeled:SkillNames[i] labelDir:LABEL_LEFT frame:NSMakeRect(340, yPos, 40, 20) isEditable:false];
         yPos -= 20;
+        [Skill->Box setAlignment:NSTextAlignmentCenter];
         
         [[item view] addSubview:Skill->Box]; [[item view] addSubview:Skill->Label];
         mainVC->Skills[i] = Skill;
     }
-    
-    /*
-    for(NSInteger i = 0; i < [pcFiles count]; i++) {
-        NSData *d = [NSData dataWithContentsOfFile:pcFiles[i]];
-        char *data = (char *)[d bytes];
-        NSString *name = (NSString *)pcNames[i];
-        Entity *e = [[Entity alloc] init];
-        e->name = [[NSString alloc] initWithString:name];
-        
-        for(NSInteger j = 0; j < STATS_NUM; j++) {
-            e->Stats[j] = data[j];
-        }
-        
-        mainVC->Party[i] = e;
-    }*/
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {

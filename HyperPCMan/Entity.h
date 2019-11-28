@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 #define ST_NUM 3
+#define MISC_NUM 3
 
 typedef struct {
     int Bonus[4];
@@ -38,6 +39,7 @@ typedef enum {
     HANDLE_ANIMAL,
     HEAL,
     INTIMIDATE,
+    INTUITION,
     KNOWLEDGE_ARCANA,
     KNOWLEDGE_DUNGEONEERING,
     KNOWLEDGE_ENGINEERING,
@@ -53,7 +55,6 @@ typedef enum {
     PERFORM,
     PROFESSION,
     RIDE,
-    INTUITION,
     SLEIGHT_OF_HAND,
     SPELLCRAFT,
     STEALTH,
@@ -63,22 +64,45 @@ typedef enum {
     SKILL_NUM
 } SkillEnums;
 
-static NSString  * _Nonnull   __strong SkillNames[SKILL_NUM] = {
-          @"ACROBATICS", @"APPRAISE", @"BLUFF", @"CLIMB", @"CRAFT",
-          @"DIPLOMACY", @"DISABLE_DEVICE", @"DISGUISE", @"ESCAPE_ARTIST", @"FLY", @"HANDLE_ANIMAL",
-          @"HEAL", @"INTIMIDATE", @"KNOWLEDGE_ARCANA", @"KNOWLEDGE_DUNGEONEERING", @"KNOWLEDGE_ENGINEERING",
-          @"KNOWLEDGE_GEOGRAPHY", @"KNOWLEDGE_HISTORY", @"KNOWLEDGE_LOCAL", @"KNOWLEDGE_NATURE",
-          @"KNOWLEDGE_NOBILITY", @"KNOWLEDGE_PLANES", @"KNOWLEDGE_RELIGION", @"LINGUISTICS",
-          @"PERCEPTION", @"PERFORM", @"PROFESSION", @"RIDE", @"INTUITION", @"SLEIGHT_OF_HAND",
-          @"SPELLCRAFT", @"STEALTH", @"SURVIVAL", @"SWIM", @"USE_MAGIC_DEVICE" };
+static NSString * _Nonnull __strong miscNamesENG[MISC_NUM] = {
+        @"BAB", @"CMB", @"CMD"
+};
+static NSString * _Nonnull __strong miscNamesIT[MISC_NUM] = {
+        @"BAB", @"BMC", @"DMC"
+};
 
-static NSInteger ASBonus[] = {
+static NSString  * _Nonnull __strong SkillNamesENG[SKILL_NUM] = {
+        @"Acrobatics", @"Appraise", @"Bluff", @"Climb", @"Craft",
+        @"Diplomacy", @"Disable Device", @"Disguise", @"Escape Artist",
+        @"Fly", @"Handle Animal", @"Heal", @"Intimidate", @"Intuition",
+        @"Knowledge(Arcana)", @"Knowledge(Dungeoneering)", @"Knowledge(Engineering)",
+        @"Knowledge(Geography)", @"Knowledge(History)", @"Knowledge(Local)",
+        @"Knowledge(Nature)", @"Knowledge(Nobility)", @"Knowledge(Planes)",
+        @"Knowledge(Religion)", @"Linguistics", @"Perception", @"Perform",
+        @"Profession", @"Ride", @"Sleight of Hand", @"Spellcraft",
+        @"Stealth", @"Survival", @"Swim", @"Use Magic Device"
+};
+
+static NSString * _Nonnull __strong SkillNamesIT[SKILL_NUM] = {
+        @"Acrobazia", @"Addestrare Animali", @"Artigianato", @"Artista Della Fuga",
+        @"Camuffare", @"Cavalcare", @"Conoscenze(Arcane)", @"Conoscenze(Dungeon)",
+        @"Conoscenze(Geografia)", @"Conoscenze(Ingegneria)", @"Conoscenze(Locali)",
+        @"Conoscenze(Natura)", @"Conoscenze(Nobiltà)", @"Conoscenze(Piani)",
+        @"Conoscenze(Religioni)", @"Conoscenze(Storia)", @"Diplomazia",
+        @"Disattivare Congegni", @"Furtività", @"Guarire", @"Intimidire", @"Intrattenere",
+        @"Intuizione", @"Linguistica", @"Nuotare", @"Percezione", @"Professione", @"Raggirare",
+        @"Rapidità Di Mano", @"Sapienza Magica", @"Scalare", @"Sopravvivenza",
+        @"Utilizzare Congegni Magici", @"Valutare", @"Volare"
+};
+
+static int ASBonus[] = {
     -5, -5, -4, -4, -3, -3, -2, -2, -1, -1, 0, 0, 1, 1, 2, 2,
     3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
     12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17
 };
 
-static NSString * _Nonnull __strong STNames[ST_NUM] = {@"Fortitude", @"Reflexes", @"Will"};
+static NSString * _Nonnull __strong STNamesENG[ST_NUM] = {@"Fortitude", @"Reflexes", @"Will"};
+static NSString * _Nonnull __strong STNamesIT[ST_NUM] = {@"Tempra", @"Riflessi", @"Volontà"};
 
 @interface Entity : NSObject {
     @public NSString *name;

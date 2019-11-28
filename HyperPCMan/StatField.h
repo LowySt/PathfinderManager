@@ -12,7 +12,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 #define STATS_NUM 6
 
-static NSString * _Nonnull __strong Stat[STATS_NUM] = {@"STR", @"DEX", @"CON", @"INT", @"WIS", @"CHA"};
+static NSString * _Nonnull __strong StatENG[STATS_NUM] = {
+    @"STR", @"DEX", @"CON", @"INT", @"WIS", @"CHA"
+};
+
+static NSString * _Nonnull __strong StatIT[STATS_NUM] = {
+    @"FOR", @"DES", @"COS", @"INT", @"SAG", @"CAR"
+};
+
 
 @interface StatField : NSObject {
     
