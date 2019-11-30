@@ -151,6 +151,15 @@
         }
         for(NSInteger i = 0; i < SKILL_NUM; i++) {
             [mainVC->Skills[i]->Box setIntValue:mainVC->Party[index]->Skills[i].Value];
+            if(mainVC->Party[index]->Skills[i].markSet == SKILL_MARK_UNSET) {
+                [mainVC->hasLevels[i]->Button setTitle:@"O"];
+            }
+            else if(mainVC->Party[index]->Skills[i].markSet == 0) {
+                [mainVC->hasLevels[i]->Button setTitle:@"X"];
+            }
+            else if(mainVC->Party[index]->Skills[i].markSet == 1) {
+                [mainVC->hasLevels[i]->Button setTitle:@"✓"];
+            }
         }
         //TODO: Account for multiple bonuses
         [mainVC->miscAttack[0]->Box setIntValue:mainVC->Party[index]->AttackBonus.Bonus[0]];
@@ -160,7 +169,7 @@
 }
 
 - (void)SetupInitTab:(NSTabViewItem *)item {
-                
+
     int yPos = 750;
     for(int i = 0; i < PARTY_SIZE; i++) {
     
@@ -402,9 +411,9 @@
 }
 
 - (void)SetupPartyTab:(NSTabViewItem *)item {
-    NSString *sourcePath = @"/Users/lowy/Desktop/test/Party.pc";
-    //NSError *err;
-    //NSArray* dirs = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:sourcePath error:&err];
+    //TODO: Add Error Specifying no Party.pc file was found in the application folder!
+    NSString *appParentDirectory = [[[NSBundle mainBundle] bundlePath] stringByDeletingLastPathComponent];
+    NSString *sourcePath = [appParentDirectory stringByAppendingString:@"/Party.pc"];
     NSMutableArray *pcNames = [[NSMutableArray alloc] init];
     int language = 99;
     
@@ -459,8 +468,7 @@
                 e->AttackBonus.Bonus[j] = data[dataIdx++];
             }
             e->CMB = data[dataIdx++]; e->CMD = data[dataIdx++];
-            
-            //TODO: BUGGED! Need to be FIXED!!!!!!!
+                        
             for(NSInteger j = 0; j < SKILL_NUM; j++) {
                 if(levelRequiredSkill[j] == true) {
                     e->Skills[j].markSet = data[dataIdx++];
@@ -539,7 +547,34 @@
         [[item view] addSubview:Skill->Box]; [[item view] addSubview:Skill->Label];
         [[item view] addSubview:mark->Button];
         mainVC->Skills[i] = Skill;
+        mainVC->hasLevels[i] = mark;
     }
+    
+    NSInteger index = [mainVC->PCSelector indexOfSelectedItem];
+    for(NSInteger i = 0; i < STATS_NUM; i++) {
+        int v = mainVC->Party[index]->Stats[i];
+        [mainVC->Stats[i] setIntValue:v];
+        [mainVC->Stats[i]->Bonus setIntValue:ASBonus[v]];
+    }
+    for(NSInteger i = 0; i < ST_NUM; i++) {
+        [mainVC->SavingThrows[i]->Box setIntValue:mainVC->Party[index]->SavingThrows[i]];
+    }
+    for(NSInteger i = 0; i < SKILL_NUM; i++) {
+        [mainVC->Skills[i]->Box setIntValue:mainVC->Party[index]->Skills[i].Value];
+        if(mainVC->Party[index]->Skills[i].markSet == SKILL_MARK_UNSET) {
+            [mainVC->hasLevels[i]->Button setTitle:@"O"];
+        }
+        else if(mainVC->Party[index]->Skills[i].markSet == 0) {
+            [mainVC->hasLevels[i]->Button setTitle:@"X"];
+        }
+        else if(mainVC->Party[index]->Skills[i].markSet == 1) {
+            [mainVC->hasLevels[i]->Button setTitle:@"✓"];
+        }
+    }
+    //TODO: Account for multiple bonuses
+    [mainVC->miscAttack[0]->Box setIntValue:mainVC->Party[index]->AttackBonus.Bonus[0]];
+    [mainVC->miscAttack[1]->Box setIntValue:mainVC->Party[index]->CMB];
+    [mainVC->miscAttack[2]->Box setIntValue:mainVC->Party[index]->CMD];
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
@@ -568,7 +603,7 @@
     
     NSArray *tabViewItems = [[NSArray alloc] initWithObjects:item0, item1, item2, item3, nil];
     [MainTabView setTabViewItems:tabViewItems];
-    [MainTabView selectTabViewItemAtIndex:3];
+    [MainTabView selectTabViewItemAtIndex:2];
     [[MainWindow contentView] addSubview:MainTabView];
 }
 
