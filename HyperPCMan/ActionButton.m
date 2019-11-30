@@ -35,6 +35,16 @@
     return self;
 }
 
+- (ActionButton *)initSymNoAction:(NSRect)frame sym:(NSString *)sym {
+
+    Button = [NSButton buttonWithTitle:sym target:self action:nil];
+    [Button setBordered:false];
+    [Button setFrame:frame];
+        
+    return self;
+
+}
+
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];
     

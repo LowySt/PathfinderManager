@@ -402,41 +402,54 @@
 }
 
 - (void)SetupPartyTab:(NSTabViewItem *)item {
-    NSString *sourcePath = @"/Users/lowy/Desktop/test";
-    NSError *err;
-    NSArray* dirs = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:sourcePath error:&err];
+    NSString *sourcePath = @"/Users/lowy/Desktop/test/Party.pc";
+    //NSError *err;
+    //NSArray* dirs = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:sourcePath error:&err];
+    NSMutableArray *pcNames = [[NSMutableArray alloc] init];
+    int language = 99;
     
     NSInteger __block partyIdx = 0;
     NSString * __strong *Stat = nil;
     NSString * __strong *STNames = nil;
     NSString * __strong *SkillNames = nil;
     NSString * __strong *miscNames = nil;
-    int __block language = 99;
+    bool *levelRequiredSkill = nil;
     
-    //TODO: I don't like loading N files. Also, is there a better way to load these files?
-    NSMutableArray *pcFiles = [[NSMutableArray alloc] init];
-    NSMutableArray *pcNames = [[NSMutableArray alloc] init];
-    [dirs enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
-        NSString *filename = (NSString *)obj;
-        NSString *extension = [[filename pathExtension] lowercaseString];
-        if ([extension isEqualToString:@"pc"]) {
-            NSString *filePath = [sourcePath stringByAppendingPathComponent:filename];
-            NSString *name = [obj stringByDeletingPathExtension];
-            [pcFiles addObject:filePath]; //This is probably useless
-            [pcNames addObject:name];
-            
-            //-- Entity Setup --//
-            NSData *d = [NSData dataWithContentsOfFile:filePath];
-            NSInteger dataIdx = 0;
-            char *data = (char *)[d bytes];
+    NSData *d = [NSData dataWithContentsOfFile:sourcePath];
+    if(d == nil) { assert(false); }
+    else {
+              
+        NSInteger dataIdx = 0;
+        char *data = (char *)[d bytes];
+                
+        //-- Entity Setup --//
+        NSInteger sizeOfParty = data[dataIdx++];
+        
+        for(NSInteger i = 0; i < sizeOfParty; i++) {
             Entity *e = [[Entity alloc] init];
-            e->name = [[NSString alloc] initWithString:name];
             
             if((language == 0 && data[dataIdx] == 1) ||
                (language == 1 && data[dataIdx] == 0)) {
                 //TODO: Report Error!!!
+                assert(false);
             }
             language = data[dataIdx++];
+            
+            switch(language) {
+                case 0: {
+                    levelRequiredSkill = levelRequiredSkillENG;
+                } break;
+                case 1: {
+                    levelRequiredSkill = levelRequiredSkillIT;
+                } break;
+            }
+
+            uint8_t nameLen = data[dataIdx++];
+            e->name = [[NSString alloc] initWithBytes:(data + dataIdx) length:nameLen encoding:NSUTF8StringEncoding];
+            dataIdx += nameLen;
+            
+            NSString *pcName = [[NSString alloc] initWithString:e->name];
+            [pcNames addObject:pcName];
             
             for(NSInteger j = 0; j < STATS_NUM; j++) { e->Stats[j] = data[dataIdx++]; }
             for(NSInteger j = 0; j < ST_NUM; j++) { e->SavingThrows[j] = data[dataIdx++]; }
@@ -447,12 +460,20 @@
             }
             e->CMB = data[dataIdx++]; e->CMD = data[dataIdx++];
             
-            for(NSInteger j = 0; j < SKILL_NUM; j++) { e->Skills[j].Value = data[dataIdx++]; }
+            //TODO: BUGGED! Need to be FIXED!!!!!!!
+            for(NSInteger j = 0; j < SKILL_NUM; j++) {
+                if(levelRequiredSkill[j] == true) {
+                    e->Skills[j].markSet = data[dataIdx++];
+                } else {
+                    e->Skills[j].markSet = SKILL_MARK_UNSET;
+                }
+                e->Skills[j].Value = data[dataIdx++];
+            }
             mainVC->Party[partyIdx] = e; partyIdx += 1;
         }
-    }];
-    //TODO: Report Error! assert([pcNames count] > 0);
-    
+               
+    }
+ 
     NSComboBox *pcs = [[NSComboBox alloc] initWithFrame:NSMakeRect(40, 810, 100, 26)];
     [pcs setDelegate:self];
     [pcs removeAllItems];
@@ -467,12 +488,14 @@
             STNames = STNamesENG;
             miscNames = miscNamesENG;
             SkillNames = SkillNamesENG;
+            levelRequiredSkill = levelRequiredSkillENG;
         } break;
         case 1: {
             Stat = StatIT;
             STNames = STNamesIT;
             miscNames = miscNamesIT;
             SkillNames = SkillNamesIT;
+            levelRequiredSkill = levelRequiredSkillIT;
         } break;
     }
     
@@ -508,10 +531,13 @@
     yPos = 780;
     for(NSInteger i = 0; i < SKILL_NUM; i++) {
         LabeledTextBox *Skill = [[LabeledTextBox alloc] initLabeled:SkillNames[i] labelDir:LABEL_LEFT frame:NSMakeRect(340, yPos, 40, 20) isEditable:false];
-        yPos -= 20;
         [Skill->Box setAlignment:NSTextAlignmentCenter];
         
+        ActionButton *mark = [[ActionButton alloc] initSymNoAction:NSMakeRect(385, yPos, 20, 22) sym:@"O"];
+        yPos -= 20;
+        
         [[item view] addSubview:Skill->Box]; [[item view] addSubview:Skill->Label];
+        [[item view] addSubview:mark->Button];
         mainVC->Skills[i] = Skill;
     }
 }

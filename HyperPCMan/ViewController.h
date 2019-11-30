@@ -60,6 +60,7 @@
     @public LabeledTextBox * __strong SavingThrows[ST_NUM];
     @public LabeledTextBox * __strong miscAttack[MISC_NUM];
     @public LabeledTextBox * __strong Skills[SKILL_NUM];
+    @public ActionButton * __strong hasLevels[SKILL_NUM];
 };
 
 - (void)resetMobs;

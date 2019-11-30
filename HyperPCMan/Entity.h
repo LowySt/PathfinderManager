@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 #define ST_NUM 3
 #define MISC_NUM 3
+#define SKILL_MARK_UNSET 99
 
 typedef struct {
     int Bonus[4];
@@ -23,6 +24,8 @@ typedef struct {
     int Value;
     int AS;
     int Extra;
+    
+    int markSet;
 } Skill;
 
 typedef enum {
@@ -73,26 +76,38 @@ static NSString * _Nonnull __strong miscNamesIT[MISC_NUM] = {
 
 static NSString  * _Nonnull __strong SkillNamesENG[SKILL_NUM] = {
         @"Acrobatics", @"Appraise", @"Bluff", @"Climb", @"Craft",
-        @"Diplomacy", @"Disable Device", @"Disguise", @"Escape Artist",
-        @"Fly", @"Handle Animal", @"Heal", @"Intimidate", @"Intuition",
-        @"Knowledge(Arcana)", @"Knowledge(Dungeoneering)", @"Knowledge(Engineering)",
-        @"Knowledge(Geography)", @"Knowledge(History)", @"Knowledge(Local)",
-        @"Knowledge(Nature)", @"Knowledge(Nobility)", @"Knowledge(Planes)",
-        @"Knowledge(Religion)", @"Linguistics", @"Perception", @"Perform",
-        @"Profession", @"Ride", @"Sleight of Hand", @"Spellcraft",
-        @"Stealth", @"Survival", @"Swim", @"Use Magic Device"
+        @"Diplomacy", @"Disable Device*", @"Disguise", @"Escape Artist",
+        @"Fly", @"Handle Animal*", @"Heal", @"Intimidate", @"Intuition",
+        @"Knowledge(Arcana)*", @"Knowledge(Dungeoneering)*", @"Knowledge(Engineering)*",
+        @"Knowledge(Geography)*", @"Knowledge(History)*", @"Knowledge(Local)*",
+        @"Knowledge(Nature)*", @"Knowledge(Nobility)*", @"Knowledge(Planes)*",
+        @"Knowledge(Religion)*", @"Linguistics*", @"Perception", @"Perform",
+        @"Profession*", @"Ride", @"Sleight of Hand*", @"Spellcraft*",
+        @"Stealth", @"Survival", @"Swim", @"Use Magic Device*"
 };
 
 static NSString * _Nonnull __strong SkillNamesIT[SKILL_NUM] = {
-        @"Acrobazia", @"Addestrare Animali", @"Artigianato", @"Artista Della Fuga",
-        @"Camuffare", @"Cavalcare", @"Conoscenze(Arcane)", @"Conoscenze(Dungeon)",
-        @"Conoscenze(Geografia)", @"Conoscenze(Ingegneria)", @"Conoscenze(Locali)",
-        @"Conoscenze(Natura)", @"Conoscenze(Nobiltà)", @"Conoscenze(Piani)",
-        @"Conoscenze(Religioni)", @"Conoscenze(Storia)", @"Diplomazia",
-        @"Disattivare Congegni", @"Furtività", @"Guarire", @"Intimidire", @"Intrattenere",
-        @"Intuizione", @"Linguistica", @"Nuotare", @"Percezione", @"Professione", @"Raggirare",
-        @"Rapidità Di Mano", @"Sapienza Magica", @"Scalare", @"Sopravvivenza",
-        @"Utilizzare Congegni Magici", @"Valutare", @"Volare"
+        @"Acrobazia", @"Addestrare Animali*", @"Artigianato", @"Artista Della Fuga",
+        @"Camuffare", @"Cavalcare", @"Conoscenze(Arcane)*", @"Conoscenze(Dungeon)*",
+        @"Conoscenze(Geografia)*", @"Conoscenze(Ingegneria)*", @"Conoscenze(Locali)*",
+        @"Conoscenze(Natura)*", @"Conoscenze(Nobiltà)*", @"Conoscenze(Piani)*",
+        @"Conoscenze(Religioni)*", @"Conoscenze(Storia)*", @"Diplomazia",
+        @"Disattivare Congegni*", @"Furtività", @"Guarire", @"Intimidire", @"Intrattenere",
+        @"Intuizione", @"Linguistica*", @"Nuotare", @"Percezione", @"Professione*",
+        @"Raggirare",  @"Rapidità Di Mano*", @"Sapienza Magica*", @"Scalare",
+        @"Sopravvivenza", @"Utilizzare Congegni Magici*", @"Valutare", @"Volare"
+};
+
+static bool levelRequiredSkillENG[SKILL_NUM] = {
+        false, false, false, false, false, false, true, false, false, false, true,
+        false, false, false, true, true, true, true, true, true, true, true, true,
+        true, true, false, false, true, false, true, true, false, false, false, true
+};
+
+static bool levelRequiredSkillIT[SKILL_NUM] = {
+        false, true, false, false, false, false, true, true, true, true, true, true,
+        true, true, true, true, false, true, false, false, false, false, false, true,
+        false, false, true, false, true, true, false, false, true, false, false
 };
 
 static int ASBonus[] = {
