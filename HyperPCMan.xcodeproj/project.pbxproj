@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9E52CDE723B221A7004BCF97 /* SetEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = 9E52CDE623B221A7004BCF97 /* SetEntity.m */; };
 		9EC95349237C554400C857B0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC95348237C554400C857B0 /* AppDelegate.m */; };
 		9EC9534C237C554400C857B0 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9EC9534B237C554400C857B0 /* ViewController.m */; };
 		9EC9534E237C554600C857B0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9EC9534D237C554600C857B0 /* Assets.xcassets */; };
@@ -23,6 +24,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9E52CDE523B221A7004BCF97 /* SetEntity.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SetEntity.h; sourceTree = "<group>"; };
+		9E52CDE623B221A7004BCF97 /* SetEntity.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SetEntity.m; sourceTree = "<group>"; };
 		9EC95344237C554400C857B0 /* HyperPCMan.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HyperPCMan.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9EC95347237C554400C857B0 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		9EC95348237C554400C857B0 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -99,6 +102,8 @@
 				9EC9534B237C554400C857B0 /* ViewController.m */,
 				9EC953672385A33E00C857B0 /* BattleEntity.h */,
 				9EC953682385A33E00C857B0 /* BattleEntity.m */,
+				9E52CDE523B221A7004BCF97 /* SetEntity.h */,
+				9E52CDE623B221A7004BCF97 /* SetEntity.m */,
 				9EC9535E238168F900C857B0 /* OrderField.h */,
 				9EC9535F238168F900C857B0 /* OrderField.m */,
 				9EC9534D237C554600C857B0 /* Assets.xcassets */,
@@ -186,6 +191,7 @@
 				9EC9535D237C875100C857B0 /* LabeledTextBox.m in Sources */,
 				9EC95349237C554400C857B0 /* AppDelegate.m in Sources */,
 				9EC9536F238EAB7B00C857B0 /* StatField.m in Sources */,
+				9E52CDE723B221A7004BCF97 /* SetEntity.m in Sources */,
 				9EC95366238311E100C857B0 /* Counter.m in Sources */,
 				9EC9536C238C4EA600C857B0 /* CheckButton.m in Sources */,
 				9EC95363238192BC00C857B0 /* ActionButton.m in Sources */,

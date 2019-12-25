@@ -162,21 +162,24 @@
             }
         }
         //TODO: Account for multiple bonuses
-        [mainVC->miscAttack[0]->Box setIntValue:mainVC->Party[index]->AttackBonus.Bonus[0]];
-        [mainVC->miscAttack[1]->Box setIntValue:mainVC->Party[index]->CMB];
-        [mainVC->miscAttack[2]->Box setIntValue:mainVC->Party[index]->CMD];
+        [mainVC->miscAttack[0]->Box setIntValue:mainVC->Party[index]->AC];
+        [mainVC->miscAttack[1]->Box setIntValue:mainVC->Party[index]->AttackBonus.Bonus[0]];
+        [mainVC->miscAttack[2]->Box setIntValue:mainVC->Party[index]->CMB];
+        [mainVC->miscAttack[3]->Box setIntValue:mainVC->Party[index]->CMD];
     }
 }
 
 - (void)SetupInitTab:(NSTabViewItem *)item {
 
-    int yPos = 750;
+    self->mainVC->battleOngoing = false;
+    
+    int yPos = 720;
     for(int i = 0; i < PARTY_SIZE; i++) {
     
         //TODO: Remove the formatter from hero. Maybe make it a BattleEntity
         //      as well?
         BattleEntity *Hero = [[BattleEntity alloc]initHero:NSMakeRect(525, yPos, 30, 20) name:HeroNames[i]];
-                   
+                
         CheckButton *InBattle = [[CheckButton alloc] initWithAction:NSMakeRect(560, yPos, 20, 20) blk:^void(CheckButton *s){
             ViewController *v = self->mainVC;
             if([s->Button state] == NSControlStateValueOff) {
@@ -188,7 +191,7 @@
                 [v showNOrder:(v->orderNum - v->notInBattle)];
             }
         }];
-        
+                
         [Hero->Box->Box setDelegate:self];
         [[item view] addSubview:Hero->Box->Box];
         [[item view] addSubview:Hero->Box->Label];
@@ -202,35 +205,112 @@
     
         BattleEntity *Ally = [[BattleEntity alloc] initWithFrame:NSMakeRect(525, yPos, 70, 20) name:AllyNames[i]];
         
+        SetEntity *set = [[SetEntity alloc] initWithFrame:NSMakeRect(525, yPos, 70, 20) name:@"" blk:^void(){
+            ViewController *v = self->mainVC;
+            NSInteger newAllyNum = v->allyNum+1;
+            assert(newAllyNum <= ALLY_SIZE);
+            [v->NewAllies[v->allyNum] hide];
+            
+            [v showNOrder:(v->mobNum + newAllyNum + PARTY_SIZE - v->notInBattle)];
+            NSString *newName = [v->NewAllies[v->allyNum]->Box->Label stringValue];
+            [v->Order[v->orderNum]->Name setStringValue:newName];
+            [v->Order[v->orderNum]->Num setIntegerValue:(v->orderNum+1)];
+            
+            v->turnsInRound += 1;
+            [v changePos:(v->orderNum+1) newPos:(v->currentTurnIdx+1+1)];
+                       
+            v->allyNum = newAllyNum; [v->Allies[newAllyNum-1] show]; v->orderNum += 1;
+            
+            [v->Allies[v->allyNum-1]->Box->Label setStringValue:newName];
+            if(newAllyNum < ALLY_SIZE) { [v->AddEntity[v->allyNum]->Button setHidden:false]; }
+        }];
+        
+        ActionButton *ab = [[ActionButton alloc] initWithAction:NSMakeRect(525, yPos, 40, 20) name:@"+" blk:^void(){
+            ViewController *vc = self->mainVC;
+            if(vc->battleOngoing == false) { return; }
+            
+            NSInteger idx = vc->allyNum;
+            [vc->NewAllies[idx] show];
+            [vc->AddEntity[idx]->Button setHidden:true];
+            //TODO: Maybe add boolean to allow other components to know a new entity is being added.
+        }];
+        [ab->Button setHidden:true];
+        
         [Ally->Box->Label setDelegate:self];
         [Ally->Box->Box setDelegate:self];
         [Ally->Init setDelegate:self];
+        [set->Box->Label setDelegate:self];
+        [set->Box->Box setDelegate:self];
         [[item view] addSubview:Ally->Box->Box];
     	[[item view] addSubview:Ally->Box->Label];
         [[item view] addSubview:Ally->Init];
+        [[item view] addSubview:ab->Button];
+        [[item view] addSubview:set->Box->Box];
+        [[item view] addSubview:set->Box->Label];
+        [[item view] addSubview:set->Butt->Button];
+        mainVC->NewAllies[i] = set;
+        mainVC->AddEntity[i] = ab;
         mainVC->Allies[i] = Ally;
         yPos -= 30;
     }
  
-    yPos = 750;
+    yPos = 720;
     for(int i = 0; i < MOB_SIZE; i++) {
 
         BattleEntity *Mob = [[BattleEntity alloc] initWithFrame:NSMakeRect(365, yPos, 70, 20) name:EnemyNames[i]];
         
+        SetEntity *set = [[SetEntity alloc] initWithFrame:NSMakeRect(365, yPos, 70, 20) name:@"" blk:^void(){
+            ViewController *v = self->mainVC;
+            NSInteger newMobNum = v->mobNum+1;
+            assert(newMobNum <= MOB_SIZE);
+            [v->NewMobs[v->mobNum] hide];
+            
+            [v showNOrder:(newMobNum + v->allyNum + PARTY_SIZE - v->notInBattle)];
+            NSString *newName = [v->NewMobs[v->mobNum]->Box->Label stringValue];
+            [v->Order[v->orderNum]->Name setStringValue:newName];
+            [v->Order[v->orderNum]->Num setIntegerValue:(v->orderNum+1)];
+            
+            v->turnsInRound += 1;
+            [v changePos:(v->orderNum+1) newPos:(v->currentTurnIdx+1+1)];
+                       
+            v->mobNum = newMobNum; [v->Mobs[newMobNum-1] show]; v->orderNum += 1;
+            
+            [v->Mobs[v->mobNum-1]->Box->Label setStringValue:newName];
+            if(newMobNum < MOB_SIZE) { [v->AddEntity[v->mobNum+ALLY_SIZE]->Button setHidden:false]; }
+        }];
+        
+        ActionButton *ab = [[ActionButton alloc] initWithAction:NSMakeRect(365, yPos, 40, 20) name:@"+" blk:^void(){
+            ViewController *vc = self->mainVC;
+            if(vc->battleOngoing == false) { return; }
+            
+            NSInteger idx = vc->mobNum;
+            [vc->NewMobs[idx] show];
+            [vc->AddEntity[idx+ALLY_SIZE]->Button setHidden:true];
+            //TODO: Maybe add boolean to allow other components to know a new entity is being added.
+        }];
+        [ab->Button setHidden:true];
+        
         [Mob->Box->Label setDelegate:self];
         [Mob->Box->Box setDelegate:self];
         [Mob->Init setDelegate:self];
+        [set->Box->Label setDelegate:self];
+        [set->Box->Box setDelegate:self];
         [[item view] addSubview:Mob->Box->Box];
         [[item view] addSubview:Mob->Box->Label];
         [[item view] addSubview:Mob->Init];
+        [[item view] addSubview:ab->Button];
+        [[item view] addSubview:set->Box->Box];
+        [[item view] addSubview:set->Box->Label];
+        [[item view] addSubview:set->Butt->Button];
+        mainVC->NewMobs[i] = set;
+        mainVC->AddEntity[i+ALLY_SIZE] = ab;
         mainVC->Mobs[i] = Mob;
         yPos -= 30;
     }
     
-    yPos = 750;
+    yPos = 720;
     for(int i = 0; i < ORDER_SIZE; i++) {
-         //NOTE:TODO: Something fucky happening. Slowdown HERE! In button creation
-        OrderField *Order = [[OrderField alloc]
+         OrderField *Order = [[OrderField alloc]
                              initOrder:CGPointMake(680, yPos) num:i+1 vc:mainVC];
         
         [Order->Num setDelegate:self];
@@ -241,37 +321,54 @@
         yPos -= 22;
     }
     
-    mainVC->CurrentInTurn = [[NSTextField alloc] initWithFrame:NSMakeRect(820, 750, 120, 20)];
+    mainVC->CurrentInTurn = [[NSTextField alloc] initWithFrame:NSMakeRect(820, 720, 120, 20)];
     [mainVC->CurrentInTurn setAlignment:NSTextAlignmentCenter];
     [mainVC->CurrentInTurn setEditable:false];
     [[item view] addSubview:mainVC->CurrentInTurn];
     
-    mainVC->RoundCount = [[NSTextField alloc] initWithFrame:NSMakeRect(1200, 820, 30, 20)];
+    mainVC->RoundCount = [[NSTextField alloc] initWithFrame:NSMakeRect(1100, 790, 30, 20)];
     [mainVC->RoundCount setAlignment:NSTextAlignmentCenter];
     [mainVC->RoundCount setEditable:false];
     [[item view] addSubview:mainVC->RoundCount];
     
-    ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 810, 80, 24) name:@"Reset" blk:^void(){
+    ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 780, 80, 24) name:@"Reset" blk:^void(){
         ViewController *vc = self->mainVC;
+        [vc->AddEntity[vc->allyNum]->Button setHidden:true];
+        [vc->AddEntity[vc->mobNum+ALLY_SIZE]->Button setHidden:true];
         [vc resetMobs]; [vc resetAllies]; [vc resetOrder];
         [vc->MobSelector selectItemAtIndex:0];
         [vc->AllySelector selectItemAtIndex:0];
         [vc->RoundCount setStringValue:@""];
         [vc->CurrentInTurn setStringValue:@""];
+        [vc->MobSelector setHidden:false];
+        [vc->AllySelector setHidden:false];
+        [vc->Roll->Button setHidden:false];
         vc->currentTurnIdx = 0; vc->notInBattle = 0; vc->removed = 0;
+        vc->battleOngoing = false;
         for(int i = 0; i < COUNTER_SIZE; i++) { [vc->Counters[i] reset]; }
         for(int i = 0; i < PARTY_SIZE; i++) {
             [vc->Heros[i]->Box->Box setStringValue:@""];
             [vc->InBattle[i]->Button setState:NSControlStateValueOn];
         }
+        for(int i = 0; i < MOB_SIZE; i++) {
+            [vc->NewMobs[i]->Box->Box setHidden:true];
+            [vc->NewMobs[i]->Box->Label setHidden:true];
+            [vc->NewMobs[i]->Butt->Button setHidden:true];
+        }
+        for(int i = 0; i < ALLY_SIZE; i++) {
+            [vc->NewAllies[i]->Box->Box setHidden:true];
+            [vc->NewAllies[i]->Box->Label setHidden:true];
+            [vc->NewAllies[i]->Butt->Button setHidden:true];
+        }
         [vc resetOrder];
     }];
         
-    ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, 810, 80, 24) name:@"Map" blk:^void(){
+    ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, 780, 80, 24) name:@"Map" blk:^void(){
         NSLog(@"Map Button!");
     }];
-        
-    ActionButton *Roll = [[ActionButton alloc] initWithAction:NSMakeRect(420, 780, 80, 24) name:@"Roll" blk:^void(){
+    
+    yPos = 750;
+    ActionButton *Roll = [[ActionButton alloc] initWithAction:NSMakeRect(420, yPos, 80, 24) name:@"Roll" blk:^void(){
         
         ViewController *v = self->mainVC;
         int newRand;
@@ -286,12 +383,16 @@
         }
     }];
     
-    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(695, 780, 80, 24) name:@"Set" blk:^void(){
+    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(695, yPos, 80, 24) name:@"Set" blk:^void(){
         ViewController *v = self->mainVC;
-                
+        
         v->currentTurnIdx = 0;
         v->removed = 0;
         v->turnsInRound = v->orderNum - v->notInBattle;
+        v->battleOngoing = true;
+        [v->MobSelector setHidden:true];
+        [v->AllySelector setHidden:true];
+        [v->Roll->Button setHidden:true];
         [v->RoundCount setStringValue:@""];
        
         NSMutableArray *orderArr = [[NSMutableArray alloc] init];
@@ -339,9 +440,15 @@
             
             if(i == 0) { [v->CurrentInTurn setStringValue:[b->Box->Label stringValue]]; }
         }
+        
+        //Show Enemy and Ally Adding Buttons:
+        if(v->allyNum < ALLY_SIZE)
+        { [v->AddEntity[v->allyNum]->Button setHidden:false]; }
+        if(v->mobNum < MOB_SIZE)
+        { [v->AddEntity[v->mobNum+ALLY_SIZE]->Button setHidden:false]; }
     }];
     
-    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(840, 780, 80, 24) name:@"Next" blk:^void(){
+    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(840, yPos, 80, 24) name:@"Next" blk:^void(){
         ViewController *v = self->mainVC;
         NSInteger num = v->orderNum - v->notInBattle - v->removed;
         
@@ -377,7 +484,7 @@
     mainVC->Roll = Roll; mainVC->Set = Set;
     mainVC->Next = Next;
     
-    yPos = 760;
+    yPos = 730;
     for(int i = 0; i < COUNTER_SIZE; i++) {
         
         Counter *C = [[Counter alloc] initWithFrame:NSMakeRect(20, yPos, 80, 20) name:counterNames[i]];
@@ -392,7 +499,7 @@
     }
 
     NSArray *MobSelValues = @[@"No Enemies", @"1 Enemy", @"2 Enemies", @"3 Enemies", @"4 Enemies", @"5 Enemies", @"6 Enemies", @"7 Enemies", @"8 Enemies", @"9 Enemies", @"10 Enemies", @"11 Enemies", @"12 Enemies", @"13 Enemies", @"14 Enemies", @"15 Enemies", @"16 Enemies"];
-    NSComboBox *MobSel = [[NSComboBox alloc] initWithFrame:NSMakeRect(315, 780, 100, 25)];
+    NSComboBox *MobSel = [[NSComboBox alloc] initWithFrame:NSMakeRect(315, 750, 100, 25)];
     [MobSel addItemsWithObjectValues:MobSelValues];
     [MobSel selectItemAtIndex:0];
     MobSel.identifier = @"MobSel";
@@ -401,7 +508,7 @@
     [mainVC->MobSelector setDelegate:self];
     
     NSArray *AllySelValues = @[@"No Allies", @"1 Ally", @"2 Allies", @"3 Allies", @"4 Allies"];
-    NSComboBox *AllySel = [[NSComboBox alloc] initWithFrame:NSMakeRect(500, 780, 100, 25)];
+    NSComboBox *AllySel = [[NSComboBox alloc] initWithFrame:NSMakeRect(500, 750, 100, 25)];
     [AllySel addItemsWithObjectValues:AllySelValues];
     [AllySel selectItemAtIndex:0];
     AllySel.identifier = @"AllySel";
@@ -416,7 +523,17 @@
     NSString *sourcePath = [appParentDirectory stringByAppendingString:@"/Party.pc"];
     NSMutableArray *pcNames = [[NSMutableArray alloc] init];
     int language = 99;
+    /*
+    NSString *initMessage = @"Directory: ";
+    NSString *message = [initMessage stringByAppendingString:sourcePath];
     
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:message];
+    [alert setInformativeText:@"Informative text."];
+    [alert addButtonWithTitle:@"Cancel"];
+    [alert addButtonWithTitle:@"Ok"];
+    [alert runModal];
+    */
     NSInteger __block partyIdx = 0;
     NSString * __strong *Stat = nil;
     NSString * __strong *STNames = nil;
@@ -463,6 +580,8 @@
             for(NSInteger j = 0; j < STATS_NUM; j++) { e->Stats[j] = data[dataIdx++]; }
             for(NSInteger j = 0; j < ST_NUM; j++) { e->SavingThrows[j] = data[dataIdx++]; }
             
+            e->AC = data[dataIdx++];
+            
             NSInteger howManyBABs = data[dataIdx++]; e->AttackBonus.num = (int)howManyBABs;
             for(NSInteger j = 0; j < howManyBABs; j++) {
                 e->AttackBonus.Bonus[j] = data[dataIdx++];
@@ -482,7 +601,7 @@
                
     }
  
-    NSComboBox *pcs = [[NSComboBox alloc] initWithFrame:NSMakeRect(40, 810, 100, 26)];
+    NSComboBox *pcs = [[NSComboBox alloc] initWithFrame:NSMakeRect(40, 700, 100, 26)];
     [pcs setDelegate:self];
     [pcs removeAllItems];
     [pcs addItemsWithObjectValues:pcNames];
@@ -507,7 +626,7 @@
         } break;
     }
     
-    int yPos = 780;
+    int yPos = 670;
     for(NSInteger i = 0; i < STATS_NUM; i++) {
         StatField *f = [[StatField alloc] initWithLabel:Stat[i] frame:NSMakeRect(60, yPos, 40, 20)];
         yPos -= 30;
@@ -536,13 +655,16 @@
         mainVC->miscAttack[i] = m;
     }
          
-    yPos = 780;
+    yPos = 670;
+    int xPos = 340;
     for(NSInteger i = 0; i < SKILL_NUM; i++) {
-        LabeledTextBox *Skill = [[LabeledTextBox alloc] initLabeled:SkillNames[i] labelDir:LABEL_LEFT frame:NSMakeRect(340, yPos, 40, 20) isEditable:false];
+        LabeledTextBox *Skill = [[LabeledTextBox alloc] initLabeled:SkillNames[i] labelDir:LABEL_LEFT frame:NSMakeRect(xPos, yPos, 40, 20) isEditable:false];
         [Skill->Box setAlignment:NSTextAlignmentCenter];
         
-        ActionButton *mark = [[ActionButton alloc] initSymNoAction:NSMakeRect(385, yPos, 20, 22) sym:@"O"];
+        ActionButton *mark = [[ActionButton alloc] initSymNoAction:NSMakeRect(xPos+45, yPos, 20, 22) sym:@"O"];
         yPos -= 20;
+        
+        if(yPos < 320) { yPos = 670; xPos = xPos + 45 + 210; }
         
         [[item view] addSubview:Skill->Box]; [[item view] addSubview:Skill->Label];
         [[item view] addSubview:mark->Button];
@@ -572,9 +694,10 @@
         }
     }
     //TODO: Account for multiple bonuses
-    [mainVC->miscAttack[0]->Box setIntValue:mainVC->Party[index]->AttackBonus.Bonus[0]];
-    [mainVC->miscAttack[1]->Box setIntValue:mainVC->Party[index]->CMB];
-    [mainVC->miscAttack[2]->Box setIntValue:mainVC->Party[index]->CMD];
+    [mainVC->miscAttack[0]->Box setIntValue:mainVC->Party[index]->AC];
+    [mainVC->miscAttack[1]->Box setIntValue:mainVC->Party[index]->AttackBonus.Bonus[0]];
+    [mainVC->miscAttack[2]->Box setIntValue:mainVC->Party[index]->CMB];
+    [mainVC->miscAttack[3]->Box setIntValue:mainVC->Party[index]->CMD];
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
@@ -584,9 +707,10 @@
     mainVC->currentTurnIdx = 0;
     
     NSWindow *MainWindow = [NSApp windows][0];
-    [MainWindow setFrame:NSMakeRect(300, 160, 1280, 960) display:true];
+    //NOTE: Originally 1280x960
+    [MainWindow setFrame:NSMakeRect(300, 160, 1280, 800) display:true];
     
-    NSTabView __strong *MainTabView = [[NSTabView alloc] initWithFrame:NSMakeRect(0, 0, 1280, 890)];
+    NSTabView __strong *MainTabView = [[NSTabView alloc] initWithFrame:NSMakeRect(0, 0, 1280, 780)];
     NSTabViewItem *item0 = [[NSTabViewItem alloc] init];
     [item0 setLabel:@"PC"];
     NSTabViewItem *item1 = [[NSTabViewItem alloc] init];
@@ -596,6 +720,12 @@
     NSTabViewItem *item3 = [[NSTabViewItem alloc] init];
     [item3 setLabel:@"Party"];
 
+    //NOTE: This is the solution to fullscreen correct positioning.
+    //      Maybe not...
+    int resizeFlags = (NSViewMinXMargin | NSViewMaxXMargin | NSViewMinYMargin |
+                       NSViewHeightSizable | NSViewWidthSizable);
+    [MainTabView setAutoresizingMask:resizeFlags];
+    
     [self SetupInitTab:item2];
     [mainVC resetOrder];
     

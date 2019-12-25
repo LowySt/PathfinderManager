@@ -15,6 +15,7 @@
 #import "CheckButton.h"
 #import "StatField.h"
 #import "Entity.h"
+#import "SetEntity.h"
 
 @interface ViewController : NSViewController {
     
@@ -30,7 +31,9 @@
     @public NSInteger removed;
     
     @public BattleEntity * __strong Allies[ALLY_SIZE];
+    @public SetEntity * __strong NewAllies[ALLY_SIZE];
     @public BattleEntity * __strong Mobs[MOB_SIZE];
+    @public SetEntity * __strong NewMobs[MOB_SIZE];
     @public OrderField * __strong Order[ORDER_SIZE];
         
     @public NSInteger mobNum;
@@ -41,6 +44,9 @@
     @public NSTextField __strong *RoundCount;
     @public NSInteger currentTurnIdx;
     @public NSInteger turnsInRound;
+    
+    @public ActionButton * __strong AddEntity[ALLY_SIZE+MOB_SIZE];
+    @public Boolean battleOngoing;
     
     @public ActionButton __strong *Reset;
     @public ActionButton __strong *Map;
@@ -55,7 +61,7 @@
     // ----------- //
     
     @public NSComboBox __strong *PCSelector;
-    @public Entity * __strong Party[PARTY_SIZE];
+    @public Entity * __strong Party[PARTY_SIZE+1]; //TODO:Fanculo Cpt.Fagiano
     @public StatField * __strong Stats[STATS_NUM];
     @public LabeledTextBox * __strong SavingThrows[ST_NUM];
     @public LabeledTextBox * __strong miscAttack[MISC_NUM];

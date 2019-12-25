@@ -12,7 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 #define ST_NUM 3
-#define MISC_NUM 3
+#define MISC_NUM 4
 #define SKILL_MARK_UNSET 99
 
 typedef struct {
@@ -68,10 +68,10 @@ typedef enum {
 } SkillEnums;
 
 static NSString * _Nonnull __strong miscNamesENG[MISC_NUM] = {
-        @"BAB", @"CMB", @"CMD"
+        @"AC", @"BAB", @"CMB", @"CMD"
 };
 static NSString * _Nonnull __strong miscNamesIT[MISC_NUM] = {
-        @"BAB", @"BMC", @"DMC"
+        @"CA", @"BAB", @"BMC", @"DMC"
 };
 
 static NSString  * _Nonnull __strong SkillNamesENG[SKILL_NUM] = {
@@ -123,6 +123,7 @@ static NSString * _Nonnull __strong STNamesIT[ST_NUM] = {@"Tempra", @"Riflessi",
     @public NSString *name;
     @public int      Stats[STATS_NUM];
     @public int      SavingThrows[ST_NUM];
+    @public int      AC;
     @public BAB      AttackBonus;
     @public int      CMB;
     @public int      CMD;
