@@ -309,21 +309,25 @@
     }
     
     yPos = 720;
+    bool left = true;
     for(int i = 0; i < ORDER_SIZE; i++) {
-         OrderField *Order = [[OrderField alloc]
-                             initOrder:CGPointMake(680, yPos) num:i+1 vc:mainVC];
+        CGPoint p;
+        if(left == true) { p = CGPointMake(680, yPos); left = false; }
+        else { p = CGPointMake(870, yPos); left = true; yPos -= 22; }
+        
+        OrderField *Order = [[OrderField alloc] initOrder:p num:i+1 vc:mainVC];
         
         [Order->Num setDelegate:self];
         [[item view] addSubview:Order->Name];
         [[item view] addSubview:Order->Num];
         [[item view] addSubview:Order->Remove->Button];
         mainVC->Order[i] = Order;
-        yPos -= 22;
     }
     
-    mainVC->CurrentInTurn = [[NSTextField alloc] initWithFrame:NSMakeRect(820, 720, 120, 20)];
+    mainVC->CurrentInTurn = [[NSTextField alloc] initWithFrame:NSMakeRect(760, 750, 120, 20)];
     [mainVC->CurrentInTurn setAlignment:NSTextAlignmentCenter];
     [mainVC->CurrentInTurn setEditable:false];
+    [mainVC->CurrentInTurn setHidden:true];
     [[item view] addSubview:mainVC->CurrentInTurn];
     
     mainVC->RoundCount = [[NSTextField alloc] initWithFrame:NSMakeRect(1100, 790, 30, 20)];
@@ -331,7 +335,8 @@
     [mainVC->RoundCount setEditable:false];
     [[item view] addSubview:mainVC->RoundCount];
     
-    ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, 780, 80, 24) name:@"Reset" blk:^void(){
+    yPos = 780;
+    ActionButton *Reset = [[ActionButton alloc] initWithAction:NSMakeRect(20, yPos, 80, 24) name:@"Reset" blk:^void(){
         ViewController *vc = self->mainVC;
         [vc->AddEntity[vc->allyNum]->Button setHidden:true];
         [vc->AddEntity[vc->mobNum+ALLY_SIZE]->Button setHidden:true];
@@ -343,6 +348,9 @@
         [vc->MobSelector setHidden:false];
         [vc->AllySelector setHidden:false];
         [vc->Roll->Button setHidden:false];
+        [vc->Next->Button setHidden:true];
+        [vc->CurrentInTurn setHidden:true];
+        [vc->Set->Button setHidden:false];
         vc->currentTurnIdx = 0; vc->notInBattle = 0; vc->removed = 0;
         vc->battleOngoing = false;
         for(int i = 0; i < COUNTER_SIZE; i++) { [vc->Counters[i] reset]; }
@@ -363,12 +371,41 @@
         [vc resetOrder];
     }];
         
-    ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, 780, 80, 24) name:@"Map" blk:^void(){
+    ActionButton *Map = [[ActionButton alloc] initWithAction:NSMakeRect(100, yPos, 80, 24) name:@"Map" blk:^void(){
         NSLog(@"Map Button!");
     }];
     
-    yPos = 750;
-    ActionButton *Roll = [[ActionButton alloc] initWithAction:NSMakeRect(420, yPos, 80, 24) name:@"Roll" blk:^void(){
+    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(780, 770, 80, 24) name:@"Next" blk:^void(){
+        ViewController *v = self->mainVC;
+        NSInteger num = v->orderNum - v->notInBattle - v->removed;
+        
+        if(v->mobNum == 0 && v->allyNum == 0) { return; }
+        
+        //TODO: Maybe bug when removing from order and currentTurnIdx gets >= than num?
+        //      Probably not because currentTurnIdx gets managed when removing from order
+        if(v->currentTurnIdx == (num-1)) {
+            v->currentTurnIdx = 0;
+            [v->RoundCount setIntValue:([v->RoundCount intValue]+1)];
+        } else {
+            v->currentTurnIdx += 1;
+        }
+
+        //NOTE: We need numberOfTurnsI >= turnsInRound, rather then ==, because if
+        //      turnsInRound was modified while the counter was on the boundary, it
+        //      ends up in a wrong state!
+        for(int i = 0; i < COUNTER_SIZE; i++) {
+            Counter *curr = v->Counters[i];
+            if(curr->isCounting == true) {
+                curr->elapsedTurns += 1;
+                if(curr->elapsedTurns >= v->turnsInRound) { [curr tick]; }
+            }
+        }
+        
+        [v->CurrentInTurn setStringValue:[v->Order[v->currentTurnIdx]->Name stringValue]];
+    }];
+    [Next->Button setHidden:true];
+    
+    ActionButton *Roll = [[ActionButton alloc] initWithAction:NSMakeRect(420, 750, 80, 24) name:@"Roll" blk:^void(){
         
         ViewController *v = self->mainVC;
         int newRand;
@@ -383,7 +420,7 @@
         }
     }];
     
-    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(695, yPos, 80, 24) name:@"Set" blk:^void(){
+    ActionButton *Set = [[ActionButton alloc] initWithAction:NSMakeRect(770, 740, 80, 24) name:@"Set" blk:^void(){
         ViewController *v = self->mainVC;
         
         v->currentTurnIdx = 0;
@@ -393,6 +430,8 @@
         [v->MobSelector setHidden:true];
         [v->AllySelector setHidden:true];
         [v->Roll->Button setHidden:true];
+        [v->Next->Button setHidden:false];
+        [v->CurrentInTurn setHidden:false];
         [v->RoundCount setStringValue:@""];
        
         NSMutableArray *orderArr = [[NSMutableArray alloc] init];
@@ -446,36 +485,10 @@
         { [v->AddEntity[v->allyNum]->Button setHidden:false]; }
         if(v->mobNum < MOB_SIZE)
         { [v->AddEntity[v->mobNum+ALLY_SIZE]->Button setHidden:false]; }
+        
+        [v->Set->Button setHidden:true];
     }];
-    
-    ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(840, yPos, 80, 24) name:@"Next" blk:^void(){
-        ViewController *v = self->mainVC;
-        NSInteger num = v->orderNum - v->notInBattle - v->removed;
-        
-        if(v->mobNum == 0 && v->allyNum == 0) { return; }
-        
-        //TODO: Maybe bug when removing from order and currentTurnIdx gets >= than num?
-        //      Probably not because currentTurnIdx gets managed when removing from order
-        if(v->currentTurnIdx == (num-1)) {
-            v->currentTurnIdx = 0;
-            [v->RoundCount setIntValue:([v->RoundCount intValue]+1)];
-        } else {
-            v->currentTurnIdx += 1;
-        }
-
-        //NOTE: We need numberOfTurnsI >= turnsInRound, rather then ==, because if
-        //      turnsInRound was modified while the counter was on the boundary, it
-        //      ends up in a wrong state!
-        for(int i = 0; i < COUNTER_SIZE; i++) {
-            Counter *curr = v->Counters[i];
-            if(curr->isCounting == true) {
-                curr->elapsedTurns += 1;
-                if(curr->elapsedTurns >= v->turnsInRound) { [curr tick]; }
-            }
-        }
-        
-        [v->CurrentInTurn setStringValue:[v->Order[v->currentTurnIdx]->Name stringValue]];
-    }];
+       
     
     [[item view] addSubview:Reset->Button]; [[item view] addSubview:Map->Button];
     [[item view] addSubview:Roll->Button]; [[item view] addSubview:Set->Button];
