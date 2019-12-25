@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 #define ALLY_SIZE    4
 #define MOB_SIZE     16
 #define ORDER_SIZE   29
-#define COUNTER_SIZE 4
+#define COUNTER_SIZE 8
 
 NSString static * _Nonnull __strong EnemyNames[MOB_SIZE] = {@"Enemy 1", @"Enemy 2", @"Enemy 3", @"Enemy 4", @"Enemy 5", @"Enemy 6", @"Enemy 7", @"Enemy 8", @"Enemy 9", @"Enemy 10", @"Enemy 11", @"Enemy 12", @"Enemy 13", @"Enemy 14", @"Enemy 15", @"Enemy 16"};
 
@@ -23,7 +23,7 @@ NSString static *_Nonnull __strong HeroNames[PARTY_SIZE] = {@"Gremag", @"Federic
 
 NSString static *_Nonnull __strong AllyNames[ALLY_SIZE] = {@"Ally 1", @"Ally 2", @"Ally 3", @"Ally 4"};
 
-NSString static *_Nonnull __strong counterNames[COUNTER_SIZE] = {@"Counter 1", @"Counter 2", @"Counter 3", @"Counter 4"};
+NSString static *_Nonnull __strong counterNames[COUNTER_SIZE] = {@"Counter 1", @"Counter 2", @"Counter 3", @"Counter 4", @"Counter 5", @"Counter 6", @"Counter 7", @"Counter 8"};
 
 @interface BattleEntity : NSObject {
   

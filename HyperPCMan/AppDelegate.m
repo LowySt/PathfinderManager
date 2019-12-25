@@ -305,7 +305,7 @@
         mainVC->NewMobs[i] = set;
         mainVC->AddEntity[i+ALLY_SIZE] = ab;
         mainVC->Mobs[i] = Mob;
-        yPos -= 30;
+        yPos -= 22;
     }
     
     yPos = 720;
