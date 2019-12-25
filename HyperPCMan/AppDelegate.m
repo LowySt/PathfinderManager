@@ -472,7 +472,8 @@
             return (NSComparisonResult)NSOrderedSame;
         }];
         
-        for(int i = 0; i < v->orderNum; i++) {
+        NSInteger totNum = v->orderNum - v->notInBattle;
+        for(int i = 0; i < totNum; i++) {
             BattleEntity *b = orderArr[i];
             [v->Order[i]->Name setStringValue:[b->Box->Label stringValue]];
             [v->Order[i]->Num setIntValue:(i+1)];
@@ -511,7 +512,8 @@
         yPos -= 40;
     }
 
-    NSArray *MobSelValues = @[@"No Enemies", @"1 Enemy", @"2 Enemies", @"3 Enemies", @"4 Enemies", @"5 Enemies", @"6 Enemies", @"7 Enemies", @"8 Enemies", @"9 Enemies", @"10 Enemies", @"11 Enemies", @"12 Enemies", @"13 Enemies", @"14 Enemies", @"15 Enemies", @"16 Enemies"];
+    NSArray *MobSelValues = @[@"No Enemies", @"1 Enemy", @"2 Enemies", @"3 Enemies", @"4 Enemies", @"5 Enemies", @"6 Enemies", @"7 Enemies", @"8 Enemies", @"9 Enemies", @"10 Enemies", @"11 Enemies", @"12 Enemies", @"13 Enemies", @"14 Enemies", @"15 Enemies", @"16 Enemies", @"17 Enemies", @"18 Enemies", @"19 Enemies", @"20 Enemies", @"21 Enemies", @"22 Enemies", @"23 Enemies", @"24 Enemies"];
+    assert(MobSelValues.count == MOB_SIZE+1);
     NSComboBox *MobSel = [[NSComboBox alloc] initWithFrame:NSMakeRect(315, 750, 100, 25)];
     [MobSel addItemsWithObjectValues:MobSelValues];
     [MobSel selectItemAtIndex:0];
@@ -521,6 +523,7 @@
     [mainVC->MobSelector setDelegate:self];
     
     NSArray *AllySelValues = @[@"No Allies", @"1 Ally", @"2 Allies", @"3 Allies", @"4 Allies"];
+    assert(AllySelValues.count == ALLY_SIZE+1);
     NSComboBox *AllySel = [[NSComboBox alloc] initWithFrame:NSMakeRect(500, 750, 100, 25)];
     [AllySel addItemsWithObjectValues:AllySelValues];
     [AllySel selectItemAtIndex:0];
