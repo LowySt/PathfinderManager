@@ -58,13 +58,19 @@
 - (void)hide {
     [Box->Box setHidden:true];
     [Box->Label setHidden:true];
-    [Init setHidden:true];
+    if(Init != nil) { [Init setHidden:true]; }
+}
+
+- (void)clear {
+    [Box->Box setStringValue:@"0"];
+    [Box->Label setStringValue:@""];
+    if(Init != nil) { [Init setStringValue:@""]; }
 }
 
 - (void)show {
     [Box->Box setHidden:false];
     [Box->Label setHidden:false];
-    [Init setHidden:false];
+    if(Init != nil) { [Init setHidden:false]; }
 }
 
 //NOTE: I hate ""OOP"" languages...

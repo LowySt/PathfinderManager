@@ -28,14 +28,13 @@
     @public BattleEntity * __strong Heros[PARTY_SIZE];
     @public CheckButton * __strong InBattle[PARTY_SIZE];
     @public NSInteger notInBattle;
-    @public NSInteger removed;
     
     @public BattleEntity * __strong Allies[ALLY_SIZE];
     @public SetEntity * __strong NewAllies[ALLY_SIZE];
     @public BattleEntity * __strong Mobs[MOB_SIZE];
     @public SetEntity * __strong NewMobs[MOB_SIZE];
     @public OrderField * __strong Order[ORDER_SIZE];
-        
+
     @public NSInteger mobNum;
     @public NSInteger allyNum;
     @public NSInteger orderNum;

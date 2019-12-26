@@ -34,12 +34,13 @@
     CGPoint numP = CGPointMake(p.x - 40, p.y);
     
     [Name setFrameOrigin:p]; [Num setFrameOrigin:numP];
-    
-    //NOTE:TODO: Something fucky happening. Slowdown HERE!
+        
     NSRect buttonFrame = NSMakeRect(p.x - 60, p.y, 20, 20);
     Remove = [[ActionButton alloc] initXWithAction:buttonFrame blk:^void(){
         NSInteger arrIdx = [self->Num integerValue] - 1;
-        NSInteger num = vc->orderNum - vc->notInBattle - vc->removed;
+        NSInteger num = vc->orderNum;
+        
+        NSString *lookupName = [self->Name stringValue];
         
         for(NSInteger i = arrIdx; i < num-1; i++) {
             NSString *new = [vc->Order[i+1]->Name stringValue];
@@ -60,7 +61,79 @@
         [vc->Order[num-1]->Remove->Button setHidden:true];
         
         vc->turnsInRound -= 1;
-        vc->removed += 1;
+        vc->orderNum -= 1;
+        
+        //NOTE: Clear from Mobs/Ally List This name, and shorten the list.
+        //Will this create problems with the "removed" counter?
+        
+        //TODO: I CAN'T HAVE THE SAME NAME BETWEEN TWO GUYS!
+        //      NEED TO ADD AN IDENTIFIER SHARED BETWEEN ORDER AND ENTITIES!
+        for(NSInteger i = 0; i < vc->allyNum; i++) {
+            BattleEntity *a = vc->Allies[i];
+            if([[a->Box->Label stringValue] isEqualToString:lookupName]) {
+                if(vc->allyNum == 1) {
+                    [a hide];
+                    [vc->AddEntity[1]->Button setHidden:true];
+                    [vc->AddEntity[0]->Button setHidden:false];
+                }
+                else if(i == (vc->allyNum-1)) {
+                    [a clear];
+                    [a hide];
+                    [vc->AddEntity[i]->Button setHidden:false];
+                    if(i+1 < ALLY_SIZE)
+                    { [vc->AddEntity[i+1]->Button setHidden:true]; }
+                }
+                else {
+                    BattleEntity *last = vc->Allies[vc->allyNum-1];
+                    [a->Box->Label setStringValue:[last->Box->Label stringValue]];
+                    [a->Box->Box setStringValue:[last->Box->Box stringValue]];
+                    [a->Init setStringValue:[last->Init stringValue]];
+                
+                    [last clear];
+                    [last hide];
+                    if(vc->allyNum != ALLY_SIZE) {
+                        [vc->AddEntity[vc->allyNum]->Button setHidden:true];
+                    }
+                    [vc->AddEntity[vc->allyNum-1]->Button setHidden:false];
+                }
+                vc->allyNum -= 1;
+                return;
+            }
+        }
+        
+        for(NSInteger i = 0; i < vc->mobNum; i++) {
+            BattleEntity *m = vc->Mobs[i];
+            if([[m->Box->Label stringValue] isEqualToString:lookupName]) {
+                if(vc->mobNum == 1) {
+                    [m hide];
+                    [vc->AddEntity[ALLY_SIZE + 1]->Button setHidden:true];
+                    [vc->AddEntity[ALLY_SIZE + 0]->Button setHidden:false];
+                }
+                else if(i == (vc->mobNum-1)) {
+                    [m clear];
+                    [m hide];
+                    [vc->AddEntity[ALLY_SIZE + i]->Button setHidden:false];
+                    if(i+1 < MOB_SIZE)
+                    { [vc->AddEntity[ALLY_SIZE + i+1]->Button setHidden:true]; }
+                }
+                else {
+                    BattleEntity *last = vc->Mobs[vc->mobNum-1];
+                    [m->Box->Label setStringValue:[last->Box->Label stringValue]];
+                    [m->Box->Box setStringValue:[last->Box->Box stringValue]];
+                    [m->Init setStringValue:[last->Init stringValue]];
+                
+                    [last clear];
+                    [last hide];
+                    if(vc->mobNum != MOB_SIZE) {
+                        [vc->AddEntity[ALLY_SIZE + vc->mobNum]->Button setHidden:true];
+                    }
+                    [vc->AddEntity[ALLY_SIZE + (vc->mobNum-1)]->Button setHidden:false];
+                }
+                vc->mobNum -= 1;
+                return;
+            }
+        }
+        
     }];
     
     [Name setHidden:true];

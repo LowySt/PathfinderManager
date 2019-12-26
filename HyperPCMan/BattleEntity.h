@@ -37,6 +37,7 @@ NSString static *_Nonnull __strong counterNames[COUNTER_SIZE] = {@"Counter 1", @
 
 - (BattleEntity *)initHero:(NSRect)frame name:(NSString *)name;
 
+- (void)clear;
 - (void)hide;
 - (void)show;
 

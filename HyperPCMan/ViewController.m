@@ -45,7 +45,7 @@
 
 - (void)changePos:(NSInteger)p newPos:(NSInteger)newP {
        
-    NSInteger num = orderNum - notInBattle - removed;
+    NSInteger num = orderNum;
     
     if(p == newP) { return; }
     if(newP > num) { return; }

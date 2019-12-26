@@ -97,10 +97,8 @@
     ViewController *v = mainVC;
     NSTextField *t = obj.object;
     void *tp = (__bridge void *)t;
-    
-    NSInteger num = v->orderNum - v->notInBattle - v->removed;
-    
-    for(NSInteger i = 0; i < num; i++) {
+
+    for(NSInteger i = 0; i < v->orderNum; i++) {
         if(tp == (__bridge void *)v->Order[i]->Num)
         {
             NSInteger newPos = [v->Order[i]->Num integerValue];
@@ -123,8 +121,8 @@
         for(int i = 0; i < num; i++) { [mainVC->Mobs[i] show]; }
                
         NSInteger allyNum = [mainVC->AllySelector indexOfSelectedItem];
-        [mainVC showNOrder:(num + allyNum + PARTY_SIZE - mainVC->notInBattle)];
-        mainVC->orderNum = num + allyNum + PARTY_SIZE;
+        mainVC->orderNum = num + allyNum + PARTY_SIZE - mainVC->notInBattle;
+        [mainVC showNOrder:mainVC->orderNum];
     }
     else if(t.identifier == mainVC->AllySelector.identifier)
     {
@@ -136,8 +134,8 @@
         for(int i = 0; i < num; i++) { [mainVC->Allies[i] show]; }
         
         NSInteger mobNum = [mainVC->MobSelector indexOfSelectedItem];
-        [mainVC showNOrder:(num + mobNum + PARTY_SIZE - mainVC->notInBattle)];
-        mainVC->orderNum = num + mobNum + PARTY_SIZE;
+        mainVC->orderNum = num + mobNum + PARTY_SIZE - mainVC->notInBattle;
+        [mainVC showNOrder:mainVC->orderNum];
     }
     else if(t == mainVC->PCSelector) {
         NSInteger index = [mainVC->PCSelector indexOfSelectedItem];
@@ -171,7 +169,7 @@
 
 - (void)SetupInitTab:(NSTabViewItem *)item {
 
-    self->mainVC->battleOngoing = false;
+    mainVC->battleOngoing = false;
     
     int yPos = 720;
     for(int i = 0; i < PARTY_SIZE; i++) {
@@ -182,14 +180,10 @@
                 
         CheckButton *InBattle = [[CheckButton alloc] initWithAction:NSMakeRect(560, yPos, 20, 20) blk:^void(CheckButton *s){
             ViewController *v = self->mainVC;
-            if([s->Button state] == NSControlStateValueOff) {
-                v->notInBattle += 1;
-                [v showNOrder:(v->orderNum - v->notInBattle)];
-            }
-            else if([s->Button state] == NSControlStateValueOn) {
-                self->mainVC->notInBattle -= 1;
-                [v showNOrder:(v->orderNum - v->notInBattle)];
-            }
+            if([s->Button state] == NSControlStateValueOff) { v->notInBattle += 1; v->orderNum -= 1; }
+            else if([s->Button state] == NSControlStateValueOn) { v->notInBattle -= 1; v->orderNum += 1; }
+            
+            [v showNOrder:v->orderNum];
         }];
                 
         [Hero->Box->Box setDelegate:self];
@@ -211,7 +205,7 @@
             assert(newAllyNum <= ALLY_SIZE);
             [v->NewAllies[v->allyNum] hide];
             
-            [v showNOrder:(v->mobNum + newAllyNum + PARTY_SIZE - v->notInBattle)];
+            [v showNOrder:(v->orderNum+1)];
             NSString *newName = [v->NewAllies[v->allyNum]->Box->Label stringValue];
             [v->Order[v->orderNum]->Name setStringValue:newName];
             [v->Order[v->orderNum]->Num setIntegerValue:(v->orderNum+1)];
@@ -265,7 +259,7 @@
             assert(newMobNum <= MOB_SIZE);
             [v->NewMobs[v->mobNum] hide];
             
-            [v showNOrder:(newMobNum + v->allyNum + PARTY_SIZE - v->notInBattle)];
+            [v showNOrder:(v->orderNum+1)];
             NSString *newName = [v->NewMobs[v->mobNum]->Box->Label stringValue];
             [v->Order[v->orderNum]->Name setStringValue:newName];
             [v->Order[v->orderNum]->Num setIntegerValue:(v->orderNum+1)];
@@ -351,7 +345,7 @@
         [vc->Next->Button setHidden:true];
         [vc->CurrentInTurn setHidden:true];
         [vc->Set->Button setHidden:false];
-        vc->currentTurnIdx = 0; vc->notInBattle = 0; vc->removed = 0;
+        vc->currentTurnIdx = 0;
         vc->battleOngoing = false;
         for(int i = 0; i < COUNTER_SIZE; i++) { [vc->Counters[i] reset]; }
         for(int i = 0; i < PARTY_SIZE; i++) {
@@ -377,7 +371,7 @@
     
     ActionButton *Next = [[ActionButton alloc] initWithAction:NSMakeRect(780, 770, 80, 24) name:@"Next" blk:^void(){
         ViewController *v = self->mainVC;
-        NSInteger num = v->orderNum - v->notInBattle - v->removed;
+        NSInteger num = v->orderNum;
         
         if(v->mobNum == 0 && v->allyNum == 0) { return; }
         
@@ -424,8 +418,7 @@
         ViewController *v = self->mainVC;
         
         v->currentTurnIdx = 0;
-        v->removed = 0;
-        v->turnsInRound = v->orderNum - v->notInBattle;
+        v->turnsInRound = v->orderNum;
         v->battleOngoing = true;
         [v->MobSelector setHidden:true];
         [v->AllySelector setHidden:true];
@@ -472,8 +465,7 @@
             return (NSComparisonResult)NSOrderedSame;
         }];
         
-        NSInteger totNum = v->orderNum - v->notInBattle;
-        for(int i = 0; i < totNum; i++) {
+        for(int i = 0; i < v->orderNum; i++) {
             BattleEntity *b = orderArr[i];
             [v->Order[i]->Name setStringValue:[b->Box->Label stringValue]];
             [v->Order[i]->Num setIntValue:(i+1)];
