@@ -170,6 +170,7 @@
 - (void)SetupInitTab:(NSTabViewItem *)item {
 
     mainVC->battleOngoing = false;
+    mainVC->orderNum = PARTY_SIZE;
     
     int yPos = 720;
     for(int i = 0; i < PARTY_SIZE; i++) {

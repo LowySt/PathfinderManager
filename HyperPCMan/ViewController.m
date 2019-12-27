@@ -29,6 +29,7 @@
 }
 
 - (void)resetOrder {
+    orderNum = PARTY_SIZE;
     for(int i = 0; i < ORDER_SIZE; i++) {
         if(i < PARTY_SIZE) { [Order[i] show]; }
         else { [Order[i] hide]; }
