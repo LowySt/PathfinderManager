@@ -408,12 +408,12 @@
         ViewController *v = self->mainVC;
         int newRand;
         for(int i = 0; i < v->mobNum; i++) {
-            newRand = arc4random_uniform(20) + 1;
+            newRand = arc4random_uniform(20)+1;
             [v->Mobs[i]->Init setIntValue:(newRand + [v->Mobs[i]->Box->Box intValue])];
         }
         
         for(int i = 0; i < self->mainVC->allyNum; i++) {
-            newRand = arc4random_uniform(20) + 1;
+            newRand = arc4random_uniform(20)+1;
             [v->Allies[i]->Init setIntValue:(newRand + [v->Allies[i]->Box->Box intValue])];
         }
     }];
@@ -542,8 +542,8 @@
     [mainVC->Calc setDelegate:self];
     
     ActionButton *DoCalc = [[ActionButton alloc] initWithAction:NSMakeRect(20, 183, 60, 30) name:@"Calc" blk:^void(){
-        NSInteger result = [self->mainVC calcThrow:[self->mainVC->Calc stringValue]];
-        [self->mainVC->CalcResult setIntegerValue:result];
+        float result = [self->mainVC calcThrow:[self->mainVC->Calc stringValue]];
+        [self->mainVC->CalcResult setFloatValue:result];
     }];
     [[item view] addSubview:DoCalc->Button];
     mainVC->DoCalc = DoCalc;

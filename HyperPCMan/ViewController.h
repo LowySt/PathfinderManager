@@ -78,7 +78,7 @@
 - (void)showNOrder:(NSInteger)n;
 
 - (void)changePos:(NSInteger)p newPos:(NSInteger)newP;
-- (NSInteger)calcThrow:(NSString *)s;
+- (float)calcThrow:(NSString *)s;
 
 @end
 
