@@ -45,7 +45,6 @@
 }
 
 - (void)changePos:(NSInteger)p newPos:(NSInteger)newP {
-       
     NSInteger num = orderNum;
     
     if(p == newP) { return; }
@@ -81,6 +80,56 @@
     [Order[newP-1]->Name setStringValue:moved];
    
     [CurrentInTurn setStringValue:[Order[currentTurnIdx]->Name stringValue]];
+}
+
+bool isToken(char c) {
+    switch(c)
+    {
+        case '(': return true;
+        case ')': return true;
+        case 'd': return true;
+        case '+': return true;
+        case '-': return true;
+        case '*': return true;
+    }
+    
+    return false;
+}
+
+NSString *getSubstringUntilChar(const char *s, char c) {
+    int length = 0;
+    char *at = (char *)s;
+    while(*at != c) { length += 1; at += 1; }
+    
+    NSString *result = [[NSString alloc] initWithBytes:s length:length encoding:NSUTF8StringEncoding];
+    return result;
+}
+
+- (NSInteger)calcThrow:(NSString *)s {
+    
+    NSInteger result = 0;
+    const char *cStr = [s cStringUsingEncoding:NSUTF8StringEncoding];
+    char *At = (char *)cStr;
+    while(*At != 0)
+    {
+        char c = *At;
+        if(isToken(c)) {
+            if(c == '(') {
+                NSString *subStr = getSubstringUntilChar(At+1, ')'); At += 1;
+                NSInteger partialResult = [self calcThrow:subStr];
+                result += partialResult;
+                At += [subStr length];
+                At += 1; // )
+            }
+        }
+        else {
+            
+        }
+        
+        At += 1;
+    }
+        
+    return 0;
 }
 
 - (void)viewDidLoad {

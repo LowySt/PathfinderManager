@@ -55,6 +55,10 @@
     
     @public Counter * __strong Counters[COUNTER_SIZE];
     
+    @public ActionButton __strong *DoCalc;
+    @public NSTextField __strong *CalcResult;
+    @public NSTextField __strong *Calc;
+    
     // ----------- //
     //  Party Tab  //
     // ----------- //
@@ -74,6 +78,7 @@
 - (void)showNOrder:(NSInteger)n;
 
 - (void)changePos:(NSInteger)p newPos:(NSInteger)newP;
+- (NSInteger)calcThrow:(NSString *)s;
 
 @end
 

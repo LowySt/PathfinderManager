@@ -46,6 +46,7 @@
             NSString *new = [vc->Order[i+1]->Name stringValue];
             [vc->Order[i]->Name setStringValue:new];
         }
+        
         if(vc->currentTurnIdx == arrIdx) {
             if(arrIdx == num-1) {
                 vc->currentTurnIdx = 0;
@@ -53,7 +54,10 @@
             } else {
                 [vc->CurrentInTurn setStringValue:[vc->Order[arrIdx]->Name stringValue]];
             }
+        } else if(vc->currentTurnIdx > arrIdx) {
+            vc->currentTurnIdx -= 1;
         }
+        
         //NOTE: Right now I don't waste time clearing the name... but maybe it could
         //      be useful if I add stuff like "Add enemies to battle" and other things...
         [vc->Order[num-1]->Name setHidden:true];
@@ -63,9 +67,8 @@
         vc->turnsInRound -= 1;
         vc->orderNum -= 1;
         
-        //NOTE: Clear from Mobs/Ally List This name, and shorten the list.
-        //Will this create problems with the "removed" counter?
-        
+        assert(vc->currentTurnIdx < vc->orderNum);
+                
         //TODO: I CAN'T HAVE THE SAME NAME BETWEEN TWO GUYS!
         //      NEED TO ADD AN IDENTIFIER SHARED BETWEEN ORDER AND ENTITIES!
         for(NSInteger i = 0; i < vc->allyNum; i++) {
@@ -133,7 +136,7 @@
                 return;
             }
         }
-        
+                
     }];
     
     [Name setHidden:true];

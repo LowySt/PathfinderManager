@@ -171,6 +171,7 @@
 
     mainVC->battleOngoing = false;
     mainVC->orderNum = PARTY_SIZE;
+    mainVC->notInBattle = 0;
     
     int yPos = 720;
     for(int i = 0; i < PARTY_SIZE; i++) {
@@ -340,6 +341,8 @@
         [vc->AllySelector selectItemAtIndex:0];
         [vc->RoundCount setStringValue:@""];
         [vc->CurrentInTurn setStringValue:@""];
+        [vc->CalcResult setStringValue:@""];
+        [vc->Calc setStringValue:@""];
         [vc->MobSelector setHidden:false];
         [vc->AllySelector setHidden:false];
         [vc->Roll->Button setHidden:false];
@@ -347,6 +350,7 @@
         [vc->CurrentInTurn setHidden:true];
         [vc->Set->Button setHidden:false];
         vc->currentTurnIdx = 0;
+        vc->notInBattle = 0;
         vc->battleOngoing = false;
         for(int i = 0; i < COUNTER_SIZE; i++) { [vc->Counters[i] reset]; }
         for(int i = 0; i < PARTY_SIZE; i++) {
@@ -376,8 +380,7 @@
         
         if(v->mobNum == 0 && v->allyNum == 0) { return; }
         
-        //TODO: Maybe bug when removing from order and currentTurnIdx gets >= than num?
-        //      Probably not because currentTurnIdx gets managed when removing from order
+        assert(v->currentTurnIdx < num);
         if(v->currentTurnIdx == (num-1)) {
             v->currentTurnIdx = 0;
             [v->RoundCount setIntValue:([v->RoundCount intValue]+1)];
@@ -505,9 +508,10 @@
         yPos -= 40;
     }
 
+    yPos = 750;
     NSArray *MobSelValues = @[@"No Enemies", @"1 Enemy", @"2 Enemies", @"3 Enemies", @"4 Enemies", @"5 Enemies", @"6 Enemies", @"7 Enemies", @"8 Enemies", @"9 Enemies", @"10 Enemies", @"11 Enemies", @"12 Enemies", @"13 Enemies", @"14 Enemies", @"15 Enemies", @"16 Enemies", @"17 Enemies", @"18 Enemies", @"19 Enemies", @"20 Enemies", @"21 Enemies", @"22 Enemies", @"23 Enemies", @"24 Enemies"];
     assert(MobSelValues.count == MOB_SIZE+1);
-    NSComboBox *MobSel = [[NSComboBox alloc] initWithFrame:NSMakeRect(315, 750, 100, 25)];
+    NSComboBox *MobSel = [[NSComboBox alloc] initWithFrame:NSMakeRect(315, yPos, 100, 25)];
     [MobSel addItemsWithObjectValues:MobSelValues];
     [MobSel selectItemAtIndex:0];
     MobSel.identifier = @"MobSel";
@@ -517,13 +521,33 @@
     
     NSArray *AllySelValues = @[@"No Allies", @"1 Ally", @"2 Allies", @"3 Allies", @"4 Allies"];
     assert(AllySelValues.count == ALLY_SIZE+1);
-    NSComboBox *AllySel = [[NSComboBox alloc] initWithFrame:NSMakeRect(500, 750, 100, 25)];
+    NSComboBox *AllySel = [[NSComboBox alloc] initWithFrame:NSMakeRect(500, yPos, 100, 25)];
     [AllySel addItemsWithObjectValues:AllySelValues];
     [AllySel selectItemAtIndex:0];
     AllySel.identifier = @"AllySel";
     [[item view] addSubview:AllySel];
     mainVC->AllySelector = AllySel;
     [mainVC->AllySelector setDelegate:self];
+    
+    NSTextField *CalcResult = [[NSTextField alloc] initWithFrame:NSMakeRect(86, 190, 60, 20)];
+    [CalcResult setEditable:false];
+    [CalcResult setAlignment:NSTextAlignmentCenter];
+    [[item view] addSubview:CalcResult];
+    mainVC->CalcResult = CalcResult;
+    [mainVC->CalcResult setDelegate:self];
+    
+    NSTextField *Calc = [[NSTextField alloc] initWithFrame:NSMakeRect(20, 160, 300, 20)];
+    [[item view] addSubview:Calc];
+    mainVC->Calc = Calc;
+    [mainVC->Calc setDelegate:self];
+    
+    ActionButton *DoCalc = [[ActionButton alloc] initWithAction:NSMakeRect(20, 183, 60, 30) name:@"Calc" blk:^void(){
+        NSInteger result = [self->mainVC calcThrow:[self->mainVC->Calc stringValue]];
+        [self->mainVC->CalcResult setIntegerValue:result];
+    }];
+    [[item view] addSubview:DoCalc->Button];
+    mainVC->DoCalc = DoCalc;
+
 }
 
 - (void)SetupPartyTab:(NSTabViewItem *)item {
