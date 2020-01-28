@@ -121,14 +121,14 @@ const char parens[PA_ARR_LEN] = { '(', ')' };
 
 enum TokenType
 {
-    TOKEN_BLOCK_START = 0,
-    TOKEN_VAL,
-    TOKEN_OPEN_PAREN,
-    TOKEN_CLOSE_PAREN,
-    TOKEN_PLUS,
-    TOKEN_MINUS,
-    TOKEN_TIMES,
-    TOKEN_DICE_THROW
+    TOKEN_BLOCK_START = 0x0000000,
+    TOKEN_VAL         = 0x0000001,
+    TOKEN_OPEN_PAREN  = 0x0000010,
+    TOKEN_CLOSE_PAREN = 0x0000100,
+    TOKEN_PLUS        = 0x0001000,
+    TOKEN_MINUS       = 0x0010000,
+    TOKEN_TIMES       = 0x0100000,
+    TOKEN_DICE_THROW  = 0x1000000
 };
 
 char *tokenStr[] = {"BLOCK_START", "VAL", "OPEN_PAREN", "CLOSE_PAREN", "PLUS", "MINUS", "TIMES", "DICE_THROW"};
@@ -161,6 +161,23 @@ bool isNum(char c)
     return false;
 }
 
+// 0x0000011 &
+// 0x0000001 =
+// 0x0000001
+
+bool expectTok(char *v, int typeMask)
+{
+    if((TOKEN_VAL & typeMask) == TOKEN_VAL) {
+        if(isNum(*v)) { return true; }
+    }
+    
+    if((TOKEN_OPEN_PAREN & typeMask) == TOKEN_OPEN_PAREN) {
+        if(*v == '(') { return true; }
+    }
+    
+    return false;
+}
+
 struct TokenList *tokenize(const char *in, int len)
 {
     struct TokenList *Result = calloc(1, sizeof(struct TokenList));
@@ -175,10 +192,12 @@ struct TokenList *tokenize(const char *in, int len)
         {
             int parenLen = 0;
             char *Bt = At+1;
-            while(*Bt != ')') { Bt += 1; parenLen += 1; }
+            while(*Bt != ')') { if(parenLen >= (len-1)) { return 0x0; } Bt += 1; parenLen += 1; }
             struct Token open = {TOKEN_OPEN_PAREN, 0};
             struct Token close = {TOKEN_CLOSE_PAREN, 0};
             struct TokenList *ParenList = tokenize(At+1, parenLen);
+            if(ParenList == 0x0) { return 0x0; }
+            
             curr->next = calloc(1, sizeof(struct TokenList));
             curr->next->prev = curr;
             curr = curr->next;
@@ -196,13 +215,17 @@ struct TokenList *tokenize(const char *in, int len)
         else if(isOperator(*At))
         {
             struct Token op = {};
+            bool res = true;
             switch(*At)
             {
-                case 'd': {    op.t = TOKEN_DICE_THROW; } break;
-                case '+': {    op.t = TOKEN_PLUS; } break;
-                case '-': {    op.t = TOKEN_MINUS;    } break;
-                case '*': {    op.t = TOKEN_TIMES;    } break;
+                case 'd': { op.t = TOKEN_DICE_THROW; res = expectTok(At+1, TOKEN_VAL);               } break;
+                case '+': { op.t = TOKEN_PLUS; res = expectTok(At+1, TOKEN_VAL | TOKEN_OPEN_PAREN);  } break;
+                case '-': { op.t = TOKEN_MINUS; res = expectTok(At+1, TOKEN_VAL | TOKEN_OPEN_PAREN); } break;
+                case '*': { op.t = TOKEN_TIMES; res = expectTok(At+1, TOKEN_VAL | TOKEN_OPEN_PAREN); } break;
             }
+            
+            if(res == false) { return 0x0; }
+            
             curr->next = calloc(1, sizeof(struct TokenList));
             curr->next->prev = curr;
             curr = curr->next;
@@ -216,6 +239,8 @@ struct TokenList *tokenize(const char *in, int len)
             int valLen = 0;
             char *Bt = At;
             while(isNum(*Bt)) { Bt += 1; valLen += 1; }
+            if(valLen == 0) { return 0x0; } //Note this should be good.
+            
             float v = atof(At);
             tok.val = v;
             curr->next = calloc(1, sizeof(struct TokenList));
@@ -313,6 +338,7 @@ struct TokenList *doOp(struct TokenList *head, struct TokenList *tail, enum OpTy
         struct Token newTok = {TOKEN_VAL, resultVal};
         curr->prev = calloc(1, sizeof(struct TokenList));
         curr->prev->t = newTok;
+        curr->prev->next = curr;
         curr->prev->prev = newPrevLink;
         newPrevLink->next = curr->prev;
         return curr;
@@ -348,6 +374,7 @@ struct TokenList *doOp(struct TokenList *head, struct TokenList *tail, enum OpTy
 
                     curr->prev = calloc(1, sizeof(struct TokenList));
                     curr->prev->t = newTok;
+                    curr->prev->next = curr;
                     curr->prev->prev = newPrevLink;
                     if(newPrevLink != NULL) { newPrevLink->next = curr->prev; }
                 }
@@ -554,6 +581,9 @@ float calc(struct TokenList *head, struct TokenList *tail)
     int inputLen = (int)[s length];
     
     struct TokenList *head = tokenize(input, inputLen);
+    
+    if(head == 0x0) { return 0.0f; }
+    
     struct TokenList *tail = head;
     while(tail->next != NULL) { tail = tail->next; }
 
