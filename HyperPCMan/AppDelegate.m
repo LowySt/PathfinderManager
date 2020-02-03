@@ -104,6 +104,7 @@
             NSInteger newPos = [v->Order[i]->Num integerValue];
             [v changePos:(i+1) newPos:newPos];
             [v->Order[i]->Num setIntegerValue:(i+1)];
+            break;
         }
     }
 }
@@ -378,7 +379,8 @@
         ViewController *v = self->mainVC;
         NSInteger num = v->orderNum;
         
-        if(v->mobNum == 0 && v->allyNum == 0) { return; }
+        //Casto wanted to use this with no mobs and allies so I'm gonna allow it.
+        //if(v->mobNum == 0 && v->allyNum == 0) { return; }
         
         assert(v->currentTurnIdx < num);
         if(v->currentTurnIdx == (num-1)) {
