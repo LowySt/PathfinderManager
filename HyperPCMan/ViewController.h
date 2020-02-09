@@ -59,6 +59,8 @@
     @public NSTextField __strong *CalcResult;
     @public NSTextField __strong *Calc;
     
+    @public ActionButton * __strong PrevCalcs[5];
+    @public NSInteger lastPrevCalcIdx;
     // ----------- //
     //  Party Tab  //
     // ----------- //

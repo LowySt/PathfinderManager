@@ -577,6 +577,8 @@ float calc(struct TokenList *head, struct TokenList *tail)
 
 - (float)calcThrow:(NSString *)s {
     
+    if([s length] == 0) { return 0.0f; }
+    
     const char *input = [s UTF8String];
     int inputLen = (int)[s length];
     

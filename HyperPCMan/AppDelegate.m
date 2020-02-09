@@ -544,12 +544,28 @@
     [mainVC->Calc setDelegate:self];
     
     ActionButton *DoCalc = [[ActionButton alloc] initWithAction:NSMakeRect(20, 183, 60, 30) name:@"Calc" blk:^void(){
-        float result = [self->mainVC calcThrow:[self->mainVC->Calc stringValue]];
-        [self->mainVC->CalcResult setFloatValue:result];
+        ViewController *v = self->mainVC;
+        
+        float result = [v calcThrow:[v->Calc stringValue]];
+        [v->CalcResult setFloatValue:result];
+        [v->PrevCalcs[v->lastPrevCalcIdx]->Button setTitle:[v->Calc stringValue]];
+        
+        v->lastPrevCalcIdx += 1;
+        if(v->lastPrevCalcIdx > 4) { v->lastPrevCalcIdx = 0; }
     }];
     [[item view] addSubview:DoCalc->Button];
     mainVC->DoCalc = DoCalc;
 
+    
+    for(NSInteger i = 0; i < 5; i++)
+    {
+        ActionButton *PrevCalc = [[ActionButton alloc] initWithAction:NSMakeRect(340+(i*80), 153, 90, 30) name:@"" blk:^void(){
+            float result = [self->mainVC calcThrow:[self->mainVC->PrevCalcs[i]->Button title]];
+            [self->mainVC->CalcResult setFloatValue:result];
+        }];
+        [[item view] addSubview:PrevCalc->Button];
+        mainVC->PrevCalcs[i] = PrevCalc;
+    }
 }
 
 - (void)SetupPartyTab:(NSTabViewItem *)item {
@@ -740,6 +756,7 @@
     mainVC = (ViewController *) NSApplication.sharedApplication.orderedWindows.firstObject.contentViewController;
     
     mainVC->currentTurnIdx = 0;
+    mainVC->lastPrevCalcIdx = 0;
     
     NSWindow *MainWindow = [NSApp windows][0];
     //NOTE: Originally 1280x960
