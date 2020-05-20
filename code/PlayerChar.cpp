@@ -1,16 +1,18 @@
-s32 ASBonusTable[]
+#define AS_BONUS_NUM     46
+#define AS_BONUS_STR_NUM 47
+s32 ASBonusTable[AS_BONUS_NUM]
 {
-    -5, -5, -4, -4, -3, -3, -2, -2, -1, -1, 0, 0, 1, 1, 2, 2, 
-    3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 
+    -5, -5, -4, -4, -3, -3, -2, -2, -1, -1, 0, 0, 1, 1, 2, 2,
+    3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
     12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17
 };
 
-char *ASBonusTableString[]
+char *ASBonusTableString[AS_BONUS_STR_NUM]
 {
-    "-5", "-5", "-4", "-4", "-3", "-3", "-2", "-2", "-1", "-1", "0", "0", "+1", "+1", 
+    "-5", "-5", "-4", "-4", "-3", "-3", "-2", "-2", "-1", "-1", "0", "0", "+1", "+1",
     "+2", "+2", "+3", "+3", "+4", "+4", "+5", "+5", "+6", "+6", "+7", "+7", "+8", "+8",
     "+9", "+9", "+10", "+10", "+11", "+11", "+12", "+12", "+13", "+13", "+14","+14",
-    "+15", "+15", "+16", "+16", "+17", "+17"
+    "+15", "+15", "+16", "+16", "+17", "+17", "-999"
 };
 
 enum XPCurveIdx : u8
@@ -22,15 +24,15 @@ enum XPCurveIdx : u8
 
 char *FastXPCurve[] =
 {
-    "0", "1300", "3300", "6000", "10000", "15000", "23000", "34000", "50000", "71000", 
-    "105000", "145000", "210000", "295000", "425000", "600000", "850000", "1200000", 
+    "0", "1300", "3300", "6000", "10000", "15000", "23000", "34000", "50000", "71000",
+    "105000", "145000", "210000", "295000", "425000", "600000", "850000", "1200000",
     "1700000", "2400000", "0"
 };
 
 char *MediumXPCurve[] =
 {
     "0", "2000", "5000", "9000", "15000", "23000", "35000", "51000", "75000", "105000",
-    "155000", "220000", "315000", "445000", "635000", "890000", "1300000", "1800000", 
+    "155000", "220000", "315000", "445000", "635000", "890000", "1300000", "1800000",
     "2550000", "3600000", "0"
 };
 
@@ -55,7 +57,7 @@ char **XPCurvesArr[] =
     SlowXPCurve
 };
 
-char *AbilityGenMethods[] = 
+char *AbilityGenMethods[] =
 {
     "Classic",
     "Dice Pool",
@@ -91,9 +93,11 @@ enum AbilityScore : u8
     ABILITY_COUNT
 };
 
-char *Races[] = 
+char *AS_string[6] = { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
+
+char *Races[] =
 {
-    "Human", "Elf", "Half-Orc", "Half-Elf", 
+    "Human", "Elf", "Half-Orc", "Half-Elf",
     "Gnome", "Halfling", "Dwarf"
 };
 
@@ -128,6 +132,18 @@ struct PlayerChar
     u32 xp;
     XPCurveIdx xpCurve;
 };
+
+char *getASBonusStr(u8 v)
+{
+    if(v < 0 || v >= AS_BONUS_NUM) { return ASBonusTableString[AS_BONUS_STR_NUM - 1]; }
+    return ASBonusTableString[v];
+}
+
+s32 getASBonusVal(s32 v)
+{
+    if(v < 0 || v >= AS_BONUS_NUM) { return 0; }
+    return ASBonusTable[v];
+}
 
 GameRace getRaceFromString(string s)
 {
@@ -185,70 +201,62 @@ GenMethod getGenMethodFromString(string s)
 
 void SerializePC(PlayerChar *pc)
 {
-    dataBuffer buff;
+    buffer buff = ls_bufferInit(KB(1));
     
     //SERIALIZE NAME
-    buff += (string)pc->Name;
+    ls_bufferAddString(&buff, pc->Name);
     
     //SERIALIZE PLAYER
-    buff += (string)pc->Player;
+    ls_bufferAddString(&buff, pc->Player);
     
     //SERIALIZE RACE
-    buff += (u8)pc->Race;
+    ls_bufferAddByte(&buff, pc->Race);
     
     //SERIALIZE CLASS
-    buff += (u8)pc->Class;
-    
-    //SERIALIZE GEN METHOD
-    buff += (u8)pc->GenMethod;
+    ls_bufferAddByte(&buff, pc->Class);
     
     //SERIALIZE ABILITY SCORES
-    buff += (u8)pc->AbilityScores[ABILITY_STR];
-    buff += (u8)pc->AbilityScores[ABILITY_DEX];
-    buff += (u8)pc->AbilityScores[ABILITY_CON];
-    buff += (u8)pc->AbilityScores[ABILITY_INT];
-    buff += (u8)pc->AbilityScores[ABILITY_WIS];
-    buff += (u8)pc->AbilityScores[ABILITY_CHA];
+    ls_bufferAddByte(&buff, pc->AbilityScores[ABILITY_STR]);
+    ls_bufferAddByte(&buff, pc->AbilityScores[ABILITY_DEX]);
+    ls_bufferAddByte(&buff, pc->AbilityScores[ABILITY_CON]);
+    ls_bufferAddByte(&buff, pc->AbilityScores[ABILITY_INT]);
+    ls_bufferAddByte(&buff, pc->AbilityScores[ABILITY_WIS]);
+    ls_bufferAddByte(&buff, pc->AbilityScores[ABILITY_CHA]);
     
     //SERIALIZE LVL, XP, XP CURVE
-    buff += (u8)pc->lvl;
-    buff += (u32)pc->xp;
-    buff += (u8)pc->xpCurve;
+    ls_bufferAddByte(&buff, pc->lvl);
+    ls_bufferAddDWord(&buff, pc->xp);
+    ls_bufferAddByte(&buff, pc->xpCurve);
     
-    string Path = ls_strInit("test.pcm");
-    ls_writeFile(&Path, buff.data, buff.used, FALSE);
+    ls_writeFile("test.pcm", buff.data, buff.used, FALSE);
 }
 
 void LoadPC(PlayerChar *pc)
 {
-    dataBuffer buff = 0;
+    buffer buff = ls_bufferInit(KB(1));
     
-    string Path = ls_strInit("F:\\ProgrammingProjects\\Lowy_No_VS\\PCMan\\test.pcm");
-    buff.size = ls_readFile(&Path, (char **)(&buff.data), 0);
+    buff.size = ls_readFile("F:\\ProgrammingProjects\\Lowy_No_VS\\PCMan\\test.pcm", (char **)(&buff.data), 0);
     buff.used = buff.size;
     
-    buff.readPos = 0;
+    buff.cursor = 0;
     
-    pc->Name      = buff.readString();
-    pc->Player    = buff.readString();
+    pc->Name      = ls_bufferReadString(&buff);
+    pc->Player    = ls_bufferReadString(&buff);
     
-    u8 race  = buff.readU8();
-    u8 c    = buff.readU8(); 
-    u8 g    = buff.readU8();
-    
+    u8 race  = ls_bufferReadByte(&buff);
+    u8 c     = ls_bufferReadByte(&buff);
     
     pc->Race = RACE_HALF_ELF;
     pc->Class = CLASS_DRUID;
-    pc->GenMethod = GEN_CLASSIC; 
     
-    pc->AbilityScores[ABILITY_STR] = buff.readU8();
-    pc->AbilityScores[ABILITY_DEX] = buff.readU8();
-    pc->AbilityScores[ABILITY_CON] = buff.readU8();
-    pc->AbilityScores[ABILITY_INT] = buff.readU8();
-    pc->AbilityScores[ABILITY_WIS] = buff.readU8();
-    pc->AbilityScores[ABILITY_CHA] = buff.readU8();
+    pc->AbilityScores[ABILITY_STR] = ls_bufferReadByte(&buff);
+    pc->AbilityScores[ABILITY_DEX] = ls_bufferReadByte(&buff);
+    pc->AbilityScores[ABILITY_CON] = ls_bufferReadByte(&buff);
+    pc->AbilityScores[ABILITY_INT] = ls_bufferReadByte(&buff);
+    pc->AbilityScores[ABILITY_WIS] = ls_bufferReadByte(&buff);
+    pc->AbilityScores[ABILITY_CHA] = ls_bufferReadByte(&buff);
     
-    pc->lvl     = buff.readU8();
-    pc->xp      = buff.readU32();
-    pc->xpCurve = (XPCurveIdx)buff.readU8();
+    pc->lvl     = ls_bufferReadByte(&buff);
+    pc->xp      = ls_bufferReadDWord(&buff);
+    pc->xpCurve = (XPCurveIdx)ls_bufferReadByte(&buff);;
 }

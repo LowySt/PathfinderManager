@@ -1,27 +1,38 @@
+#define LS_WINDOWS_IMPLEMENTATION
+#include "lsWindows.h"
+#undef LS_WINDOWS_IMPLEMENTATION
+
 #define LS_CRT_IMPLEMENTATION
-#include "tools\lsCRT.h"
+#include "lsCRT.h"
+#undef LS_CRT_IMPLEMENTATION
 
-#define PLATFORM_IMPLEMENTATION
-#include "Platform\lsWindows.h"
+#define LS_STRING_IMPLEMENTATION
+#include "lsString.h"
+#undef LS_STRING_IMPLEMENTATION
 
-#include "tools\lsGraphics.h"
+#define LS_BUFFER_IMPLEMENTATION
+#include "lsBuffer.h"
+#undef LS_BUFFER_IMPLEMENTATION
+
+#include "lsGraphics.h"
 
 #include "Class.cpp"
 #include "Skills.cpp"
 #include "Feats.cpp"
 #include "PlayerChar.cpp"
+#include "Init.cpp"
 
 #define AddAllComboBoxItems(wnd, s, n) { for(size_t i = 0; i < n; i++) \
-    {ComboBox_AddString(wnd, s[i]); } }
+{ComboBox_AddString(wnd, s[i]); } }
 
 #define AddAllListBoxItems(wnd, s, n)  { for(size_t i = 0; i < n; i++) \
-    {ListBox_AddString(wnd, s[i]); } }
+{ListBox_AddString(wnd, s[i]); } }
 
 #define HidePage(page) for(u32 i = 0; i < page->numWindows; i++) { \
-    ShowWindow(page->WindowsArray[i], SW_HIDE); }
+ShowWindow(page->WindowsArray[i], SW_HIDE); }
 
 #define ShowPage(page) for(u32 i = 0; i < page->numWindows; i++) { \
-    ShowWindow(page->WindowsArray[i], SW_SHOW); }
+ShowWindow(page->WindowsArray[i], SW_SHOW); }
 
 #define FILE_MENU_SAVE_IDX 0
 #define FILE_MENU_LOAD_IDX 1
@@ -36,6 +47,12 @@ enum LabelAlign
     LABEL_RIGHT,
     
     LABEL_COUNT
+};
+
+struct dim
+{
+    u32 width;
+    u32 height;
 };
 
 //TODO: Support Unicode in WindowCreation
@@ -74,6 +91,8 @@ struct Button
     u32 value;
     
     u64 id;
+    
+    b32 hasBackground;
 };
 
 struct AbilityScores
@@ -95,7 +114,6 @@ struct PCPage
     ComboBox *Class;
     b32 wasClassChosen;
     
-    ComboBox *GenMethod;
     AbilityScores *Scores;
     
     ListBox *RacialTraits;
@@ -125,26 +143,74 @@ struct FeatsPage
     u32 numWindows;
 };
 
+struct OrderField
+{
+    TextBox *Field;
+    TextBox *Pos;
+    
+    Button  *Remove;
+};
+
+struct InitField
+{
+    TextBox *Bonus;
+    TextBox *Final;
+};
+
+struct InitPage
+{
+    ComboBox   *Mobs;
+    ComboBox   *Allies;
+    
+    InitField  PlayerFields[5];
+    
+    InitField  MobFields[16];
+    u32        VisibleMobs;
+    
+    InitField  AllyFields[4];
+    u32        VisibleAllies;
+    
+    OrderField Order[26];
+    u32        VisibleOrder;
+    
+    HWND WindowsArray[256];
+    u32 numWindows;
+};
+
 struct ProgramState
 {
-    PCPage *PC;
+    PCPage    *PC;
     FeatsPage *Feats;
+    InitPage  *Init;
+};
+
+struct Element
+{
+    void *ptr;
+    
+    b32 isButton;
+    b32 isTextBox;
+    b32 isComboBox;
+    b32 isListBox;
 };
 
 
 HINSTANCE MainInstance;
 PlayerChar pc = {};
 ProgramState State = {};
+const HBRUSH controlBkg = CreateSolidBrush(0x00565656); // 0x00 BB GG RR
+const HBRUSH appBkg     = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
+
 
 //TODO: Can I manage to do things using this?
-void *ElementMap[512] = {};
+Element ElementMap[512] = {};
 
 //TODO: Why is this here...
-b32 ArrayContains(u32 *a, u32 v) 
-{ 
+b32 ArrayContains(u32 *a, u32 v)
+{
     for(size_t i = 0; i < State.Feats->usedFeats; i++)
-    { if(a[i] == v) { return TRUE; } } 
-    return FALSE; 
+    { if(a[i] == v) { return TRUE; } }
+    return FALSE;
 }
 
 //TODO: Why is this here...
@@ -153,6 +219,55 @@ void ArrayRemove(u32 *a, u32 idx)
     u32 len = State.Feats->usedFeats;
     ls_memcpy(a + (idx + 1), a + idx, (len - idx)*sizeof(u32));
     a[len] = u32(-1);
+}
+
+inline void HideInitField(InitField *f, s32 n)
+{
+    for(u32 i = 0; i < n; i++)
+    {
+        ShowWindow(f[i].Bonus->box, SW_HIDE);
+        ShowWindow(f[i].Bonus->label, SW_HIDE);
+        ShowWindow(f[i].Final->box, SW_HIDE);
+    }
+}
+
+void HideInitElem(InitPage *p) {
+    //Hide Hidden Mob Fields
+    HideInitField(p->MobFields, MOB_NUM);
+    
+    //Hide Hidden Ally Fields
+    HideInitField(p->AllyFields, ALLY_NUM);
+}
+
+inline void ShowInitField(InitField *f, s32 n)
+{
+    for(u32 i = 0; i < n; i++)
+    {
+        ShowWindow(f[i].Bonus->box, SW_SHOW);
+        ShowWindow(f[i].Bonus->label, SW_SHOW);
+        ShowWindow(f[i].Final->box, SW_SHOW);
+    }
+}
+
+inline void ShowOrder(OrderField *o, s32 n)
+{
+    for(u32 i = 0; i < n; i++)
+    {
+        ShowWindow(o[i].Field->box, SW_SHOW);
+        ShowWindow(o[i].Pos->box, SW_SHOW);
+        ShowWindow(o[i].Remove->box, SW_SHOW);
+    }
+}
+
+void ShowInitElem(InitPage *p) {
+    //Show Hidden Mob Fields
+    ShowInitField(p->MobFields, MOB_NUM);
+    
+    //Show Hidden Ally Fields
+    ShowInitField(p->AllyFields, ALLY_NUM);
+    
+    //Show Order Fields
+    ShowOrder(p->Order, ORDER_NUM);
 }
 
 string getText(HWND hwnd)
@@ -198,50 +313,45 @@ void loadAS()
     u8 v = pc.AbilityScores[ABILITY_STR];
     char *a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_STR]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, ASBonusTableString[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, getASBonusStr(v));
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_DEX];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_DEX]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, ASBonusTableString[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, getASBonusStr(v));
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_CON];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_CON]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, ASBonusTableString[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, getASBonusStr(v));
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_INT];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_INT]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, ASBonusTableString[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, getASBonusStr(v));
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_WIS];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_WIS]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, ASBonusTableString[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, getASBonusStr(v));
     ls_free(a);
     
     v = pc.AbilityScores[ABILITY_CHA];
     a = ls_itoa(v);
     Edit_SetText(State.PC->Scores->Box[ABILITY_CHA]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, ASBonusTableString[v]);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, getASBonusStr(v));
     ls_free(a);
 }
 
 void UpdateSavingThrows()
 {
-    s32 Fortitude = ClassSavingThrows[pc.Class][0][pc.lvl] + 
-        ASBonusTable[pc.AbilityScores[ABILITY_CON]];
-    
-    s32 Reflex = ClassSavingThrows[pc.Class][1][pc.lvl] + 
-        ASBonusTable[pc.AbilityScores[ABILITY_DEX]];
-    
-    s32 Will = ClassSavingThrows[pc.Class][2][pc.lvl] + 
-        ASBonusTable[pc.AbilityScores[ABILITY_WIS]];
+    s32 Fortitude = ClassSavingThrows[pc.Class][0][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_CON]);
+    s32 Reflex = ClassSavingThrows[pc.Class][1][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_DEX]);
+    s32 Will = ClassSavingThrows[pc.Class][2][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_WIS]);
     
     char *ST = ls_itoa(Fortitude);
     Edit_SetText(State.PC->SavingThrows[0]->box, ST);
@@ -273,10 +383,159 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             }
         } break;
         
+#if 0
+        case WM_NCLBUTTONDOWN:
+        {
+            int xPos = GET_X_LPARAM(l); ;
+            int yPos = GET_Y_LPARAM(l); ;
+            
+            //@TODO Do I have to check if I'm clicking a button
+            {
+                POINT sp = { xPos, yPos };
+                BOOL res = DragDetect(h, sp); //NOTE: This is WRONG
+                
+                int xDrag = GetSystemMetrics(SM_CXDRAG);
+                int yDrag = GetSystemMetrics(SM_CYDRAG);
+                
+                WINDOWINFO wi = {};
+                res = GetWindowInfo(h, &wi);
+                
+                // @Hardcoded
+                res = MoveWindow(h, wi.rcWindow.left + xDrag, wi.rcWindow.left + yDrag, 1350, 900, TRUE);
+            }
+        } break;
+#endif
         case WM_DESTROY:
         {
             ExitProcess(0);
         } break;
+        
+        case WM_MEASUREITEM:
+        {
+            MEASUREITEMSTRUCT *item = (MEASUREITEMSTRUCT *)l;
+            
+            if(item->CtlType == ODT_MENU) {
+                
+                item->itemWidth  = 50;
+                item->itemHeight = 20;
+            }
+            
+        } break;
+        
+        case WM_DRAWITEM:
+        {
+            //NOTE: Only owner drawn right now are static (labels)
+            DRAWITEMSTRUCT *item = (DRAWITEMSTRUCT *)l;
+            
+            if(item->CtlType == ODT_STATIC)
+            {
+                //NOTE: Why does this work on the Labels, but it works differently on the
+                // read only edit boxes, for which I am using the CTLCOLOR message?
+                SetBkColor(item->hDC, RGB(0x38, 0x38, 0x38));
+                SetTextColor(item->hDC, RGB(255, 255, 255));
+                char text[32] = {};
+                int len = SendMessageA(item->hwndItem, WM_GETTEXT, 32, (LPARAM)text);
+                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, text, len);
+            }
+            
+            if(item->CtlType == ODT_MENU)
+            {
+                SetBkColor(item->hDC, RGB(0x38, 0x38, 0x38));
+                
+                RECT Rect = {item->rcItem.left, item->rcItem.top, item->rcItem.left+1400, item->rcItem.top+22};
+                FillRect(item->hDC, &Rect, appBkg);
+                
+                SetTextColor(item->hDC, RGB(255, 255, 255));
+                
+                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top+5, (LPCSTR)item->itemData, 4);
+            }
+            
+            if(item->CtlType == ODT_COMBOBOX)
+            {
+                SetBkColor(item->hDC, RGB(0x56, 0x56, 0x56));
+                
+                FillRect(item->hDC, &item->rcItem, controlBkg);
+                
+                SetTextColor(item->hDC, RGB(255, 255, 255));
+                
+                u32 count = SendMessageA(item->hwndItem, CB_GETCOUNT, 0, 0);
+                
+                //for(u32 i = 0; i < count; i++)
+                //{
+                char text[32] = {};
+                SendMessageA(item->hwndItem, CB_GETLBTEXT, item->itemID, (LPARAM)text);
+                u32 textLen = SendMessageA(item->hwndItem, CB_GETLBTEXTLEN , item->itemID, 0);
+                
+                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
+                //}
+            }
+            
+            if(item->CtlType == ODT_LISTBOX)
+            {
+                u32 count = SendMessageA(item->hwndItem, LB_GETCOUNT, 0, 0);
+                u32 textLen = SendMessageA(item->hwndItem, LB_GETTEXTLEN , item->itemID, 0);
+                
+                char *text = (char *)ls_alloc(sizeof(char)*(textLen + 1));
+                SendMessageA(item->hwndItem, LB_GETTEXT, item->itemID, (LPARAM)text);
+                
+                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
+                ls_free(text);
+            }
+            
+            if(item->CtlType == ODT_BUTTON)
+            {
+                Button *b = (Button *)ElementMap[item->CtlID].ptr;
+                
+                int textLen = GetWindowTextLengthA(item->hwndItem) + 1; //Add the null
+                char *text = (char *)ls_alloc(sizeof(char)*textLen);
+                
+                GetWindowTextA(item->hwndItem, text, textLen);
+                
+                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
+                ls_free(text);
+            }
+            
+        } break;
+        
+        case WM_CTLCOLORBTN:
+        {
+            HDC buttonHDC   = (HDC)w;
+            
+            SetBkColor(buttonHDC, RGB(0x56, 0x56, 0x56));
+            SetTextColor(buttonHDC, RGB(255, 255, 255));
+            
+            return (LRESULT)controlBkg;
+        } break;
+        
+        case WM_CTLCOLORLISTBOX:
+        {
+            HDC listboxHDC = (HDC)w;
+            
+            SetBkColor(listboxHDC, RGB(0x56, 0x56, 0x56));
+            SetTextColor(listboxHDC, RGB(255, 255, 255));
+            
+            return (LRESULT)controlBkg;
+        } break;
+        
+        case WM_CTLCOLOREDIT:
+        {
+            HDC editHDC = (HDC)w;
+            
+            SetBkColor(editHDC, RGB(0x56, 0x56, 0x56));
+            SetTextColor(editHDC, RGB(255, 255, 255));
+            
+            return (LRESULT)controlBkg;
+        } break;
+        
+        case WM_CTLCOLORSTATIC:
+        {
+            HDC editHDC = (HDC)w;
+            
+            SetBkColor(editHDC, RGB(0x56, 0x56, 0x56));
+            SetTextColor(editHDC, RGB(255, 255, 255));
+            
+            return (LRESULT)controlBkg;
+        };
         
         case WM_MENUCOMMAND:
         {
@@ -296,11 +555,11 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     LoadPC(&pc);
                     
                     //TODO: Stop allocating and deallocating mem for stupid C Strings
-                    char *cStr = ls_toCStr(pc.Name);
+                    char *cStr = ls_strToCStr(pc.Name);
                     Edit_SetText(State.PC->Name->box, cStr);
                     ls_free(cStr);
                     
-                    cStr = ls_toCStr(pc.Player);
+                    cStr = ls_strToCStr(pc.Player);
                     Edit_SetText(State.PC->Player->box, cStr);
                     ls_free(cStr);
                     
@@ -308,9 +567,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     ComboBox_SelectString(State.PC->Class->box, -1, Classes[pc.Class]);
                     
                     State.PC->wasClassChosen = TRUE;
-                    
-                    ComboBox_SelectString(State.PC->GenMethod->box, -1, 
-                                          AbilityGenMethods[pc.GenMethod]);
                     
                     loadAS();
                     
@@ -381,6 +637,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             u32 notificationCode = HIWORD(w);
             HWND handle = (HWND)l;
             
+            //TODO: NOTE: ASBonus doesn't check Out Of Bounds
             switch(notificationCode)
             {
                 case EN_KILLFOCUS:
@@ -411,7 +668,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         u32 v = ls_stoi(s);
                         pc.AbilityScores[ABILITY_STR] = v;
                         
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, ASBonusTableString[v]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, getASBonusStr(v));
                         UpdateSavingThrows();
                         
                         ls_strFree(&s);
@@ -423,7 +680,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         u32 v = ls_stoi(s);
                         pc.AbilityScores[ABILITY_DEX] = v;
                         
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, ASBonusTableString[v]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, getASBonusStr(v));
                         UpdateSavingThrows();
                         
                         ls_strFree(&s);
@@ -435,7 +692,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         u32 v = ls_stoi(s);
                         pc.AbilityScores[ABILITY_CON] = v;
                         
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, ASBonusTableString[v]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, getASBonusStr(v));
                         UpdateSavingThrows();
                         
                         ls_strFree(&s);
@@ -447,7 +704,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         u32 v = ls_stoi(s);
                         pc.AbilityScores[ABILITY_INT] = v;
                         
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, ASBonusTableString[v]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, getASBonusStr(v));
                         UpdateSavingThrows();
                         
                         ls_strFree(&s);
@@ -459,7 +716,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         u32 v = ls_stoi(s);
                         pc.AbilityScores[ABILITY_WIS] = v;
                         
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, ASBonusTableString[v]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, getASBonusStr(v));
                         UpdateSavingThrows();
                         
                         ls_strFree(&s);
@@ -471,7 +728,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         u32 v = ls_stoi(s);
                         pc.AbilityScores[ABILITY_CHA] = v;
                         
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, ASBonusTableString[v]);
+                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, getASBonusStr(v));
                         UpdateSavingThrows();
                         
                         ls_strFree(&s);
@@ -481,7 +738,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     {
                         string s = getText(handle);
                         u32 currLevel = ls_stoi(s);
-                        if(currLevel > 20) 
+                        if(currLevel > 20)
                         { currLevel = 20; Edit_SetText(handle, "20"); }
                         pc.lvl = (u8)currLevel;
                         
@@ -515,7 +772,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         GameRace r = getRaceFromString(s);
                         pc.Race = r;
                         
-                        if(State.PC->wasClassChosen) 
+                        if(State.PC->wasClassChosen)
                         { ListBox_ResetContent(State.PC->RacialTraits->box); }
                         
                         if(!State.PC->wasClassChosen) { State.PC->wasClassChosen = TRUE; }
@@ -541,15 +798,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         ls_strFree(&s);
                     }
-                    else if(commandID == State.PC->GenMethod->id)
-                    {
-                        string s = getText(handle);
-                        
-                        GenMethod r = getGenMethodFromString(s);
-                        pc.GenMethod = r;
-                        
-                        ls_strFree(&s);
-                    }
                     else if(commandID == State.PC->XPCurve->id)
                     {
                         State.PC->xpIdx = (XPCurveIdx)ComboBox_GetCurSel(handle);
@@ -561,9 +809,27 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         Edit_SetText(State.PC->nextLevelXP->box, xpCurve[currLevel]);
                         
-                        
-                        
                         ls_strFree(&s);
+                    }
+                    else if(commandID == State.Init->Mobs->id)
+                    {
+                        s32 idx = ComboBox_GetCurSel(handle);
+                        Assert(idx != CB_ERR);
+                        State.Init->VisibleMobs  = idx;
+                        State.Init->VisibleOrder = PARTY_NUM + State.Init->VisibleAllies + idx;
+                        
+                        HideInitField(State.Init->MobFields, MOB_NUM);
+                        ShowInitField(State.Init->MobFields, idx);
+                    }
+                    else if(commandID == State.Init->Allies->id)
+                    {
+                        s32 idx = ComboBox_GetCurSel(handle);
+                        Assert(idx != CB_ERR);
+                        State.Init->VisibleAllies = idx;
+                        State.Init->VisibleOrder = PARTY_NUM + State.Init->VisibleMobs + idx;
+                        
+                        HideInitField(State.Init->AllyFields, ALLY_NUM);
+                        ShowInitField(State.Init->AllyFields, idx);
                     }
                     
                 } break;
@@ -571,8 +837,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 case LBN_SELCHANGE:
                 {
                     u32 index = ListBox_GetCurSel(handle);
-                    if(index > ArraySize(FeatsDesc)) 
-                    { 
+                    if(index > ArraySize(FeatsDesc))
+                    {
                         ls_printf("Not implemented description of Feat n°%d\n", index);
                         Assert(FALSE);
                     }
@@ -587,8 +853,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     if(commandID == State.Feats->Feats->id)
                     {
                         u32 index = ListBox_GetCurSel(handle);
-                        if(index > ArraySize(FeatsDesc)) 
-                        { 
+                        if(index > ArraySize(FeatsDesc))
+                        {
                             ls_printf("Not implemented description of Feat n°%d\n", index);
                             Assert(FALSE);
                         }
@@ -614,66 +880,72 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 
                 //TODO: I'd like to add functionality for removing Ability Scores.
                 case BN_CLICKED:
-                { 
-                    Button *clicked = (Button *)ElementMap[commandID];
-                    TextBox *text = clicked->LinkedText;
+                {
                     
-                    string s = getText(text->box);
-                    u32 val = ls_stoi(s);
-                    val += clicked->value;
+                    Button *clicked = (Button *)ElementMap[commandID].ptr;
+                    ls_printf("ButtonID: %ld\n", clicked->id);
                     
-                    if((commandID == State.PC->Scores->Plus1[ABILITY_STR]->id) ||
-                       (commandID == State.PC->Scores->Plus10[ABILITY_STR]->id))
-                    {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, ASBonusTableString[val]);
+                    if(clicked->LinkedText != 0x0) {
+                        TextBox *text = clicked->LinkedText;
                         
-                        pc.AbilityScores[ABILITY_STR] = val;
-                    }
-                    else if((commandID == State.PC->Scores->Plus1[ABILITY_DEX]->id) ||
-                            (commandID == State.PC->Scores->Plus10[ABILITY_DEX]->id))
-                    {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, ASBonusTableString[val]);
+                        string s = getText(text->box);
+                        u32 val = ls_stoi(s);
+                        val += clicked->value;
                         
-                        pc.AbilityScores[ABILITY_DEX] = val;
-                    }
-                    else if((commandID == State.PC->Scores->Plus1[ABILITY_CON]->id) ||
-                            (commandID == State.PC->Scores->Plus10[ABILITY_CON]->id))
-                    {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, ASBonusTableString[val]);
+                        if((commandID == State.PC->Scores->Plus1[ABILITY_STR]->id) ||
+                           (commandID == State.PC->Scores->Plus10[ABILITY_STR]->id))
+                        {
+                            Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, getASBonusStr(val));
+                            
+                            pc.AbilityScores[ABILITY_STR] = val;
+                        }
+                        else if((commandID == State.PC->Scores->Plus1[ABILITY_DEX]->id) ||
+                                (commandID == State.PC->Scores->Plus10[ABILITY_DEX]->id))
+                        {
+                            Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, getASBonusStr(val));
+                            
+                            pc.AbilityScores[ABILITY_DEX] = val;
+                        }
+                        else if((commandID == State.PC->Scores->Plus1[ABILITY_CON]->id) ||
+                                (commandID == State.PC->Scores->Plus10[ABILITY_CON]->id))
+                        {
+                            Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, getASBonusStr(val));
+                            
+                            pc.AbilityScores[ABILITY_CON] = val;
+                        }
+                        else if((commandID == State.PC->Scores->Plus1[ABILITY_INT]->id) ||
+                                (commandID == State.PC->Scores->Plus10[ABILITY_INT]->id))
+                        {
+                            Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, getASBonusStr(val));
+                            
+                            pc.AbilityScores[ABILITY_INT] = val;
+                        }
+                        else if((commandID == State.PC->Scores->Plus1[ABILITY_WIS]->id) ||
+                                (commandID == State.PC->Scores->Plus10[ABILITY_WIS]->id))
+                        {
+                            Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, getASBonusStr(val));
+                            
+                            pc.AbilityScores[ABILITY_WIS] = val;
+                        }
+                        else if((commandID == State.PC->Scores->Plus1[ABILITY_CHA]->id) ||
+                                (commandID == State.PC->Scores->Plus10[ABILITY_CHA]->id))
+                        {
+                            Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, getASBonusStr(val));
+                            
+                            pc.AbilityScores[ABILITY_CHA] = val;
+                        }
                         
-                        pc.AbilityScores[ABILITY_CON] = val;
-                    }
-                    else if((commandID == State.PC->Scores->Plus1[ABILITY_INT]->id) ||
-                            (commandID == State.PC->Scores->Plus10[ABILITY_INT]->id))
-                    {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, ASBonusTableString[val]);
+                        string newVal = ls_itos(val);
+                        ls_strNullTerminate(&newVal);
                         
-                        pc.AbilityScores[ABILITY_INT] = val;
-                    }
-                    else if((commandID == State.PC->Scores->Plus1[ABILITY_WIS]->id) ||
-                            (commandID == State.PC->Scores->Plus10[ABILITY_WIS]->id))
-                    {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, ASBonusTableString[val]);
+                        BOOL ret = SetWindowTextA(text->box, newVal.data);
                         
-                        pc.AbilityScores[ABILITY_WIS] = val;
-                    }
-                    else if((commandID == State.PC->Scores->Plus1[ABILITY_CHA]->id) ||
-                            (commandID == State.PC->Scores->Plus10[ABILITY_CHA]->id))
-                    {
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, ASBonusTableString[val]);
+                        UpdateSavingThrows();
                         
-                        pc.AbilityScores[ABILITY_CHA] = val;
+                        ls_strFree(&s);
+                        ls_strFree(&newVal);
                     }
                     
-                    string newVal = ls_itos(val);
-                    ls_nullTerminate(&newVal);
-                    
-                    BOOL ret = SetWindowTextA(text->box, newVal.data);
-                    
-                    UpdateSavingThrows();
-                    
-                    ls_strFree(&s);
-                    ls_strFree(&newVal);
                 } break;
             }
             
@@ -693,11 +965,13 @@ void RegisterWindow()
     
     u32 prop = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
     
+    HBRUSH backgroundColor = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
+    
     WNDCLASSA WindowClass = { 0 };
     WindowClass.style = prop;
     WindowClass.lpfnWndProc = WindowProc;
     WindowClass.hInstance = MainInstance;
-    WindowClass.hbrBackground = (HBRUSH)COLOR_GRAYTEXT;
+    WindowClass.hbrBackground = backgroundColor; //(HBRUSH)COLOR_GRAYTEXT;
     WindowClass.lpszClassName = "WndClass";
     
     if (!RegisterClassA(&WindowClass))
@@ -709,7 +983,7 @@ void RegisterWindow()
 
 HWND CreateWindow(HMENU MenuBar)
 {
-    u32 style = LS_OVERLAPPEDWINDOW | LS_VISIBLE;
+    u32 style = LS_VISIBLE | LS_POPUP | LS_THIN_BORDER; //LS_OVERLAPPEDWINDOW | LS_VISIBLE;
     BOOL Result;
     
     HMENU SubMenu = CreateMenu();
@@ -718,17 +992,30 @@ HWND CreateWindow(HMENU MenuBar)
     
     MENUITEMINFOA FileMenuInfo = {};
     FileMenuInfo.cbSize = sizeof(MENUITEMINFOA);
-    FileMenuInfo.fMask = MIIM_STRING | MIIM_SUBMENU;
-    FileMenuInfo.dwTypeData = "File";
+    
+    FileMenuInfo.fMask = MIIM_SUBMENU | MIIM_DATA | MIIM_FTYPE;
+    FileMenuInfo.fType = MFT_OWNERDRAW;
+    
+    FileMenuInfo.dwItemData = (ULONG_PTR)"File";
     FileMenuInfo.hSubMenu = SubMenu;
     FileMenuInfo.cch = 5;
     Result = InsertMenuItemA(MenuBar, 0, TRUE, &FileMenuInfo);
     
+    HBRUSH backgroundColor = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
+    
+    MENUINFO menuInfo = {};
+    menuInfo.cbSize  = sizeof(MENUINFO);
+    menuInfo.fMask   = MIM_APPLYTOSUBMENUS | MIM_BACKGROUND;
+    menuInfo.hbrBack = backgroundColor;
+    
+    // SetMenuInfo(MenuBar, &menuInfo); Works Shittily
+    
+    // @Hardcoded
     HWND WindowHandle;
-    if ((WindowHandle = CreateWindowExA(0, "WndClass", 
-                                        "Name", style, 
-                                        CW_USEDEFAULT, CW_USEDEFAULT, 
-                                        1350, 900, 
+    if ((WindowHandle = CreateWindowExA(0, "WndClass",
+                                        "Name", style,
+                                        300, 50,//CW_USEDEFAULT, CW_USEDEFAULT,
+                                        1350, 900,
                                         0, MenuBar, MainInstance, 0)) == nullptr)
     {
         DWORD Error = GetLastError();
@@ -767,14 +1054,14 @@ HWND AddLabelBox(HWND win, LabelAlign A, char *label, s32 x, s32 y, u32 width, u
         
         case LABEL_LEFT:
         {
-            correctWidth = 100;
+            correctWidth = 80;
             correctHeight = 20;
             correctX = x - correctWidth;
         } break;
         
         case LABEL_RIGHT:
         {
-            correctWidth = 100;
+            correctWidth = 80;
             correctHeight = 20;
             correctX = x + correctWidth;
         } break;
@@ -785,11 +1072,13 @@ HWND AddLabelBox(HWND win, LabelAlign A, char *label, s32 x, s32 y, u32 width, u
         }
     };
     
+    //WindowClass labelClass = {};
+    
     //TODO: Make label id dynamically allocated
     HWND Result = CreateWindowExA(0, WC_STATIC, 0,
-                                  WS_CHILD | WS_VISIBLE | 
-                                  SS_CENTER, 
-                                  correctX, correctY, correctWidth, correctHeight, 
+                                  WS_CHILD | WS_VISIBLE |
+                                  SS_CENTER | SS_OWNERDRAW,
+                                  correctX, correctY, correctWidth, correctHeight,
                                   win, (HMENU)1, MainInstance, 0);
     
     SetWindowTextA(Result, label);
@@ -801,9 +1090,9 @@ HWND AddLabelBox(HWND win, LabelAlign A, char *label, s32 x, s32 y, u32 width, u
 HWND AddEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id)
 {
     HWND Result = CreateWindowExA(0, WC_EDIT, "",
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | 
-                                  ES_LEFT | ES_AUTOHSCROLL, 
-                                  x, y, width, height, 
+                                  WS_CHILD | WS_VISIBLE | WS_BORDER |
+                                  ES_LEFT | ES_AUTOHSCROLL,
+                                  x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     
     return Result;
@@ -813,12 +1102,12 @@ HWND AddStaticEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id,
                       b32 isMultiline = FALSE)
 {
     u32 flags = ES_LEFT | ES_READONLY;
-    if(isMultiline == TRUE) { flags |= ES_MULTILINE | ES_AUTOVSCROLL;}
+    if(isMultiline == TRUE) { flags |= WS_VSCROLL | ES_MULTILINE | ES_AUTOVSCROLL;}
     else { flags |= ES_AUTOHSCROLL; }
     
     HWND Result = CreateWindowExA(0, WC_EDIT, "",
-                                  WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_BORDER | flags, 
-                                  x, y, width, height, 
+                                  WS_CHILD | WS_VISIBLE | WS_BORDER | flags,
+                                  x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     
     return Result;
@@ -827,9 +1116,9 @@ HWND AddStaticEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id,
 HWND AddEditNumberBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id)
 {
     HWND Result = CreateWindowExA(0, WC_EDIT, "0",
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | 
+                                  WS_CHILD | WS_VISIBLE | WS_BORDER |
                                   ES_LEFT | ES_AUTOHSCROLL | ES_NUMBER,
-                                  x, y, width, height, 
+                                  x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     
     return Result;
@@ -839,29 +1128,33 @@ HWND AddStaticNumberBox(HWND win, s32 value, s32 x, s32 y, u32 width, u32 height
 {
     char *v = ls_itoa(value);
     HWND Result = CreateWindowExA(0, WC_EDIT, v,
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | 
+                                  WS_CHILD | WS_VISIBLE | WS_BORDER |
                                   ES_LEFT | ES_AUTOHSCROLL | ES_NUMBER | ES_READONLY,
-                                  x, y, width, height, 
+                                  x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     ls_free(v);
     
     return Result;
 }
 
-Button *AddButton(HWND win, HWND *pageArr, const char *label, s32 x, s32 y, 
-                  u32 width, u32 height, u64 id)
+Button *AddButton(HWND win, HWND *pageArr, const char *label, s32 x, s32 y,
+                  u32 width, u32 height, u64 id, b32 hasBackground = TRUE)
 {
     Button *Result = (Button *)ls_alloc(sizeof(Button));
     
     Result->box = CreateWindowExA(0, WC_BUTTON, label,
                                   WS_CHILD | WS_VISIBLE | WS_BORDER |
-                                  BS_CENTER | BS_TEXT,
-                                  x, y, width, height, 
+                                  BS_CENTER | BS_TEXT | BS_OWNERDRAW,
+                                  x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     Result->id = id;
     pageArr[0] = Result->box;
     
-    ElementMap[id] = (void *)Result;
+    if(hasBackground == TRUE) { Result->hasBackground = TRUE; }
+    else { Result->hasBackground = FALSE; }
+    
+    ElementMap[id].ptr      = (void *)Result;
+    ElementMap[id].isButton = TRUE;
     
     return Result;
 }
@@ -876,8 +1169,8 @@ ComboBox *AddComboBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     
     HWND Box = CreateWindowExA(0, WC_COMBOBOX, 0,
                                WS_CHILD | WS_VISIBLE | WS_BORDER |
-                               CBS_DROPDOWNLIST | CBS_SORT,
-                               x, y, width, height*(numItems + 1), 
+                               CBS_DROPDOWNLIST | CBS_SORT | CBS_HASSTRINGS | CBS_OWNERDRAWFIXED,
+                               x, y, width, height*(numItems + 1),
                                win, (HMENU)id, MainInstance, 0);
     Result->box = Box;
     Result->id = id;
@@ -885,7 +1178,33 @@ ComboBox *AddComboBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     pageArr[0] = Box;
     pageArr[1] = Label;
     
-    ElementMap[id] = (void *)Result;
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isComboBox = TRUE;
+    
+    return Result;
+}
+
+ComboBox *AddUnsortedComboBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
+                              s32 x, s32 y, u32 width, u32 height, u64 id, u32 numItems)
+{
+    ComboBox *Result = (ComboBox *)ls_alloc(sizeof(ComboBox));
+    
+    HWND Label = AddLabelBox(win, A, label, x, y, width, height);
+    Result->label = Label;
+    
+    HWND Box = CreateWindowExA(0, WC_COMBOBOX, 0,
+                               WS_CHILD | WS_VISIBLE | WS_BORDER |
+                               CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_OWNERDRAWFIXED,
+                               x, y, width, height*(numItems + 1),
+                               win, (HMENU)id, MainInstance, 0);
+    Result->box = Box;
+    Result->id = id;
+    
+    pageArr[0] = Box;
+    pageArr[1] = Label;
+    
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isComboBox = TRUE;
     
     return Result;
 }
@@ -904,7 +1223,8 @@ TextBox *AddTextBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     pageArr[0] = Result->box;
     pageArr[1] = Label;
     
-    ElementMap[id] = (void *)Result;
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isTextBox  = TRUE;
     
     return Result;
 }
@@ -923,7 +1243,24 @@ TextBox *AddStaticTextBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     pageArr[0] = Result->box;
     pageArr[1] = Label;
     
-    ElementMap[id] = (void *)Result;
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isTextBox  = TRUE;
+    
+    return Result;
+}
+
+TextBox *AddStaticUnlabeledTextBox(HWND win, HWND *pageArr, s32 x, s32 y, u32 width, u32 height,
+                                   u64 id, b32 isMultiline = FALSE)
+{
+    TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
+    
+    Result->box = AddStaticEditBox(win, x, y, width, height, id, isMultiline);
+    Result->id = id;
+    
+    pageArr[0] = Result->box;
+    
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isTextBox  = TRUE;
     
     return Result;
 }
@@ -947,7 +1284,8 @@ TextBox *AddNumberBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     if(A != LABEL_NULL)
     { pageArr[1] = Label; }
     
-    ElementMap[id] = (void *)Result;
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isTextBox  = TRUE;
     
     return Result;
 }
@@ -971,7 +1309,8 @@ TextBox *AddValueBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     if(A != LABEL_NULL)
     { pageArr[1] = Label; }
     
-    ElementMap[id] = (void *)Result;
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isTextBox  = TRUE;
     
     return Result;
 }
@@ -985,19 +1324,21 @@ ListBox *AddListBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     Result->label = Label;
     
     u32 flags;
-    if(isSorted) { flags = LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_SORT; }
-    else { flags = LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY; }
+    if(isSorted) { flags = LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_SORT; }
+    else { flags = LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY; }
     
     Result->box = CreateWindowExA(0, WC_LISTBOX, "",
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | flags, 
-                                  x, y, width, height, 
+                                  WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | flags,
+                                  x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
+    
     Result->id = id;
     
     pageArr[0] = Result->box;
     pageArr[1] = Label;
     
-    ElementMap[id] = (void *)Result;
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isListBox  = TRUE;
     
     return Result;
 }
@@ -1011,19 +1352,35 @@ ListBox *AddSingleSelListBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     Result->label = Label;
     
     u32 flags;
-    if(isSorted) { flags = LBS_HASSTRINGS | LBS_NOTIFY | LBS_SORT; }
-    else { flags = LBS_HASSTRINGS | LBS_NOTIFY; }
+    if(isSorted) { flags = LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY | LBS_SORT; }
+    else { flags = LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY; }
     
     Result->box = CreateWindowExA(0, WC_LISTBOX, "",
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | flags, 
-                                  x, y, width, height, 
+                                  WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | flags,
+                                  x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     Result->id = id;
     
     pageArr[0] = Result->box;
     pageArr[1] = Label;
     
-    ElementMap[id] = (void *)Result;
+    ElementMap[id].ptr        = (void *)Result;
+    ElementMap[id].isListBox  = TRUE;
+    
+    return Result;
+}
+
+OrderField AddOrderField(HWND win, HWND **winA, s32 x, s32 y, u64 *id)
+{
+    HWND *wA = *winA;
+    
+    OrderField Result = {};
+    
+    Result.Field  = AddStaticUnlabeledTextBox(win, wA, x + 50, y, 100, 20, (*id)++); wA += 1;
+    Result.Pos    = AddNumberBox(win, wA, 0, LABEL_NULL, x + 25, y, 20, 20, (*id)++); wA += 1;
+    Result.Remove = AddButton(win, wA, "X", x, y, 20, 20, (*id)++, FALSE); wA += 1;
+    
+    *winA = wA;
     
     return Result;
 }
@@ -1035,115 +1392,29 @@ void AddAbilityScoreBoxes(HWND WindowHandle, u32 baseX, u32 baseY, u64 *ElementI
     
     AbilityScores *Scores  = Page->Scores;
     
-    Scores->Box[ABILITY_STR] = AddNumberBox(WindowHandle, wA, "STR", LABEL_UP, 
-                                            364, baseY, 100, 20, (*ElementId)++);
-    wA += 2;
-    Scores->Bonus[ABILITY_STR] = AddValueBox(WindowHandle, wA, "", LABEL_NULL, 0,
-                                             474, baseY, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_STR]  = AddButton(WindowHandle, wA, "+1", 
-                                            504, baseY, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus10[ABILITY_STR] = AddButton(WindowHandle, wA, "+10", 
-                                            534, baseY, 40, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_STR]->LinkedText = Scores->Box[ABILITY_STR];
-    Scores->Plus1[ABILITY_STR]->value = 1;
-    Scores->Plus10[ABILITY_STR]->LinkedText = Scores->Box[ABILITY_STR];
-    Scores->Plus10[ABILITY_STR]->value = 10;
-    
-    
-    Scores->Box[ABILITY_DEX] = AddNumberBox(WindowHandle, wA, "DEX", LABEL_UP, 
-                                            364, baseY+44, 100, 20, (*ElementId)++);
-    wA += 2;
-    Scores->Bonus[ABILITY_DEX] = AddValueBox(WindowHandle, wA, "", LABEL_NULL, 0,
-                                             474, baseY+44, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_DEX]  = AddButton(WindowHandle, wA, "+1", 
-                                            504, baseY+44, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus10[ABILITY_DEX] = AddButton(WindowHandle, wA, "+10", 
-                                            534, baseY+44, 40, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_DEX]->LinkedText = Scores->Box[ABILITY_DEX];
-    Scores->Plus1[ABILITY_DEX]->value = 1;
-    Scores->Plus10[ABILITY_DEX]->LinkedText = Scores->Box[ABILITY_DEX];
-    Scores->Plus10[ABILITY_DEX]->value = 10;
-    
-    
-    Scores->Box[ABILITY_CON] = AddNumberBox(WindowHandle, wA, "CON", LABEL_UP, 
-                                            364, baseY+88, 100, 20, (*ElementId)++);
-    wA += 2;
-    Scores->Bonus[ABILITY_CON] = AddValueBox(WindowHandle, wA, "", LABEL_NULL, 0,
-                                             474, baseY+88, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_CON]  = AddButton(WindowHandle, wA, "+1", 
-                                            504, baseY+88, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus10[ABILITY_CON] = AddButton(WindowHandle, wA, "+10", 
-                                            534, baseY+88, 40, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_CON]->LinkedText = Scores->Box[ABILITY_CON];
-    Scores->Plus1[ABILITY_CON]->value = 1;
-    Scores->Plus10[ABILITY_CON]->LinkedText = Scores->Box[ABILITY_CON];
-    Scores->Plus10[ABILITY_CON]->value = 10;
-    
-    
-    Scores->Box[ABILITY_INT] = AddNumberBox(WindowHandle, wA, "INT", LABEL_UP, 
-                                            364, baseY+132, 100, 20, (*ElementId)++);
-    wA += 2;
-    Scores->Bonus[ABILITY_INT] = AddValueBox(WindowHandle, wA, "", LABEL_NULL, 0,
-                                             474, baseY+132, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_INT]  = AddButton(WindowHandle, wA, "+1", 
-                                            504, baseY+132, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus10[ABILITY_INT] = AddButton(WindowHandle, wA, "+10", 
-                                            534, baseY+132, 40, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_INT]->LinkedText = Scores->Box[ABILITY_INT];
-    Scores->Plus1[ABILITY_INT]->value = 1;
-    Scores->Plus10[ABILITY_INT]->LinkedText = Scores->Box[ABILITY_INT];
-    Scores->Plus10[ABILITY_INT]->value = 10;
-    
-    
-    Scores->Box[ABILITY_WIS] = AddNumberBox(WindowHandle, wA, "WIS", LABEL_UP, 
-                                            364, baseY+176, 100, 20, (*ElementId)++);
-    wA += 2;
-    Scores->Bonus[ABILITY_WIS] = AddValueBox(WindowHandle, wA, "", LABEL_NULL, 0,
-                                             474, baseY+176, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_WIS]  = AddButton(WindowHandle, wA, "+1", 
-                                            504, baseY+176, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus10[ABILITY_WIS] = AddButton(WindowHandle, wA, "+10", 
-                                            534, baseY+176, 40, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_WIS]->LinkedText = Scores->Box[ABILITY_WIS];
-    Scores->Plus1[ABILITY_WIS]->value = 1;
-    Scores->Plus10[ABILITY_WIS]->LinkedText = Scores->Box[ABILITY_WIS];
-    Scores->Plus10[ABILITY_WIS]->value = 10;
-    
-    
-    Scores->Box[ABILITY_CHA] = AddNumberBox(WindowHandle, wA, "CHA", LABEL_UP, 
-                                            364, 252, 100, 20, (*ElementId)++);
-    wA += 2;
-    Scores->Bonus[ABILITY_CHA] = AddValueBox(WindowHandle, wA, "", LABEL_NULL, 0,
-                                             474, 252, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_CHA]  = AddButton(WindowHandle, wA, "+1", 
-                                            504, 252, 20, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus10[ABILITY_CHA] = AddButton(WindowHandle, wA, "+10", 
-                                            534, 252, 40, 20, (*ElementId)++);
-    wA += 1;
-    Scores->Plus1[ABILITY_CHA]->LinkedText = Scores->Box[ABILITY_CHA];
-    Scores->Plus1[ABILITY_CHA]->value = 1;
-    Scores->Plus10[ABILITY_CHA]->LinkedText = Scores->Box[ABILITY_CHA];
-    Scores->Plus10[ABILITY_CHA]->value = 10;
-    
-    Page->numWindows += 30;
-    
+    s32 yPos = baseY;
+    for(u32 i = 0; i < 6; i++)
+    {
+        Scores->Box[i] = AddNumberBox(WindowHandle, wA, AS_string[i], LABEL_UP,
+                                      364, yPos, 60, 20, (*ElementId)++);
+        wA += 2;
+        Scores->Bonus[i] = AddValueBox(WindowHandle, wA, "", LABEL_NULL, 0,
+                                       434, yPos, 40, 20, (*ElementId)++);
+        wA += 1;
+        Scores->Plus1[i]  = AddButton(WindowHandle, wA, "+1",
+                                      484, yPos, 30, 20, (*ElementId)++);
+        wA += 1;
+        Scores->Plus10[i] = AddButton(WindowHandle, wA, "+10",
+                                      524, yPos, 40, 20, (*ElementId)++);
+        wA += 1;
+        Scores->Plus1[i]->LinkedText = Scores->Box[i];
+        Scores->Plus1[i]->value = 1;
+        Scores->Plus10[i]->LinkedText = Scores->Box[i];
+        Scores->Plus10[i]->value = 10;
+        
+        yPos += 44;
+        Page->numWindows += 5;
+    }
 }
 
 void DrawPCTab(HWND WindowHandle, u64 *ElementId)
@@ -1157,30 +1428,25 @@ void DrawPCTab(HWND WindowHandle, u64 *ElementId)
     Page->Name = AddTextBox(WindowHandle, wA, "Name", LABEL_LEFT,
                             128, 42, 100, 20, (*ElementId)++);
     wA += 2;
-    Page->Player = AddTextBox(WindowHandle, wA, "Player", LABEL_LEFT, 
+    Page->Player = AddTextBox(WindowHandle, wA, "Player", LABEL_LEFT,
                               128, 82, 100, 20, (*ElementId)++);
     wA += 2;
-    Page->Race = AddComboBox(WindowHandle, wA, "Race", LABEL_LEFT, 
+    Page->Race = AddComboBox(WindowHandle, wA, "Race", LABEL_LEFT,
                              128, 122, 100, 20, (*ElementId)++, ArraySize(Races));
     wA += 2;
     AddAllComboBoxItems(Page->Race->box, Races, ArraySize(Races));
     
     
-    Page->Class = AddComboBox(WindowHandle, wA, "Class", LABEL_LEFT, 
+    Page->Class = AddComboBox(WindowHandle, wA, "Class", LABEL_LEFT,
                               128, 162, 100, 20, (*ElementId)++, ArraySize(Classes));
     wA += 2;
     AddAllComboBoxItems(Page->Class->box, Classes, ArraySize(Classes));
     
+    Page->numWindows += 8;
+    
     //
     // Create Ability Scores Fields
     //
-    Page->GenMethod = AddComboBox(WindowHandle, wA, "Gen Method", LABEL_UP, 
-                                  256, 40, 100, 20, 
-                                  (*ElementId)++, ArraySize(AbilityGenMethods));
-    wA += 2;
-    AddAllComboBoxItems(Page->GenMethod->box, AbilityGenMethods, ArraySize(AbilityGenMethods));
-    
-    Page->numWindows += 10;
     
     Page->Scores = (AbilityScores *)ls_alloc(sizeof(AbilityScores));
     AddAbilityScoreBoxes(WindowHandle, 364, 40, ElementId);
@@ -1195,7 +1461,7 @@ void DrawPCTab(HWND WindowHandle, u64 *ElementId)
                                     28, 302, 1280, 384, (*ElementId)++);
     wA += 2;
     
-    Page->currLevel = AddNumberBox(WindowHandle, wA, "LvL", LABEL_UP, 
+    Page->currLevel = AddNumberBox(WindowHandle, wA, "LvL", LABEL_UP,
                                    664, 42, 100, 20, (*ElementId)++);
     Edit_SetText(Page->currLevel->box, "1");
     
@@ -1205,17 +1471,17 @@ void DrawPCTab(HWND WindowHandle, u64 *ElementId)
     
     wA += 2;
     
-    Page->currXP = AddNumberBox(WindowHandle, wA, "XP", LABEL_UP, 
+    Page->currXP = AddNumberBox(WindowHandle, wA, "XP", LABEL_UP,
                                 784, 42, 100, 20, (*ElementId)++);
     
     wA += 2;
     
     u32 nextXPValue = 0;
-    Page->nextLevelXP = AddValueBox(WindowHandle, wA, "To Next LVL", LABEL_UP, 
+    Page->nextLevelXP = AddValueBox(WindowHandle, wA, "To Next LVL", LABEL_UP,
                                     nextXPValue, 924, 42, 100, 20, (*ElementId)++);
     wA += 2;
     
-    Page->XPCurve = AddComboBox(WindowHandle, wA, "XP Curve", LABEL_UP, 
+    Page->XPCurve = AddComboBox(WindowHandle, wA, "XP Curve", LABEL_UP,
                                 1044, 42, 100, 20, (*ElementId)++, ArraySize(XPCurvesString));
     wA += 2;
     AddAllComboBoxItems(Page->XPCurve->box, XPCurvesString, ArraySize(XPCurvesString));
@@ -1224,16 +1490,16 @@ void DrawPCTab(HWND WindowHandle, u64 *ElementId)
     // Class & Level Info
     //
     
-    Page->BaseAttackBonus = AddValueBox(WindowHandle, wA, "BAB", LABEL_LEFT, 
+    Page->BaseAttackBonus = AddValueBox(WindowHandle, wA, "BAB", LABEL_LEFT,
                                         0, 764, 102, 20, 20, (*ElementId)++);
     wA += 2;
-    Page->SavingThrows[0] = AddValueBox(WindowHandle, wA, "FORTITUDE", LABEL_LEFT, 
+    Page->SavingThrows[0] = AddValueBox(WindowHandle, wA, "FORTITUDE", LABEL_LEFT,
                                         0, 764, 142, 20, 20, (*ElementId)++);
     wA += 2;
-    Page->SavingThrows[1] = AddValueBox(WindowHandle, wA, "REFLEX", LABEL_LEFT, 
+    Page->SavingThrows[1] = AddValueBox(WindowHandle, wA, "REFLEX", LABEL_LEFT,
                                         0, 764, 182, 20, 20, (*ElementId)++);
     wA += 2;
-    Page->SavingThrows[2] = AddValueBox(WindowHandle, wA, "WILL", LABEL_LEFT, 
+    Page->SavingThrows[2] = AddValueBox(WindowHandle, wA, "WILL", LABEL_LEFT,
                                         0, 764, 222, 20, 20, (*ElementId)++);
     wA += 2;
     
@@ -1263,6 +1529,82 @@ void DrawFeatsTab(HWND WindowHandle, u64 *ElementId)
     Page->numWindows += 6;
 }
 
+InitField AddInitField(HWND h, HWND **winA, char *label, s32 x, s32 y, u64 *id)
+{
+    InitField Result = {};
+    HWND *wA = *winA;
+    
+    Result.Bonus = AddTextBox(h, wA, label, LABEL_LEFT, x, y, 30, 20, (*id)++); wA += 2;
+    Result.Final = AddValueBox(h, wA, "", LABEL_NULL, 0, x + 40, y, 30, 20, (*id)++); wA += 1;
+    
+    *winA = wA;
+    return Result;
+}
+
+void DrawInitTab(HWND WinH, u64 *ElementId)
+{
+    InitPage *Page = State.Init;
+    HWND *wA = Page->WindowsArray + Page->numWindows;
+    
+    Page->Mobs = AddUnsortedComboBox(WinH, wA, "Enemies", LABEL_UP,
+                                     256, 142, 100, 20, (*ElementId)++, ArraySize(Enemies));;
+    wA += 2;
+    
+    AddAllComboBoxItems(Page->Mobs->box, Enemies, ArraySize(Enemies));
+    
+    Page->Allies = AddUnsortedComboBox(WinH, wA, "Allies", LABEL_LEFT,
+                                       500, 282, 100, 20, (*ElementId)++, ArraySize(Allies));;
+    wA += 2;
+    AddAllComboBoxItems(Page->Allies->box, Allies, ArraySize(Allies));
+    
+    Page->numWindows += 4;
+    
+    // Party Fields
+    s32 yPos = 142;
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    {
+        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 500, yPos, ElementId);
+        yPos += 20;
+        Page->numWindows += 3;
+    }
+    
+    // Ally Fields
+    yPos += 70;
+    for(u32 i = 0; i < ALLY_NUM; i++)
+    {
+        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 500, yPos, ElementId);
+        yPos += 20;
+        Page->numWindows += 3;
+    }
+    
+    // Mob Fields
+    yPos = 182;
+    for(u32 i = 0; i < MOB_NUM; i++)
+    {
+        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 256, yPos, ElementId);
+        yPos += 20;
+        Page->numWindows += 3;
+    }
+    
+    
+    //ORDER
+    yPos = 142;
+    for(u32 i = 0; i <= 24; i+= 2)
+    {
+        Page->Order[i] = AddOrderField(WinH, &wA, 700, yPos, ElementId);
+        Page->numWindows += 3;
+        yPos += 20;
+    }
+    
+    yPos = 142;
+    for(u32 i = 1; i <= 25; i+= 2)
+    {
+        Page->Order[i] = AddOrderField(WinH, &wA, 860, yPos, ElementId);
+        Page->numWindows += 3;
+        yPos += 20;
+    }
+}
+
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
@@ -1277,8 +1619,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SetMenuInfo(MenuBar, &Info);
     
     HWND WindowHandle = CreateWindow(MenuBar);
-    State.PC = (PCPage *)ls_alloc(sizeof(PCPage));
+    State.PC    = (PCPage *)ls_alloc(sizeof(PCPage));
     State.Feats = (FeatsPage *)ls_alloc(sizeof(FeatsPage));
+    State.Init  = (InitPage *)ls_alloc(sizeof(InitPage));
     
     u64 ElementId = 0;
     
@@ -1290,32 +1633,46 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //
     
     HWND TabControl = CreateWindowExA(0, WC_TABCONTROL, "",
-                                      WS_CHILD | WS_VISIBLE | WS_BORDER, 
-                                      0, 0, 300, 20, 
+                                      WS_CHILD | WS_VISIBLE | WS_BORDER,
+                                      0, 0, 300, 20,
                                       WindowHandle, (HMENU)99, MainInstance, 0);
     State.PC->TabControl = TabControl;
     TCITEMA TabItem = {};
     TabItem.mask = TCIF_TEXT;
     TabItem.pszText = "PC";
-    TabItem.cchTextMax = 2;
+    TabItem.cchTextMax = 3;
     TabItem.iImage = -1;
     Tab_InsertItem(TabControl, 0, &TabItem);
     
     TCITEMA TabItem2 = {};
     TabItem2.mask = TCIF_TEXT;
     TabItem2.pszText = "Feats";
-    TabItem2.cchTextMax = 9;
+    TabItem2.cchTextMax = 6;
     TabItem2.iImage = -1;
     Tab_InsertItem(TabControl, 1, &TabItem2);
     
+    TCITEMA TabItem3 = {};
+    TabItem3.mask = TCIF_TEXT;
+    TabItem3.pszText = "Init";
+    TabItem3.cchTextMax = 4;
+    TabItem3.iImage = -1;
+    Tab_InsertItem(TabControl, 2, &TabItem3);
+    
     DrawPCTab(WindowHandle, &ElementId);
     DrawFeatsTab(WindowHandle, &ElementId);
+    DrawInitTab(WindowHandle, &ElementId);
     
     HidePage(State.Feats);
-    ShowPage(State.PC);
+    HidePage(State.PC);
+    ShowPage(State.Init);
+    
+    ShowInitElem(State.Init); //TODO: Should I do this here? Maybe an Init function?
+    HideInitElem(State.Init);
+    
+    TabCtrl_SetCurSel(TabControl, 2);
     
     b32 Running = TRUE;
-    u32 oldPageIdx = 0;
+    u32 oldPageIdx = 2;
     u32 newPageIdx = 0;
     
     while(Running)
@@ -1325,20 +1682,31 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         newPageIdx = TabCtrl_GetCurSel(TabControl);
         
-        if(newPageIdx != oldPageIdx) 
-        { 
+        if(newPageIdx != oldPageIdx)
+        {
             switch(newPageIdx)
             {
                 case 0:
                 {
-                    HidePage(State.Feats); 
-                    ShowPage(State.PC); 
+                    HidePage(State.Feats);
+                    HidePage(State.Init);
+                    ShowPage(State.PC);
                 } break;
                 
                 case 1:
                 {
-                    HidePage(State.PC); 
-                    ShowPage(State.Feats); 
+                    HidePage(State.PC);
+                    HidePage(State.Init);
+                    ShowPage(State.Feats);
+                } break;
+                
+                case 2:
+                {
+                    HidePage(State.PC);
+                    HidePage(State.Feats);
+                    ShowPage(State.Init);
+                    HideInitElem(State.Init);
+                    
                 } break;
             }
         }
