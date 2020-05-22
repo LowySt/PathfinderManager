@@ -22,6 +22,8 @@
 #include "PlayerChar.cpp"
 #include "Init.cpp"
 
+#include "pcg.c"
+
 #define AddAllComboBoxItems(wnd, s, n) { for(size_t i = 0; i < n; i++) \
 {ComboBox_AddString(wnd, s[i]); } }
 
@@ -162,16 +164,24 @@ struct InitPage
     ComboBox   *Mobs;
     ComboBox   *Allies;
     
-    InitField  PlayerFields[5];
+    InitField  PlayerFields[PARTY_NUM];
     
-    InitField  MobFields[16];
+    InitField  MobFields[MOB_NUM];
     u32        VisibleMobs;
     
-    InitField  AllyFields[4];
+    InitField  AllyFields[ALLY_NUM];
     u32        VisibleAllies;
     
-    OrderField Order[26];
+    OrderField Order[ORDER_NUM];
     u32        VisibleOrder;
+    
+    TextBox   *Current;
+    u32       currIdx;
+    
+    Button     *Roll;
+    Button     *Set;
+    Button     *Next;
+    Button     *Reset;
     
     HWND WindowsArray[256];
     u32 numWindows;
@@ -182,6 +192,8 @@ struct ProgramState
     PCPage    *PC;
     FeatsPage *Feats;
     InitPage  *Init;
+    
+    b32       inBattle;
 };
 
 struct Element
@@ -231,12 +243,23 @@ inline void HideInitField(InitField *f, s32 n)
     }
 }
 
-void HideInitElem(InitPage *p) {
-    //Hide Hidden Mob Fields
+inline void HideOrder(OrderField *o, s32 n)
+{
+    for(u32 i = 0; i < n; i++)
+    {
+        ShowWindow(o[i].Field->box, SW_HIDE);
+        ShowWindow(o[i].Pos->box, SW_HIDE);
+        ShowWindow(o[i].Remove->box, SW_HIDE);
+    }
+}
+
+inline void HideElem(HWND box) { ShowWindow(box, SW_HIDE); }
+inline void ShowElem(HWND box) { ShowWindow(box, SW_SHOW); }
+
+inline void HideInitElem(InitPage *p) {
     HideInitField(p->MobFields, MOB_NUM);
-    
-    //Hide Hidden Ally Fields
     HideInitField(p->AllyFields, ALLY_NUM);
+    HideOrder(p->Order, ORDER_NUM);
 }
 
 inline void ShowInitField(InitField *f, s32 n)
@@ -259,14 +282,9 @@ inline void ShowOrder(OrderField *o, s32 n)
     }
 }
 
-void ShowInitElem(InitPage *p) {
-    //Show Hidden Mob Fields
+inline void ShowInitElem(InitPage *p) {
     ShowInitField(p->MobFields, MOB_NUM);
-    
-    //Show Hidden Ally Fields
     ShowInitField(p->AllyFields, ALLY_NUM);
-    
-    //Show Order Fields
     ShowOrder(p->Order, ORDER_NUM);
 }
 
@@ -369,6 +387,10 @@ void UpdateSavingThrows()
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
     LRESULT Result = 0;
+    
+    InitPage  *Init = State.Init;
+    FeatsPage *Feats = State.Feats;
+    PCPage    *PC   = State.PC;
     
     switch (msg)
     {
@@ -820,6 +842,9 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         HideInitField(State.Init->MobFields, MOB_NUM);
                         ShowInitField(State.Init->MobFields, idx);
+                        
+                        HideOrder(State.Init->Order, ORDER_NUM);
+                        ShowOrder(State.Init->Order, State.Init->VisibleOrder);
                     }
                     else if(commandID == State.Init->Allies->id)
                     {
@@ -830,6 +855,9 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         HideInitField(State.Init->AllyFields, ALLY_NUM);
                         ShowInitField(State.Init->AllyFields, idx);
+                        
+                        HideOrder(State.Init->Order, ORDER_NUM);
+                        ShowOrder(State.Init->Order, State.Init->VisibleOrder);
                     }
                     
                 } break;
@@ -944,6 +972,86 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         ls_strFree(&s);
                         ls_strFree(&newVal);
+                    }
+                    
+                    if(commandID == Init->Roll->id)
+                    {
+                        for(u32 i = 0; i < Init->VisibleMobs; i++)
+                        {
+                            s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
+                            char v[32] = {};
+                            u32 len = Edit_GetText(Init->MobFields[i].Bonus->box, v, 32);
+                            s32 bonus = ls_atoi(v, len);
+                            char final[32] = {};
+                            ls_itoa_t(bonus + die, final, 32);
+                            Edit_SetText(Init->MobFields[i].Final->box, final);
+                        }
+                        
+                        for(u32 i = 0; i < Init->VisibleAllies; i++)
+                        {
+                            s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
+                            char v[32] = {};
+                            u32 len = Edit_GetText(Init->MobFields[i].Bonus->box, v, 32);
+                            s32 bonus = ls_atoi(v, len);
+                            char final[32] = {};
+                            ls_itoa_t(bonus + die, final, 32);
+                            Edit_SetText(Init->AllyFields[i].Final->box, final);
+                        }
+                    }
+                    
+                    if(commandID == Init->Set->id)
+                    {
+                        tmp_order ord[ORDER_NUM] = {};
+                        u32 idx = 0;
+                        
+                        for(u32 i = 0; i < Init->VisibleMobs; i++)
+                        {
+                            char v[32] = {};
+                            u32 len = Edit_GetText(Init->MobFields[i].Final->box, v, 32);
+                            ord[idx].init      = ls_atoi(v, len);
+                            ord[idx++].nameBox = Init->MobFields[i].Bonus->label;
+                        }
+                        
+                        for(u32 i = 0; i < Init->VisibleAllies; i++)
+                        {
+                            char v[32] = {};
+                            u32 len = Edit_GetText(Init->AllyFields[i].Final->box, v, 32);
+                            ord[idx].init      = ls_atoi(v, len);
+                            ord[idx++].nameBox = Init->AllyFields[i].Bonus->label;
+                        }
+                        
+                        for(u32 i = 0; i < PARTY_NUM; i++)
+                        {
+                            char v[32] = {};
+                            u32 len = Edit_GetText(Init->PlayerFields[i].Bonus->box, v, 32);
+                            ord[idx].init      = ls_atoi(v, len);
+                            ord[idx++].nameBox = Init->PlayerFields[i].Bonus->label;
+                        }
+                        
+                        order_ascending(ord, Init->VisibleOrder);
+                        
+                        for(u32 i = 0, j = Init->VisibleOrder - 1; i < Init->VisibleOrder; i++, j--)
+                        {
+                            char v[32] = {};
+                            u32 len = Edit_GetText(ord[j].nameBox, v, 32);
+                            
+                            Edit_SetText(Init->Order[i].Field->box, v);
+                            
+                            if(i == 0) { Edit_SetText(Init->Current->box, v); }
+                        }
+                        
+                        State.inBattle = TRUE;
+                        HideElem(Init->Set->box);
+                        ShowElem(Init->Next->box);
+                    }
+                    
+                    if(commandID == Init->Next->id)
+                    {
+                        Init->currIdx = (Init->currIdx + 1) % Init->VisibleOrder;
+                        
+                        char v[32] = {};
+                        u32 len = Edit_GetText(Init->Order[Init->currIdx].Field->box, v, 32);
+                        Edit_SetText(Init->Current->box, v);
                     }
                     
                 } break;
@@ -1113,9 +1221,12 @@ HWND AddStaticEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id,
     return Result;
 }
 
-HWND AddEditNumberBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id)
+HWND AddEditNumberBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, s32 defaultNumber = 0)
 {
-    HWND Result = CreateWindowExA(0, WC_EDIT, "0",
+    char num[32] = {};
+    ls_itoa_t(defaultNumber, num, 32);
+    
+    HWND Result = CreateWindowExA(0, WC_EDIT, num,
                                   WS_CHILD | WS_VISIBLE | WS_BORDER |
                                   ES_LEFT | ES_AUTOHSCROLL | ES_NUMBER,
                                   x, y, width, height,
@@ -1266,7 +1377,7 @@ TextBox *AddStaticUnlabeledTextBox(HWND win, HWND *pageArr, s32 x, s32 y, u32 wi
 }
 
 TextBox *AddNumberBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                      s32 x, s32 y, u32 width, u32 height, u64 id)
+                      s32 x, s32 y, u32 width, u32 height, u64 id, s32 defaultNumber = 0)
 {
     TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
     HWND Label;
@@ -1276,7 +1387,7 @@ TextBox *AddNumberBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
         Result->label = Label;
     }
     
-    Result->box = AddEditNumberBox(win, x, y, width, height, id);
+    Result->box = AddEditNumberBox(win, x, y, width, height, id, defaultNumber);
     Result->id = id;
     
     pageArr[0] = Result->box;
@@ -1366,21 +1477,6 @@ ListBox *AddSingleSelListBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     
     ElementMap[id].ptr        = (void *)Result;
     ElementMap[id].isListBox  = TRUE;
-    
-    return Result;
-}
-
-OrderField AddOrderField(HWND win, HWND **winA, s32 x, s32 y, u64 *id)
-{
-    HWND *wA = *winA;
-    
-    OrderField Result = {};
-    
-    Result.Field  = AddStaticUnlabeledTextBox(win, wA, x + 50, y, 100, 20, (*id)++); wA += 1;
-    Result.Pos    = AddNumberBox(win, wA, 0, LABEL_NULL, x + 25, y, 20, 20, (*id)++); wA += 1;
-    Result.Remove = AddButton(win, wA, "X", x, y, 20, 20, (*id)++, FALSE); wA += 1;
-    
-    *winA = wA;
     
     return Result;
 }
@@ -1529,13 +1625,30 @@ void DrawFeatsTab(HWND WindowHandle, u64 *ElementId)
     Page->numWindows += 6;
 }
 
-InitField AddInitField(HWND h, HWND **winA, char *label, s32 x, s32 y, u64 *id)
+OrderField AddOrderField(HWND win, HWND **winA, s32 x, s32 y, u32 idx, u64 *id)
+{
+    HWND *wA = *winA;
+    
+    OrderField Result = {};
+    
+    Result.Field  = AddStaticUnlabeledTextBox(win, wA, x + 50, y, 100, 20, (*id)++); wA += 1;
+    Result.Pos    = AddNumberBox(win, wA, 0, LABEL_NULL, x + 25, y, 20, 20, (*id)++, idx); wA += 1;
+    Result.Remove = AddButton(win, wA, "X", x, y, 20, 20, (*id)++, FALSE); wA += 1;
+    
+    *winA = wA;
+    
+    return Result;
+}
+
+InitField AddInitField(HWND h, HWND **winA, char *label, s32 x, s32 y, u64 *id, b32 isParty = FALSE)
 {
     InitField Result = {};
     HWND *wA = *winA;
     
-    Result.Bonus = AddTextBox(h, wA, label, LABEL_LEFT, x, y, 30, 20, (*id)++); wA += 2;
-    Result.Final = AddValueBox(h, wA, "", LABEL_NULL, 0, x + 40, y, 30, 20, (*id)++); wA += 1;
+    Result.Bonus = AddTextBox(h, wA, label, LABEL_LEFT, x, y, 30, 20, (*id)++);       wA += 2;
+    if(isParty == FALSE) {
+        Result.Final = AddValueBox(h, wA, "", LABEL_NULL, 0, x + 40, y, 30, 20, (*id)++); wA += 1;
+    }
     
     *winA = wA;
     return Result;
@@ -1561,9 +1674,10 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     
     // Party Fields
     s32 yPos = 142;
+    b32 isParty = TRUE;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 500, yPos, ElementId);
+        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 540, yPos, ElementId, isParty);
         yPos += 20;
         Page->numWindows += 3;
     }
@@ -1581,7 +1695,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     yPos = 182;
     for(u32 i = 0; i < MOB_NUM; i++)
     {
-        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 256, yPos, ElementId);
+        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 326, yPos, ElementId);
         yPos += 20;
         Page->numWindows += 3;
     }
@@ -1589,25 +1703,38 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     
     //ORDER
     yPos = 142;
-    for(u32 i = 0; i <= 24; i+= 2)
+    for(u32 i = 0; i < ORDER_NUM; i += 2)
     {
-        Page->Order[i] = AddOrderField(WinH, &wA, 700, yPos, ElementId);
+        Page->Order[i]   = AddOrderField(WinH, &wA, 700, yPos, i, ElementId);
+        if((i+1) < ORDER_NUM) { 
+            Page->Order[i+1] = AddOrderField(WinH, &wA, 860, yPos, i+1, ElementId); 
+            Page->numWindows += 3;
+        }
         Page->numWindows += 3;
         yPos += 20;
     }
     
-    yPos = 142;
-    for(u32 i = 1; i <= 25; i+= 2)
-    {
-        Page->Order[i] = AddOrderField(WinH, &wA, 860, yPos, ElementId);
-        Page->numWindows += 3;
-        yPos += 20;
-    }
+    
+    Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 800, 112, 100, 20, (*ElementId)++); wA += 1;
+    
+    Page->Roll  = AddButton(WinH, wA, "Roll",  386, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Set   = AddButton(WinH, wA, "Set",   610, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Next  = AddButton(WinH, wA, "Next",  830, 82, 45, 20, (*ElementId)++); wA += 1;
+    Page->Reset = AddButton(WinH, wA, "Reset", 500, 102, 45, 20, (*ElementId)++); wA += 1;
+    
+    Page->numWindows += 5;
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
+    
+    u64 rand_init_state = 0;
+    u64 rand_init_seq = 0;
+    _rdseed64_step(&rand_init_state);
+    _rdseed64_step(&rand_init_seq);
+    
+    pcg32_seed(&pcg32_global, rand_init_state, rand_init_seq);
     
     RegisterWindow();
     
@@ -1666,8 +1793,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     HidePage(State.PC);
     ShowPage(State.Init);
     
-    ShowInitElem(State.Init); //TODO: Should I do this here? Maybe an Init function?
+    //Initialization of Init Page
     HideInitElem(State.Init);
+    ShowOrder(State.Init->Order, PARTY_NUM);
+    HideElem(State.Init->Next->box);          
     
     TabCtrl_SetCurSel(TabControl, 2);
     
