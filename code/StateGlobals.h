@@ -168,6 +168,11 @@ struct ProgramState
     InitPage  *Init;
     
     b32       inBattle;
+    
+    
+    b32    isDragging;
+    POINTS prevMousePos;
+    POINTS currWindowPos;
 };
 
 struct Element
@@ -182,6 +187,7 @@ struct Element
 
 
 HINSTANCE MainInstance;
+HWND MainWindow;
 PlayerChar pc = {};
 ProgramState State = {};
 const HBRUSH controlBkg = CreateSolidBrush(0x00565656); // 0x00 BB GG RR

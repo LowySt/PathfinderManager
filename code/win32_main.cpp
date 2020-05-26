@@ -31,6 +31,181 @@
 #include "Init.cpp"
 #include "OnButton.cpp"
 
+//NOTE: *TEST*//
+WNDPROC mainWinProc;
+
+/// WindowProc Subclass for Edit Controls (Only done on EditBox)
+LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
+{
+    InitPage *Init = State.Init;
+    
+    switch (msg)
+    {
+        case WM_CHAR:
+        {
+            if(w == VK_RETURN) { return 0; } //NOTE: This stupid shit stops the Beeping when pressing enter
+            
+            //NOTE: Still needs to call the default proc to actually have characters display
+            return CallWindowProcA(mainWinProc, h, msg, w, l);
+        } break;
+        
+        case WM_SETFOCUS:
+        {
+            b32 isValid = FALSE;
+            for( u32 i = 0; i < Init->VisibleMobs; i++) {
+                if(h == Init->MobFields[i].Name->box)  { isValid = TRUE; break; }
+                if(h == Init->MobFields[i].Bonus->box) { isValid = TRUE; break; }
+            }
+            
+            if(!isValid) { 
+                for( u32 i = 0; i < Init->VisibleAllies; i++) {
+                    if(h == Init->AllyFields[i].Name->box)  { isValid = TRUE; break; }
+                    if(h == Init->AllyFields[i].Bonus->box) { isValid = TRUE; break; }
+                }
+            }
+            
+            if(!isValid) {
+                for( u32 i = 0; i < PARTY_NUM; i++) {
+                    if(h == Init->PlayerFields[i].Bonus->box) { isValid = TRUE; break; }
+                }
+            }
+            
+            if(isValid) { Edit_SetText(h, ""); }
+            
+            return CallWindowProcA(mainWinProc, h, msg, w, l);
+        } break;
+        
+        case WM_KEYDOWN:
+        {
+            switch(w)
+            {
+                case VK_RETURN:
+                {
+                    for(u32 i = 0; i < Init->VisibleMobs; i++) {
+                        if(h == Init->MobFields[i].Name->box) { 
+                            
+                            if(i < Init->VisibleMobs - 1) { SetFocus(Init->MobFields[i+1].Name->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                        
+                        if(h == Init->MobFields[i].Bonus->box) { 
+                            
+                            if(i < Init->VisibleMobs - 1) { SetFocus(Init->MobFields[i+1].Bonus->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                    }
+                    
+                    for(u32 i = 0; i < PARTY_NUM; i++) {
+                        if(h == Init->PlayerFields[i].Bonus->box) {
+                            if(i < PARTY_NUM - 1) { SetFocus(Init->PlayerFields[i+1].Bonus->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                    }
+                    
+                    for(u32 i = 0; i < Init->VisibleAllies; i++) {
+                        if(h == Init->AllyFields[i].Name->box) { 
+                            if(i < Init->VisibleAllies - 1) { SetFocus(Init->AllyFields[i+1].Name->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                        
+                        if(h == Init->AllyFields[i].Bonus->box) { 
+                            if(i < Init->VisibleAllies - 1) { SetFocus(Init->AllyFields[i+1].Bonus->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                    }
+                    
+                    for(u32 i = 0; i < Init->VisibleOrder; i++) {
+                        if(h == Init->Order[i].Pos->box) {
+                            int len = Edit_GetTextLength(h);
+                            char buff[8] = {};
+                            Edit_GetText(h, buff, 8);
+                            
+                            s32 newPosition = ls_atoi(buff, len);
+                            
+                            if((newPosition >= Init->VisibleOrder) ||
+                               (newPosition == i) || (newPosition < 0)) { 
+                                return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                            }
+                            
+                            OrderField *oldOrder = &Init->Order[i];
+                            
+                            u32 tmpFieldID = oldOrder->fieldId;
+                            b32 tmpIsMob   = oldOrder->isMob;
+                            b32 tmpIsParty = oldOrder->isParty;
+                            
+                            char tmpName[32] = {};
+                            Edit_GetText(oldOrder->Field->box, tmpName, 32);
+                            
+                            if(newPosition > i)
+                            {
+                                for(u32 j = i; j <= newPosition; j++)
+                                {
+                                    char name[32] = {};
+                                    Edit_GetText(Init->Order[j+1].Field->box, name, 32);
+                                    
+                                    Init->Order[j].fieldId = Init->Order[j+1].fieldId;
+                                    Init->Order[j].isMob   = Init->Order[j+1].isMob;
+                                    Init->Order[j].isParty = Init->Order[j+1].isParty;
+                                    
+                                    Edit_SetText(Init->Order[j].Field->box, name);
+                                }
+                            }
+                            
+                            if(newPosition < i)
+                            {
+                                for(u32 j = i; j >= newPosition; j--)
+                                {
+                                    char name[32] = {};
+                                    Edit_GetText(Init->Order[j-1].Field->box, name, 32);
+                                    
+                                    Init->Order[j].fieldId = Init->Order[j-1].fieldId;
+                                    Init->Order[j].isMob   = Init->Order[j-1].isMob;
+                                    Init->Order[j].isParty = Init->Order[j-1].isParty;
+                                    
+                                    Edit_SetText(Init->Order[j].Field->box, name);
+                                }
+                            }
+                            
+                            Init->Order[newPosition].fieldId = tmpFieldID;
+                            Init->Order[newPosition].isMob   = tmpIsMob;
+                            Init->Order[newPosition].isParty = tmpIsParty;
+                            
+                            Edit_SetText(Init->Order[newPosition].Field->box, tmpName);
+                            
+                            //NOTE: Reset the position to actual ordinal
+                            char ith[8] = {};
+                            ls_itoa_t(i, ith, 8);
+                            Edit_SetText(h, ith);
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                    }
+                    
+                    return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                } break;
+            }
+        } break;
+        
+        default: { 
+            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+        }
+    }
+    return 0;
+}
+
+
+
+
 #define AddAllComboBoxItems(wnd, s, n) { for(size_t i = 0; i < n; i++) \
 {ComboBox_AddString(wnd, s[i]); } }
 
@@ -234,6 +409,39 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
     
     switch (msg)
     {
+        case WM_NCLBUTTONDOWN:
+        {
+            State.isDragging = TRUE;
+            State.prevMousePos = *((POINTS *)&l);
+            //TODO:NOTE: Page says to return 0, but DO i HAVE to?
+            
+        } break;
+        
+        case WM_NCLBUTTONUP:
+        {
+            State.isDragging = FALSE;
+        } break;
+        
+        case WM_NCMOUSEMOVE:
+        {
+            if(State.isDragging) {
+                POINTS currMouse = *((POINTS *)&l);
+                
+                SHORT newX = State.prevMousePos.x - currMouse.x;
+                SHORT newY = State.prevMousePos.y - currMouse.y;
+                
+                SHORT newWinX = State.currWindowPos.x - newX;
+                SHORT newWinY = State.currWindowPos.y - newY;
+                
+                State.currWindowPos = { newWinX, newWinY };
+                State.prevMousePos  = currMouse;
+                //State.isDragging = FALSE;
+                
+                SetWindowPos(h, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+            }
+            //TODO:NOTE: Page says to return 0, but DO i HAVE to?
+        };
+        
         case WM_KEYDOWN:
         {
             switch(w)
@@ -245,28 +453,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             }
         } break;
         
-#if 0
-        case WM_NCLBUTTONDOWN:
-        {
-            int xPos = GET_X_LPARAM(l); ;
-            int yPos = GET_Y_LPARAM(l); ;
-            
-            //@TODO Do I have to check if I'm clicking a button
-            {
-                POINT sp = { xPos, yPos };
-                BOOL res = DragDetect(h, sp); //NOTE: This is WRONG
-                
-                int xDrag = GetSystemMetrics(SM_CXDRAG);
-                int yDrag = GetSystemMetrics(SM_CYDRAG);
-                
-                WINDOWINFO wi = {};
-                res = GetWindowInfo(h, &wi);
-                
-                // @Hardcoded
-                res = MoveWindow(h, wi.rcWindow.left + xDrag, wi.rcWindow.left + yDrag, 1350, 900, TRUE);
-            }
-        } break;
-#endif
         case WM_DESTROY:
         {
             ExitProcess(0);
@@ -786,7 +972,7 @@ void RegisterWindow()
 
 HWND CreateWindow(HMENU MenuBar)
 {
-    u32 style = LS_VISIBLE | LS_POPUP | LS_THIN_BORDER; //LS_OVERLAPPEDWINDOW | LS_VISIBLE;
+    u32 style = LS_VISIBLE | LS_THIN_BORDER | LS_POPUP; // | LS_OVERLAPPEDWINDOW;
     BOOL Result;
     
     HMENU SubMenu = CreateMenu();
@@ -824,6 +1010,8 @@ HWND CreateWindow(HMENU MenuBar)
         DWORD Error = GetLastError();
         ls_printf("When Retrieving a WindowHandle in Win32_SetupScreen got error: %d", Error);
     }
+    
+    State.currWindowPos = { 300, 50 };
     
     return WindowHandle;
 }
@@ -898,6 +1086,12 @@ HWND AddEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, char *def
                                   x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     
+    //NOTE: TEST
+    
+    mainWinProc = (WNDPROC)SetWindowLongPtrA(Result, GWLP_WNDPROC, (LONG_PTR)subEditProc);
+    
+    //NOTE: TEST
+    
     return Result;
 }
 
@@ -926,6 +1120,8 @@ HWND AddEditNumberBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, s32
                                   ES_LEFT | ES_AUTOHSCROLL | ES_NUMBER,
                                   x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
+    
+    mainWinProc = (WNDPROC)SetWindowLongPtrA(Result, GWLP_WNDPROC, (LONG_PTR)subEditProc);
     
     return Result;
 }
@@ -1449,7 +1645,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     Info.dwStyle = MNS_NOTIFYBYPOS;
     SetMenuInfo(MenuBar, &Info);
     
-    HWND WindowHandle = CreateWindow(MenuBar);
+    MainWindow = CreateWindow(MenuBar);
     State.PC    = (PCPage *)ls_alloc(sizeof(PCPage));
     State.Feats = (FeatsPage *)ls_alloc(sizeof(FeatsPage));
     State.Init  = (InitPage *)ls_alloc(sizeof(InitPage));
@@ -1466,7 +1662,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     HWND TabControl = CreateWindowExA(0, WC_TABCONTROL, "",
                                       WS_CHILD | WS_VISIBLE | WS_BORDER,
                                       0, 0, 300, 20,
-                                      WindowHandle, (HMENU)99, MainInstance, 0);
+                                      MainWindow, (HMENU)99, MainInstance, 0);
     State.PC->TabControl = TabControl;
     TCITEMA TabItem = {};
     TabItem.mask = TCIF_TEXT;
@@ -1489,9 +1685,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     TabItem3.iImage = -1;
     Tab_InsertItem(TabControl, 2, &TabItem3);
     
-    DrawPCTab(WindowHandle, &ElementId);
-    DrawFeatsTab(WindowHandle, &ElementId);
-    DrawInitTab(WindowHandle, &ElementId);
+    DrawPCTab(MainWindow, &ElementId);
+    DrawFeatsTab(MainWindow, &ElementId);
+    DrawInitTab(MainWindow, &ElementId);
     
     HidePage(State.Feats);
     HidePage(State.PC);
