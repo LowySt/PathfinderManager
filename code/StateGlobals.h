@@ -139,6 +139,18 @@ struct EncList
     b32 isInitialized;
 };
 
+struct Counter
+{
+    TextBox *Field;
+    TextBox *Rounds;
+    Button  *Start;
+    
+    u32 roundCounter;
+    u32 turnsInRound;
+    
+    b32 isActive;
+};
+
 struct OrderField
 {
     TextBox *Field;
@@ -187,6 +199,8 @@ struct InitPage
     
     ComboBox   *EncounterSel;
     TextBox    *EncounterName;
+    
+    Counter    Counters[COUNTER_NUM];
     
     HWND WindowsArray[512];
     u32 numWindows;

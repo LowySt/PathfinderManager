@@ -18,52 +18,48 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     if(clicked->LinkedText != 0x0) {
         TextBox *text = clicked->LinkedText;
         
+        AbilityScores *S = PCPage->Scores;
+        
         string s = getText(text->box);
         u32 val = ls_stoi(s);
         val += clicked->value;
         
-        if((commandID == PCPage->Scores->Plus1[ABILITY_STR]->id) ||
-           (commandID == PCPage->Scores->Plus10[ABILITY_STR]->id))
+        if(S->Plus1[ABILITY_STR]->id ||
+           S->Plus10[ABILITY_STR]->id)
         {
-            Edit_SetText(PCPage->Scores->Bonus[ABILITY_STR]->box, getASBonusStr(val));
-            
+            Edit_SetText(S->Bonus[ABILITY_STR]->box, getASBonusStr(val));
             pc.AbilityScores[ABILITY_STR] = val;
         }
-        else if((commandID == PCPage->Scores->Plus1[ABILITY_DEX]->id) ||
-                (commandID == PCPage->Scores->Plus10[ABILITY_DEX]->id))
+        else if(S->Plus1[ABILITY_DEX]->id ||
+                S->Plus10[ABILITY_DEX]->id) 
         {
-            Edit_SetText(PCPage->Scores->Bonus[ABILITY_DEX]->box, getASBonusStr(val));
-            
+            Edit_SetText(S->Bonus[ABILITY_DEX]->box, getASBonusStr(val));
             pc.AbilityScores[ABILITY_DEX] = val;
-        }
-        else if((commandID == PCPage->Scores->Plus1[ABILITY_CON]->id) ||
-                (commandID == PCPage->Scores->Plus10[ABILITY_CON]->id))
+        } 
+        else if(S->Plus1[ABILITY_CON]->id ||
+                S->Plus10[ABILITY_CON]->id)
         {
-            Edit_SetText(PCPage->Scores->Bonus[ABILITY_CON]->box, getASBonusStr(val));
-            
+            Edit_SetText(S->Bonus[ABILITY_CON]->box, getASBonusStr(val));
             pc.AbilityScores[ABILITY_CON] = val;
-        }
-        else if((commandID == PCPage->Scores->Plus1[ABILITY_INT]->id) ||
-                (commandID == PCPage->Scores->Plus10[ABILITY_INT]->id))
+        } 
+        else if(S->Plus1[ABILITY_INT]->id ||
+                S->Plus10[ABILITY_INT]->id)
         {
-            Edit_SetText(PCPage->Scores->Bonus[ABILITY_INT]->box, getASBonusStr(val));
-            
+            Edit_SetText(S->Bonus[ABILITY_INT]->box, getASBonusStr(val));
             pc.AbilityScores[ABILITY_INT] = val;
-        }
-        else if((commandID == PCPage->Scores->Plus1[ABILITY_WIS]->id) ||
-                (commandID == PCPage->Scores->Plus10[ABILITY_WIS]->id))
+        } 
+        else if(S->Plus1[ABILITY_WIS]->id ||
+                S->Plus10[ABILITY_WIS]->id)
         {
-            Edit_SetText(PCPage->Scores->Bonus[ABILITY_WIS]->box, getASBonusStr(val));
-            
+            Edit_SetText(S->Bonus[ABILITY_WIS]->box, getASBonusStr(val));
             pc.AbilityScores[ABILITY_WIS] = val;
-        }
-        else if((commandID == PCPage->Scores->Plus1[ABILITY_CHA]->id) ||
-                (commandID == PCPage->Scores->Plus10[ABILITY_CHA]->id))
+        } 
+        else if(S->Plus1[ABILITY_CHA]->id ||
+                S->Plus10[ABILITY_CHA]->id)
         {
-            Edit_SetText(PCPage->Scores->Bonus[ABILITY_CHA]->box, getASBonusStr(val));
-            
+            Edit_SetText(S->Bonus[ABILITY_CHA]->box, getASBonusStr(val));
             pc.AbilityScores[ABILITY_CHA] = val;
-        }
+        } 
         
         string newVal = ls_itos(val);
         ls_strNullTerminate(&newVal);
@@ -251,6 +247,43 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         char v[32] = {};
         u32 len = Edit_GetText(Init->Order[Init->currIdx].Field->box, v, 32);
         Edit_SetText(Init->Current->box, v);
+        
+        for(u32 i = 0; i < COUNTER_NUM; i++)
+        {
+            Counter *C = &Init->Counters[i];
+            
+            if(C->isActive == TRUE)
+            {
+                if(C->roundCounter >= C->turnsInRound)
+                { 
+                    C->roundCounter = 0;
+                    
+                    char v[8] = {};
+                    u32 len = Edit_GetText(C->Rounds->box, v, 8);
+                    s32 val = ls_atoi(v, len);
+                    
+                    if((val - 1) == 0)
+                    {
+                        Edit_SetReadOnly(Init->Counters[i].Field->box, FALSE);
+                        Edit_SetText(Init->Counters[i].Field->box, "");
+                        Edit_SetText(Init->Counters[i].Rounds->box, "0");
+                        
+                        Init->Counters[i].roundCounter = 0;
+                        Init->Counters[i].isActive     = FALSE;
+                        return;
+                    }
+                    
+                    char newV[8] = {};
+                    ls_itoa_t(val - 1, newV, 8);
+                    
+                    Edit_SetText(C->Rounds->box, newV);
+                    return;
+                }
+                
+                C->roundCounter += 1;
+                return;
+            }
+        }
     }
     
     if(commandID == Init->Reset->id)
@@ -287,6 +320,16 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Init->Order[i].isParty = 0;
         }
         
+        for(u32 i = 0; i < COUNTER_NUM; i++)
+        {
+            Edit_SetReadOnly(Init->Counters[i].Field->box, FALSE);
+            Edit_SetText(Init->Counters[i].Field->box, "");
+            Edit_SetText(Init->Counters[i].Rounds->box, "");
+            
+            Init->Counters[i].roundCounter = 0;
+            Init->Counters[i].isActive     = FALSE;
+        }
+        
         Init->VisibleMobs   = 0;
         Init->VisibleAllies = 0;
         Init->VisibleOrder  = PARTY_NUM;
@@ -306,6 +349,28 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         
         ComboBox_SetCurSel(Init->Mobs->box, 0);
         ComboBox_SetCurSel(Init->Allies->box, 0);
+    }
+    
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        if(commandID == Init->Counters[i].Start->id)
+        {
+            if(State.inBattle == FALSE) { return; }
+            
+            char rounds[8] = {};
+            
+            Edit_SetReadOnly(Init->Counters[i].Field->box, TRUE);
+            u32 len = Edit_GetText(Init->Counters[i].Rounds->box, rounds, 8);
+            
+            s32 val = ls_atoi(rounds, len);
+            if(val <= 0) { return; }
+            
+            Init->Counters[i].isActive     = TRUE;
+            Init->Counters[i].roundCounter = 0;
+            Init->Counters[i].turnsInRound = (Init->VisibleOrder - 1);
+            
+            return;
+        }
     }
     
     for(u32 i = 0; i < Init->VisibleOrder; i++)
@@ -386,8 +451,16 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Edit_SetText(Init->Order[Init->VisibleOrder - 1].Field->box, "");
             HideOrder(Init->Order + (Init->VisibleOrder - 1), 1);
             
+            for(u32 i = 0; i < COUNTER_NUM; i++)
+            {
+                Counter *C = &Init->Counters[i];
+                if(C->isActive == TRUE) { C->turnsInRound -= 1; }
+            }
+            
             Init->VisibleOrder -= 1;
             if(Init->currIdx >= i) { Init->currIdx -= 1; }
+            
+            //NOTE:TODO: Should I return here?
         }
     }
     

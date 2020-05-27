@@ -1653,15 +1653,29 @@ InitField AddInitField(HWND h, HWND **winA, char *label, s32 x, s32 y,
     
     if(isParty == FALSE) 
     {
-        Result.Name  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, label);    wA += 1;
-        Result.Bonus = AddTextBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++, "0"); wA += 1;
-        Result.Final = AddValueBox(h, wA, 0, LABEL_NULL, 0, x + 150, y, 30, 20, (*id)++);  wA += 1;
+        Result.Name  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, label);      wA += 1;
+        Result.Bonus = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++); wA += 1;
+        Result.Final = AddValueBox(h, wA, 0, LABEL_NULL, 0, x + 150, y, 30, 20, (*id)++);    wA += 1;
     }
     else {
-        Result.Bonus  = AddTextBox(h, wA, label, LABEL_LEFT, x, y, 30, 20, (*id)++);  wA += 2;
+        Result.Bonus  = AddNumberBox(h, wA, label, LABEL_LEFT, x, y, 30, 20, (*id)++);  wA += 2;
     }
     
     Result.id = initId;
+    
+    *winA = wA;
+    return Result;
+}
+
+Counter AddCounter(HWND h, HWND **winA, char *label, s32 x, s32 y, u64 *id)
+{
+    HWND *wA = *winA;
+    
+    Counter Result = {};
+    
+    Result.Field  = AddTextBox(h, wA, label, LABEL_UP, x, y, 100, 20, (*id)++);      wA += 2;
+    Result.Rounds = AddNumberBox(h, wA, 0, LABEL_NULL, x + 105, y, 30, 20, (*id)++); wA += 1;
+    Result.Start  = AddButton(h, wA, "Start", x + 140, y, 35, 20, (*id)++);          wA += 1;
     
     *winA = wA;
     return Result;
@@ -1673,13 +1687,13 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     HWND *wA = Page->WindowsArray + Page->numWindows;
     
     Page->Mobs = AddUnsortedComboBox(WinH, wA, "Enemies", LABEL_UP,
-                                     256, 102, 100, 20, (*ElementId)++, ArraySize(Enemies));;
+                                     276, 102, 100, 20, (*ElementId)++, ArraySize(Enemies));;
     wA += 2;
     
     AddAllComboBoxItems(Page->Mobs->box, Enemies, ArraySize(Enemies));
     
     Page->Allies = AddUnsortedComboBox(WinH, wA, "Allies", LABEL_UP,
-                                       500, 282, 100, 20, (*ElementId)++, ArraySize(Allies));;
+                                       520, 282, 100, 20, (*ElementId)++, ArraySize(Allies));;
     wA += 2;
     AddAllComboBoxItems(Page->Allies->box, Allies, ArraySize(Allies));
     
@@ -1689,7 +1703,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     s32 yPos = 142;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 540, yPos, ElementId, i, TRUE);
+        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 560, yPos, ElementId, i, TRUE);
         yPos += 20;
         Page->numWindows += 2;
     }
@@ -1698,7 +1712,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     yPos += 70;
     for(u32 i = 0; i < ALLY_NUM; i++)
     {
-        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 460, yPos, ElementId, i, FALSE);
+        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 480, yPos, ElementId, i, FALSE);
         yPos += 20;
         Page->numWindows += 3;
     }
@@ -1707,7 +1721,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     yPos = 142;
     for(u32 i = 0; i < MOB_NUM; i++)
     {
-        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 226, yPos, ElementId, i, FALSE);
+        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 246, yPos, ElementId, i, FALSE);
         yPos += 20;
         Page->numWindows += 3;
     }
@@ -1716,9 +1730,9 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     yPos = 142;
     for(u32 i = 0; i < ORDER_NUM; i += 2)
     {
-        Page->Order[i]   = AddOrderField(WinH, &wA, 700, yPos, i, ElementId);
+        Page->Order[i]   = AddOrderField(WinH, &wA, 720, yPos, i, ElementId);
         if((i+1) < ORDER_NUM) { 
-            Page->Order[i+1] = AddOrderField(WinH, &wA, 860, yPos, i+1, ElementId); 
+            Page->Order[i+1] = AddOrderField(WinH, &wA, 880, yPos, i+1, ElementId); 
             Page->numWindows += 3;
         }
         Page->numWindows += 3;
@@ -1726,24 +1740,32 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     }
     
     
-    Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 800, 112, 100, 20, (*ElementId)++); wA += 1;
+    Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 820, 112, 100, 20, (*ElementId)++); wA += 1;
     
-    Page->Roll  = AddButton(WinH, wA, "Roll",  386, 102, 45, 20, (*ElementId)++); wA += 1;
-    Page->Set   = AddButton(WinH, wA, "Set",   610, 102, 45, 20, (*ElementId)++); wA += 1;
-    Page->Next  = AddButton(WinH, wA, "Next",  830, 82, 45, 20, (*ElementId)++); wA += 1;
-    Page->Reset = AddButton(WinH, wA, "Reset", 500, 102, 45, 20, (*ElementId)++); wA += 1;
-    Page->Save  = AddButton(WinH, wA, "Save",  600, 42, 45, 20, (*ElementId)++); wA += 1;
+    Page->Roll  = AddButton(WinH, wA, "Roll",  406, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Set   = AddButton(WinH, wA, "Set",   630, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Next  = AddButton(WinH, wA, "Next",  850, 82, 45, 20, (*ElementId)++); wA += 1;
+    Page->Reset = AddButton(WinH, wA, "Reset", 520, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Save  = AddButton(WinH, wA, "Save",  620, 42, 45, 20, (*ElementId)++); wA += 1;
     
     Page->numWindows += 6;
     
+    yPos = 142;
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Page->Counters[i] = AddCounter(WinH, &wA, CounterNames[i], 20, yPos, ElementId);
+        yPos += 40;
+        Page->numWindows += 4;
+    }
     
-    Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 574, 62, 100, 20, (*ElementId)++); wA += 1;
+    
+    Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 594, 62, 100, 20, (*ElementId)++); wA += 1;
     Page->numWindows += 1;
     
     //EncounterSelection
     if(State.encounters.isInitialized == TRUE)
     {
-        Page->EncounterSel = FillEncounters(WinH, wA, "Encounters", 450, 60, 100, 20, (*ElementId)++);
+        Page->EncounterSel = FillEncounters(WinH, wA, "Encounters", 470, 60, 100, 20, (*ElementId)++);
         wA += 2;
         
         Page->numWindows += 2;
