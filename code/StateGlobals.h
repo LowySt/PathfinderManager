@@ -112,6 +112,33 @@ struct FeatsPage
     u32 numWindows;
 };
 
+//NOTE: Size in Bytes of an Encounter
+const u32 sizeOfEncEntry  = 760;
+const u32 sizeOfInitEntry = 36; // 32 Bytes Name, 4 Bytes Bonus
+
+const u32 encounterOffset = KBytes(128);
+
+struct Encounter
+{
+    u32 numMobs;
+    char mobNames[MOB_NUM][32];
+    u32  mobBonus[MOB_NUM];
+    
+    u32 numAllies;
+    char allyNames[ALLY_NUM][32];
+    u32  allyBonus[ALLY_NUM];
+};
+
+struct EncList
+{
+    void *data;  //NOTE: Fixed size of 32 Kbytes
+    
+    u32 numEncounters;
+    Encounter Enc[64];
+    
+    b32 isInitialized;
+};
+
 struct OrderField
 {
     TextBox *Field;
@@ -149,15 +176,19 @@ struct InitPage
     OrderField Order[ORDER_NUM];
     u32        VisibleOrder;
     
-    TextBox   *Current;
-    u32       currIdx;
+    TextBox    *Current;
+    u32        currIdx;
     
     Button     *Roll;
     Button     *Set;
     Button     *Next;
     Button     *Reset;
+    Button     *Save;
     
-    HWND WindowsArray[256];
+    ComboBox   *EncounterSel;
+    TextBox    *EncounterName;
+    
+    HWND WindowsArray[512];
     u32 numWindows;
 };
 
@@ -167,9 +198,13 @@ struct ProgramState
     FeatsPage *Feats;
     InitPage  *Init;
     
+    void *StateData;
+    
+    //State Management
     b32       inBattle;
+    EncList   encounters;
     
-    
+    //Window management
     b32    isDragging;
     POINTS prevMousePos;
     POINTS currWindowPos;
@@ -190,6 +225,7 @@ HINSTANCE MainInstance;
 HWND MainWindow;
 PlayerChar pc = {};
 ProgramState State = {};
+
 const HBRUSH controlBkg = CreateSolidBrush(0x00565656); // 0x00 BB GG RR
 const HBRUSH appBkg     = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
 

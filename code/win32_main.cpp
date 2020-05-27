@@ -875,18 +875,60 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         HideOrder(State.Init->Order, ORDER_NUM);
                         ShowOrder(State.Init->Order, State.Init->VisibleOrder);
                     }
-                    else if(commandID == State.Init->Allies->id)
+                    else if(commandID == Init->Allies->id)
                     {
                         s32 idx = ComboBox_GetCurSel(handle);
                         Assert(idx != CB_ERR);
-                        State.Init->VisibleAllies = idx;
-                        State.Init->VisibleOrder = PARTY_NUM + State.Init->VisibleMobs + idx;
+                        Init->VisibleAllies = idx;
+                        Init->VisibleOrder = PARTY_NUM + Init->VisibleMobs + idx;
                         
-                        HideInitField(State.Init->AllyFields, ALLY_NUM);
-                        ShowInitField(State.Init->AllyFields, idx);
+                        HideInitField(Init->AllyFields, ALLY_NUM);
+                        ShowInitField(Init->AllyFields, idx);
                         
-                        HideOrder(State.Init->Order, ORDER_NUM);
-                        ShowOrder(State.Init->Order, State.Init->VisibleOrder);
+                        HideOrder(Init->Order, ORDER_NUM);
+                        ShowOrder(Init->Order, State.Init->VisibleOrder);
+                    }
+                    else if(commandID == Init->EncounterSel->id)
+                    {
+                        s32 idx = ComboBox_GetCurSel(handle);
+                        Assert(idx != CB_ERR);
+                        
+                        Encounter *Curr = &State.encounters.Enc[idx];
+                        Init->VisibleMobs   = Curr->numMobs;
+                        Init->VisibleAllies = Curr->numAllies;
+                        Init->VisibleOrder  = PARTY_NUM + Curr->numMobs + Curr->numAllies;
+                        
+                        ComboBox_SetCurSel(Init->Mobs->box, Curr->numMobs);
+                        ComboBox_SetCurSel(Init->Allies->box, Curr->numAllies);
+                        
+                        HideInitField(Init->MobFields, MOB_NUM);
+                        ShowInitField(Init->MobFields, Curr->numMobs);
+                        
+                        HideInitField(Init->AllyFields, ALLY_NUM);
+                        ShowInitField(Init->AllyFields, Curr->numAllies);
+                        
+                        HideOrder(Init->Order, ORDER_NUM);
+                        ShowOrder(Init->Order, Init->VisibleOrder);
+                        
+                        for(u32 i = 0; i < Init->VisibleMobs; i++)
+                        {
+                            Edit_SetText(Init->MobFields[i].Name->box, Curr->mobNames[i]);
+                            
+                            char bonus[8] = {};
+                            ls_itoa_t(Curr->mobBonus[i], bonus, 8);
+                            
+                            Edit_SetText(Init->MobFields[i].Bonus->box, bonus);
+                        }
+                        
+                        for(u32 i = 0; i < Init->VisibleAllies; i++)
+                        {
+                            Edit_SetText(Init->AllyFields[i].Name->box, Curr->allyNames[i]);
+                            
+                            char bonus[8] = {};
+                            ls_itoa_t(Curr->allyBonus[i], bonus, 8);
+                            
+                            Edit_SetText(Init->AllyFields[i].Bonus->box, bonus);
+                        }
                     }
                     
                 } break;
@@ -1375,6 +1417,75 @@ ListBox *AddSingleSelListBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
     return Result;
 }
 
+ComboBox *FillEncounters(HWND h, HWND *wA, char *label, s32 x, s32 y, u32 width, u32 height, u64 id)
+{
+    buffer buff = ls_bufferViewIntoPtr(State.encounters.data, KBytes(64));
+    
+    u32 numOfEncounters = ls_bufferReadDWord(&buff);
+    State.encounters.numEncounters = numOfEncounters;
+    
+    char **encounterNames = (char **)ls_alloc(sizeof(char *) * numOfEncounters);
+    for(u32 i = 0; i < numOfEncounters; i++) { encounterNames[i] = (char *)ls_alloc(sizeof(char) * 32); }
+    
+    const u32 sizeInBytesOfEntry = 36; // 32 Bytes Name, 4 Bytes Bonus
+    
+    for(u32 i = 0; i < numOfEncounters; i++)
+    {
+        //NOTE: Size in Bytes: 760 Bytes
+        Encounter *CurrEnc = &State.encounters.Enc[i];
+        ls_bufferReadData(&buff, encounterNames[i], 32);
+        
+        u32 numOfMobs = ls_bufferReadDWord(&buff);
+        CurrEnc->numMobs = numOfMobs;
+        
+        for(u32 j = 0; j < numOfMobs; j++)
+        {
+            //NOTE: Size in Bytes: 36 Bytes
+            char nameBuff[32] = {};
+            ls_bufferReadData(&buff, nameBuff, 32);
+            
+            u32  mobBonus = ls_bufferReadDWord(&buff);
+            
+            ls_memcpy(nameBuff, CurrEnc->mobNames[j], 32);
+            CurrEnc->mobBonus[j] = mobBonus;
+        }
+        
+        if(numOfMobs < MOB_NUM) { 
+            u32 paddingBytes = (MOB_NUM - numOfMobs) * sizeInBytesOfEntry;
+            ls_bufferAdvanceCursor(&buff, paddingBytes);
+        }
+        
+        u32 numOfAllies = ls_bufferReadDWord(&buff);
+        CurrEnc->numAllies = numOfAllies;
+        
+        for(u32 j = 0; j < numOfAllies; j++)
+        {
+            char nameBuff[32] = {};
+            ls_bufferReadData(&buff, nameBuff, 32);
+            
+            u32  allyBonus = ls_bufferReadDWord(&buff);
+            
+            ls_memcpy(nameBuff, CurrEnc->allyNames[j], 32);
+            CurrEnc->allyBonus[j] = allyBonus;
+        }
+        
+        if(numOfAllies < ALLY_NUM) { 
+            u32 paddingBytes = (ALLY_NUM - numOfAllies) * sizeInBytesOfEntry;
+            ls_bufferAdvanceCursor(&buff, paddingBytes);
+        }
+    }
+    
+    u32 stupidComboBoxNumberOfItemsWhichDeterminesHeight = numOfEncounters;
+    if(numOfEncounters == 1)
+    { stupidComboBoxNumberOfItemsWhichDeterminesHeight = 2; }
+    
+    ComboBox *Result = AddUnsortedComboBox(h, wA, label, LABEL_UP, x, y, width, height, id,
+                                           stupidComboBoxNumberOfItemsWhichDeterminesHeight);
+    AddAllComboBoxItems(Result->box, encounterNames, numOfEncounters);
+    
+    return Result;
+}
+
 void AddAbilityScoreBoxes(HWND WindowHandle, u32 baseX, u32 baseY, u64 *ElementId)
 {
     PCPage *Page = State.PC;
@@ -1621,8 +1732,22 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     Page->Set   = AddButton(WinH, wA, "Set",   610, 102, 45, 20, (*ElementId)++); wA += 1;
     Page->Next  = AddButton(WinH, wA, "Next",  830, 82, 45, 20, (*ElementId)++); wA += 1;
     Page->Reset = AddButton(WinH, wA, "Reset", 500, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Save  = AddButton(WinH, wA, "Save",  600, 42, 45, 20, (*ElementId)++); wA += 1;
     
-    Page->numWindows += 5;
+    Page->numWindows += 6;
+    
+    
+    Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 574, 62, 100, 20, (*ElementId)++); wA += 1;
+    Page->numWindows += 1;
+    
+    //EncounterSelection
+    if(State.encounters.isInitialized == TRUE)
+    {
+        Page->EncounterSel = FillEncounters(WinH, wA, "Encounters", 450, 60, 100, 20, (*ElementId)++);
+        wA += 2;
+        
+        Page->numWindows += 2;
+    }
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -1655,6 +1780,19 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     for(size_t i = 0; i < ArraySize(State.Feats->ChosenFeatsIndices); i++)
     { State.Feats->ChosenFeatsIndices[i] = u32(-1); }
     
+    //
+    // Initialize StateData
+    //
+    
+    char fullPathBuff[128] = {};
+    u32 len = ls_getFullPathName("State.bin", fullPathBuff, 128);
+    
+    if(ls_fileExists(fullPathBuff) == TRUE)
+    {
+        ls_readFile("State.bin", (char **)&State.StateData, 0);
+        State.encounters.data = (u8 *)State.StateData + encounterOffset;
+        State.encounters.isInitialized = TRUE;
+    }
     //
     // Create Tabs
     //

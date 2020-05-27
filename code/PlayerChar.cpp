@@ -95,7 +95,7 @@ void SerializePC(PlayerChar *pc)
     ls_bufferAddDWord(&buff, pc->xp);
     ls_bufferAddByte(&buff, pc->xpCurve);
     
-    ls_writeFile("test.pcm", buff.data, buff.used, FALSE);
+    ls_writeFile("test.pcm", buff.data, buff.cursor, FALSE);
 }
 
 void LoadPC(PlayerChar *pc)
@@ -103,8 +103,6 @@ void LoadPC(PlayerChar *pc)
     buffer buff = ls_bufferInit(KB(1));
     
     buff.size = ls_readFile("F:\\ProgrammingProjects\\Lowy_No_VS\\PCMan\\test.pcm", (char **)(&buff.data), 0);
-    buff.used = buff.size;
-    
     buff.cursor = 0;
     
     pc->Name      = ls_bufferReadString(&buff);
