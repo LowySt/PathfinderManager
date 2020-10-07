@@ -146,9 +146,17 @@ struct Counter
     Button  *Start;
     
     u32 roundCounter;
-    u32 turnsInRound;
     
     b32 isActive;
+};
+
+struct AddInit
+{
+    TextBox *Name;
+    TextBox *Bonus;
+    
+    Button  *Add;
+    Button  *Ok;
 };
 
 struct OrderField
@@ -169,8 +177,9 @@ struct InitField
     TextBox *Bonus;
     TextBox *Final;
     
-    u64     id;
+    AddInit New;
     
+    u64     id;
     b32     isSelected;
 };
 
@@ -189,6 +198,7 @@ struct InitPage
     
     OrderField Order[ORDER_NUM];
     u32        VisibleOrder;
+    u32        turnsInRound;
     
     TextBox    *Current;
     u32        currIdx;

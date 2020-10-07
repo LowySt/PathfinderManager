@@ -290,6 +290,11 @@ void ArrayRemove(u32 *a, u32 idx)
     a[len] = u32(-1);
 }
 
+inline void HideInitFieldAdd(InitField *f, u32 idx, s32 max)
+{
+    if(idx < max) { ShowWindow(f[idx].New.Add->box, SW_HIDE); }
+}
+
 inline void HideInitField(InitField *f, s32 n)
 {
     for(u32 i = 0; i < n; i++)
@@ -299,6 +304,11 @@ inline void HideInitField(InitField *f, s32 n)
             ShowWindow(f[i].Name->box, SW_HIDE);
             ShowWindow(f[i].Final->box, SW_HIDE);
             ShowWindow(f[i].Bonus->box, SW_HIDE);
+            
+            ShowWindow(f[i].New.Name->box, SW_HIDE);
+            ShowWindow(f[i].New.Bonus->box, SW_HIDE);
+            ShowWindow(f[i].New.Add->box, SW_HIDE);
+            ShowWindow(f[i].New.Ok->box, SW_HIDE);
         }
         else {
             ShowWindow(f[i].Bonus->box, SW_HIDE);
@@ -326,9 +336,15 @@ inline void HideInitElem(InitPage *p) {
     HideOrder(p->Order, ORDER_NUM);
 }
 
-inline void ShowInitField(InitField *f, s32 n)
+inline void ShowInitFieldAdd(InitField *f, u32 idx, s32 max)
 {
-    for(u32 i = 0; i < n; i++)
+    if(idx < max) { ShowWindow(f[idx].New.Add->box, SW_SHOW); }
+}
+
+inline void ShowInitField(InitField *f, s32 n, s32 max)
+{
+    u32 i = 0; 
+    for(; i < n; i++)
     {
         if(f[i].Name  != 0) //NOTE: Assuming this is not a party member
         { 
@@ -341,6 +357,8 @@ inline void ShowInitField(InitField *f, s32 n)
             ShowWindow(f[i].Bonus->label, SW_SHOW);
         }
     }
+    
+    if(i < max) { ShowWindow(f[i].New.Add->box, SW_SHOW); }
 }
 
 inline void ShowOrder(OrderField *o, s32 n)
@@ -354,8 +372,8 @@ inline void ShowOrder(OrderField *o, s32 n)
 }
 
 inline void ShowInitElem(InitPage *p) {
-    ShowInitField(p->MobFields, MOB_NUM);
-    ShowInitField(p->AllyFields, ALLY_NUM);
+    ShowInitField(p->MobFields, MOB_NUM, MOB_NUM);
+    ShowInitField(p->AllyFields, ALLY_NUM, ALLY_NUM);
     ShowOrder(p->Order, ORDER_NUM);
 }
 
@@ -920,7 +938,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         State.Init->VisibleOrder = PARTY_NUM + State.Init->VisibleAllies + idx;
                         
                         HideInitField(State.Init->MobFields, MOB_NUM);
-                        ShowInitField(State.Init->MobFields, idx);
+                        ShowInitField(State.Init->MobFields, idx, MOB_NUM);
                         
                         HideOrder(State.Init->Order, ORDER_NUM);
                         ShowOrder(State.Init->Order, State.Init->VisibleOrder);
@@ -933,7 +951,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         Init->VisibleOrder = PARTY_NUM + Init->VisibleMobs + idx;
                         
                         HideInitField(Init->AllyFields, ALLY_NUM);
-                        ShowInitField(Init->AllyFields, idx);
+                        ShowInitField(Init->AllyFields, idx, ALLY_NUM);
                         
                         HideOrder(Init->Order, ORDER_NUM);
                         ShowOrder(Init->Order, State.Init->VisibleOrder);
@@ -952,10 +970,10 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         ComboBox_SetCurSel(Init->Allies->box, Curr->numAllies);
                         
                         HideInitField(Init->MobFields, MOB_NUM);
-                        ShowInitField(Init->MobFields, Curr->numMobs);
+                        ShowInitField(Init->MobFields, Curr->numMobs, MOB_NUM);
                         
                         HideInitField(Init->AllyFields, ALLY_NUM);
-                        ShowInitField(Init->AllyFields, Curr->numAllies);
+                        ShowInitField(Init->AllyFields, Curr->numAllies, ALLY_NUM);
                         
                         HideOrder(Init->Order, ORDER_NUM);
                         ShowOrder(Init->Order, Init->VisibleOrder);
@@ -1341,9 +1359,14 @@ InitField AddInitField(HWND h, HWND **winA, const char *label, s32 x, s32 y,
     
     if(isParty == FALSE) 
     {
-        Result.Name  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, label);      wA += 1;
-        Result.Bonus = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++); wA += 1;
-        Result.Final = AddValueBox(h, wA, 0, LABEL_NULL, 0, x + 150, y, 30, 20, (*id)++);    wA += 1;
+        Result.Name    = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, label);   wA += 1;
+        Result.Bonus   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++);   wA += 1;
+        Result.Final   = AddValueBox(h, wA, 0, LABEL_NULL, 0, x + 150, y, 30, 20, (*id)++); wA += 1;
+        
+        Result.New.Name  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, ""); wA += 1;
+        Result.New.Bonus = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++); wA += 1;
+        Result.New.Add   = AddButton(h, wA, "+", x + 50, y, 11, 18, (*id)++, FALSE);        wA += 1;
+        Result.New.Ok    = AddButton(h, wA, "v", x + 150, y, 11, 18, (*id)++, FALSE);       wA += 1;
     }
     else {
         Result.Bonus  = AddNumberBox(h, wA, label, LABEL_LEFT, x, y, 30, 20, (*id)++);  wA += 2;

@@ -5,8 +5,11 @@ void ShowElem(HWND box);
 void HideOrder(OrderField *o, s32 n);
 void ShowOrder(OrderField *o, s32 n);
 void HideInitField(InitField *f, s32 n);
+void HideInitFieldAdd(InitField *f, u32 idx, s32 max);
+void ShowInitFieldAdd(InitField *f, u32 idx, s32 max);
 
 //TODO: I'd like to add functionality for removing Ability Scores.
+//TODO: Start using the ElementMap to stop doing the stupid for loops everywhere
 void OnButton(u32 commandID, u32 notificationCode, HWND handle)
 {
     InitPage  *Init = State.Init;
@@ -232,6 +235,8 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Edit_SetReadOnly(Init->AllyFields[i].Bonus->box, TRUE);
         }
         
+        Init->turnsInRound = Init->VisibleOrder - 1;
+        
         State.inBattle = TRUE;
         HideElem(Init->Set->box);
         HideElem(Init->Mobs->box);   HideElem(Init->Mobs->label);
@@ -254,7 +259,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             
             if(C->isActive == TRUE)
             {
-                if(C->roundCounter >= C->turnsInRound)
+                if(C->roundCounter >= Init->turnsInRound)
                 { 
                     C->roundCounter = 0;
                     
@@ -336,6 +341,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         
         Edit_SetText(Init->Current->box, "");
         Init->currIdx       = 0;
+        Init->turnsInRound  = 0;
         
         HideInitField(Init->MobFields, MOB_NUM);
         HideInitField(Init->AllyFields, ALLY_NUM);
@@ -367,9 +373,28 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             
             Init->Counters[i].isActive     = TRUE;
             Init->Counters[i].roundCounter = 0;
-            Init->Counters[i].turnsInRound = (Init->VisibleOrder - 1);
             
             return;
+        }
+    }
+    
+    for(u32 i = 0; i < MOB_NUM; i++)
+    {
+        if(commandID == Init->MobFields[i].New.Add->id)
+        {
+            if(State.inBattle == FALSE) { return; }
+            
+            HideInitFieldAdd(Init->MobFields, i, MOB_NUM);
+        }
+    }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++)
+    {
+        if(commandID == Init->AllyFields[i].New.Add->id)
+        {
+            if(State.inBattle == FALSE) { return; }
+            
+            HideInitFieldAdd(Init->AllyFields, i, ALLY_NUM);
         }
     }
     
@@ -401,8 +426,10 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
                 
                 toRemove->id = Init->MobFields[Init->VisibleMobs - 1].id;
                 
-                
                 HideInitField(&Init->MobFields[Init->VisibleMobs - 1], 1);
+                HideInitFieldAdd(Init->MobFields, Init->VisibleMobs, MOB_NUM);
+                ShowInitFieldAdd(Init->MobFields, Init->VisibleMobs-1, MOB_NUM);
+                
                 Init->VisibleMobs -= 1;
             }
             else if(Init->Order[i].isParty == TRUE)
@@ -430,8 +457,10 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
                 
                 toRemove->id = Init->AllyFields[Init->VisibleAllies - 1].id;
                 
-                
                 HideInitField(&Init->AllyFields[Init->VisibleAllies - 1], 1);
+                HideInitFieldAdd(Init->AllyFields, Init->VisibleAllies, ALLY_NUM);
+                ShowInitFieldAdd(Init->AllyFields, Init->VisibleAllies-1, ALLY_NUM);
+                
                 Init->VisibleAllies -= 1;
             }
             
@@ -453,12 +482,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Edit_SetText(Init->Order[Init->VisibleOrder - 1].Field->box, "");
             HideOrder(Init->Order + (Init->VisibleOrder - 1), 1);
             
-            for(u32 i = 0; i < COUNTER_NUM; i++)
-            {
-                Counter *C = &Init->Counters[i];
-                if(C->isActive == TRUE) { C->turnsInRound -= 1; }
-            }
-            
+            Init->turnsInRound -= 1;
             Init->VisibleOrder -= 1;
             if(Init->currIdx >= i) { Init->currIdx -= 1; }
             
