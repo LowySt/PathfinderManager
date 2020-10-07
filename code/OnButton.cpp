@@ -471,6 +471,9 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             
             //TODO: When Removing the last added entry, it's going to fuck up the names, because
             //      It will copy from the name in the mob/ally list from itself???
+            //      
+            //      BUT ONLY IF THERE WERE MULTIPLE ADD/REMOVE ALREADY HAPPENING!
+            //      IT'S A PROBLEM WITH THE ID SYSTEM REUSING IDs!
             if(Init->Order[i].isMob == TRUE)
             {
                 u32 mobId = Init->Order[i].fieldId;
