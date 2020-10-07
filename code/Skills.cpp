@@ -1,4 +1,4 @@
-char *DwarfTraitsList[] = { 
+const char *DwarfTraitsList[] = { 
     "+2 CON, +2 WIS, -2 CHA",
     "Medium Size",
     "Speed: 6m, but don't get encumbered",
@@ -13,7 +13,7 @@ char *DwarfTraitsList[] = {
     "Languages: Common, Dwarven and can learn : Giant, Gnome, Goblin, Orc, Terran and Undercommon",
 };
 
-char *ElfTraitsList[] = { 
+const char *ElfTraitsList[] = { 
     "+2 DEX, +2 INT, -2 CON",
     "Medium Size",
     "Speed: 9m",
@@ -25,7 +25,7 @@ char *ElfTraitsList[] = {
     "Languages: Common, Elven and can learn : Celestial, Draconic, Gnoll, Gnome, Goblin, Orc and Sylvan",
 };
 
-char *GnomeTraitsList[] = { 
+const char *GnomeTraitsList[] = { 
     "+2 CON, +2 CHA, -2 STR",
     "Small Size: +1 AC, +1 Attack Roll, -1 CMB and CMD, +4 on Stealth Checks",
     "Speed: 6m",
@@ -40,7 +40,7 @@ char *GnomeTraitsList[] = {
     "Languages: Common, Gnome and can learn : Draconic, Dwarven, Elven, Giant, Goblin, Orc",
 };
 
-char *HalfElfTraitsList[] = { 
+const char *HalfElfTraitsList[] = { 
     "+2 to One Ability Score of choice",
     "Medium Size",
     "Speed: 9m",
@@ -53,7 +53,7 @@ char *HalfElfTraitsList[] = {
     "Languages: Common, Elven and can learn any language they want expect secret languages.",
 };
 
-char *HalfOrcTraitsList[] = {
+const char *HalfOrcTraitsList[] = {
     "+2 to One Ability Score of choice",
     "Medium Size",
     "Speed: 9m",
@@ -65,7 +65,7 @@ char *HalfOrcTraitsList[] = {
     "Languages: Common, Orc and can learn: Abyssal, Draconic, Giant, Gnoll and Goblin",
 };
 
-char *HalflingTraitsList[] = { 
+const char *HalflingTraitsList[] = { 
     "+2 DEX, +2 CHA, -2 STR",
     "Small Size: +1 AC, +1 Attack Roll, -1 CMB and CMD, +4 on Stealth Checks",
     "Speed: 6m",
@@ -77,7 +77,7 @@ char *HalflingTraitsList[] = {
     "Languages: Common, Halfling and can learn : Dwarven, Elven, Gnome, Goblin",
 };
 
-char *HumanTraitsList[] = {
+const char *HumanTraitsList[] = {
     "+2 to One Ability Score of choice",
     "Medium Size",
     "Speed: 9m",
@@ -86,7 +86,7 @@ char *HumanTraitsList[] = {
     "Languages: Common and can learn any language except secret ones, like Druidic."
 };
 
-char **RaceTraits[] = 
+const char **RaceTraits[] = 
 { 
     DwarfTraitsList, 
     ElfTraitsList, 

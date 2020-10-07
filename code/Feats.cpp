@@ -1,6 +1,6 @@
 //TODO: Add Tables to Feats Descriptions.
 
-char *FeatNames[] =
+const char *FeatNames[] =
 {
     "Acrobatic",
     "Acrobatic Steps",
@@ -201,7 +201,7 @@ char *FeatNames[] =
 
 //" ’ "
 
-char *FeatsDesc[]=
+const char *FeatsDesc[]=
 {
     "You are skilled at leaping, jumping and flying.\r\n\r\nBenefit: You get a +2 bonus on all Acrobatics and Fly skill checks.\r\nIf you have 10 or more ranks in one of these skills, the bonus increases to +4 for that skill.",
     

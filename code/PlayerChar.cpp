@@ -1,6 +1,6 @@
 #include "PlayerChar.h"
 
-char *getASBonusStr(u8 v)
+const char *getASBonusStr(u8 v)
 {
     if(v < 0 || v >= AS_BONUS_NUM) { return ASBonusTableString[AS_BONUS_STR_NUM - 1]; }
     return ASBonusTableString[v];
@@ -95,14 +95,14 @@ void SerializePC(PlayerChar *pc)
     ls_bufferAddDWord(&buff, pc->xp);
     ls_bufferAddByte(&buff, pc->xpCurve);
     
-    ls_writeFile("test.pcm", buff.data, buff.cursor, FALSE);
+    ls_writeFile((char *)"test.pcm", buff.data, buff.cursor, FALSE);
 }
 
 void LoadPC(PlayerChar *pc)
 {
     buffer buff = ls_bufferInit(KB(1));
     
-    buff.size = ls_readFile("F:\\ProgrammingProjects\\Lowy_No_VS\\PCMan\\test.pcm", (char **)(&buff.data), 0);
+    buff.size = ls_readFile((char *)"F:\\ProgrammingProjects\\Lowy_No_VS\\PCMan\\test.pcm", (char **)(&buff.data), 0);
     buff.cursor = 0;
     
     pc->Name      = ls_bufferReadString(&buff);

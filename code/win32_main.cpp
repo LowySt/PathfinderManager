@@ -31,8 +31,7 @@
 #include "Init.cpp"
 #include "OnButton.cpp"
 
-//NOTE: *TEST*//
-WNDPROC mainWinProc;
+#include "win32_widgets.cpp"
 
 /// WindowProc Subclass for Edit Controls (Only done on EditBox)
 LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
@@ -41,6 +40,63 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
     
     switch (msg)
     {
+#if 0
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps;
+            HDC hDC = BeginPaint(h, &ps);
+            
+            RECT itemRect = {};
+            BOOL res = GetWindowRect(h, &itemRect); //Screen Space
+            u32  itemWidth  = itemRect.right - itemRect.left;
+            u32  itemHeight = itemRect.bottom - itemRect.top;
+            
+            RECT cRect = {};
+            res = GetClientRect(h, &cRect);
+            cRect = {cRect.left+10, cRect.top+10, cRect.right-10, cRect.bottom+10};
+            
+            
+            //NOTETODO: Testing highlighting of *Selected* Init Fields.
+            InitField *field = getInitByHWND(h);
+            if(field != 0x0)
+            {
+                if(field->isSelected == TRUE)
+                {
+                    RECT Rect = {cRect.left-30, cRect.top-30, cRect.right+30, cRect.bottom+30};
+                    FillRect(hDC, &Rect, testColor);
+                }
+            }
+            
+            //NOTE: Why does this work on the Labels, but it works differently on the
+            // read only edit boxes, for which I am using the CTLCOLOR message?
+#if 1
+            FillRect(hDC, &cRect, controlBkgBrush);
+            
+            SetBkColor(hDC, controlBkgRGB);
+            SetTextColor(hDC, RGB(255, 255, 255));
+            char text[32] = {};
+            int len = SendMessageA(h, WM_GETTEXT, 32, (LPARAM)text);
+            TextOutA(hDC, cRect.left, cRect.top, text, len);
+            
+            EndPaint(h, &ps);
+#endif
+            //NOTE: To Finish drawing everything else.
+            //return DefWindowProcA(h, msg, w, l);
+            return CallWindowProcA(mainWinProc, h, msg, w, l);
+            
+        } break;
+#endif
+        
+        
+        case WM_RBUTTONUP:
+        {
+            InitField *field = getInitByHWND(h);
+            if(field != 0x0)
+            {
+                field->isSelected = TRUE;
+            }
+        } break;
+        
         case WM_CHAR:
         {
             if(w == VK_RETURN) { return 0; } //NOTE: This stupid shit stops the Beeping when pressing enter
@@ -479,11 +535,10 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             {
                 //NOTE: Why does this work on the Labels, but it works differently on the
                 // read only edit boxes, for which I am using the CTLCOLOR message?
-                SetBkColor(item->hDC, RGB(0x38, 0x38, 0x38));
+                FillRect(item->hDC, &item->rcItem, appBkgBrush);
                 
-                FillRect(item->hDC, &item->rcItem, appBkg);
-                
-                SetTextColor(item->hDC, RGB(255, 255, 255));
+                SetBkColor(item->hDC, appBkgRGB);
+                SetTextColor(item->hDC, whiteRGB);
                 char text[32] = {};
                 int len = SendMessageA(item->hwndItem, WM_GETTEXT, 32, (LPARAM)text);
                 TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, text, len);
@@ -491,23 +546,20 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             if(item->CtlType == ODT_MENU)
             {
-                SetBkColor(item->hDC, RGB(0x38, 0x38, 0x38));
-                
                 RECT Rect = {item->rcItem.left, item->rcItem.top, item->rcItem.left+1400, item->rcItem.top+22};
-                FillRect(item->hDC, &Rect, appBkg);
+                FillRect(item->hDC, &Rect, appBkgBrush);
                 
-                SetTextColor(item->hDC, RGB(255, 255, 255));
-                
+                SetBkColor(item->hDC, appBkgRGB);
+                SetTextColor(item->hDC, whiteRGB);
                 TextOutA(item->hDC, item->rcItem.left, item->rcItem.top+5, (LPCSTR)item->itemData, 4);
             }
             
             if(item->CtlType == ODT_COMBOBOX)
             {
-                SetBkColor(item->hDC, RGB(0x56, 0x56, 0x56));
+                FillRect(item->hDC, &item->rcItem, controlBkgBrush);
                 
-                FillRect(item->hDC, &item->rcItem, controlBkg);
-                
-                SetTextColor(item->hDC, RGB(255, 255, 255));
+                SetBkColor(item->hDC, controlBkgRGB);
+                SetTextColor(item->hDC, whiteRGB);
                 
                 u32 count = SendMessageA(item->hwndItem, CB_GETCOUNT, 0, 0);
                 
@@ -535,8 +587,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             if(item->CtlType == ODT_BUTTON)
             {
-                Button *b = (Button *)ElementMap[item->CtlID].ptr;
-                
                 int textLen = GetWindowTextLengthA(item->hwndItem) + 1; //Add the null
                 char *text = (char *)ls_alloc(sizeof(char)*textLen);
                 
@@ -555,7 +605,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             SetBkColor(buttonHDC, RGB(0x56, 0x56, 0x56));
             SetTextColor(buttonHDC, RGB(255, 255, 255));
             
-            return (LRESULT)controlBkg;
+            return (LRESULT)controlBkgBrush;
         } break;
         
         case WM_CTLCOLORLISTBOX:
@@ -565,7 +615,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             SetBkColor(listboxHDC, RGB(0x56, 0x56, 0x56));
             SetTextColor(listboxHDC, RGB(255, 255, 255));
             
-            return (LRESULT)controlBkg;
+            return (LRESULT)controlBkgBrush;
         } break;
         
         case WM_CTLCOLOREDIT:
@@ -575,7 +625,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             SetBkColor(editHDC, RGB(0x56, 0x56, 0x56));
             SetTextColor(editHDC, RGB(255, 255, 255));
             
-            return (LRESULT)controlBkg;
+            return (LRESULT)controlBkgBrush;
         } break;
         
         case WM_CTLCOLORSTATIC:
@@ -585,7 +635,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             SetBkColor(editHDC, RGB(0x56, 0x56, 0x56));
             SetTextColor(editHDC, RGB(255, 255, 255));
             
-            return (LRESULT)controlBkg;
+            return (LRESULT)controlBkgBrush;
         };
         
         case WM_MENUCOMMAND:
@@ -624,7 +674,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     char **TraitsList;
                     u32 arrSize = 0;
                     
-                    TraitsList = RaceTraits[pc.Race];
+                    TraitsList = (char **)RaceTraits[pc.Race];
                     arrSize = RaceTraitsArraySize[pc.Race];
                     
                     ListBox_ResetContent(State.PC->RacialTraits->box);
@@ -646,7 +696,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     ComboBox_SelectString(State.PC->XPCurve->box, -1,
                                           XPCurvesString[pc.xpCurve]);
                     
-                    char **xpCurve = XPCurvesArr[State.PC->xpIdx];
+                    char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
                     Edit_SetText(State.PC->nextLevelXP->box, xpCurve[pc.lvl]);
                     
                     UpdateSavingThrows();
@@ -793,7 +843,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         { currLevel = 20; Edit_SetText(handle, "20"); }
                         pc.lvl = (u8)currLevel;
                         
-                        char **xpCurve = XPCurvesArr[State.PC->xpIdx];
+                        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
                         Edit_SetText(State.PC->nextLevelXP->box, xpCurve[currLevel]);
                         
                         UpdateSavingThrows();
@@ -831,7 +881,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         char **TraitsList;
                         u32 arrSize = 0;
                         
-                        TraitsList = RaceTraits[r];
+                        TraitsList = (char **)RaceTraits[r];
                         arrSize = RaceTraitsArraySize[r];
                         
                         AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
@@ -853,7 +903,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     {
                         State.PC->xpIdx = (XPCurveIdx)ComboBox_GetCurSel(handle);
                         pc.xpCurve = State.PC->xpIdx;
-                        char **xpCurve = XPCurvesArr[State.PC->xpIdx];
+                        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
                         
                         string s = getText(State.PC->currLevel->box);
                         u32 currLevel = ls_stoi(s);
@@ -941,7 +991,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         ls_printf("Not implemented description of Feat n°%d\n", index);
                         Assert(FALSE);
                     }
-                    char *Desc = FeatsDesc[index];
+                    char *Desc = (char *)FeatsDesc[index];
                     
                     Edit_SetText(State.Feats->FeatsDesc->box, Desc);
                     
@@ -996,13 +1046,11 @@ void RegisterWindow()
     
     u32 prop = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
     
-    HBRUSH backgroundColor = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
-    
     WNDCLASSA WindowClass = { 0 };
     WindowClass.style = prop;
     WindowClass.lpfnWndProc = WindowProc;
     WindowClass.hInstance = MainInstance;
-    WindowClass.hbrBackground = backgroundColor; //(HBRUSH)COLOR_GRAYTEXT;
+    WindowClass.hbrBackground = appBkgBrush; //RGB(0x38, 0x38, 0x38);
     WindowClass.lpszClassName = "WndClass";
     
     if (!RegisterClassA(&WindowClass))
@@ -1032,392 +1080,31 @@ HWND CreateWindow(HMENU MenuBar)
     FileMenuInfo.cch = 5;
     Result = InsertMenuItemA(MenuBar, 0, TRUE, &FileMenuInfo);
     
-    HBRUSH backgroundColor = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
-    
     MENUINFO menuInfo = {};
     menuInfo.cbSize  = sizeof(MENUINFO);
     menuInfo.fMask   = MIM_APPLYTOSUBMENUS | MIM_BACKGROUND;
-    menuInfo.hbrBack = backgroundColor;
+    menuInfo.hbrBack = appBkgBrush;  //RGB(0x38, 0x38, 0x38);
     
     // SetMenuInfo(MenuBar, &menuInfo); Works Shittily
     
-    // @Hardcoded
+    //NOTE:TODO: Hardcoded!!
     HWND WindowHandle;
     if ((WindowHandle = CreateWindowExA(0, "WndClass",
                                         "Name", style,
-                                        300, 50,//CW_USEDEFAULT, CW_USEDEFAULT,
-                                        1350, 900,
+                                        300, 50, //CW_USEDEFAULT, CW_USEDEFAULT,
+                                        1280, 840,//1350, 900,
                                         0, MenuBar, MainInstance, 0)) == nullptr)
     {
         DWORD Error = GetLastError();
         ls_printf("When Retrieving a WindowHandle in Win32_SetupScreen got error: %d", Error);
     }
     
-    State.currWindowPos = { 300, 50 };
+    State.currWindowPos = { 300, 50 }; //NOTE:TODO: Hardcoded!!
     
     return WindowHandle;
 }
 
-
-HWND AddLabelBox(HWND win, LabelAlign A, char *label, s32 x, s32 y, u32 width, u32 height)
-{
-    s32 correctX = x;
-    s32 correctY = y;
-    s32 correctWidth = width;
-    s32 correctHeight = height;
-    
-    switch(A)
-    {
-        case LABEL_NULL:
-        {
-            return NULL;
-        } break;
-        
-        case LABEL_UP:
-        {
-            correctHeight = 20;
-            correctY = y - correctHeight;
-        } break;
-        
-        case LABEL_DOWN:
-        {
-            correctHeight = 20;
-            correctY = y + correctHeight;
-        } break;
-        
-        case LABEL_LEFT:
-        {
-            correctWidth = 80;
-            correctHeight = 20;
-            correctX = x - correctWidth;
-        } break;
-        
-        case LABEL_RIGHT:
-        {
-            correctWidth = 80;
-            correctHeight = 20;
-            correctX = x + correctWidth;
-        } break;
-        
-        default:
-        {
-            Assert(FALSE);
-        }
-    };
-    
-    //WindowClass labelClass = {};
-    
-    //TODO: Make label id dynamically allocated
-    HWND Result = CreateWindowExA(0, WC_STATIC, 0,
-                                  WS_CHILD | WS_VISIBLE |
-                                  SS_CENTER | SS_OWNERDRAW,
-                                  correctX, correctY, correctWidth, correctHeight,
-                                  win, (HMENU)1, MainInstance, 0);
-    
-    SetWindowTextA(Result, label);
-    
-    return Result;
-}
-
-
-HWND AddEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, char *defName = "")
-{
-    HWND Result = CreateWindowExA(0, WC_EDIT, defName,
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER |
-                                  ES_LEFT | ES_AUTOHSCROLL,
-                                  x, y, width, height,
-                                  win, (HMENU)id, MainInstance, 0);
-    
-    //NOTE: TEST
-    
-    mainWinProc = (WNDPROC)SetWindowLongPtrA(Result, GWLP_WNDPROC, (LONG_PTR)subEditProc);
-    
-    //NOTE: TEST
-    
-    return Result;
-}
-
-HWND AddStaticEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id,
-                      b32 isMultiline = FALSE)
-{
-    u32 flags = ES_LEFT | ES_READONLY;
-    if(isMultiline == TRUE) { flags |= WS_VSCROLL | ES_MULTILINE | ES_AUTOVSCROLL;}
-    else { flags |= ES_AUTOHSCROLL; }
-    
-    HWND Result = CreateWindowExA(0, WC_EDIT, "",
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | flags,
-                                  x, y, width, height,
-                                  win, (HMENU)id, MainInstance, 0);
-    
-    return Result;
-}
-
-HWND AddEditNumberBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, s32 defaultNumber = 0)
-{
-    char num[32] = {};
-    ls_itoa_t(defaultNumber, num, 32);
-    
-    HWND Result = CreateWindowExA(0, WC_EDIT, num,
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER |
-                                  ES_LEFT | ES_AUTOHSCROLL | ES_NUMBER,
-                                  x, y, width, height,
-                                  win, (HMENU)id, MainInstance, 0);
-    
-    mainWinProc = (WNDPROC)SetWindowLongPtrA(Result, GWLP_WNDPROC, (LONG_PTR)subEditProc);
-    
-    return Result;
-}
-
-HWND AddStaticNumberBox(HWND win, s32 value, s32 x, s32 y, u32 width, u32 height, u64 id)
-{
-    char *v = ls_itoa(value);
-    HWND Result = CreateWindowExA(0, WC_EDIT, v,
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER |
-                                  ES_LEFT | ES_AUTOHSCROLL | ES_NUMBER | ES_READONLY,
-                                  x, y, width, height,
-                                  win, (HMENU)id, MainInstance, 0);
-    ls_free(v);
-    
-    return Result;
-}
-
-Button *AddButton(HWND win, HWND *pageArr, const char *label, s32 x, s32 y,
-                  u32 width, u32 height, u64 id, b32 hasBackground = TRUE)
-{
-    Button *Result = (Button *)ls_alloc(sizeof(Button));
-    
-    Result->box = CreateWindowExA(0, WC_BUTTON, label,
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER |
-                                  BS_CENTER | BS_TEXT | BS_OWNERDRAW,
-                                  x, y, width, height,
-                                  win, (HMENU)id, MainInstance, 0);
-    Result->id = id;
-    pageArr[0] = Result->box;
-    
-    if(hasBackground == TRUE) { Result->hasBackground = TRUE; }
-    else { Result->hasBackground = FALSE; }
-    
-    ElementMap[id].ptr      = (void *)Result;
-    ElementMap[id].isButton = TRUE;
-    
-    return Result;
-}
-
-ComboBox *AddComboBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                      s32 x, s32 y, u32 width, u32 height, u64 id, u32 numItems)
-{
-    ComboBox *Result = (ComboBox *)ls_alloc(sizeof(ComboBox));
-    
-    HWND Label = AddLabelBox(win, A, label, x, y, width, height);
-    Result->label = Label;
-    
-    HWND Box = CreateWindowExA(0, WC_COMBOBOX, 0,
-                               WS_CHILD | WS_VISIBLE | WS_BORDER |
-                               CBS_DROPDOWNLIST | CBS_SORT | CBS_HASSTRINGS | CBS_OWNERDRAWFIXED,
-                               x, y, width, height*(numItems + 1),
-                               win, (HMENU)id, MainInstance, 0);
-    Result->box = Box;
-    Result->id = id;
-    
-    pageArr[0] = Box;
-    pageArr[1] = Label;
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isComboBox = TRUE;
-    
-    return Result;
-}
-
-ComboBox *AddUnsortedComboBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                              s32 x, s32 y, u32 width, u32 height, u64 id, u32 numItems)
-{
-    ComboBox *Result = (ComboBox *)ls_alloc(sizeof(ComboBox));
-    
-    HWND Label = AddLabelBox(win, A, label, x, y, width, height);
-    Result->label = Label;
-    
-    HWND Box = CreateWindowExA(0, WC_COMBOBOX, 0,
-                               WS_CHILD | WS_VISIBLE | WS_BORDER |
-                               CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_OWNERDRAWFIXED,
-                               x, y, width, height*(numItems + 1),
-                               win, (HMENU)id, MainInstance, 0);
-    Result->box = Box;
-    Result->id = id;
-    
-    pageArr[0] = Box;
-    pageArr[1] = Label;
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isComboBox = TRUE;
-    
-    return Result;
-}
-
-TextBox *AddTextBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                    s32 x, s32 y, u32 width, u32 height, u64 id, char *defName = "")
-{
-    TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
-    
-    if(A != LABEL_NULL)
-    {
-        HWND Label = AddLabelBox(win, A, label, x, y, width, height);
-        Result->label = Label;
-        pageArr[1] = Label;
-    }
-    
-    Result->box = AddEditBox(win, x, y, width, height, id, defName);
-    Result->id = id;
-    
-    pageArr[0] = Result->box;
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isTextBox  = TRUE;
-    
-    return Result;
-}
-
-TextBox *AddStaticTextBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                          s32 x, s32 y, u32 width, u32 height, u64 id, b32 isMultiline = FALSE)
-{
-    TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
-    
-    HWND Label = AddLabelBox(win, A, label, x, y, width, height);;
-    Result->label = Label;
-    
-    Result->box = AddStaticEditBox(win, x, y, width, height, id, isMultiline);
-    Result->id = id;
-    
-    pageArr[0] = Result->box;
-    pageArr[1] = Label;
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isTextBox  = TRUE;
-    
-    return Result;
-}
-
-TextBox *AddStaticUnlabeledTextBox(HWND win, HWND *pageArr, s32 x, s32 y, u32 width, u32 height,
-                                   u64 id, b32 isMultiline = FALSE)
-{
-    TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
-    
-    Result->box = AddStaticEditBox(win, x, y, width, height, id, isMultiline);
-    Result->id = id;
-    
-    pageArr[0] = Result->box;
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isTextBox  = TRUE;
-    
-    return Result;
-}
-
-TextBox *AddNumberBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                      s32 x, s32 y, u32 width, u32 height, u64 id, s32 defaultNumber = 0)
-{
-    TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
-    HWND Label;
-    if(A != LABEL_NULL)
-    {
-        Label = AddLabelBox(win, A, label, x, y, width, height);
-        Result->label = Label;
-    }
-    
-    Result->box = AddEditNumberBox(win, x, y, width, height, id, defaultNumber);
-    Result->id = id;
-    
-    pageArr[0] = Result->box;
-    
-    if(A != LABEL_NULL)
-    { pageArr[1] = Label; }
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isTextBox  = TRUE;
-    
-    return Result;
-}
-
-TextBox *AddValueBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                     s32 value, s32 x, s32 y, u32 width, u32 height, u64 id)
-{
-    TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
-    HWND Label;
-    if(A != LABEL_NULL)
-    {
-        Label = AddLabelBox(win, A, label, x, y, width, height);
-        Result->label = Label;
-    }
-    
-    Result->box = AddStaticNumberBox(win, value, x, y, width, height, id);
-    Result->id = id;
-    
-    pageArr[0] = Result->box;
-    
-    if(A != LABEL_NULL)
-    { pageArr[1] = Label; }
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isTextBox  = TRUE;
-    
-    return Result;
-}
-
-ListBox *AddListBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                    s32 x, s32 y, u32 width, u32 height, u64 id, b32 isSorted = TRUE)
-{
-    ListBox *Result = (ListBox *)ls_alloc(sizeof(ListBox));
-    HWND Label = AddLabelBox(win, A, label, x, y, width, height);
-    
-    Result->label = Label;
-    
-    u32 flags;
-    if(isSorted) { flags = LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY | LBS_SORT; }
-    else { flags = LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_MULTIPLESEL | LBS_NOTIFY; }
-    
-    Result->box = CreateWindowExA(0, WC_LISTBOX, "",
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | flags,
-                                  x, y, width, height,
-                                  win, (HMENU)id, MainInstance, 0);
-    
-    Result->id = id;
-    
-    pageArr[0] = Result->box;
-    pageArr[1] = Label;
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isListBox  = TRUE;
-    
-    return Result;
-}
-
-ListBox *AddSingleSelListBox(HWND win, HWND *pageArr, char *label, LabelAlign A,
-                             s32 x, s32 y, u32 width, u32 height, u64 id, b32 isSorted = TRUE)
-{
-    ListBox *Result = (ListBox *)ls_alloc(sizeof(ListBox));
-    HWND Label = AddLabelBox(win, A, label, x, y, width, height);
-    
-    Result->label = Label;
-    
-    u32 flags;
-    if(isSorted) { flags = LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY | LBS_SORT; }
-    else { flags = LBS_OWNERDRAWFIXED | LBS_HASSTRINGS | LBS_NOTIFY; }
-    
-    Result->box = CreateWindowExA(0, WC_LISTBOX, "",
-                                  WS_CHILD | WS_VISIBLE | WS_BORDER | WS_VSCROLL | flags,
-                                  x, y, width, height,
-                                  win, (HMENU)id, MainInstance, 0);
-    Result->id = id;
-    
-    pageArr[0] = Result->box;
-    pageArr[1] = Label;
-    
-    ElementMap[id].ptr        = (void *)Result;
-    ElementMap[id].isListBox  = TRUE;
-    
-    return Result;
-}
-
-ComboBox *FillEncounters(HWND h, HWND *wA, char *label, s32 x, s32 y, u32 width, u32 height, u64 id)
+ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 width, u32 height, u64 id)
 {
     buffer buff = ls_bufferViewIntoPtr(State.encounters.data, KBytes(64));
     
@@ -1496,16 +1183,16 @@ void AddAbilityScoreBoxes(HWND WindowHandle, u32 baseX, u32 baseY, u64 *ElementI
     s32 yPos = baseY;
     for(u32 i = 0; i < 6; i++)
     {
-        Scores->Box[i] = AddNumberBox(WindowHandle, wA, AS_string[i], LABEL_UP,
+        Scores->Box[i] = AddNumberBox(WindowHandle, wA, (char *)AS_string[i], LABEL_UP,
                                       364, yPos, 60, 20, (*ElementId)++);
         wA += 2;
-        Scores->Bonus[i] = AddValueBox(WindowHandle, wA, "", LABEL_NULL, 0,
+        Scores->Bonus[i] = AddValueBox(WindowHandle, wA, (char *)"", LABEL_NULL, 0,
                                        434, yPos, 40, 20, (*ElementId)++);
         wA += 1;
-        Scores->Plus1[i]  = AddButton(WindowHandle, wA, "+1",
+        Scores->Plus1[i]  = AddButton(WindowHandle, wA, (char *)"+1",
                                       484, yPos, 30, 20, (*ElementId)++);
         wA += 1;
-        Scores->Plus10[i] = AddButton(WindowHandle, wA, "+10",
+        Scores->Plus10[i] = AddButton(WindowHandle, wA, (char *)"+10",
                                       524, yPos, 40, 20, (*ElementId)++);
         wA += 1;
         Scores->Plus1[i]->LinkedText = Scores->Box[i];
@@ -1526,7 +1213,8 @@ void DrawPCTab(HWND WindowHandle, u64 *ElementId)
     //
     // Create Basic Fields
     //
-    Page->Name = AddTextBox(WindowHandle, wA, "Name", LABEL_LEFT,
+    
+    Page->Name = AddTextBox(WindowHandle, wA, "Name", LABEL_LEFT, 
                             128, 42, 100, 20, (*ElementId)++);
     wA += 2;
     Page->Player = AddTextBox(WindowHandle, wA, "Player", LABEL_LEFT,
@@ -1559,7 +1247,7 @@ void DrawPCTab(HWND WindowHandle, u64 *ElementId)
     //
     
     Page->RacialTraits = AddListBox(WindowHandle, wA, "Racial Traits", LABEL_UP,
-                                    28, 302, 1280, 384, (*ElementId)++);
+                                    28, 302, 1220, 384, (*ElementId)++);
     wA += 2;
     
     Page->currLevel = AddNumberBox(WindowHandle, wA, "LvL", LABEL_UP,
@@ -1613,18 +1301,18 @@ void DrawFeatsTab(HWND WindowHandle, u64 *ElementId)
     HWND *wA = Page->WindowsArray + Page->numWindows;
     
     Page->Feats = AddSingleSelListBox(WindowHandle, wA, "Feats Table", LABEL_UP,
-                                      24, 48, 640, 456, (*ElementId)++);
+                                      12, 48, 640, 456, (*ElementId)++);
     AddAllListBoxItems(Page->Feats->box, FeatNames, ArraySize(FeatNames));
     wA += 2;
     
     
     
     Page->FeatsDesc = AddStaticTextBox(WindowHandle, wA, "Feat Description", LABEL_UP,
-                                       24, 526, 640, 306, (*ElementId)++, TRUE);
+                                       12, 526, 640, 276, (*ElementId)++, TRUE);
     wA += 2;
     
     Page->ChosenFeats = AddSingleSelListBox(WindowHandle, wA, "Your Feats", LABEL_UP,
-                                            684, 48, 640, 786, (*ElementId)++, FALSE);
+                                            672, 48, 596, 766, (*ElementId)++, FALSE);
     wA += 2;
     
     Page->numWindows += 6;
@@ -1645,7 +1333,7 @@ OrderField AddOrderField(HWND win, HWND **winA, s32 x, s32 y, u32 idx, u64 *id)
     return Result;
 }
 
-InitField AddInitField(HWND h, HWND **winA, char *label, s32 x, s32 y, 
+InitField AddInitField(HWND h, HWND **winA, const char *label, s32 x, s32 y, 
                        u64 *id, u64 initId, b32 isParty = FALSE)
 {
     InitField Result = {};
@@ -1667,7 +1355,7 @@ InitField AddInitField(HWND h, HWND **winA, char *label, s32 x, s32 y,
     return Result;
 }
 
-Counter AddCounter(HWND h, HWND **winA, char *label, s32 x, s32 y, u64 *id)
+Counter AddCounter(HWND h, HWND **winA, const char *label, s32 x, s32 y, u64 *id)
 {
     HWND *wA = *winA;
     
@@ -1776,10 +1464,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
     
+#ifdef __GNUG__
+    u64 rand_init_state = 2349879125314230;
+    u64 rand_init_seq = 9827346259348;
+#else
     u64 rand_init_state = 0;
     u64 rand_init_seq = 0;
     _rdseed64_step(&rand_init_state);
     _rdseed64_step(&rand_init_seq);
+#endif
     
     pcg32_seed(&pcg32_global, rand_init_state, rand_init_seq);
     
@@ -1793,6 +1486,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SetMenuInfo(MenuBar, &Info);
     
     MainWindow = CreateWindow(MenuBar);
+    
+    State.isInitialized = FALSE;
     State.PC    = (PCPage *)ls_alloc(sizeof(PCPage));
     State.Feats = (FeatsPage *)ls_alloc(sizeof(FeatsPage));
     State.Init  = (InitPage *)ls_alloc(sizeof(InitPage));
@@ -1807,11 +1502,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //
     
     char fullPathBuff[128] = {};
-    u32 len = ls_getFullPathName("State.bin", fullPathBuff, 128);
+    u32 len = ls_getFullPathName((char *)"State.bin", fullPathBuff, 128);
     
     if(ls_fileExists(fullPathBuff) == TRUE)
     {
-        ls_readFile("State.bin", (char **)&State.StateData, 0);
+        ls_readFile((char *)"State.bin", (char **)&State.StateData, 0);
         State.encounters.data = (u8 *)State.StateData + encounterOffset;
         State.encounters.isInitialized = TRUE;
     }
@@ -1826,21 +1521,21 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     State.PC->TabControl = TabControl;
     TCITEMA TabItem = {};
     TabItem.mask = TCIF_TEXT;
-    TabItem.pszText = "PC";
+    TabItem.pszText = (char *)"PC";
     TabItem.cchTextMax = 3;
     TabItem.iImage = -1;
     Tab_InsertItem(TabControl, 0, &TabItem);
     
     TCITEMA TabItem2 = {};
     TabItem2.mask = TCIF_TEXT;
-    TabItem2.pszText = "Feats";
+    TabItem2.pszText = (char *)"Feats";
     TabItem2.cchTextMax = 6;
     TabItem2.iImage = -1;
     Tab_InsertItem(TabControl, 1, &TabItem2);
     
     TCITEMA TabItem3 = {};
     TabItem3.mask = TCIF_TEXT;
-    TabItem3.pszText = "Init";
+    TabItem3.pszText = (char *)"Init";
     TabItem3.cchTextMax = 4;
     TabItem3.iImage = -1;
     Tab_InsertItem(TabControl, 2, &TabItem3);
@@ -1848,6 +1543,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     DrawPCTab(MainWindow, &ElementId);
     DrawFeatsTab(MainWindow, &ElementId);
     DrawInitTab(MainWindow, &ElementId);
+    
+    State.isInitialized = TRUE;
     
     HidePage(State.Feats);
     HidePage(State.PC);

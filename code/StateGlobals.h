@@ -170,6 +170,8 @@ struct InitField
     TextBox *Final;
     
     u64     id;
+    
+    b32     isSelected;
 };
 
 struct InitPage
@@ -214,6 +216,8 @@ struct ProgramState
     
     void *StateData;
     
+    b32  isInitialized;
+    
     //State Management
     b32       inBattle;
     EncList   encounters;
@@ -240,8 +244,16 @@ HWND MainWindow;
 PlayerChar pc = {};
 ProgramState State = {};
 
-const HBRUSH controlBkg = CreateSolidBrush(0x00565656); // 0x00 BB GG RR
-const HBRUSH appBkg     = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
+const HBRUSH controlBkgBrush = CreateSolidBrush(0x00565656); // 0x00 BB GG RR
+const COLORREF controlBkgRGB = RGB(0x56, 0x56, 0x56);
+
+const HBRUSH appBkgBrush     = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
+const COLORREF appBkgRGB     = RGB(0x38, 0x38, 0x38);
+
+const COLORREF whiteRGB      = RGB(255, 255, 255);
+
+const HBRUSH testColor  = CreateSolidBrush(0x008B1FA7);
+
 
 //TODO: Can I manage to do things using this?
 Element ElementMap[512] = {};

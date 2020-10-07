@@ -166,7 +166,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         ls_clearBuffer(&encBuff);
         
         //Write to disk the StateFile
-        ls_writeFile("State.bin", (char *)State.StateData, MBytes(1)-1, FALSE);
+        ls_writeFile((char *)"State.bin", (char *)State.StateData, MBytes(1)-1, FALSE);
     }
     
     if(commandID == Init->Set->id)
@@ -377,6 +377,8 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     {
         if(commandID == Init->Order[i].Remove->id)
         {
+            if(State.inBattle == FALSE) { return; }
+            
             //TODO:Remove the equivalent entry from Mobs/Allies
             if(Init->Order[i].isMob == TRUE)
             {

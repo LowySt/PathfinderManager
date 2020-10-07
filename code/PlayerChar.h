@@ -13,7 +13,7 @@ s32 ASBonusTable[AS_BONUS_NUM]
     12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17, 17
 };
 
-char *ASBonusTableString[AS_BONUS_STR_NUM]
+const char *ASBonusTableString[AS_BONUS_STR_NUM]
 {
     "-5", "-5", "-4", "-4", "-3", "-3", "-2", "-2", "-1", "-1", "0", "0", "+1", "+1",
     "+2", "+2", "+3", "+3", "+4", "+4", "+5", "+5", "+6", "+6", "+7", "+7", "+8", "+8",
@@ -28,42 +28,42 @@ enum XPCurveIdx : u8
     XP_SLOW
 };
 
-char *FastXPCurve[] =
+const char *FastXPCurve[] =
 {
     "0", "1300", "3300", "6000", "10000", "15000", "23000", "34000", "50000", "71000",
     "105000", "145000", "210000", "295000", "425000", "600000", "850000", "1200000",
     "1700000", "2400000", "0"
 };
 
-char *MediumXPCurve[] =
+const char *MediumXPCurve[] =
 {
     "0", "2000", "5000", "9000", "15000", "23000", "35000", "51000", "75000", "105000",
     "155000", "220000", "315000", "445000", "635000", "890000", "1300000", "1800000",
     "2550000", "3600000", "0"
 };
 
-char *SlowXPCurve[] =
+const char *SlowXPCurve[] =
 {
     "0", "3000", "75000", "14000", "23000", "35000", "53000", "77000", "115000", "160000",
     "235000", "330000", "475000", "665000", "955000", "1350000", "1900000", "2700000",
     "3850000", "5350000", "0"
 };
 
-char *XPCurvesString[] =
+const char *XPCurvesString[] =
 {
     "Fast",
     "Medium",
     "Slow"
 };
 
-char **XPCurvesArr[] =
+const char **XPCurvesArr[] =
 {
     FastXPCurve,
     MediumXPCurve,
     SlowXPCurve
 };
 
-char *AbilityGenMethods[] =
+const char *AbilityGenMethods[] =
 {
     "Classic",
     "Dice Pool",
@@ -99,9 +99,9 @@ enum AbilityScore : u8
     ABILITY_COUNT
 };
 
-char *AS_string[6] = { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
+const char *AS_string[6] = { "STR", "DEX", "CON", "INT", "WIS", "CHA" };
 
-char *Races[] =
+const char *Races[] =
 {
     "Human", "Elf", "Half-Orc", "Half-Elf",
     "Gnome", "Halfling", "Dwarf"
@@ -128,9 +128,6 @@ struct PlayerChar
     string    Player;
     GameRace  Race;
     GameClass Class;
-    
-    //NOTE: I'm not really sure this should be here...
-    GenMethod GenMethod;
     
     u8 AbilityScores[6];
     

@@ -49,3 +49,45 @@ inline InitField *getInitById(InitField *f, u32 fieldSize, u64 id)
     for(u32 i = 0; i < fieldSize; i++) { if(f[i].id == id) { return &f[i]; } }
     return 0x0;
 }
+
+inline InitField *getInitByHWND(HWND handle)
+{
+    if(State.isInitialized == FALSE) { return 0x0; }
+    
+    //NOTETODO: Is this what I want for InitField selection?
+    InitPage *InitPage = State.Init;
+    
+    for(u32 i = 0; i < MOB_NUM; i++)
+    {
+        if(InitPage->MobFields[i].Name->box == handle)
+        { return &InitPage->MobFields[i]; }
+        if(InitPage->MobFields[i].Name->label == handle)
+        { return &InitPage->MobFields[i]; }
+        if(InitPage->MobFields[i].Bonus->box == handle)
+        { return &InitPage->MobFields[i]; }
+        if(InitPage->MobFields[i].Bonus->label == handle)
+        { return &InitPage->MobFields[i]; }
+        if(InitPage->MobFields[i].Final->box == handle)
+        { return &InitPage->MobFields[i]; }
+        if(InitPage->MobFields[i].Final->label == handle)
+        { return &InitPage->MobFields[i]; }
+    }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++)
+    {
+        if(InitPage->AllyFields[i].Name->box == handle)
+        { return &InitPage->AllyFields[i]; }
+        if(InitPage->AllyFields[i].Name->label == handle)
+        { return &InitPage->AllyFields[i]; }
+        if(InitPage->AllyFields[i].Bonus->box == handle)
+        { return &InitPage->AllyFields[i]; }
+        if(InitPage->AllyFields[i].Bonus->label == handle)
+        { return &InitPage->AllyFields[i]; }
+        if(InitPage->AllyFields[i].Final->box == handle)
+        { return &InitPage->AllyFields[i]; }
+        if(InitPage->AllyFields[i].Final->label == handle)
+        { return &InitPage->AllyFields[i]; }
+    }
+    
+    return 0x0;
+}

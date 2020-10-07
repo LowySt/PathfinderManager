@@ -3,7 +3,7 @@
 #ifndef _CLASS_H
 #define _CLASS_H
 
-char *Classes[] = 
+const char *Classes[] = 
 {
     "Barbarian", "Bard", "Cleric", "Druid", 
     "Fighter", "Monk", "Paladin", "Ranger",
@@ -109,7 +109,7 @@ s32 ClassBAB[CLASS_COUNT][4][20] =
     }
 };
 
-char *ClassBABString[CLASS_COUNT][4][20] =
+const char *ClassBABString[CLASS_COUNT][4][20] =
 {
     {
         {"+1", "+2", "+3", "+4", "+5", "+6", "+7", "+8", "+9", "+10",
@@ -298,7 +298,7 @@ s32 ClassSavingThrows[CLASS_COUNT][3][20] =
     }
 };
 
-char *ClassSavingThrowsString[CLASS_COUNT][3][20] = 
+const char *ClassSavingThrowsString[CLASS_COUNT][3][20] = 
 {
     {
         {"+2", "+3", "+3", "+4", "+4", "+5", "+5", "+6", "+6", "+7", 
