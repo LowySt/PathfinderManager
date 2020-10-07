@@ -314,7 +314,7 @@ inline void HideInitField(InitField *f, s32 n)
 {
     for(u32 i = 0; i < n; i++)
     {
-        if(f[i].Name  != 0) //NOTE: Assuming this is not a party member
+        if(f[i].Name != 0) //NOTE: Assuming this is not a party member
         { 
             ShowWindow(f[i].Name->box, SW_HIDE);
             ShowWindow(f[i].Final->box, SW_HIDE);

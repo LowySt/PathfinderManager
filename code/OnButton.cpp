@@ -381,21 +381,85 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     
     for(u32 i = 0; i < MOB_NUM; i++)
     {
+        if(State.inBattle == FALSE) { return; }
+        
         if(commandID == Init->MobFields[i].New.Add->id)
         {
-            if(State.inBattle == FALSE) { return; }
-            
             SwitchInitAddToSelect(Init->MobFields, i, MOB_NUM);
+            return;
+        }
+        
+        if(commandID == Init->MobFields[i].New.Ok->id)
+        {
+            //Add to Order
+            ShowOrder(&Init->Order[Init->VisibleOrder], 1);
+            
+            char name[32] = {};
+            Edit_GetText(Init->MobFields[i].New.Name->box, name, 32);
+            Edit_SetText(Init->Order[Init->VisibleOrder].Field->box, name);
+            Edit_SetText(Init->MobFields[i].Name->box, name);
+            
+            Init->Order[Init->VisibleOrder].isMob     = TRUE;
+            Init->Order[Init->VisibleOrder].isParty   = FALSE;
+            Init->Order[Init->VisibleOrder].fieldId = Init->MobFields[i].id;
+            
+            Init->VisibleMobs += 1;
+            Init->VisibleOrder += 1;
+            Init->turnsInRound += 1;
+            
+            HideElem(Init->MobFields[i].New.Name->box);
+            HideElem(Init->MobFields[i].New.Bonus->box);
+            HideElem(Init->MobFields[i].New.Ok->box);
+            
+            ShowElem(Init->MobFields[i].Name->box);
+            ShowElem(Init->MobFields[i].Final->box);
+            ShowElem(Init->MobFields[i].Bonus->box);
+            
+            ShowInitFieldAdd(Init->MobFields, i+1, MOB_NUM);
+            
+            return;
         }
     }
     
     for(u32 i = 0; i < ALLY_NUM; i++)
     {
+        if(State.inBattle == FALSE) { return; }
+        
         if(commandID == Init->AllyFields[i].New.Add->id)
         {
-            if(State.inBattle == FALSE) { return; }
-            
             SwitchInitAddToSelect(Init->AllyFields, i, ALLY_NUM);
+            return;
+        }
+        
+        if(commandID == Init->AllyFields[i].New.Ok->id)
+        {
+            //Add to Order
+            ShowOrder(&Init->Order[Init->VisibleOrder], 1);
+            
+            char name[32] = {};
+            Edit_GetText(Init->AllyFields[i].New.Name->box, name, 32);
+            Edit_SetText(Init->Order[Init->VisibleOrder].Field->box, name);
+            Edit_SetText(Init->AllyFields[i].Name->box, name);
+            
+            Init->Order[Init->VisibleOrder].isMob   = FALSE;
+            Init->Order[Init->VisibleOrder].isParty = FALSE;
+            Init->Order[Init->VisibleOrder].fieldId = Init->AllyFields[i].id;
+            
+            Init->VisibleAllies += 1;
+            Init->VisibleOrder += 1;
+            Init->turnsInRound += 1;
+            
+            HideElem(Init->AllyFields[i].New.Name->box);
+            HideElem(Init->AllyFields[i].New.Bonus->box);
+            HideElem(Init->AllyFields[i].New.Ok->box);
+            
+            ShowElem(Init->AllyFields[i].Name->box);
+            ShowElem(Init->AllyFields[i].Final->box);
+            ShowElem(Init->AllyFields[i].Bonus->box);
+            
+            ShowInitFieldAdd(Init->AllyFields, i+1, ALLY_NUM);
+            
+            return;
         }
     }
     
@@ -405,7 +469,8 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         {
             if(State.inBattle == FALSE) { return; }
             
-            //TODO:Remove the equivalent entry from Mobs/Allies
+            //TODO: When Removing the last added entry, it's going to fuck up the names, because
+            //      It will copy from the name in the mob/ally list from itself???
             if(Init->Order[i].isMob == TRUE)
             {
                 u32 mobId = Init->Order[i].fieldId;
