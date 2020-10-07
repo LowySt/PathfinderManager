@@ -107,6 +107,10 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_SETFOCUS:
         {
+            //NOTE: We shouldn't touch the edit box if it's set to read only!
+            DWORD dwStyle = (DWORD)GetWindowLongA(h, GWL_STYLE);
+            if((dwStyle & ES_READONLY) != 0) { break; }
+            
             b32 isValid = FALSE;
             for( u32 i = 0; i < Init->VisibleMobs; i++) {
                 if(h == Init->MobFields[i].Name->box)  { isValid = TRUE; break; }
@@ -288,6 +292,17 @@ void ArrayRemove(u32 *a, u32 idx)
     u32 len = State.Feats->usedFeats;
     ls_memcpy(a + (idx + 1), a + idx, (len - idx)*sizeof(u32));
     a[len] = u32(-1);
+}
+
+inline void SwitchInitAddToSelect(InitField *f, u32 idx, s32 max)
+{
+    if(idx < max) { 
+        ShowWindow(f[idx].New.Add->box, SW_HIDE);
+        
+        ShowWindow(f[idx].New.Name->box, SW_SHOW);
+        ShowWindow(f[idx].New.Bonus->box, SW_SHOW);
+        ShowWindow(f[idx].New.Ok->box, SW_SHOW);
+    }
 }
 
 inline void HideInitFieldAdd(InitField *f, u32 idx, s32 max)

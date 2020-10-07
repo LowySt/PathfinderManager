@@ -7,6 +7,7 @@ void ShowOrder(OrderField *o, s32 n);
 void HideInitField(InitField *f, s32 n);
 void HideInitFieldAdd(InitField *f, u32 idx, s32 max);
 void ShowInitFieldAdd(InitField *f, u32 idx, s32 max);
+void SwitchInitAddToSelect(InitField *f, u32 idx, s32 max);
 
 //TODO: I'd like to add functionality for removing Ability Scores.
 //TODO: Start using the ElementMap to stop doing the stupid for loops everywhere
@@ -384,7 +385,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         {
             if(State.inBattle == FALSE) { return; }
             
-            HideInitFieldAdd(Init->MobFields, i, MOB_NUM);
+            SwitchInitAddToSelect(Init->MobFields, i, MOB_NUM);
         }
     }
     
@@ -394,7 +395,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         {
             if(State.inBattle == FALSE) { return; }
             
-            HideInitFieldAdd(Init->AllyFields, i, ALLY_NUM);
+            SwitchInitAddToSelect(Init->AllyFields, i, ALLY_NUM);
         }
     }
     
