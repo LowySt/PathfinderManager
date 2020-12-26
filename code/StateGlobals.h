@@ -113,8 +113,9 @@ struct FeatsPage
 };
 
 //NOTE: Size in Bytes of an Encounter
-const u32 sizeOfEncEntry  = 760;
 const u32 sizeOfInitEntry = 36; // 32 Bytes Name, 4 Bytes Bonus
+const u32 sizeOfEncounterGeneral = 32 + 4 + 4; //Encounter Name, Number Mobs, Number Allies
+const u32 sizeOfEncEntry  = (MOB_NUM + ALLY_NUM)*sizeOfInitEntry + sizeOfEncounterGeneral;
 
 const u32 encounterOffset = KBytes(128);
 

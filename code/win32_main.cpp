@@ -1151,11 +1151,9 @@ ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 
     char **encounterNames = (char **)ls_alloc(sizeof(char *) * numOfEncounters);
     for(u32 i = 0; i < numOfEncounters; i++) { encounterNames[i] = (char *)ls_alloc(sizeof(char) * 32); }
     
-    const u32 sizeInBytesOfEntry = 36; // 32 Bytes Name, 4 Bytes Bonus
-    
+    u32 cursorStart = buff.cursor;
     for(u32 i = 0; i < numOfEncounters; i++)
     {
-        //NOTE: Size in Bytes: 760 Bytes
         Encounter *CurrEnc = &State.encounters.Enc[i];
         ls_bufferReadData(&buff, encounterNames[i], 32);
         
@@ -1164,7 +1162,6 @@ ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 
         
         for(u32 j = 0; j < numOfMobs; j++)
         {
-            //NOTE: Size in Bytes: 36 Bytes
             char nameBuff[32] = {};
             ls_bufferReadData(&buff, nameBuff, 32);
             
@@ -1175,7 +1172,7 @@ ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 
         }
         
         if(numOfMobs < MOB_NUM) { 
-            u32 paddingBytes = (MOB_NUM - numOfMobs) * sizeInBytesOfEntry;
+            u32 paddingBytes = (MOB_NUM - numOfMobs) * sizeOfInitEntry;
             ls_bufferAdvanceCursor(&buff, paddingBytes);
         }
         
@@ -1194,9 +1191,12 @@ ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 
         }
         
         if(numOfAllies < ALLY_NUM) { 
-            u32 paddingBytes = (ALLY_NUM - numOfAllies) * sizeInBytesOfEntry;
+            u32 paddingBytes = (ALLY_NUM - numOfAllies) * sizeOfInitEntry;
             ls_bufferAdvanceCursor(&buff, paddingBytes);
         }
+        u32 cursorEnd = buff.cursor;
+        Assert(cursorEnd - cursorStart == sizeOfEncEntry);
+        cursorStart = cursorEnd;
     }
     
     u32 stupidComboBoxNumberOfItemsWhichDeterminesHeight = numOfEncounters;
