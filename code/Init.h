@@ -20,11 +20,11 @@ const char *Enemies[MOB_NUM + 1] = {
 };
 
 
-const u32 ALLY_NUM = 6;
-const char *AllyName[ALLY_NUM] = { "Ally 1", "Ally 2", "Ally 3", "Ally 4", "Ally 5", "Ally 6" };
+const u32 ALLY_NUM = 8;
+const char *AllyName[ALLY_NUM] = { "Ally 1", "Ally 2", "Ally 3", "Ally 4", "Ally 5", "Ally 6", "Ally 7", "Ally 8" };
 
 const char *Allies[ALLY_NUM + 1] = {
-    "No Allies", "1 Ally", "2 Allies", "3 Allies", "4 Allies", "5 Allies", "6 Allies"
+    "No Allies", "1 Ally", "2 Allies", "3 Allies", "4 Allies", "5 Allies", "6 Allies", "7 Allies", "8 Allies"
 };
 
 const u32 ORDER_NUM = PARTY_NUM + MOB_NUM + ALLY_NUM;

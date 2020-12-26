@@ -53,6 +53,8 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             RECT cRect = {};
             res = GetClientRect(h, &cRect);
+            
+            //TODO:@msdn InflateRect()
             cRect = {cRect.left+10, cRect.top+10, cRect.right-10, cRect.bottom+10};
             
             
@@ -62,6 +64,7 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             {
                 if(field->isSelected == TRUE)
                 {
+                    //TODO:@msdn InflateRect()
                     RECT Rect = {cRect.left-30, cRect.top-30, cRect.right+30, cRect.bottom+30};
                     FillRect(hDC, &Rect, testColor);
                 }
@@ -579,6 +582,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             if(item->CtlType == ODT_MENU)
             {
+                //TODO:@msdn InflateRect()
                 RECT Rect = {item->rcItem.left, item->rcItem.top, item->rcItem.left+1400, item->rcItem.top+22};
                 FillRect(item->hDC, &Rect, appBkgBrush);
                 
