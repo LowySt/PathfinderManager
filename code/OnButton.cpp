@@ -80,10 +80,14 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     {
         for(u32 i = 0; i < Init->VisibleMobs; i++)
         {
-            s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
             char v[32] = {};
-            u32 len = Edit_GetText(Init->MobFields[i].Bonus->box, v, 32);
-            s32 bonus = ls_atoi(v, len);
+            u32 len = Edit_GetText(Init->MobFields[i].Final->box, v, 32);
+            s32 finalVal = ls_atoi(v, len);
+            if(finalVal != 0) { continue; }
+            
+            s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
+            u32 bonusLen = Edit_GetText(Init->MobFields[i].Bonus->box, v, 32);
+            s32 bonus = ls_atoi(v, bonusLen);
             char final[32] = {};
             ls_itoa_t(bonus + die, final, 32);
             Edit_SetText(Init->MobFields[i].Final->box, final);
@@ -91,10 +95,14 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         
         for(u32 i = 0; i < Init->VisibleAllies; i++)
         {
-            s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
             char v[32] = {};
-            u32 len = Edit_GetText(Init->MobFields[i].Bonus->box, v, 32);
-            s32 bonus = ls_atoi(v, len);
+            u32 len = Edit_GetText(Init->AllyFields[i].Final->box, v, 32);
+            s32 finalVal = ls_atoi(v, len);
+            if(finalVal != 0) { continue; }
+            
+            s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
+            u32 bonusLen = Edit_GetText(Init->AllyFields[i].Bonus->box, v, 32);
+            s32 bonus = ls_atoi(v, bonusLen);
             char final[32] = {};
             ls_itoa_t(bonus + die, final, 32);
             Edit_SetText(Init->AllyFields[i].Final->box, final);

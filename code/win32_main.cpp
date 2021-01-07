@@ -188,6 +188,7 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     }
                     
                     for(u32 i = 0; i < Init->VisibleOrder; i++) {
+                        
                         if(h == Init->Order[i].Pos->box) {
                             int len = Edit_GetTextLength(h);
                             char buff[8] = {};
@@ -226,7 +227,9 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                             
                             if(newPosition < i)
                             {
-                                for(u32 j = i; j >= newPosition; j--)
+                                //NOTE: This was changed from j >= newPosition, 
+                                // because of j-1 going out of bounds when newPosition is 0.
+                                for(u32 j = i; j > newPosition; j--)
                                 {
                                     char name[32] = {};
                                     Edit_GetText(Init->Order[j-1].Field->box, name, 32);
@@ -234,6 +237,7 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                                     Init->Order[j].fieldId = Init->Order[j-1].fieldId;
                                     Init->Order[j].isMob   = Init->Order[j-1].isMob;
                                     Init->Order[j].isParty = Init->Order[j-1].isParty;
+                                    
                                     
                                     Edit_SetText(Init->Order[j].Field->box, name);
                                 }
@@ -1380,7 +1384,8 @@ InitField AddInitField(HWND h, HWND **winA, const char *label, s32 x, s32 y,
     {
         Result.Name    = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, label);   wA += 1;
         Result.Bonus   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++);   wA += 1;
-        Result.Final   = AddValueBox(h, wA, 0, LABEL_NULL, 0, x + 150, y, 30, 20, (*id)++); wA += 1;
+        //Result.Final   = AddValueBox(h, wA, 0, LABEL_NULL, 0, x + 150, y, 30, 20, (*id)++); wA += 1;
+        Result.Final   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 150, y, 30, 20, (*id)++); wA += 1;
         
         Result.New.Name  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, ""); wA += 1;
         Result.New.Bonus = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++); wA += 1;
