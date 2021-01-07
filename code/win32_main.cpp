@@ -118,12 +118,14 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             for( u32 i = 0; i < Init->VisibleMobs; i++) {
                 if(h == Init->MobFields[i].Name->box)  { isValid = TRUE; break; }
                 if(h == Init->MobFields[i].Bonus->box) { isValid = TRUE; break; }
+                if(h == Init->MobFields[i].Final->box) { isValid = TRUE; break; }
             }
             
             if(!isValid) { 
                 for( u32 i = 0; i < Init->VisibleAllies; i++) {
                     if(h == Init->AllyFields[i].Name->box)  { isValid = TRUE; break; }
                     if(h == Init->AllyFields[i].Bonus->box) { isValid = TRUE; break; }
+                    if(h == Init->AllyFields[i].Final->box) { isValid = TRUE; break; }
                 }
             }
             
@@ -160,6 +162,14 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                             
                             return CallWindowProcA(mainWinProc, h, msg, w, l); 
                         }
+                        
+                        if(h == Init->MobFields[i].Final->box) { 
+                            
+                            if(i < Init->VisibleMobs - 1) { SetFocus(Init->MobFields[i+1].Final->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
                     }
                     
                     for(u32 i = 0; i < PARTY_NUM; i++) {
@@ -181,6 +191,13 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         
                         if(h == Init->AllyFields[i].Bonus->box) { 
                             if(i < Init->VisibleAllies - 1) { SetFocus(Init->AllyFields[i+1].Bonus->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                        
+                        if(h == Init->AllyFields[i].Final->box) { 
+                            if(i < Init->VisibleAllies - 1) { SetFocus(Init->AllyFields[i+1].Final->box); }
                             else { SetFocus(MainWindow); }
                             
                             return CallWindowProcA(mainWinProc, h, msg, w, l); 
