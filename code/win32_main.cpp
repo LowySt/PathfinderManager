@@ -142,8 +142,97 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_KEYDOWN:
         {
+            //TODO: Make this more efficient by using int GetDlgCtrlID(HWND hWnd);
+            //      To get the position in the array using the control IDs. This way i don't need to for loop
             switch(w)
             {
+                case VK_DOWN:
+                {
+                    for(u32 i = 0; i < Init->VisibleMobs; i++) {
+                        
+                        int breakHere = 0;
+                        
+                        if(h == Init->MobFields[i].Name->box) { 
+                            
+                            int breakThere = 0;
+                            
+                            if(i < Init->VisibleMobs - 1) 
+                            { 
+                                char name[32] = {};
+                                s32 len = Edit_GetTextLength(h);
+                                Edit_GetText(h, name, 32);
+                                
+                                char *BeginOfNumber = name;
+                                u32 alphaLen = 0;
+                                while(!ls_isANumber(*BeginOfNumber)) 
+                                { 
+                                    if(BeginOfNumber > name + len) 
+                                    { 
+                                        SetFocus(MainWindow);
+                                        return CallWindowProcA(mainWinProc, h, msg, w, l);
+                                    }
+                                    
+                                    BeginOfNumber += 1; 
+                                    alphaLen += 1;
+                                }
+                                
+                                s64 newNumber = ls_atoi(BeginOfNumber, len - alphaLen) + 1;
+                                ls_itoa_t(newNumber, BeginOfNumber, 32 - alphaLen);
+                                
+                                //NOTE: Just make sure the buffer is zero terminated.
+                                name[31] = 0;
+                                SetFocus(Init->MobFields[i+1].Name->box);
+                                Edit_SetText(Init->MobFields[i+1].Name->box, name);
+                            }
+                            else 
+                            { SetFocus(MainWindow); }
+                        }
+                    }
+                    
+                    for(u32 i = 0; i < Init->VisibleAllies; i++) {
+                        
+                        int breakHere = 0;
+                        
+                        if(h == Init->AllyFields[i].Name->box) { 
+                            
+                            int breakThere = 0;
+                            
+                            if(i < Init->VisibleAllies - 1) 
+                            { 
+                                char name[32] = {};
+                                s32 len = Edit_GetTextLength(h);
+                                Edit_GetText(h, name, 32);
+                                
+                                char *BeginOfNumber = name;
+                                u32 alphaLen = 0;
+                                while(!ls_isANumber(*BeginOfNumber)) 
+                                { 
+                                    if(BeginOfNumber > name + len) 
+                                    { 
+                                        SetFocus(MainWindow);
+                                        return CallWindowProcA(mainWinProc, h, msg, w, l);
+                                    }
+                                    
+                                    BeginOfNumber += 1; 
+                                    alphaLen += 1;
+                                }
+                                
+                                s64 newNumber = ls_atoi(BeginOfNumber, len - alphaLen) + 1;
+                                ls_itoa_t(newNumber, BeginOfNumber, 32 - alphaLen);
+                                
+                                //NOTE: Just make sure the buffer is zero terminated.
+                                name[31] = 0;
+                                SetFocus(Init->AllyFields[i+1].Name->box);
+                                Edit_SetText(Init->AllyFields[i+1].Name->box, name);
+                            }
+                            else 
+                            { SetFocus(MainWindow); }
+                        }
+                    }
+                    
+                    return CallWindowProcA(mainWinProc, h, msg, w, l);
+                } break;
+                
                 case VK_RETURN:
                 {
                     for(u32 i = 0; i < Init->VisibleMobs; i++) {
@@ -275,7 +364,7 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         }
                     }
                     
-                    return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                    return CallWindowProcA(mainWinProc, h, msg, w, l);
                 } break;
             }
         } break;
