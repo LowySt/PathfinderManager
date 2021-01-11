@@ -214,7 +214,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             u32 len = Edit_GetText(Init->PlayerFields[i].Bonus->box, v, 32);
             ord[idx].init      = ls_atoi(v, len);
             ord[idx].nameBox   = Init->PlayerFields[i].Bonus->label;
-            ord[idx].fieldId   = Init->PlayerFields[i].id;;
+            ord[idx].fieldId   = Init->PlayerFields[i].id;
             ord[idx].isParty   = TRUE;
             ord[idx++].isMob   = FALSE;
         }
@@ -280,22 +280,22 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
                     {
                         Edit_SetReadOnly(Init->Counters[i].Field->box, FALSE);
                         Edit_SetText(Init->Counters[i].Field->box, "");
-                        Edit_SetText(Init->Counters[i].Rounds->box, "0");
+                        Edit_SetText(Init->Counters[i].Rounds->box, "");
                         
                         Init->Counters[i].roundCounter = 0;
                         Init->Counters[i].isActive     = FALSE;
-                        return;
+                        continue;
                     }
                     
                     char newV[8] = {};
                     ls_itoa_t(val - 1, newV, 8);
                     
                     Edit_SetText(C->Rounds->box, newV);
-                    return;
+                    continue;
                 }
                 
                 C->roundCounter += 1;
-                return;
+                continue;
             }
         }
     }

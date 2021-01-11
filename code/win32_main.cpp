@@ -360,6 +360,11 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                             ls_itoa_t(i, ith, 8);
                             Edit_SetText(h, ith);
                             
+                            //NOTE: Update "Current" TextBox to reflect change if there was any
+                            //NOTE:TODO: Do I actually like this? Do we want this?
+                            if(Init->currIdx == newPosition)
+                            { Edit_SetText(Init->Current->box, tmpName); }
+                            
                             return CallWindowProcA(mainWinProc, h, msg, w, l); 
                         }
                     }
@@ -460,7 +465,11 @@ inline void ShowElem(HWND box) { ShowWindow(box, SW_SHOW); }
 
 inline void HideInitElem(InitPage *p) {
     HideInitField(p->MobFields, MOB_NUM);
+    ShowElem(p->MobFields[0].New.Add->box);
+    
     HideInitField(p->AllyFields, ALLY_NUM);
+    ShowElem(p->AllyFields[0].New.Add->box);
+    
     HideOrder(p->Order, ORDER_NUM);
 }
 
@@ -1515,13 +1524,19 @@ Counter AddCounter(HWND h, HWND **winA, const char *label, s32 x, s32 y, u64 *id
     Counter Result = {};
     
     Result.Field  = AddTextBox(h, wA, label, LABEL_UP, x, y, 100, 20, (*id)++);      wA += 2;
+    
+    //TODO: Fix AddEditNumberBox
     Result.Rounds = AddNumberBox(h, wA, 0, LABEL_NULL, x + 105, y, 30, 20, (*id)++); wA += 1;
+    Edit_SetText(Result.Rounds->box, "");
+    
     Result.Start  = AddButton(h, wA, "Start", x + 140, y, 35, 20, (*id)++);          wA += 1;
     
     *winA = wA;
     return Result;
 }
 
+//TODO: Init is umproperly Initialized. Can't "Set" at program start without other commands prior.
+//      Can't add new enemies or allies if no other enemy/ally selection was previously made.
 void DrawInitTab(HWND WinH, u64 *ElementId)
 {
     InitPage *Page = State.Init;
@@ -1580,6 +1595,8 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
         yPos += 20;
     }
     
+    //TODO: Should this be initialized here???
+    Page->VisibleOrder = PARTY_NUM;
     
     Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 820, 112, 100, 20, (*ElementId)++); wA += 1;
     
