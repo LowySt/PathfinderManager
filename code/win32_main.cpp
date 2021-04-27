@@ -40,57 +40,6 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
     
     switch (msg)
     {
-#if 0
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hDC = BeginPaint(h, &ps);
-            
-            RECT itemRect = {};
-            BOOL res = GetWindowRect(h, &itemRect); //Screen Space
-            u32  itemWidth  = itemRect.right - itemRect.left;
-            u32  itemHeight = itemRect.bottom - itemRect.top;
-            
-            RECT cRect = {};
-            res = GetClientRect(h, &cRect);
-            
-            //TODO:@msdn InflateRect()
-            cRect = {cRect.left+10, cRect.top+10, cRect.right-10, cRect.bottom+10};
-            
-            
-            //NOTETODO: Testing highlighting of *Selected* Init Fields.
-            InitField *field = getInitByHWND(h);
-            if(field != 0x0)
-            {
-                if(field->isSelected == TRUE)
-                {
-                    //TODO:@msdn InflateRect()
-                    RECT Rect = {cRect.left-30, cRect.top-30, cRect.right+30, cRect.bottom+30};
-                    FillRect(hDC, &Rect, testColor);
-                }
-            }
-            
-            //NOTE: Why does this work on the Labels, but it works differently on the
-            // read only edit boxes, for which I am using the CTLCOLOR message?
-#if 1
-            FillRect(hDC, &cRect, controlBkgBrush);
-            
-            SetBkColor(hDC, controlBkgRGB);
-            SetTextColor(hDC, RGB(255, 255, 255));
-            char text[32] = {};
-            int len = SendMessageA(h, WM_GETTEXT, 32, (LPARAM)text);
-            TextOutA(hDC, cRect.left, cRect.top, text, len);
-            
-            EndPaint(h, &ps);
-#endif
-            //NOTE: To Finish drawing everything else.
-            //return DefWindowProcA(h, msg, w, l);
-            return CallWindowProcA(mainWinProc, h, msg, w, l);
-            
-        } break;
-#endif
-        
-        
         case WM_RBUTTONUP:
         {
             InitField *field = getInitByHWND(h);
@@ -630,7 +579,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
         } break;
         
-        case WM_NCLBUTTONUP:
+        case WM_LBUTTONUP:
         {
             State.isDragging = FALSE;
             BOOL success = ReleaseCapture();
@@ -689,8 +638,18 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             if(item->CtlType == ODT_MENU) {
                 
-                item->itemWidth  = 50;
-                item->itemHeight = 20;
+                u32 len = ls_len((char *)item->itemData);
+                SIZE size = {};
+                BOOL success = GetTextExtentPoint32A(GetDC(h), (LPCSTR)item->itemData, len, &size);
+                
+                ls_printf("Success: %d, size: (%d, %d)\n", success, size.cx, size.cy);
+                
+                //NOTE: Used to center Text inside the rect.
+                u32 marginX = 0;
+                u32 marginY = 0;
+                
+                item->itemWidth  = size.cx + (2*marginX);
+                item->itemHeight = size.cy + (2*marginY);
             }
             
         } break;
@@ -715,13 +674,26 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             if(item->CtlType == ODT_MENU)
             {
-                //TODO:@msdn InflateRect()
-                RECT Rect = {item->rcItem.left, item->rcItem.top, item->rcItem.left+1400, item->rcItem.top+22};
-                FillRect(item->hDC, &Rect, appBkgBrush);
+                POINT cursorPos = {};
+                GetCursorPos(&cursorPos);
                 
-                SetBkColor(item->hDC, appBkgRGB);
+                RECT screenRect = {};
+                GetMenuItemRect(h, MenuBar, 0, &screenRect);
+                
+                HBRUSH brush      = appBkgBrush;
+                COLORREF brushRGB = appBkgRGB;
+                if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
+                   (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
+                { brush = menuBkgBrush; brushRGB = menuBkgRGB; }
+                
+                FillRect(item->hDC, &item->rcItem, brush);
+                
+                SetBkColor(item->hDC, brushRGB);
                 SetTextColor(item->hDC, whiteRGB);
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top+5, (LPCSTR)item->itemData, 4);
+                
+                u32 marginX = 8, marginY = 2;
+                TextOutA(item->hDC, item->rcItem.left + marginX, item->rcItem.top + marginY, 
+                         (LPCSTR)item->itemData, 4);
             }
             
             if(item->CtlType == ODT_COMBOBOX)
@@ -876,6 +848,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
         } break;
         
+#if 0
         case WM_NOTIFY:
         {
             struct NMHDR {
@@ -901,6 +874,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             }
             
         } break;
+#endif
         
         case WM_COMMAND:
         {
@@ -1235,15 +1209,16 @@ HWND CreateWindow(HMENU MenuBar)
     u32 style = LS_VISIBLE | LS_THIN_BORDER | LS_POPUP; // | LS_OVERLAPPEDWINDOW;
     BOOL Result;
     
-    HMENU SubMenu = CreateMenu();
+    SubMenu = CreateMenu();
     Result = AppendMenuA(SubMenu, MF_STRING, 0, "Save");
     Result = AppendMenuA(SubMenu, MF_STRING, 1, "Load");
     
     MENUITEMINFOA FileMenuInfo = {};
     FileMenuInfo.cbSize = sizeof(MENUITEMINFOA);
     
-    FileMenuInfo.fMask = MIIM_SUBMENU | MIIM_DATA | MIIM_FTYPE;
+    FileMenuInfo.fMask = MIIM_SUBMENU | MIIM_DATA | MIIM_FTYPE | MIIM_ID;
     FileMenuInfo.fType = MFT_OWNERDRAW;
+    FileMenuInfo.wID   = MENU_FILE_ITEM_ID;
     
     FileMenuInfo.dwItemData = (ULONG_PTR)"File";
     FileMenuInfo.hSubMenu = SubMenu;
@@ -1255,7 +1230,7 @@ HWND CreateWindow(HMENU MenuBar)
     menuInfo.fMask   = MIM_APPLYTOSUBMENUS | MIM_BACKGROUND;
     menuInfo.hbrBack = appBkgBrush;  //RGB(0x38, 0x38, 0x38);
     
-    // SetMenuInfo(MenuBar, &menuInfo); Works Shittily
+    //SetMenuInfo(MenuBar, &menuInfo); Works Shittily
     
     //NOTE:TODO: Hardcoded!!
     HWND WindowHandle;
@@ -1549,7 +1524,7 @@ Counter AddCounter(HWND h, HWND **winA, const char *label, s32 x, s32 y, u64 *id
     return Result;
 }
 
-//TODO: Init is umproperly Initialized. Can't "Set" at program start without other commands prior.
+//TODO: Init is improperly Initialized. Can't "Set" at program start without other commands prior.
 //      Can't add new enemies or allies if no other enemy/ally selection was previously made.
 void DrawInitTab(HWND WinH, u64 *ElementId)
 {
@@ -1584,7 +1559,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     {
         Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 480, yPos, ElementId, i, FALSE);
         yPos += 20;
-        Page->numWindows += 3;
+        Page->numWindows += 7;
     }
     
     // Mob Fields
@@ -1593,7 +1568,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     {
         Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 246, yPos, ElementId, i, FALSE);
         yPos += 20;
-        Page->numWindows += 3;
+        Page->numWindows += 7;
     }
     
     //ORDER
@@ -1630,7 +1605,6 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
         Page->numWindows += 4;
     }
     
-    
     Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 594, 62, 100, 20, (*ElementId)++); wA += 1;
     Page->numWindows += 1;
     
@@ -1642,6 +1616,8 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
         
         Page->numWindows += 2;
     }
+    
+    return;
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -1662,11 +1638,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     RegisterWindow();
     
-    HMENU MenuBar = CreateMenu();
+    MenuBar = CreateMenu();
     MENUINFO Info = {};
     Info.cbSize = sizeof(MENUINFO);
-    Info.fMask = MIM_APPLYTOSUBMENUS | MIM_STYLE;
+    Info.fMask = MIM_APPLYTOSUBMENUS | MIM_STYLE | MIM_BACKGROUND;
     Info.dwStyle = MNS_NOTIFYBYPOS;
+    Info.hbrBack = appBkgBrush;
     SetMenuInfo(MenuBar, &Info);
     
     MainWindow = CreateWindow(MenuBar);
@@ -1726,6 +1703,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     DrawPCTab(MainWindow, &ElementId);
     DrawFeatsTab(MainWindow, &ElementId);
+    
     DrawInitTab(MainWindow, &ElementId);
     
     State.isInitialized = TRUE;
@@ -1750,6 +1728,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         // Process Input
         MSG Msg;
         
+        
         newPageIdx = TabCtrl_GetCurSel(TabControl);
         
         if(newPageIdx != oldPageIdx)
@@ -1766,7 +1745,13 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 case 1:
                 {
                     HidePage(State.PC);
-                    HidePage(State.Init);
+                    //HidePage(State.Init);
+                    
+                    for(u32 i = 0; i < State.Init->numWindows; i++) 
+                    {
+                        ShowWindow(State.Init->WindowsArray[i], SW_HIDE);
+                    }
+                    
                     ShowPage(State.Feats);
                 } break;
                 

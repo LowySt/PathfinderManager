@@ -261,10 +261,19 @@ const COLORREF controlBkgRGB = RGB(0x56, 0x56, 0x56);
 const HBRUSH appBkgBrush     = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
 const COLORREF appBkgRGB     = RGB(0x38, 0x38, 0x38);
 
+const HBRUSH menuBkgBrush    = CreateSolidBrush(0x00787878);
+const COLORREF menuBkgRGB    = RGB(0x78, 0x78, 0x78);
+
+const HBRUSH whiteBrush      = CreateSolidBrush(0x00FFFFFF); // 0x00 BB GG RR
 const COLORREF whiteRGB      = RGB(255, 255, 255);
 
 const HBRUSH testColor  = CreateSolidBrush(0x008B1FA7);
 
+
+//---- MENU ----//
+const u32 MENU_FILE_ITEM_ID = 76;
+HMENU MenuBar;
+HMENU SubMenu;
 
 //TODO: Can I manage to do things using this?
 Element ElementMap[512] = {};
