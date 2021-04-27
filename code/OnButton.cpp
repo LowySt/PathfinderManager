@@ -175,7 +175,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             ls_bufferAdvanceCursor(&encBuff, paddingBytes);
         }
         
-        ls_clearBuffer(&encBuff);
+        ls_bufferClear(&encBuff);
         
         //Write to disk the StateFile
         ls_writeFile((char *)"State.bin", (char *)State.StateData, MBytes(1)-1, FALSE);

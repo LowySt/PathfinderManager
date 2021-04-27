@@ -624,6 +624,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             State.isDragging = TRUE;
             State.prevMousePos = *((POINTS *)&l);
+            
+            SetCapture(h);
             //TODO:NOTE: Page says to return 0, but DO i HAVE to?
             
         } break;
@@ -631,12 +633,15 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         case WM_NCLBUTTONUP:
         {
             State.isDragging = FALSE;
+            BOOL success = ReleaseCapture();
         } break;
         
-        case WM_NCMOUSEMOVE:
+        case WM_MOUSEMOVE:
         {
             if(State.isDragging) {
-                POINTS currMouse = *((POINTS *)&l);
+                POINTS currMouseClient = *((POINTS *)&l);
+                POINT currMouse = {currMouseClient.x, currMouseClient.y};
+                BOOL success = ClientToScreen(h, &currMouse);
                 
                 SHORT newX = State.prevMousePos.x - currMouse.x;
                 SHORT newY = State.prevMousePos.y - currMouse.y;
@@ -644,14 +649,23 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 SHORT newWinX = State.currWindowPos.x - newX;
                 SHORT newWinY = State.currWindowPos.y - newY;
                 
+#if 0
+                ls_printf("CurrMousePos: (%d, %d)\n"
+                          "PrevMousePos: (%d, %d)\n"
+                          "DragState:\n\t newXY: (%d, %d)\n\t newWinXY: (%d, %d)\n\t currWinPos: (%d, %d)\n",
+                          currMouse.x, currMouse.y,
+                          State.prevMousePos.x, State.prevMousePos.y, newX, newY, newWinX, newWinY,
+                          State.currWindowPos.x, State.currWindowPos.y);
+#endif
+                
                 State.currWindowPos = { newWinX, newWinY };
-                State.prevMousePos  = currMouse;
+                State.prevMousePos  = POINTS { (SHORT)currMouse.x, (SHORT)currMouse.y};
                 //State.isDragging = FALSE;
                 
                 SetWindowPos(h, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
             }
             //TODO:NOTE: Page says to return 0, but DO i HAVE to?
-        };
+        } break;
         
         case WM_KEYDOWN:
         {
