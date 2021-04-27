@@ -642,8 +642,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 SIZE size = {};
                 BOOL success = GetTextExtentPoint32A(GetDC(h), (LPCSTR)item->itemData, len, &size);
                 
-                ls_printf("Success: %d, size: (%d, %d)\n", success, size.cx, size.cy);
-                
                 //NOTE: Used to center Text inside the rect.
                 u32 marginX = 0;
                 u32 marginY = 0;
