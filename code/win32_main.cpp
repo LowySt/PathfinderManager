@@ -14,6 +14,9 @@
 #include "lsBuffer.h"
 #undef LS_BUFFER_IMPLEMENTATION
 
+
+#define HAS_TABS 0
+
 #include "lsGraphics.h"
 
 #include "pcg.c"
@@ -42,72 +45,6 @@ ShowWindow(page->WindowsArray[i], SW_HIDE); }
 
 #define ShowPage(page) for(u32 i = 0; i < page->numWindows; i++) { \
 ShowWindow(page->WindowsArray[i], SW_SHOW); }
-
-void saveAS()
-{
-    string as = getText(State.PC->Scores->Box[ABILITY_STR]->box);
-    pc.AbilityScores[ABILITY_STR] = (u8)ls_stoi(as);
-    ls_strFree(&as);
-    
-    as = getText(State.PC->Scores->Box[ABILITY_DEX]->box);
-    pc.AbilityScores[ABILITY_DEX] = (u8)ls_stoi(as);
-    ls_strFree(&as);
-    
-    as = getText(State.PC->Scores->Box[ABILITY_CON]->box);
-    pc.AbilityScores[ABILITY_CON] = (u8)ls_stoi(as);
-    ls_strFree(&as);
-    
-    as = getText(State.PC->Scores->Box[ABILITY_INT]->box);
-    pc.AbilityScores[ABILITY_INT] = (u8)ls_stoi(as);
-    ls_strFree(&as);
-    
-    as = getText(State.PC->Scores->Box[ABILITY_WIS]->box);
-    pc.AbilityScores[ABILITY_WIS] = (u8)ls_stoi(as);
-    ls_strFree(&as);
-    
-    as = getText(State.PC->Scores->Box[ABILITY_CHA]->box);
-    pc.AbilityScores[ABILITY_CHA] = (u8)ls_stoi(as);
-    ls_strFree(&as);
-}
-
-void loadAS()
-{
-    u8 v = pc.AbilityScores[ABILITY_STR];
-    char *a = ls_itoa(v);
-    Edit_SetText(State.PC->Scores->Box[ABILITY_STR]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, getASBonusStr(v));
-    ls_free(a);
-    
-    v = pc.AbilityScores[ABILITY_DEX];
-    a = ls_itoa(v);
-    Edit_SetText(State.PC->Scores->Box[ABILITY_DEX]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, getASBonusStr(v));
-    ls_free(a);
-    
-    v = pc.AbilityScores[ABILITY_CON];
-    a = ls_itoa(v);
-    Edit_SetText(State.PC->Scores->Box[ABILITY_CON]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, getASBonusStr(v));
-    ls_free(a);
-    
-    v = pc.AbilityScores[ABILITY_INT];
-    a = ls_itoa(v);
-    Edit_SetText(State.PC->Scores->Box[ABILITY_INT]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, getASBonusStr(v));
-    ls_free(a);
-    
-    v = pc.AbilityScores[ABILITY_WIS];
-    a = ls_itoa(v);
-    Edit_SetText(State.PC->Scores->Box[ABILITY_WIS]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, getASBonusStr(v));
-    ls_free(a);
-    
-    v = pc.AbilityScores[ABILITY_CHA];
-    a = ls_itoa(v);
-    Edit_SetText(State.PC->Scores->Box[ABILITY_CHA]->box, a);
-    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, getASBonusStr(v));
-    ls_free(a);
-}
 
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
@@ -144,15 +81,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 SHORT newWinX = State.currWindowPos.x - newX;
                 SHORT newWinY = State.currWindowPos.y - newY;
                 
-#if 0
-                ls_printf("CurrMousePos: (%d, %d)\n"
-                          "PrevMousePos: (%d, %d)\n"
-                          "DragState:\n\t newXY: (%d, %d)\n\t newWinXY: (%d, %d)\n\t currWinPos: (%d, %d)\n",
-                          currMouse.x, currMouse.y,
-                          State.prevMousePos.x, State.prevMousePos.y, newX, newY, newWinX, newWinY,
-                          State.currWindowPos.x, State.currWindowPos.y);
-#endif
-                
                 State.currWindowPos = { newWinX, newWinY };
                 State.prevMousePos  = POINTS { (SHORT)currMouse.x, (SHORT)currMouse.y};
                 //State.isDragging = FALSE;
@@ -166,6 +94,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             switch(w)
             {
+                //NOTE: TODO: Why does this sometimes not proc when focus is on certain fields??
                 case VK_ESCAPE:
                 {
                     ExitProcess(0);
@@ -406,16 +335,20 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     //NOTE: Handles storing data for save on the fields in the PC Tab
                     //TODO: Could probably be handled better if it was moved in the subEditProc
                     //      CAREFUL! If more is added a found flag has to be returned.
+#if HAS_TABS
                     PCTabOnKillFocus(commandID, handle);
+#endif
                 } break;
                 
                 case CBN_SELENDOK:
                 {
+                    b32 found = FALSE;
                     //NOTE:TODO: This is easier to read. But it forces me to add a check
                     //           for the early break. Bad or Acceptable??
-                    b32 found = PCTabOnComboSelect(commandID, handle);
+#if HAS_TABS
+                    found = PCTabOnComboSelect(commandID, handle);
                     if(found) break;
-                    
+#endif
                     found = InitTabOnComboSelect(commandID, handle);
                     if(found) break;
                     
@@ -423,22 +356,30 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 
                 case LBN_SELCHANGE:
                 {
-                    u32 index = ListBox_GetCurSel(handle);
-                    if(index > ArraySize(FeatsDesc))
+                    //TODO: THIS DOESN'T MAKE ANY SENSE!!!
+                    // THERE'S NO DIFFERENTIATION BETWEEN THE FEATS AND THE CHOSEN ONES!
+#if HAS_TABS
+                    if(commandID == State.Feats->Feats->id)
                     {
-                        ls_printf("Not implemented description of Feat n°%d\n", index);
-                        Assert(FALSE);
+                        u32 index = ListBox_GetCurSel(handle);
+                        if(index > ArraySize(FeatsDesc))
+                        {
+                            ls_printf("Not implemented description of Feat n°%d\n", index);
+                            Assert(FALSE);
+                        }
+                        char *Desc = (char *)FeatsDesc[index];
+                        
+                        Edit_SetText(State.Feats->FeatsDesc->box, Desc);
                     }
-                    char *Desc = (char *)FeatsDesc[index];
-                    
-                    Edit_SetText(State.Feats->FeatsDesc->box, Desc);
-                    
+#endif
                 } break;
                 
                 case LBN_DBLCLK:
                 {
                     //NOTE: Handles selecting feats and chosen feats from the ListBoxes
+#if HAS_TABS
                     FeatsTabOnDoubleClick(commandID, handle);
+#endif
                 } break;
                 
                 case BN_CLICKED: { OnButton(commandID, notificationCode, handle); } break;
@@ -546,14 +487,19 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     MainWindow = CreateWindow(MenuBar);
     
     State.isInitialized = FALSE;
+#if HAS_TABS
     State.PC    = (PCPage *)ls_alloc(sizeof(PCPage));
     State.Feats = (FeatsPage *)ls_alloc(sizeof(FeatsPage));
+#endif
+    
     State.Init  = (InitPage *)ls_alloc(sizeof(InitPage));
     
     u64 ElementId = 0;
     
+#if HAS_TABS
     for(size_t i = 0; i < ArraySize(State.Feats->ChosenFeatsIndices); i++)
     { State.Feats->ChosenFeatsIndices[i] = u32(-1); }
+#endif
     
     //
     // Initialize StateData
@@ -572,6 +518,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     // Create Tabs
     //
     
+#if HAS_TABS
     HWND TabControl = CreateWindowExA(0, WC_TABCONTROL, "",
                                       WS_CHILD | WS_VISIBLE | WS_BORDER,
                                       0, 0, 300, 20,
@@ -600,13 +547,17 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     DrawPCTab(MainWindow, &ElementId);
     DrawFeatsTab(MainWindow, &ElementId);
+#endif
     
     DrawInitTab(MainWindow, &ElementId);
     
     State.isInitialized = TRUE;
     
+#if HAS_TABS
     HidePage(State.Feats);
     HidePage(State.PC);
+#endif
+    
     ShowPage(State.Init);
     
     //Initialization of Init Page
@@ -614,18 +565,20 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ShowOrder(State.Init->Order, PARTY_NUM);
     HideElem(State.Init->Next->box);          
     
+#if HAS_TABS
     TabCtrl_SetCurSel(TabControl, 2);
     
-    b32 Running = TRUE;
     u32 oldPageIdx = 2;
     u32 newPageIdx = 0;
+#endif
     
+    b32 Running = TRUE;
     while(Running)
     {
         // Process Input
         MSG Msg;
         
-        
+#if HAS_TABS
         newPageIdx = TabCtrl_GetCurSel(TabControl);
         
         if(newPageIdx != oldPageIdx)
@@ -663,13 +616,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             }
         }
         
+        oldPageIdx = newPageIdx;
+#endif
+        
         while (PeekMessageA(&Msg, NULL, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&Msg);
             DispatchMessageA(&Msg);
         }
         
-        oldPageIdx = newPageIdx;
     }
     
     return 0;

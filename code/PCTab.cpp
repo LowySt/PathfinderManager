@@ -1,4 +1,70 @@
 
+void saveAS()
+{
+    string as = getText(State.PC->Scores->Box[ABILITY_STR]->box);
+    pc.AbilityScores[ABILITY_STR] = (u8)ls_stoi(as);
+    ls_strFree(&as);
+    
+    as = getText(State.PC->Scores->Box[ABILITY_DEX]->box);
+    pc.AbilityScores[ABILITY_DEX] = (u8)ls_stoi(as);
+    ls_strFree(&as);
+    
+    as = getText(State.PC->Scores->Box[ABILITY_CON]->box);
+    pc.AbilityScores[ABILITY_CON] = (u8)ls_stoi(as);
+    ls_strFree(&as);
+    
+    as = getText(State.PC->Scores->Box[ABILITY_INT]->box);
+    pc.AbilityScores[ABILITY_INT] = (u8)ls_stoi(as);
+    ls_strFree(&as);
+    
+    as = getText(State.PC->Scores->Box[ABILITY_WIS]->box);
+    pc.AbilityScores[ABILITY_WIS] = (u8)ls_stoi(as);
+    ls_strFree(&as);
+    
+    as = getText(State.PC->Scores->Box[ABILITY_CHA]->box);
+    pc.AbilityScores[ABILITY_CHA] = (u8)ls_stoi(as);
+    ls_strFree(&as);
+}
+
+void loadAS()
+{
+    u8 v = pc.AbilityScores[ABILITY_STR];
+    char *a = ls_itoa(v);
+    Edit_SetText(State.PC->Scores->Box[ABILITY_STR]->box, a);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, getASBonusStr(v));
+    ls_free(a);
+    
+    v = pc.AbilityScores[ABILITY_DEX];
+    a = ls_itoa(v);
+    Edit_SetText(State.PC->Scores->Box[ABILITY_DEX]->box, a);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, getASBonusStr(v));
+    ls_free(a);
+    
+    v = pc.AbilityScores[ABILITY_CON];
+    a = ls_itoa(v);
+    Edit_SetText(State.PC->Scores->Box[ABILITY_CON]->box, a);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, getASBonusStr(v));
+    ls_free(a);
+    
+    v = pc.AbilityScores[ABILITY_INT];
+    a = ls_itoa(v);
+    Edit_SetText(State.PC->Scores->Box[ABILITY_INT]->box, a);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, getASBonusStr(v));
+    ls_free(a);
+    
+    v = pc.AbilityScores[ABILITY_WIS];
+    a = ls_itoa(v);
+    Edit_SetText(State.PC->Scores->Box[ABILITY_WIS]->box, a);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, getASBonusStr(v));
+    ls_free(a);
+    
+    v = pc.AbilityScores[ABILITY_CHA];
+    a = ls_itoa(v);
+    Edit_SetText(State.PC->Scores->Box[ABILITY_CHA]->box, a);
+    Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, getASBonusStr(v));
+    ls_free(a);
+}
+
 void UpdateSavingThrows()
 {
     s32 Fortitude = ClassSavingThrows[pc.Class][0][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_CON]);
