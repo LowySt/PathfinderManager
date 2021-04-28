@@ -1,4 +1,209 @@
 
+void UpdateSavingThrows()
+{
+    s32 Fortitude = ClassSavingThrows[pc.Class][0][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_CON]);
+    s32 Reflex = ClassSavingThrows[pc.Class][1][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_DEX]);
+    s32 Will = ClassSavingThrows[pc.Class][2][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_WIS]);
+    
+    char *ST = ls_itoa(Fortitude);
+    Edit_SetText(State.PC->SavingThrows[0]->box, ST);
+    ls_free(ST);
+    
+    ST = ls_itoa(Reflex);
+    Edit_SetText(State.PC->SavingThrows[1]->box, ST);
+    ls_free(ST);
+    
+    ST = ls_itoa(Will);
+    Edit_SetText(State.PC->SavingThrows[2]->box, ST);
+    ls_free(ST);
+}
+
+b32 PCTabOnComboSelect(u32 commandID, HWND handle)
+{
+    PCPage *PC   = State.PC;
+    
+    if(commandID == PC->Race->id)
+    {
+        string s = getText(handle);
+        
+        GameRace r = getRaceFromString(s);
+        pc.Race = r;
+        
+        if(State.PC->wasClassChosen)
+        { ListBox_ResetContent(State.PC->RacialTraits->box); }
+        
+        if(!State.PC->wasClassChosen) { State.PC->wasClassChosen = TRUE; }
+        
+        char **TraitsList;
+        u32 arrSize = 0;
+        
+        TraitsList = (char **)RaceTraits[r];
+        arrSize = RaceTraitsArraySize[r];
+        
+        AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
+        
+        ls_strFree(&s);
+        
+        return TRUE;
+    }
+    else if(commandID == PC->Class->id)
+    {
+        string s = getText(handle);
+        
+        GameClass r = getClassFromString(s);
+        pc.Class = r;
+        
+        UpdateSavingThrows();
+        
+        ls_strFree(&s);
+        
+        return TRUE;
+    }
+    else if(commandID == PC->XPCurve->id)
+    {
+        State.PC->xpIdx = (XPCurveIdx)ComboBox_GetCurSel(handle);
+        pc.xpCurve = State.PC->xpIdx;
+        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
+        
+        string s = getText(State.PC->currLevel->box);
+        u32 currLevel = ls_stoi(s);
+        
+        Edit_SetText(State.PC->nextLevelXP->box, xpCurve[currLevel]);
+        
+        ls_strFree(&s);
+        
+        return TRUE;
+    }
+    
+    return FALSE;
+}
+
+void PCTabOnKillFocus(u32 commandID, HWND handle)
+{
+    PCPage    *PC   = State.PC;
+    
+    if(commandID == PC->Name->id)
+    {
+        string newName = getText(handle);
+        
+        if(pc.Name.data)
+        { ls_strFree(&pc.Name); }
+        
+        pc.Name = newName;
+    }
+    
+    else if(commandID == PC->Player->id)
+    {
+        string newPlayer = getText(handle);
+        
+        if(pc.Player.data)
+        { ls_strFree(&pc.Player); }
+        
+        pc.Player = newPlayer;
+    }
+    
+    else if(commandID == PC->Scores->Box[ABILITY_STR]->id)
+    {
+        string s = getText(handle);
+        u32 v = ls_stoi(s);
+        pc.AbilityScores[ABILITY_STR] = v;
+        
+        Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, getASBonusStr(v));
+        UpdateSavingThrows();
+        
+        ls_strFree(&s);
+    }
+    
+    else if(commandID == PC->Scores->Box[ABILITY_DEX]->id)
+    {
+        string s = getText(handle);
+        u32 v = ls_stoi(s);
+        pc.AbilityScores[ABILITY_DEX] = v;
+        
+        Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, getASBonusStr(v));
+        UpdateSavingThrows();
+        
+        ls_strFree(&s);
+    }
+    
+    else if(commandID == PC->Scores->Box[ABILITY_CON]->id)
+    {
+        string s = getText(handle);
+        u32 v = ls_stoi(s);
+        pc.AbilityScores[ABILITY_CON] = v;
+        
+        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, getASBonusStr(v));
+        UpdateSavingThrows();
+        
+        ls_strFree(&s);
+    }
+    
+    else if(commandID == PC->Scores->Box[ABILITY_INT]->id)
+    {
+        string s = getText(handle);
+        u32 v = ls_stoi(s);
+        pc.AbilityScores[ABILITY_INT] = v;
+        
+        Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, getASBonusStr(v));
+        UpdateSavingThrows();
+        
+        ls_strFree(&s);
+    }
+    
+    else if(commandID == PC->Scores->Box[ABILITY_WIS]->id)
+    {
+        string s = getText(handle);
+        u32 v = ls_stoi(s);
+        pc.AbilityScores[ABILITY_WIS] = v;
+        
+        Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, getASBonusStr(v));
+        UpdateSavingThrows();
+        
+        ls_strFree(&s);
+    }
+    
+    else if(commandID == PC->Scores->Box[ABILITY_CHA]->id)
+    {
+        string s = getText(handle);
+        u32 v = ls_stoi(s);
+        pc.AbilityScores[ABILITY_CHA] = v;
+        
+        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, getASBonusStr(v));
+        UpdateSavingThrows();
+        
+        ls_strFree(&s);
+    }
+    
+    else if(commandID == PC->currLevel->id)
+    {
+        string s = getText(handle);
+        u32 currLevel = ls_stoi(s);
+        if(currLevel > 20)
+        { currLevel = 20; Edit_SetText(handle, "20"); }
+        pc.lvl = (u8)currLevel;
+        
+        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
+        Edit_SetText(State.PC->nextLevelXP->box, xpCurve[currLevel]);
+        
+        UpdateSavingThrows();
+        
+        Edit_SetText(State.PC->BaseAttackBonus->box,
+                     ClassBABString[pc.Class][0][pc.lvl]);
+        
+        ls_strFree(&s);
+    }
+    else if(commandID == PC->currXP->id)
+    {
+        string s = getText(handle);
+        u32 currXP = ls_stoi(s);
+        
+        pc.xp = currXP;
+        
+        ls_strFree(&s);
+    }
+}
+
+
 void AddAbilityScoreBoxes(HWND WindowHandle, u32 baseX, u32 baseY, u64 *ElementId)
 {
     PCPage *Page = State.PC;

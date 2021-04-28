@@ -43,33 +43,6 @@ ShowWindow(page->WindowsArray[i], SW_HIDE); }
 #define ShowPage(page) for(u32 i = 0; i < page->numWindows; i++) { \
 ShowWindow(page->WindowsArray[i], SW_SHOW); }
 
-//TODO: Why is this here...
-b32 ArrayContains(u32 *a, u32 v)
-{
-    for(size_t i = 0; i < State.Feats->usedFeats; i++)
-    { if(a[i] == v) { return TRUE; } }
-    return FALSE;
-}
-
-//TODO: Why is this here...
-void ArrayRemove(u32 *a, u32 idx)
-{
-    u32 len = State.Feats->usedFeats;
-    ls_memcpy(a + (idx + 1), a + idx, (len - idx)*sizeof(u32));
-    a[len] = u32(-1);
-}
-
-string getText(HWND hwnd)
-{
-    u32 textLen = GetWindowTextLengthA(hwnd);
-    char buffer[32] = {};
-    GetWindowTextA(hwnd, buffer, textLen + 1);
-    
-    string Result = ls_strInit(buffer);
-    
-    return Result;
-}
-
 void saveAS()
 {
     string as = getText(State.PC->Scores->Box[ABILITY_STR]->box);
@@ -136,32 +109,9 @@ void loadAS()
     ls_free(a);
 }
 
-void UpdateSavingThrows()
-{
-    s32 Fortitude = ClassSavingThrows[pc.Class][0][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_CON]);
-    s32 Reflex = ClassSavingThrows[pc.Class][1][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_DEX]);
-    s32 Will = ClassSavingThrows[pc.Class][2][pc.lvl] + getASBonusVal(pc.AbilityScores[ABILITY_WIS]);
-    
-    char *ST = ls_itoa(Fortitude);
-    Edit_SetText(State.PC->SavingThrows[0]->box, ST);
-    ls_free(ST);
-    
-    ST = ls_itoa(Reflex);
-    Edit_SetText(State.PC->SavingThrows[1]->box, ST);
-    ls_free(ST);
-    
-    ST = ls_itoa(Will);
-    Edit_SetText(State.PC->SavingThrows[2]->box, ST);
-    ls_free(ST);
-}
-
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
     LRESULT Result = 0;
-    
-    InitPage  *Init = State.Init;
-    FeatsPage *Feats = State.Feats;
-    PCPage    *PC   = State.PC;
     
     switch (msg)
     {
@@ -453,243 +403,21 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             {
                 case EN_KILLFOCUS:
                 {
-                    if(commandID == State.PC->Name->id)
-                    {
-                        string newName = getText(handle);
-                        
-                        if(pc.Name.data)
-                        { ls_strFree(&pc.Name); }
-                        
-                        pc.Name = newName;
-                    }
-                    
-                    else if(commandID == State.PC->Player->id)
-                    {
-                        string newPlayer = getText(handle);
-                        
-                        if(pc.Player.data)
-                        { ls_strFree(&pc.Player); }
-                        
-                        pc.Player = newPlayer;
-                    }
-                    
-                    else if(commandID == State.PC->Scores->Box[ABILITY_STR]->id)
-                    {
-                        string s = getText(handle);
-                        u32 v = ls_stoi(s);
-                        pc.AbilityScores[ABILITY_STR] = v;
-                        
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_STR]->box, getASBonusStr(v));
-                        UpdateSavingThrows();
-                        
-                        ls_strFree(&s);
-                    }
-                    
-                    else if(commandID == State.PC->Scores->Box[ABILITY_DEX]->id)
-                    {
-                        string s = getText(handle);
-                        u32 v = ls_stoi(s);
-                        pc.AbilityScores[ABILITY_DEX] = v;
-                        
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_DEX]->box, getASBonusStr(v));
-                        UpdateSavingThrows();
-                        
-                        ls_strFree(&s);
-                    }
-                    
-                    else if(commandID == State.PC->Scores->Box[ABILITY_CON]->id)
-                    {
-                        string s = getText(handle);
-                        u32 v = ls_stoi(s);
-                        pc.AbilityScores[ABILITY_CON] = v;
-                        
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CON]->box, getASBonusStr(v));
-                        UpdateSavingThrows();
-                        
-                        ls_strFree(&s);
-                    }
-                    
-                    else if(commandID == State.PC->Scores->Box[ABILITY_INT]->id)
-                    {
-                        string s = getText(handle);
-                        u32 v = ls_stoi(s);
-                        pc.AbilityScores[ABILITY_INT] = v;
-                        
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_INT]->box, getASBonusStr(v));
-                        UpdateSavingThrows();
-                        
-                        ls_strFree(&s);
-                    }
-                    
-                    else if(commandID == State.PC->Scores->Box[ABILITY_WIS]->id)
-                    {
-                        string s = getText(handle);
-                        u32 v = ls_stoi(s);
-                        pc.AbilityScores[ABILITY_WIS] = v;
-                        
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_WIS]->box, getASBonusStr(v));
-                        UpdateSavingThrows();
-                        
-                        ls_strFree(&s);
-                    }
-                    
-                    else if(commandID == State.PC->Scores->Box[ABILITY_CHA]->id)
-                    {
-                        string s = getText(handle);
-                        u32 v = ls_stoi(s);
-                        pc.AbilityScores[ABILITY_CHA] = v;
-                        
-                        Edit_SetText(State.PC->Scores->Bonus[ABILITY_CHA]->box, getASBonusStr(v));
-                        UpdateSavingThrows();
-                        
-                        ls_strFree(&s);
-                    }
-                    
-                    else if(commandID == State.PC->currLevel->id)
-                    {
-                        string s = getText(handle);
-                        u32 currLevel = ls_stoi(s);
-                        if(currLevel > 20)
-                        { currLevel = 20; Edit_SetText(handle, "20"); }
-                        pc.lvl = (u8)currLevel;
-                        
-                        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
-                        Edit_SetText(State.PC->nextLevelXP->box, xpCurve[currLevel]);
-                        
-                        UpdateSavingThrows();
-                        
-                        Edit_SetText(State.PC->BaseAttackBonus->box,
-                                     ClassBABString[pc.Class][0][pc.lvl]);
-                        
-                        ls_strFree(&s);
-                    }
-                    else if(commandID == State.PC->currXP->id)
-                    {
-                        string s = getText(handle);
-                        u32 currXP = ls_stoi(s);
-                        
-                        pc.xp = currXP;
-                        
-                        ls_strFree(&s);
-                    }
+                    //NOTE: Handles storing data for save on the fields in the PC Tab
+                    //TODO: Could probably be handled better if it was moved in the subEditProc
+                    //      CAREFUL! If more is added a found flag has to be returned.
+                    PCTabOnKillFocus(commandID, handle);
                 } break;
                 
                 case CBN_SELENDOK:
                 {
-                    if(commandID == State.PC->Race->id)
-                    {
-                        string s = getText(handle);
-                        
-                        GameRace r = getRaceFromString(s);
-                        pc.Race = r;
-                        
-                        if(State.PC->wasClassChosen)
-                        { ListBox_ResetContent(State.PC->RacialTraits->box); }
-                        
-                        if(!State.PC->wasClassChosen) { State.PC->wasClassChosen = TRUE; }
-                        
-                        char **TraitsList;
-                        u32 arrSize = 0;
-                        
-                        TraitsList = (char **)RaceTraits[r];
-                        arrSize = RaceTraitsArraySize[r];
-                        
-                        AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
-                        
-                        ls_strFree(&s);
-                    }
-                    else if(commandID == State.PC->Class->id)
-                    {
-                        string s = getText(handle);
-                        
-                        GameClass r = getClassFromString(s);
-                        pc.Class = r;
-                        
-                        UpdateSavingThrows();
-                        
-                        ls_strFree(&s);
-                    }
-                    else if(commandID == State.PC->XPCurve->id)
-                    {
-                        State.PC->xpIdx = (XPCurveIdx)ComboBox_GetCurSel(handle);
-                        pc.xpCurve = State.PC->xpIdx;
-                        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
-                        
-                        string s = getText(State.PC->currLevel->box);
-                        u32 currLevel = ls_stoi(s);
-                        
-                        Edit_SetText(State.PC->nextLevelXP->box, xpCurve[currLevel]);
-                        
-                        ls_strFree(&s);
-                    }
-                    else if(commandID == State.Init->Mobs->id)
-                    {
-                        s32 idx = ComboBox_GetCurSel(handle);
-                        Assert(idx != CB_ERR);
-                        State.Init->VisibleMobs  = idx;
-                        State.Init->VisibleOrder = PARTY_NUM + State.Init->VisibleAllies + idx;
-                        
-                        HideInitField(State.Init->MobFields, MOB_NUM);
-                        ShowInitField(State.Init->MobFields, idx, MOB_NUM);
-                        
-                        HideOrder(State.Init->Order, ORDER_NUM);
-                        ShowOrder(State.Init->Order, State.Init->VisibleOrder);
-                    }
-                    else if(commandID == Init->Allies->id)
-                    {
-                        s32 idx = ComboBox_GetCurSel(handle);
-                        Assert(idx != CB_ERR);
-                        Init->VisibleAllies = idx;
-                        Init->VisibleOrder = PARTY_NUM + Init->VisibleMobs + idx;
-                        
-                        HideInitField(Init->AllyFields, ALLY_NUM);
-                        ShowInitField(Init->AllyFields, idx, ALLY_NUM);
-                        
-                        HideOrder(Init->Order, ORDER_NUM);
-                        ShowOrder(Init->Order, State.Init->VisibleOrder);
-                    }
-                    else if(commandID == Init->EncounterSel->id)
-                    {
-                        s32 idx = ComboBox_GetCurSel(handle);
-                        Assert(idx != CB_ERR);
-                        
-                        Encounter *Curr = &State.encounters.Enc[idx];
-                        Init->VisibleMobs   = Curr->numMobs;
-                        Init->VisibleAllies = Curr->numAllies;
-                        Init->VisibleOrder  = PARTY_NUM + Curr->numMobs + Curr->numAllies;
-                        
-                        ComboBox_SetCurSel(Init->Mobs->box, Curr->numMobs);
-                        ComboBox_SetCurSel(Init->Allies->box, Curr->numAllies);
-                        
-                        HideInitField(Init->MobFields, MOB_NUM);
-                        ShowInitField(Init->MobFields, Curr->numMobs, MOB_NUM);
-                        
-                        HideInitField(Init->AllyFields, ALLY_NUM);
-                        ShowInitField(Init->AllyFields, Curr->numAllies, ALLY_NUM);
-                        
-                        HideOrder(Init->Order, ORDER_NUM);
-                        ShowOrder(Init->Order, Init->VisibleOrder);
-                        
-                        for(u32 i = 0; i < Init->VisibleMobs; i++)
-                        {
-                            Edit_SetText(Init->MobFields[i].Name->box, Curr->mobNames[i]);
-                            
-                            char bonus[8] = {};
-                            ls_itoa_t(Curr->mobBonus[i], bonus, 8);
-                            
-                            Edit_SetText(Init->MobFields[i].Bonus->box, bonus);
-                        }
-                        
-                        for(u32 i = 0; i < Init->VisibleAllies; i++)
-                        {
-                            Edit_SetText(Init->AllyFields[i].Name->box, Curr->allyNames[i]);
-                            
-                            char bonus[8] = {};
-                            ls_itoa_t(Curr->allyBonus[i], bonus, 8);
-                            
-                            Edit_SetText(Init->AllyFields[i].Bonus->box, bonus);
-                        }
-                    }
+                    //NOTE:TODO: This is easier to read. But it forces me to add a check
+                    //           for the early break. Bad or Acceptable??
+                    b32 found = PCTabOnComboSelect(commandID, handle);
+                    if(found) break;
+                    
+                    found = InitTabOnComboSelect(commandID, handle);
+                    if(found) break;
                     
                 } break;
                 
@@ -709,32 +437,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 
                 case LBN_DBLCLK:
                 {
-                    if(commandID == State.Feats->Feats->id)
-                    {
-                        u32 index = ListBox_GetCurSel(handle);
-                        if(index > ArraySize(FeatsDesc))
-                        {
-                            ls_printf("Not implemented description of Feat n°%d\n", index);
-                            Assert(FALSE);
-                        }
-                        
-                        if(ArrayContains(State.Feats->ChosenFeatsIndices, index) == TRUE)
-                        { break; }
-                        
-                        ListBox_AddString(State.Feats->ChosenFeats->box, FeatNames[index]);
-                        State.Feats->ChosenFeatsIndices[State.Feats->usedFeats] = index;
-                        State.Feats->usedFeats += 1;
-                    }
-                    else if(commandID == State.Feats->ChosenFeats->id)
-                    {
-                        u32 index = ListBox_GetCurSel(handle);
-                        
-                        ListBox_DeleteString(handle, index);
-                        
-                        ArrayRemove(State.Feats->ChosenFeatsIndices, index);
-                        State.Feats->usedFeats -= 1;
-                    }
-                    
+                    //NOTE: Handles selecting feats and chosen feats from the ListBoxes
+                    FeatsTabOnDoubleClick(commandID, handle);
                 } break;
                 
                 case BN_CLICKED: { OnButton(commandID, notificationCode, handle); } break;

@@ -195,6 +195,88 @@ inline InitField *getInitByHWND(HWND handle)
     return 0x0;
 }
 
+b32 InitTabOnComboSelect(u32 commandID, HWND handle)
+{
+    InitPage  *Init = State.Init;
+    
+    if(commandID == Init->Mobs->id)
+    {
+        s32 idx = ComboBox_GetCurSel(handle);
+        Assert(idx != CB_ERR);
+        State.Init->VisibleMobs  = idx;
+        State.Init->VisibleOrder = PARTY_NUM + State.Init->VisibleAllies + idx;
+        
+        HideInitField(State.Init->MobFields, MOB_NUM);
+        ShowInitField(State.Init->MobFields, idx, MOB_NUM);
+        
+        HideOrder(State.Init->Order, ORDER_NUM);
+        ShowOrder(State.Init->Order, State.Init->VisibleOrder);
+        
+        return TRUE;
+    }
+    else if(commandID == Init->Allies->id)
+    {
+        s32 idx = ComboBox_GetCurSel(handle);
+        Assert(idx != CB_ERR);
+        Init->VisibleAllies = idx;
+        Init->VisibleOrder = PARTY_NUM + Init->VisibleMobs + idx;
+        
+        HideInitField(Init->AllyFields, ALLY_NUM);
+        ShowInitField(Init->AllyFields, idx, ALLY_NUM);
+        
+        HideOrder(Init->Order, ORDER_NUM);
+        ShowOrder(Init->Order, State.Init->VisibleOrder);
+        
+        return TRUE;
+    }
+    else if(commandID == Init->EncounterSel->id)
+    {
+        s32 idx = ComboBox_GetCurSel(handle);
+        Assert(idx != CB_ERR);
+        
+        Encounter *Curr = &State.encounters.Enc[idx];
+        Init->VisibleMobs   = Curr->numMobs;
+        Init->VisibleAllies = Curr->numAllies;
+        Init->VisibleOrder  = PARTY_NUM + Curr->numMobs + Curr->numAllies;
+        
+        ComboBox_SetCurSel(Init->Mobs->box, Curr->numMobs);
+        ComboBox_SetCurSel(Init->Allies->box, Curr->numAllies);
+        
+        HideInitField(Init->MobFields, MOB_NUM);
+        ShowInitField(Init->MobFields, Curr->numMobs, MOB_NUM);
+        
+        HideInitField(Init->AllyFields, ALLY_NUM);
+        ShowInitField(Init->AllyFields, Curr->numAllies, ALLY_NUM);
+        
+        HideOrder(Init->Order, ORDER_NUM);
+        ShowOrder(Init->Order, Init->VisibleOrder);
+        
+        for(u32 i = 0; i < Init->VisibleMobs; i++)
+        {
+            Edit_SetText(Init->MobFields[i].Name->box, Curr->mobNames[i]);
+            
+            char bonus[8] = {};
+            ls_itoa_t(Curr->mobBonus[i], bonus, 8);
+            
+            Edit_SetText(Init->MobFields[i].Bonus->box, bonus);
+        }
+        
+        for(u32 i = 0; i < Init->VisibleAllies; i++)
+        {
+            Edit_SetText(Init->AllyFields[i].Name->box, Curr->allyNames[i]);
+            
+            char bonus[8] = {};
+            ls_itoa_t(Curr->allyBonus[i], bonus, 8);
+            
+            Edit_SetText(Init->AllyFields[i].Bonus->box, bonus);
+        }
+        
+        return TRUE;
+    }
+    
+    return FALSE;
+}
+
 ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 width, u32 height, u64 id)
 {
     buffer buff = ls_bufferViewIntoPtr(State.encounters.data, KBytes(64));

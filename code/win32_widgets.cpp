@@ -2,6 +2,17 @@
 WNDPROC mainWinProc;
 LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l);
 
+string getText(HWND hwnd)
+{
+    u32 textLen = GetWindowTextLengthA(hwnd);
+    char buffer[32] = {};
+    GetWindowTextA(hwnd, buffer, textLen + 1);
+    
+    string Result = ls_strInit(buffer);
+    
+    return Result;
+}
+
 
 HWND AddLabelBox(HWND win, LabelAlign A, const char *label, s32 x, s32 y, u32 width, u32 height)
 {

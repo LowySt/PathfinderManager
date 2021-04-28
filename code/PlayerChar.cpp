@@ -111,8 +111,8 @@ void LoadPC(PlayerChar *pc)
     u8 race  = ls_bufferReadByte(&buff);
     u8 c     = ls_bufferReadByte(&buff);
     
-    pc->Race = RACE_HALF_ELF;
-    pc->Class = CLASS_DRUID;
+    pc->Race = (GameRace)race;
+    pc->Class = (GameClass)c;
     
     pc->AbilityScores[ABILITY_STR] = ls_bufferReadByte(&buff);
     pc->AbilityScores[ABILITY_DEX] = ls_bufferReadByte(&buff);

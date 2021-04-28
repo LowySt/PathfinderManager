@@ -12,9 +12,9 @@ const char *Classes[] =
 
 enum GameClass : u8
 {
-    CLASS_INVALID,
+    CLASS_INVALID = 99,
     
-    CLASS_BARBARIAN,
+    CLASS_BARBARIAN = 0,
     CLASS_BARD,
     CLASS_CLERIC,
     CLASS_DRUID,

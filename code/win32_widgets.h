@@ -20,6 +20,8 @@ struct OrderField;
 struct InitField;
 struct Counter;
 
+string getText(HWND hwnd);
+
 HWND AddLabelBox(HWND win, LabelAlign A, const char *label, s32 x, s32 y, u32 width, u32 height);
 HWND AddEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, const char *defName);
 HWND AddStaticEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, b32 isMultiline);
