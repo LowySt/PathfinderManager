@@ -123,7 +123,7 @@ HWND AddStaticNumberBox(HWND win, s32 value, s32 x, s32 y, u32 width, u32 height
 }
 
 Button *AddButton(HWND win, HWND *pageArr, const char *label, s32 x, s32 y,
-                  u32 width, u32 height, u64 id, b32 hasBackground = TRUE)
+                  u32 width, u32 height, u64 id, b32 hasBackground)
 {
     Button *Result = (Button *)ls_alloc(sizeof(Button));
     
@@ -195,7 +195,7 @@ ComboBox *AddUnsortedComboBox(HWND win, HWND *pageArr, const char *label, LabelA
 }
 
 TextBox *AddTextBox(HWND win, HWND *pageArr, const char *label, LabelAlign A,
-                    s32 x, s32 y, u32 width, u32 height, u64 id, const char *defName = (const char *)"")
+                    s32 x, s32 y, u32 width, u32 height, u64 id, const char *defName)
 {
     TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
     
@@ -238,7 +238,7 @@ TextBox *AddStaticTextBox(HWND win, HWND *pageArr, const char *label, LabelAlign
 }
 
 TextBox *AddStaticUnlabeledTextBox(HWND win, HWND *pageArr, s32 x, s32 y, u32 width, u32 height,
-                                   u64 id, b32 isMultiline = FALSE)
+                                   u64 id, b32 isMultiline)
 {
     TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
     
@@ -254,7 +254,7 @@ TextBox *AddStaticUnlabeledTextBox(HWND win, HWND *pageArr, s32 x, s32 y, u32 wi
 }
 
 TextBox *AddNumberBox(HWND win, HWND *pageArr, const char *label, LabelAlign A,
-                      s32 x, s32 y, u32 width, u32 height, u64 id, s32 defaultNumber = 0)
+                      s32 x, s32 y, u32 width, u32 height, u64 id, s32 defaultNumber)
 {
     TextBox *Result = (TextBox *)ls_alloc(sizeof(TextBox));
     HWND Label;
@@ -304,7 +304,7 @@ TextBox *AddValueBox(HWND win, HWND *pageArr, const char *label, LabelAlign A,
 }
 
 ListBox *AddListBox(HWND win, HWND *pageArr, const char *label, LabelAlign A,
-                    s32 x, s32 y, u32 width, u32 height, u64 id, b32 isSorted = TRUE)
+                    s32 x, s32 y, u32 width, u32 height, u64 id, b32 isSorted)
 {
     ListBox *Result = (ListBox *)ls_alloc(sizeof(ListBox));
     HWND Label = AddLabelBox(win, A, label, x, y, width, height);
@@ -332,7 +332,7 @@ ListBox *AddListBox(HWND win, HWND *pageArr, const char *label, LabelAlign A,
 }
 
 ListBox *AddSingleSelListBox(HWND win, HWND *pageArr, const char *label, LabelAlign A,
-                             s32 x, s32 y, u32 width, u32 height, u64 id, b32 isSorted = TRUE)
+                             s32 x, s32 y, u32 width, u32 height, u64 id, b32 isSorted)
 {
     ListBox *Result = (ListBox *)ls_alloc(sizeof(ListBox));
     HWND Label = AddLabelBox(win, A, label, x, y, width, height);
@@ -355,5 +355,67 @@ ListBox *AddSingleSelListBox(HWND win, HWND *pageArr, const char *label, LabelAl
     ElementMap[id].ptr        = (void *)Result;
     ElementMap[id].isListBox  = TRUE;
     
+    return Result;
+}
+
+
+OrderField AddOrderField(HWND win, HWND **winA, s32 x, s32 y, u32 idx, u64 *id)
+{
+    HWND *wA = *winA;
+    
+    OrderField Result = {};
+    
+    Result.Field  = AddStaticUnlabeledTextBox(win, wA, x + 50, y, 100, 20, (*id)++); wA += 1;
+    Result.Pos    = AddNumberBox(win, wA, 0, LABEL_NULL, x + 25, y, 20, 20, (*id)++, idx); wA += 1;
+    Result.Remove = AddButton(win, wA, "X", x, y, 20, 20, (*id)++, FALSE); wA += 1;
+    
+    *winA = wA;
+    
+    return Result;
+}
+
+InitField AddInitField(HWND h, HWND **winA, const char *label, s32 x, s32 y, 
+                       u64 *id, u64 initId, b32 isParty = FALSE)
+{
+    InitField Result = {};
+    HWND *wA = *winA;
+    
+    if(isParty == FALSE) 
+    {
+        Result.Name    = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, label);   wA += 1;
+        Result.Bonus   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++);   wA += 1;
+        //Result.Final   = AddValueBox(h, wA, 0, LABEL_NULL, 0, x + 150, y, 30, 20, (*id)++); wA += 1;
+        Result.Final   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 150, y, 30, 20, (*id)++); wA += 1;
+        
+        Result.New.Name  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, ""); wA += 1;
+        Result.New.Bonus = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++); wA += 1;
+        Result.New.Add   = AddButton(h, wA, "+", x + 50, y, 11, 18, (*id)++, FALSE);        wA += 1;
+        Result.New.Ok    = AddButton(h, wA, "v", x + 150, y, 11, 18, (*id)++, FALSE);       wA += 1;
+    }
+    else {
+        Result.Bonus  = AddNumberBox(h, wA, label, LABEL_LEFT, x, y, 30, 20, (*id)++);  wA += 2;
+    }
+    
+    Result.id = initId;
+    
+    *winA = wA;
+    return Result;
+}
+
+Counter AddCounter(HWND h, HWND **winA, const char *label, s32 x, s32 y, u64 *id)
+{
+    HWND *wA = *winA;
+    
+    Counter Result = {};
+    
+    Result.Field  = AddTextBox(h, wA, label, LABEL_UP, x, y, 100, 20, (*id)++);      wA += 2;
+    
+    //TODO: Fix AddEditNumberBox
+    Result.Rounds = AddNumberBox(h, wA, 0, LABEL_NULL, x + 105, y, 30, 20, (*id)++); wA += 1;
+    Edit_SetText(Result.Rounds->box, "");
+    
+    Result.Start  = AddButton(h, wA, "Start", x + 140, y, 35, 20, (*id)++);          wA += 1;
+    
+    *winA = wA;
     return Result;
 }

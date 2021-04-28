@@ -1,5 +1,6 @@
 /* date = May 22nd 2020 11:51 am */
 
+
 #ifndef _INIT_H
 #define _INIT_H
 
@@ -45,5 +46,6 @@ struct tmp_order {
 struct InitField;
 InitField *getInitById(InitField *f, u32 fieldSize, u64 id);
 InitField *getInitByHWND(HWND handle);
+void DrawInitTab(HWND WinH, u64 *ElementId);
 
 #endif //_INIT_H
