@@ -81,6 +81,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             screenRect.top    = screenRect.top + 1;
             screenRect.bottom = screenRect.bottom + 1;
             
+            //NOTE:TODO:NOTE:TODO:
+            // HACK HACK HACK HACK HACK HACK
             if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
                (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
             { 

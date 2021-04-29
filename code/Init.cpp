@@ -58,6 +58,8 @@ inline void HideInitElem(InitPage *p) {
     ShowElem(p->AllyFields[0].New.Add->box);
     
     HideOrder(p->Order, ORDER_NUM);
+    
+    HideElem(p->RoundCounter->box);
 }
 
 inline void ShowInitFieldAdd(InitField *f, u32 idx, s32 max)
@@ -417,7 +419,9 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     Page->Reset = AddButton(WinH, wA, "Reset", 520, 102, 45, 20, (*ElementId)++); wA += 1;
     Page->Save  = AddButton(WinH, wA, "Save",  620, 42, 45, 20, (*ElementId)++); wA += 1;
     
-    Page->numWindows += 6;
+    Page->RoundCounter = AddValueBox(WinH, wA, 0, LABEL_NULL, 1, 1180, 60, 30, 20, (*ElementId)++); wA += 1;
+    
+    Page->numWindows += 7;
     
     yPos = 142;
     for(u32 i = 0; i < COUNTER_NUM; i++)

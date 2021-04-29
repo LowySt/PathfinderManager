@@ -3,7 +3,9 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-enum LabelAlign
+const u32 saveVersion = 1;
+
+enum LabelAlign : u8
 {
     LABEL_NULL,
     
@@ -211,6 +213,8 @@ struct InitPage
     TextBox    *EncounterName;
     
     Counter    Counters[COUNTER_NUM];
+    TextBox    *RoundCounter;
+    
     
     HWND WindowsArray[512];
     u32 numWindows;
@@ -223,7 +227,6 @@ struct ProgramState
     InitPage  *Init;
     
     void *StateData;
-    
     b32  isInitialized;
     
     //State Management

@@ -90,7 +90,7 @@ HWND AddEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, const cha
 HWND AddStaticEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id,
                       b32 isMultiline = FALSE)
 {
-    u32 flags = ES_LEFT | ES_READONLY;
+    u32 flags = ES_CENTER | ES_READONLY;
     if(isMultiline == TRUE) { flags |= WS_VSCROLL | ES_MULTILINE | ES_AUTOVSCROLL;}
     else { flags |= ES_AUTOHSCROLL; }
     
@@ -111,7 +111,7 @@ HWND AddEditNumberBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, s32
     
     HWND Result = CreateWindowExA(0, WC_EDIT, num,
                                   WS_CHILD | WS_VISIBLE | WS_BORDER |
-                                  ES_LEFT | ES_AUTOHSCROLL | ES_NUMBER,
+                                  ES_CENTER | ES_AUTOHSCROLL | ES_NUMBER,
                                   x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     
@@ -125,7 +125,7 @@ HWND AddStaticNumberBox(HWND win, s32 value, s32 x, s32 y, u32 width, u32 height
     char *v = ls_itoa(value);
     HWND Result = CreateWindowExA(0, WC_EDIT, v,
                                   WS_CHILD | WS_VISIBLE | WS_BORDER |
-                                  ES_LEFT | ES_AUTOHSCROLL | ES_NUMBER | ES_READONLY,
+                                  ES_CENTER | ES_AUTOHSCROLL | ES_NUMBER | ES_READONLY,
                                   x, y, width, height,
                                   win, (HMENU)id, MainInstance, 0);
     ls_free(v);

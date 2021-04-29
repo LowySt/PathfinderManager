@@ -250,13 +250,22 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         HideElem(Init->Set->box);
         HideElem(Init->Mobs->box);   HideElem(Init->Mobs->label);
         HideElem(Init->Allies->box); HideElem(Init->Allies->label);
-        ShowElem(Init->Next->box);
+        ShowElem(Init->Next->box);   ShowElem(Init->RoundCounter->box);
     }
     
     if(commandID == Init->Next->id)
     {
         //NOTE: Make sure removing order fields doesn't fuck this up!
         Init->currIdx = (Init->currIdx + 1) % Init->VisibleOrder;
+        if(Init->currIdx == 0) 
+        {
+            char bf[8] = {};
+            u32 rLen = Edit_GetText(Init->RoundCounter->box, bf, 8);
+            s32 newRoundCount = ls_atoi(bf, rLen) + 1;
+            char newStr[8] = {};
+            u32 newLen = ls_itoa_t(newRoundCount, newStr, 8);
+            Edit_SetText(Init->RoundCounter->box, newStr);
+        }
         
         char v[32] = {};
         u32 len = Edit_GetText(Init->Order[Init->currIdx].Field->box, v, 32);
@@ -349,6 +358,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         Init->VisibleOrder  = PARTY_NUM;
         
         Edit_SetText(Init->Current->box, "");
+        Edit_SetText(Init->RoundCounter->box, "1");
         Init->currIdx       = 0;
         Init->turnsInRound  = 0;
         
@@ -356,6 +366,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         HideInitField(Init->AllyFields, ALLY_NUM);
         HideOrder(Init->Order, ORDER_NUM);
         HideElem(Init->Next->box);
+        HideElem(Init->RoundCounter->box);
         
         ShowOrder(Init->Order, Init->VisibleOrder);
         ShowElem(Init->Set->box);

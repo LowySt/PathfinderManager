@@ -11,7 +11,7 @@
 {ListBox_AddString(wnd, s[i]); } }
 
 
-enum LabelAlign;
+enum LabelAlign : u8;
 struct Button;
 struct ComboBox;
 struct TextBox;
