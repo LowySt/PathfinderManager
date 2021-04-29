@@ -46,6 +46,7 @@
 #include "PCTab.cpp"
 #include "FeatsTab.cpp"
 #include "OnButton.cpp"
+#include "SaveState.cpp"
 
 #include "win32_widgets.cpp"
 #include "subEdit.cpp"
@@ -124,6 +125,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_DESTROY:
         {
+            SaveState();
             ExitProcess(0);
         } break;
         
@@ -574,6 +576,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     { State.Feats->ChosenFeatsIndices[i] = u32(-1); }
 #endif
     
+    
+#if 0
     //
     // Initialize StateData
     //
@@ -587,6 +591,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         State.encounters.data = (u8 *)State.StateData + encounterOffset;
         State.encounters.isInitialized = TRUE;
     }
+#endif
     
     //
     // Create Tabs
@@ -645,6 +650,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     u32 oldPageIdx = 2;
     u32 newPageIdx = 0;
 #endif
+    
+    
+    b32 success = LoadState();
+    if(success == TRUE)
+    {
+        State.encounters.isInitialized = TRUE;
+    }
+    
     
     b32 Running = TRUE;
     while(Running)

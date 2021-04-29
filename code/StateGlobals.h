@@ -3,7 +3,7 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 saveVersion = 1;
+const u32 global_saveVersion = 1;
 
 enum LabelAlign : u8
 {

@@ -208,11 +208,11 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
         State.Init->VisibleMobs  = idx;
         State.Init->VisibleOrder = PARTY_NUM + State.Init->VisibleAllies + idx;
         
-        HideInitField(State.Init->MobFields, MOB_NUM);
-        ShowInitField(State.Init->MobFields, idx, MOB_NUM);
+        HideInitField(Init->MobFields, MOB_NUM);
+        ShowInitField(Init->MobFields, idx, MOB_NUM);
         
-        HideOrder(State.Init->Order, ORDER_NUM);
-        ShowOrder(State.Init->Order, State.Init->VisibleOrder);
+        HideOrder(Init->Order, ORDER_NUM);
+        ShowOrder(Init->Order, State.Init->VisibleOrder);
         
         return TRUE;
     }
@@ -293,7 +293,7 @@ ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 
     for(u32 i = 0; i < numOfEncounters; i++)
     {
         Encounter *CurrEnc = &State.encounters.Enc[i];
-        ls_bufferReadData(&buff, encounterNames[i], 32);
+        ls_bufferReadData(&buff, encounterNames[i]);
         
         u32 numOfMobs = ls_bufferReadDWord(&buff);
         CurrEnc->numMobs = numOfMobs;
@@ -301,7 +301,7 @@ ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 
         for(u32 j = 0; j < numOfMobs; j++)
         {
             char nameBuff[32] = {};
-            ls_bufferReadData(&buff, nameBuff, 32);
+            ls_bufferReadData(&buff, nameBuff);
             
             u32  mobBonus = ls_bufferReadDWord(&buff);
             
@@ -320,7 +320,7 @@ ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 
         for(u32 j = 0; j < numOfAllies; j++)
         {
             char nameBuff[32] = {};
-            ls_bufferReadData(&buff, nameBuff, 32);
+            ls_bufferReadData(&buff, nameBuff);
             
             u32  allyBonus = ls_bufferReadDWord(&buff);
             

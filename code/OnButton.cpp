@@ -234,20 +234,27 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             if(i == 0) { Edit_SetText(Init->Current->box, v); }
         }
         
+        for(u32 i = 0; i < PARTY_NUM; i++)
+        {
+            Edit_SetReadOnly(Init->PlayerFields[i].Bonus->box, TRUE);
+        }
+        
         for(u32 i = 0; i < MOB_NUM; i++)  { 
             Edit_SetReadOnly(Init->MobFields[i].Name->box, TRUE);
             Edit_SetReadOnly(Init->MobFields[i].Bonus->box, TRUE);
+            Edit_SetReadOnly(Init->MobFields[i].Final->box, TRUE);
         }
         
         for(u32 i = 0; i < ALLY_NUM; i++) { 
             Edit_SetReadOnly(Init->AllyFields[i].Name->box, TRUE);
             Edit_SetReadOnly(Init->AllyFields[i].Bonus->box, TRUE);
+            Edit_SetReadOnly(Init->AllyFields[i].Final->box, TRUE);
         }
         
         Init->turnsInRound = Init->VisibleOrder - 1;
         
         State.inBattle = TRUE;
-        HideElem(Init->Set->box);
+        HideElem(Init->Set->box);    HideElem(Init->Roll->box);
         HideElem(Init->Mobs->box);   HideElem(Init->Mobs->label);
         HideElem(Init->Allies->box); HideElem(Init->Allies->label);
         ShowElem(Init->Next->box);   ShowElem(Init->RoundCounter->box);
@@ -313,6 +320,12 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     {
         State.inBattle = FALSE;
         
+        for(u32 i = 0; i < PARTY_NUM; i++)
+        {
+            Edit_SetText(Init->PlayerFields[i].Bonus->box, "0");
+            Edit_SetReadOnly(Init->PlayerFields[i].Bonus->box, FALSE);
+        }
+        
         for(u32 i = 0; i < MOB_NUM; i++)
         { 
             Init->MobFields[i].id = i;
@@ -322,6 +335,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             
             Edit_SetReadOnly(Init->MobFields[i].Name->box, FALSE);
             Edit_SetReadOnly(Init->MobFields[i].Bonus->box, FALSE);
+            Edit_SetReadOnly(Init->MobFields[i].Final->box, FALSE);
         }
         
         for(u32 i = 0; i < ALLY_NUM; i++)
@@ -333,6 +347,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             
             Edit_SetReadOnly(Init->AllyFields[i].Name->box, FALSE);
             Edit_SetReadOnly(Init->AllyFields[i].Bonus->box, FALSE);
+            Edit_SetReadOnly(Init->AllyFields[i].Final->box, FALSE);
         }
         
         for(u32 i = 0; i < ORDER_NUM; i++)

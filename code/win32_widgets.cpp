@@ -395,7 +395,6 @@ InitField AddInitField(HWND h, HWND **winA, const char *label, s32 x, s32 y,
     {
         Result.Name    = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, label);   wA += 1;
         Result.Bonus   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++);   wA += 1;
-        //Result.Final   = AddValueBox(h, wA, 0, LABEL_NULL, 0, x + 150, y, 30, 20, (*id)++); wA += 1;
         Result.Final   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 150, y, 30, 20, (*id)++); wA += 1;
         
         Result.New.Name  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, ""); wA += 1;
