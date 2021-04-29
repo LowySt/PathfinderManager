@@ -6,5 +6,6 @@
 *.rdbg
 *.bin
 *.bmp
+*.png
 Releases/
 out/

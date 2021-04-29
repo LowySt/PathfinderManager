@@ -3,9 +3,6 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-#define FILE_MENU_SAVE_IDX 0
-#define FILE_MENU_LOAD_IDX 1
-
 enum LabelAlign
 {
     LABEL_NULL,
@@ -237,6 +234,8 @@ struct ProgramState
     b32    isDragging;
     POINTS prevMousePos;
     POINTS currWindowPos;
+    
+    b32 hasMouseClicked;
 };
 
 struct Element
@@ -271,7 +270,15 @@ const HBRUSH testColor  = CreateSolidBrush(0x008B1FA7);
 
 
 //---- MENU ----//
+
+const u32 FILE_MENU_SAVE_IDX = 0;
+const u32 FILE_MENU_LOAD_IDX = 1;
+
 const u32 MENU_FILE_ITEM_ID = 76;
+const u32 MENU_CLOSE_APP_ID = 77;
+const u32 MENU_FILE_IDX      = 0;
+const u32 MENU_CLOSE_APP_IDX = 1;
+
 HMENU MenuBar;
 HMENU SubMenu;
 

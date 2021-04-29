@@ -14,6 +14,15 @@
 #include "lsBuffer.h"
 #undef LS_BUFFER_IMPLEMENTATION
 
+//NOTE: Used by bitmap
+#define LS_MATH_IMPLEMENTATION
+#include "lsMath.h"
+#undef LS_MATH_IMPLEMENTATION
+
+#define LS_BITMAP_IMPLEMENTATION
+#include "lsBitmap.h"
+#undef LS_BITMAP_IMPLEMENTATION
+
 
 #define HAS_TABS 0
 
@@ -27,6 +36,7 @@
 #include "Class.h"
 #include "PlayerChar.h"
 #include "StateGlobals.h"
+#include "buttonImage.h"
 
 #include "Class.cpp"
 #include "Skills.cpp"
@@ -46,6 +56,10 @@ ShowWindow(page->WindowsArray[i], SW_HIDE); }
 #define ShowPage(page) for(u32 i = 0; i < page->numWindows; i++) { \
 ShowWindow(page->WindowsArray[i], SW_SHOW); }
 
+HBITMAP closeButton;
+HDC     closeButtonDC;
+void *backbuff;
+
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
     LRESULT Result = 0;
@@ -56,6 +70,22 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             State.isDragging = TRUE;
             State.prevMousePos = *((POINTS *)&l);
+            
+            POINTS cursorPos = State.prevMousePos;
+            
+            RECT screenRect = {};
+            GetMenuItemRect(h, MenuBar, 1, &screenRect);
+            
+            screenRect.right  = screenRect.right + 1234;
+            screenRect.left   = screenRect.left + 1218;
+            screenRect.top    = screenRect.top + 1;
+            screenRect.bottom = screenRect.bottom + 1;
+            
+            if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
+               (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
+            { 
+                PostMessageA(h, WM_DESTROY, 0, 0);
+            }
             
             SetCapture(h);
             //TODO:NOTE: Page says to return 0, but DO i HAVE to?
@@ -90,18 +120,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             //TODO:NOTE: Page says to return 0, but DO i HAVE to?
         } break;
         
-        case WM_KEYDOWN:
-        {
-            switch(w)
-            {
-                //NOTE: TODO: Why does this sometimes not proc when focus is on certain fields??
-                case VK_ESCAPE:
-                {
-                    ExitProcess(0);
-                } break;
-            }
-        } break;
-        
         case WM_DESTROY:
         {
             ExitProcess(0);
@@ -113,16 +131,24 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             if(item->CtlType == ODT_MENU) {
                 
-                u32 len = ls_len((char *)item->itemData);
-                SIZE size = {};
-                BOOL success = GetTextExtentPoint32A(GetDC(h), (LPCSTR)item->itemData, len, &size);
-                
-                //NOTE: Used to center Text inside the rect.
-                u32 marginX = 0;
-                u32 marginY = 0;
-                
-                item->itemWidth  = size.cx + (2*marginX);
-                item->itemHeight = size.cy + (2*marginY);
+                if(item->itemID == MENU_FILE_ITEM_ID)
+                {
+                    u32 len = ls_len((char *)item->itemData);
+                    SIZE size = {};
+                    BOOL success = GetTextExtentPoint32A(GetDC(h), (LPCSTR)item->itemData, len, &size);
+                    
+                    //NOTE: Used to center Text inside the rect.
+                    u32 marginX = 0;
+                    u32 marginY = 0;
+                    
+                    item->itemWidth  = size.cx + (2*marginX);
+                    item->itemHeight = size.cy + (2*marginY);
+                }
+                else if(item->itemID == MENU_CLOSE_APP_ID)
+                {
+                    item->itemWidth = 16;
+                    item->itemHeight = 16;
+                }
             }
             
         } break;
@@ -147,26 +173,45 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             if(item->CtlType == ODT_MENU)
             {
-                POINT cursorPos = {};
-                GetCursorPos(&cursorPos);
-                
-                RECT screenRect = {};
-                GetMenuItemRect(h, MenuBar, 0, &screenRect);
-                
-                HBRUSH brush      = appBkgBrush;
-                COLORREF brushRGB = appBkgRGB;
-                if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
-                   (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
-                { brush = menuBkgBrush; brushRGB = menuBkgRGB; }
-                
-                FillRect(item->hDC, &item->rcItem, brush);
-                
-                SetBkColor(item->hDC, brushRGB);
-                SetTextColor(item->hDC, whiteRGB);
-                
-                u32 marginX = 8, marginY = 2;
-                TextOutA(item->hDC, item->rcItem.left + marginX, item->rcItem.top + marginY, 
-                         (LPCSTR)item->itemData, 4);
+                if(item->itemID == MENU_FILE_ITEM_ID)
+                {
+                    POINT cursorPos = {};
+                    GetCursorPos(&cursorPos);
+                    
+                    RECT screenRect = {};
+                    GetMenuItemRect(h, MenuBar, 0, &screenRect);
+                    
+                    HBRUSH brush      = appBkgBrush;
+                    COLORREF brushRGB = appBkgRGB;
+                    if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
+                       (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
+                    { brush = menuBkgBrush; brushRGB = menuBkgRGB; }
+                    
+                    FillRect(item->hDC, &item->rcItem, brush);
+                    
+                    SetBkColor(item->hDC, brushRGB);
+                    SetTextColor(item->hDC, whiteRGB);
+                    
+                    u32 marginX = 8, marginY = 2;
+                    TextOutA(item->hDC, item->rcItem.left + marginX, item->rcItem.top + marginY, 
+                             (LPCSTR)item->itemData, 4);
+                }
+                else if(item->itemID == MENU_CLOSE_APP_ID)
+                {
+                    //NOTE:TODO:NOTE:TODO:
+                    // HACK HACK HACK HACK HACK HACK
+                    RECT hackRect  = item->rcItem;
+                    hackRect.right = hackRect.right + 1234;
+                    hackRect.left  = hackRect.left + 1218;
+                    hackRect.top   = hackRect.top + 1;
+                    hackRect.bottom = hackRect.bottom + 1;
+                    
+                    if(!BitBlt(item->hDC, hackRect.left, hackRect.top, 16, 16, closeButtonDC, 0, 0, SRCCOPY))
+                    {
+                        DWORD Error = GetLastError();
+                        ls_printf("When Blitting got error: %d", Error);
+                    }
+                }
             }
             
             if(item->CtlType == ODT_COMBOBOX)
@@ -256,69 +301,73 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         case WM_MENUCOMMAND:
         {
             u32 itemIdx = w;
+            HMENU menuHandle = (HMENU)l;
             
-            switch(itemIdx)
+            if(menuHandle == SubMenu)
             {
-                case FILE_MENU_SAVE_IDX:
+                switch(itemIdx)
                 {
-                    //First update Ability Scores then serialize.
-                    saveAS();
-                    SerializePC(&pc);
-                } break;
-                
-                case FILE_MENU_LOAD_IDX:
-                {
-                    LoadPC(&pc);
+                    case FILE_MENU_SAVE_IDX:
+                    {
+                        //First update Ability Scores then serialize.
+                        saveAS();
+                        SerializePC(&pc);
+                    } break;
                     
-                    //TODO: Stop allocating and deallocating mem for stupid C Strings
-                    char *cStr = ls_strToCStr(pc.Name);
-                    Edit_SetText(State.PC->Name->box, cStr);
-                    ls_free(cStr);
-                    
-                    cStr = ls_strToCStr(pc.Player);
-                    Edit_SetText(State.PC->Player->box, cStr);
-                    ls_free(cStr);
-                    
-                    ComboBox_SelectString(State.PC->Race->box, -1, Races[pc.Race]);
-                    ComboBox_SelectString(State.PC->Class->box, -1, Classes[pc.Class]);
-                    
-                    State.PC->wasClassChosen = TRUE;
-                    
-                    loadAS();
-                    
-                    char **TraitsList;
-                    u32 arrSize = 0;
-                    
-                    TraitsList = (char **)RaceTraits[pc.Race];
-                    arrSize = RaceTraitsArraySize[pc.Race];
-                    
-                    ListBox_ResetContent(State.PC->RacialTraits->box);
-                    AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
-                    
-                    //TODO: Check why lvl is not being update at loading
-                    cStr = ls_itoa(pc.lvl);
-                    Edit_SetText(State.PC->currLevel->box, cStr);
-                    ls_free(cStr);
-                    
-                    Edit_SetText(State.PC->BaseAttackBonus->box,
-                                 ClassBABString[pc.Class][0][pc.lvl]);
-                    
-                    cStr = ls_itoa(pc.xp);
-                    Edit_SetText(State.PC->currXP->box, cStr);
-                    ls_free(cStr);
-                    
-                    State.PC->xpIdx = pc.xpCurve;
-                    ComboBox_SelectString(State.PC->XPCurve->box, -1,
-                                          XPCurvesString[pc.xpCurve]);
-                    
-                    char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
-                    Edit_SetText(State.PC->nextLevelXP->box, xpCurve[pc.lvl]);
-                    
-                    UpdateSavingThrows();
-                    
-                } break;
+                    case FILE_MENU_LOAD_IDX:
+                    {
+                        LoadPC(&pc);
+                        
+                        //TODO: Stop allocating and deallocating mem for stupid C Strings
+                        char *cStr = ls_strToCStr(pc.Name);
+                        Edit_SetText(State.PC->Name->box, cStr);
+                        ls_free(cStr);
+                        
+                        cStr = ls_strToCStr(pc.Player);
+                        Edit_SetText(State.PC->Player->box, cStr);
+                        ls_free(cStr);
+                        
+                        ComboBox_SelectString(State.PC->Race->box, -1, Races[pc.Race]);
+                        ComboBox_SelectString(State.PC->Class->box, -1, Classes[pc.Class]);
+                        
+                        State.PC->wasClassChosen = TRUE;
+                        
+                        loadAS();
+                        
+                        char **TraitsList;
+                        u32 arrSize = 0;
+                        
+                        TraitsList = (char **)RaceTraits[pc.Race];
+                        arrSize = RaceTraitsArraySize[pc.Race];
+                        
+                        ListBox_ResetContent(State.PC->RacialTraits->box);
+                        AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
+                        
+                        //TODO: Check why lvl is not being update at loading
+                        cStr = ls_itoa(pc.lvl);
+                        Edit_SetText(State.PC->currLevel->box, cStr);
+                        ls_free(cStr);
+                        
+                        Edit_SetText(State.PC->BaseAttackBonus->box,
+                                     ClassBABString[pc.Class][0][pc.lvl]);
+                        
+                        cStr = ls_itoa(pc.xp);
+                        Edit_SetText(State.PC->currXP->box, cStr);
+                        ls_free(cStr);
+                        
+                        State.PC->xpIdx = pc.xpCurve;
+                        ComboBox_SelectString(State.PC->XPCurve->box, -1,
+                                              XPCurvesString[pc.xpCurve]);
+                        
+                        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
+                        Edit_SetText(State.PC->nextLevelXP->box, xpCurve[pc.lvl]);
+                        
+                        UpdateSavingThrows();
+                        
+                    } break;
+                }
             }
-            
+            else if(menuHandle == MenuBar) { }
         } break;
         
         case WM_COMMAND:
@@ -417,7 +466,7 @@ void RegisterWindow()
 
 HWND CreateWindow(HMENU MenuBar)
 {
-    u32 style = LS_VISIBLE | LS_THIN_BORDER | LS_POPUP; // | LS_OVERLAPPEDWINDOW;
+    u32 style = LS_VISIBLE | LS_THIN_BORDER | LS_POPUP; //| LS_OVERLAPPEDWINDOW;
     BOOL Result;
     
     SubMenu = CreateMenu();
@@ -425,16 +474,35 @@ HWND CreateWindow(HMENU MenuBar)
     Result = AppendMenuA(SubMenu, MF_STRING, 1, "Load");
     
     MENUITEMINFOA FileMenuInfo = {};
-    FileMenuInfo.cbSize = sizeof(MENUITEMINFOA);
-    
-    FileMenuInfo.fMask = MIIM_SUBMENU | MIIM_DATA | MIIM_FTYPE | MIIM_ID;
-    FileMenuInfo.fType = MFT_OWNERDRAW;
-    FileMenuInfo.wID   = MENU_FILE_ITEM_ID;
-    
+    FileMenuInfo.cbSize     = sizeof(MENUITEMINFOA);
+    FileMenuInfo.fMask      = MIIM_SUBMENU | MIIM_DATA | MIIM_FTYPE | MIIM_ID;
+    FileMenuInfo.fType      = MFT_OWNERDRAW;
+    FileMenuInfo.wID        = MENU_FILE_ITEM_ID;
     FileMenuInfo.dwItemData = (ULONG_PTR)"File";
-    FileMenuInfo.hSubMenu = SubMenu;
-    FileMenuInfo.cch = 5;
-    Result = InsertMenuItemA(MenuBar, 0, TRUE, &FileMenuInfo);
+    FileMenuInfo.hSubMenu   = SubMenu;
+    FileMenuInfo.cch        = 5;
+    Result = InsertMenuItemA(MenuBar, MENU_FILE_IDX, TRUE, &FileMenuInfo);
+    
+    BITMAPINFO BitmapInfo = {};
+    BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    BitmapInfo.bmiHeader.biWidth = 16;
+    BitmapInfo.bmiHeader.biHeight = -16; //Should it be negative?
+    BitmapInfo.bmiHeader.biPlanes = 1;
+    BitmapInfo.bmiHeader.biBitCount = 24;
+    BitmapInfo.bmiHeader.biCompression = BI_RGB;
+    
+    closeButton = CreateDIBSection(NULL, &BitmapInfo, DIB_RGB_COLORS, 
+                                   &backbuff, NULL, NULL);
+    closeButtonDC = CreateCompatibleDC(NULL);
+    SelectObject(closeButtonDC, closeButton);
+    ls_memcpy(pixelButtonData, backbuff, 16*16*3);
+    
+    MENUITEMINFOA CloseBitmap = {};
+    CloseBitmap.cbSize     = sizeof(MENUITEMINFOA);
+    CloseBitmap.fMask      = MIIM_ID | MIIM_FTYPE;
+    CloseBitmap.fType      = MFT_OWNERDRAW;
+    CloseBitmap.wID        = MENU_CLOSE_APP_ID;
+    Result = InsertMenuItemA(MenuBar, MENU_CLOSE_APP_IDX, TRUE, &CloseBitmap);
     
     MENUINFO menuInfo = {};
     menuInfo.cbSize  = sizeof(MENUINFO);
@@ -452,6 +520,9 @@ HWND CreateWindow(HMENU MenuBar)
         DWORD Error = GetLastError();
         ls_printf("When Retrieving a WindowHandle in Win32_SetupScreen got error: %d", Error);
     }
+    
+    RECT test = {100, 100, 200, 200};
+    DrawCaption(WindowHandle, GetDC(WindowHandle), &test, DC_BUTTONS);
     
     State.currWindowPos = { 300, 50 }; //NOTE:TODO: Hardcoded!!
     
@@ -514,6 +585,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         State.encounters.data = (u8 *)State.StateData + encounterOffset;
         State.encounters.isInitialized = TRUE;
     }
+    
     //
     // Create Tabs
     //
@@ -625,6 +697,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             DispatchMessageA(&Msg);
         }
         
+        State.hasMouseClicked = FALSE;
     }
     
     return 0;
