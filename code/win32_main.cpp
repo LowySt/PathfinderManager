@@ -230,8 +230,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 //for(u32 i = 0; i < count; i++)
                 //{
                 char text[32] = {};
-                SendMessageA(item->hwndItem, CB_GETLBTEXT, item->itemID, (LPARAM)text);
                 u32 textLen = SendMessageA(item->hwndItem, CB_GETLBTEXTLEN , item->itemID, 0);
+                SendMessageA(item->hwndItem, CB_GETLBTEXT, item->itemID, (LPARAM)text);
                 
                 TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
                 //}
@@ -577,22 +577,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 #endif
     
     
-#if 0
-    //
-    // Initialize StateData
-    //
-    
-    char fullPathBuff[128] = {};
-    u32 len = ls_getFullPathName((char *)"State.bin", fullPathBuff, 128);
-    
-    if(ls_fileExists(fullPathBuff) == TRUE)
-    {
-        ls_readFile((char *)"State.bin", (char **)&State.StateData, 0);
-        State.encounters.data = (u8 *)State.StateData + encounterOffset;
-        State.encounters.isInitialized = TRUE;
-    }
-#endif
-    
     //
     // Create Tabs
     //
@@ -651,11 +635,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     u32 newPageIdx = 0;
 #endif
     
-    
     b32 success = LoadState();
-    if(success == TRUE)
+    if(success == FALSE)
     {
-        State.encounters.isInitialized = TRUE;
+        //NOTE:TODO: How to fail?
+        // Nothing should have been changed yet, so the program shouldn't be in a bad state...
     }
     
     

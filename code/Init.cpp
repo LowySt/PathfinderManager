@@ -279,75 +279,6 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
     return FALSE;
 }
 
-ComboBox *FillEncounters(HWND h, HWND *wA, const char *label, s32 x, s32 y, u32 width, u32 height, u64 id)
-{
-    buffer buff = ls_bufferViewIntoPtr(State.encounters.data, KBytes(64));
-    
-    u32 numOfEncounters = ls_bufferReadDWord(&buff);
-    State.encounters.numEncounters = numOfEncounters;
-    
-    char **encounterNames = (char **)ls_alloc(sizeof(char *) * numOfEncounters);
-    for(u32 i = 0; i < numOfEncounters; i++) { encounterNames[i] = (char *)ls_alloc(sizeof(char) * 32); }
-    
-    u32 cursorStart = buff.cursor;
-    for(u32 i = 0; i < numOfEncounters; i++)
-    {
-        Encounter *CurrEnc = &State.encounters.Enc[i];
-        ls_bufferReadData(&buff, encounterNames[i]);
-        
-        u32 numOfMobs = ls_bufferReadDWord(&buff);
-        CurrEnc->numMobs = numOfMobs;
-        
-        for(u32 j = 0; j < numOfMobs; j++)
-        {
-            char nameBuff[32] = {};
-            ls_bufferReadData(&buff, nameBuff);
-            
-            u32  mobBonus = ls_bufferReadDWord(&buff);
-            
-            ls_memcpy(nameBuff, CurrEnc->mobNames[j], 32);
-            CurrEnc->mobBonus[j] = mobBonus;
-        }
-        
-        if(numOfMobs < MOB_NUM) { 
-            u32 paddingBytes = (MOB_NUM - numOfMobs) * sizeOfInitEntry;
-            ls_bufferAdvanceCursor(&buff, paddingBytes);
-        }
-        
-        u32 numOfAllies = ls_bufferReadDWord(&buff);
-        CurrEnc->numAllies = numOfAllies;
-        
-        for(u32 j = 0; j < numOfAllies; j++)
-        {
-            char nameBuff[32] = {};
-            ls_bufferReadData(&buff, nameBuff);
-            
-            u32  allyBonus = ls_bufferReadDWord(&buff);
-            
-            ls_memcpy(nameBuff, CurrEnc->allyNames[j], 32);
-            CurrEnc->allyBonus[j] = allyBonus;
-        }
-        
-        if(numOfAllies < ALLY_NUM) { 
-            u32 paddingBytes = (ALLY_NUM - numOfAllies) * sizeOfInitEntry;
-            ls_bufferAdvanceCursor(&buff, paddingBytes);
-        }
-        u32 cursorEnd = buff.cursor;
-        Assert(cursorEnd - cursorStart == sizeOfEncEntry);
-        cursorStart = cursorEnd;
-    }
-    
-    u32 stupidComboBoxNumberOfItemsWhichDeterminesHeight = numOfEncounters;
-    if(numOfEncounters == 1)
-    { stupidComboBoxNumberOfItemsWhichDeterminesHeight = 2; }
-    
-    ComboBox *Result = AddUnsortedComboBox(h, wA, label, LABEL_UP, x, y, width, height, id,
-                                           stupidComboBoxNumberOfItemsWhichDeterminesHeight);
-    AddAllComboBoxItems(Result->box, encounterNames, numOfEncounters);
-    
-    return Result;
-}
-
 //TODO: Init is improperly Initialized. Can't "Set" at program start without other commands prior.
 //      Can't add new enemies or allies if no other enemy/ally selection was previously made.
 void DrawInitTab(HWND WinH, u64 *ElementId)
@@ -434,10 +365,10 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 594, 62, 100, 20, (*ElementId)++); wA += 1;
     Page->numWindows += 1;
     
-    //EncounterSelection
-    if(State.encounters.isInitialized == TRUE)
+    //NOTE:EncounterSelection
     {
-        Page->EncounterSel = FillEncounters(WinH, wA, "Encounters", 470, 60, 100, 20, (*ElementId)++);
+        Page->EncounterSel = AddUnsortedComboBox(WinH, wA, "Encounters", LABEL_UP, 
+                                                 470, 60, 100, 20, (*ElementId)++, 1);
         wA += 2;
         
         Page->numWindows += 2;

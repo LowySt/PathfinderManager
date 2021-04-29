@@ -7,10 +7,13 @@ void SaveState()
     ls_bufferAddDWord(buf, State.inBattle);
     ls_bufferAddDWord(buf, State.encounters.numEncounters);
     
+    InitPage *page = State.Init;
+    
     for(u32 i = 0; i < State.encounters.numEncounters; i++)
     {
         Encounter *curr = &State.encounters.Enc[i];
         
+        ls_bufferAddData(buf, curr->name, 32);
         ls_bufferAddDWord(buf, curr->numMobs);
         for(u32 j = 0; j < curr->numMobs; j++)
         {
@@ -26,7 +29,6 @@ void SaveState()
         }
     }
     
-    InitPage *page = State.Init;
     //NOTE: Serialize Player Initiative
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
@@ -97,12 +99,14 @@ void SaveState()
         ls_bufferAddData(buf, text, len);
     }
     
+#if 0
     //NOTE: Current Encounter
     {
         char text[32] = {};
         s32 len = Edit_GetText(page->EncounterName->box, text, 32);
         ls_bufferAddData(buf, text, len);
     }
+#endif
     
     //NOTE: Round Counter
     {
@@ -149,9 +153,13 @@ b32 LoadState()
     State.inBattle = ls_bufferReadDWord(buf);
     State.encounters.numEncounters = ls_bufferReadDWord(buf);
     
+    InitPage *page = State.Init;
+    
     for(u32 i = 0; i < State.encounters.numEncounters; i++)
     {
         Encounter *curr = &State.encounters.Enc[i];
+        
+        ls_bufferReadData(buf, curr->name);
         
         curr->numMobs = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numMobs; j++)
@@ -166,9 +174,16 @@ b32 LoadState()
             ls_bufferReadData(buf, &curr->allyNames[j]);
             curr->allyBonus[j] = ls_bufferReadDWord(buf);
         }
+        
+        const u32 baseHeight = 20;
+        u32 height = 0;
+        if(State.encounters.numEncounters == 1) { height = baseHeight*3; }
+        else { height = baseHeight*(State.encounters.numEncounters + 1); }
+        SetWindowPos(State.Init->EncounterSel->box, NULL, NULL, NULL, 100, height, SWP_NOMOVE | SWP_NOZORDER);
+        
+        ComboBox_InsertString(State.Init->EncounterSel->box, -1, curr->name);
     }
     
-    InitPage *page = State.Init;
     //NOTE: UnSerialize Player Initiative
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
@@ -245,12 +260,14 @@ b32 LoadState()
         Edit_SetText(page->Current->box, text);
     }
     
+#if 0
     //NOTE: Current Encounter
     {
         char text[32] = {};
         ls_bufferReadData(buf, text);
         Edit_SetText(page->EncounterName->box, text);
     }
+#endif
     
     //NOTE: Round Counter
     {
@@ -267,13 +284,14 @@ b32 LoadState()
         c->isActive     = ls_bufferReadDWord(buf);
         c->roundCounter = ls_bufferReadDWord(buf);
         
-        char text[32] = {};
+        char text1[32] = {};
+        char text2[32] = {};
         
-        ls_bufferReadData(buf, text);
-        Edit_SetText(page->Counters[i].Field->box, text);
+        ls_bufferReadData(buf, text1);
+        Edit_SetText(page->Counters[i].Field->box, text1);
         
-        ls_bufferReadData(buf, text);
-        Edit_SetText(page->Counters[i].Rounds->box, text);
+        ls_bufferReadData(buf, text2);
+        Edit_SetText(page->Counters[i].Rounds->box, text2);
     }
     
     if(State.inBattle == TRUE)
@@ -304,6 +322,8 @@ b32 LoadState()
         
         ShowOrder(page->Order, page->VisibleOrder);
         
+        HideElem(page->EncounterSel->box); HideElem(page->EncounterSel->label);
+        
         HideElem(page->Set->box);    HideElem(page->Roll->box);
         HideElem(page->Mobs->box);   HideElem(page->Mobs->label);
         HideElem(page->Allies->box); HideElem(page->Allies->label);
@@ -311,6 +331,10 @@ b32 LoadState()
     } 
     else
     {
+        ShowElem(page->EncounterSel->box); ShowElem(page->EncounterSel->label);
+        
+        HideInitField(page->MobFields, MOB_NUM);
+        HideInitField(page->AllyFields, ALLY_NUM);
         ComboBox_SetCurSel(page->Mobs->box, 0);
         ComboBox_SetCurSel(page->Allies->box, 0);
     }

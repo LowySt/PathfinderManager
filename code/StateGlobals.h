@@ -111,15 +111,10 @@ struct FeatsPage
     u32 numWindows;
 };
 
-//NOTE: Size in Bytes of an Encounter
-const u32 sizeOfInitEntry = 36; // 32 Bytes Name, 4 Bytes Bonus
-const u32 sizeOfEncounterGeneral = 32 + 4 + 4; //Encounter Name, Number Mobs, Number Allies
-const u32 sizeOfEncEntry  = (MOB_NUM + ALLY_NUM)*sizeOfInitEntry + sizeOfEncounterGeneral;
-
-const u32 encounterOffset = KBytes(128);
-
 struct Encounter
 {
+    char name[32];
+    
     u32 numMobs;
     char mobNames[MOB_NUM][32];
     u32  mobBonus[MOB_NUM];
@@ -131,12 +126,8 @@ struct Encounter
 
 struct EncList
 {
-    void *data;  //NOTE: Fixed size of 32 Kbytes
-    
     u32 numEncounters;
     Encounter Enc[64];
-    
-    b32 isInitialized;
 };
 
 struct Counter
@@ -226,12 +217,11 @@ struct ProgramState
     FeatsPage *Feats;
     InitPage  *Init;
     
-    void *StateData;
-    b32  isInitialized;
-    
     //State Management
     b32       inBattle;
     EncList   encounters;
+    
+    b32 isInitialized;
     
     //Window management
     b32    isDragging;

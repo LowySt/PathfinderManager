@@ -111,74 +111,41 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     
     if(commandID == Init->Save->id)
     {
-        if(State.StateData == 0x0) { State.StateData = ls_alloc(MBytes(1)); }
-        if(State.encounters.data == 0x0) { 
-            State.encounters.data = (u8 *)State.StateData + encounterOffset;
-        }
+        u32 numEncounters = State.encounters.numEncounters;
+        Encounter *curr = &State.encounters.Enc[numEncounters];
         
-        buffer encBuff = ls_bufferViewIntoPtr(State.encounters.data, KBytes(64));
-        u32 numEncounters = ls_bufferPeekDWord(&encBuff);
+        Edit_GetText(State.Init->EncounterName->box, curr->name, 32);
         
-        if(numEncounters > 64) { Assert(FALSE); /*TODO: Loggging*/ }
+        curr->numMobs = State.Init->VisibleMobs;
+        curr->numAllies = State.Init->VisibleAllies;
         
-        ls_bufferChangeDWord(&encBuff, numEncounters + 1);
-        ls_bufferAdvanceCursor(&encBuff, sizeof(u32));
-        
-        //NOTE: This pushes us to the next free Entry;
-        u32 offset = numEncounters * sizeOfEncEntry;
-        ls_bufferAdvanceCursor(&encBuff, offset);
-        
-        //Add encounter name
-        char encName[32] = {};
-        u32 len = Edit_GetText(Init->EncounterName->box, encName, 32);
-        ls_bufferAddData(&encBuff, encName, 32);
-        
-        //Add mobs
-        ls_bufferAddDWord(&encBuff, Init->VisibleMobs);
-        
-        for(u32 i = 0; i < Init->VisibleMobs; i++)
+        for(u32 i = 0; i < curr->numMobs; i++)
         {
-            char mName[32] = {};
-            u32 len = Edit_GetText(Init->MobFields[i].Name->box, mName, 32);
-            ls_bufferAddData(&encBuff, mName, 32);
+            Edit_GetText(State.Init->MobFields[i].Name->box, curr->mobNames[i], 32);
             
-            char mBonus[8] = {};
-            len = Edit_GetText(Init->MobFields[i].Bonus->box, mBonus, 8);
-            u32 mobBonus = (u32)ls_atoi(mBonus, len);
-            
-            ls_bufferAddDWord(&encBuff, mobBonus);
+            char bonus[32] = {};
+            u32 len = Edit_GetText(State.Init->MobFields[i].Bonus->box, bonus, 32);
+            curr->mobBonus[i] = ls_atoi(bonus, len);
         }
         
-        if(Init->VisibleMobs < MOB_NUM) { 
-            u32 paddingBytes = (MOB_NUM - Init->VisibleMobs) * sizeOfInitEntry;
-            ls_bufferAdvanceCursor(&encBuff, paddingBytes);
-        }
-        
-        //Add allies
-        ls_bufferAddDWord(&encBuff, Init->VisibleAllies);
-        
-        for(u32 i = 0; i < Init->VisibleAllies; i++)
+        for(u32 i = 0; i < curr->numAllies; i++)
         {
-            char aName[32] = {};
-            u32 len = Edit_GetText(Init->AllyFields[i].Name->box, aName, 32);
-            ls_bufferAddData(&encBuff, aName, 32);
+            Edit_GetText(State.Init->AllyFields[i].Name->box, curr->allyNames[i], 32);
             
-            char aBonus[8] = {};
-            len = Edit_GetText(Init->AllyFields[i].Bonus->box, aBonus, 8);
-            u32 allyBonus = (u32)ls_atoi(aBonus, len);
-            
-            ls_bufferAddDWord(&encBuff, allyBonus);
+            char bonus[32] = {};
+            u32 len = Edit_GetText(State.Init->AllyFields[i].Bonus->box, bonus, 32);
+            curr->allyBonus[i] = ls_atoi(bonus, len);
         }
         
-        if(Init->VisibleAllies < ALLY_NUM) { 
-            u32 paddingBytes = (ALLY_NUM - Init->VisibleAllies) * sizeOfInitEntry;
-            ls_bufferAdvanceCursor(&encBuff, paddingBytes);
-        }
+        State.encounters.numEncounters += 1;
         
-        ls_bufferClear(&encBuff);
+        const u32 baseHeight = 20;
+        u32 height = 0;
+        if(State.encounters.numEncounters == 1) { height = baseHeight*3; }
+        else { height = baseHeight*(State.encounters.numEncounters + 1); }
+        SetWindowPos(State.Init->EncounterSel->box, NULL, NULL, NULL, 100, height, SWP_NOMOVE | SWP_NOZORDER);
         
-        //Write to disk the StateFile
-        ls_writeFile((char *)"State.bin", (char *)State.StateData, MBytes(1)-1, FALSE);
+        ComboBox_InsertString(State.Init->EncounterSel->box, -1, curr->name);
     }
     
     if(commandID == Init->Set->id)
