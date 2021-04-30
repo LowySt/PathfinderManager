@@ -315,13 +315,17 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 {
                     case FILE_MENU_SAVE_IDX:
                     {
+#if HAS_TABS
                         //First update Ability Scores then serialize.
                         saveAS();
                         SerializePC(&pc);
+#endif
+                        SaveState();
                     } break;
                     
                     case FILE_MENU_LOAD_IDX:
                     {
+#if HAS_TABS
                         LoadPC(&pc);
                         
                         //TODO: Stop allocating and deallocating mem for stupid C Strings
@@ -369,6 +373,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         Edit_SetText(State.PC->nextLevelXP->box, xpCurve[pc.lvl]);
                         
                         UpdateSavingThrows();
+#endif
                         
                     } break;
                 }

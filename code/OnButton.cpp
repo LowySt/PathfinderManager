@@ -238,6 +238,9 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         HideElem(Init->EncounterName->box);
         
         ShowElem(Init->Next->box);   ShowElem(Init->RoundCounter->box);
+        
+        ShowInitFieldAdd(Init->MobFields,   Init->VisibleMobs, MOB_NUM);
+        ShowInitFieldAdd(Init->AllyFields, Init->VisibleAllies, ALLY_NUM);
     }
     
     if(commandID == Init->Next->id)

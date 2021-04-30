@@ -81,7 +81,7 @@ inline void ShowInitField(InitField *f, s32 n, s32 max)
         }
     }
     
-    if(i < max) { ShowWindow(f[i].New.Add->box, SW_SHOW); }
+    //if(i < max) { ShowWindow(f[i].New.Add->box, SW_SHOW); }
 }
 
 inline void ShowOrder(OrderField *o, s32 n)
@@ -202,8 +202,8 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
     {
         s32 idx = ComboBox_GetCurSel(handle);
         Assert(idx != CB_ERR);
-        State.Init->VisibleMobs  = idx;
-        State.Init->VisibleOrder = PARTY_NUM + State.Init->VisibleAllies + idx;
+        Init->VisibleMobs  = idx;
+        Init->VisibleOrder = PARTY_NUM + Init->VisibleAllies + idx;
         
         HideInitField(Init->MobFields, MOB_NUM);
         ShowInitField(Init->MobFields, idx, MOB_NUM);
@@ -224,7 +224,7 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
         ShowInitField(Init->AllyFields, idx, ALLY_NUM);
         
         HideOrder(Init->Order, ORDER_NUM);
-        ShowOrder(Init->Order, State.Init->VisibleOrder);
+        ShowOrder(Init->Order, Init->VisibleOrder);
         
         return TRUE;
     }

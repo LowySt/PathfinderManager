@@ -198,6 +198,13 @@ b32 LoadState()
         ComboBox_InsertString(State.Init->EncounterSel->box, -1, curr->name);
     }
     
+    if(!State.inBattle) 
+    { 
+        ComboBox_SetCurSel(page->Mobs->box, 0);
+        ComboBox_SetCurSel(page->Allies->box, 0);
+        return FALSE; 
+    }
+    
     //NOTE: UnSerialize Player Initiative
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
@@ -308,50 +315,42 @@ b32 LoadState()
         Edit_SetText(page->Counters[i].Rounds->box, text2);
     }
     
-    if(State.inBattle == TRUE)
-    {
-        for(u32 i = 0; i < PARTY_NUM; i++) {
-            Edit_SetReadOnly(page->PlayerFields[i].Bonus->box, TRUE);
-        }
-        
-        for(u32 i = 0; i < MOB_NUM; i++)  { 
-            Edit_SetReadOnly(page->MobFields[i].Name->box, TRUE);
-            Edit_SetReadOnly(page->MobFields[i].Bonus->box, TRUE);
-            Edit_SetReadOnly(page->MobFields[i].Final->box, TRUE);
-        }
-        
-        for(u32 i = 0; i < ALLY_NUM; i++) { 
-            Edit_SetReadOnly(page->AllyFields[i].Name->box, TRUE);
-            Edit_SetReadOnly(page->AllyFields[i].Bonus->box, TRUE);
-            Edit_SetReadOnly(page->AllyFields[i].Final->box, TRUE);
-        }
-        
-        ComboBox_SetCurSel(page->Mobs->box, page->VisibleMobs);
-        HideInitField(page->MobFields, MOB_NUM);
-        ShowInitField(page->MobFields, page->VisibleMobs, MOB_NUM);
-        
-        ComboBox_SetCurSel(page->Allies->box, page->VisibleAllies);
-        HideInitField(page->AllyFields, ALLY_NUM);
-        ShowInitField(page->AllyFields, page->VisibleAllies, ALLY_NUM);
-        
-        ShowOrder(page->Order, page->VisibleOrder);
-        
-        HideElem(page->EncounterSel->box); HideElem(page->EncounterSel->label);
-        
-        HideElem(page->Set->box);    HideElem(page->Roll->box);
-        HideElem(page->Mobs->box);   HideElem(page->Mobs->label);
-        HideElem(page->Allies->box); HideElem(page->Allies->label);
-        ShowElem(page->Next->box);   ShowElem(page->RoundCounter->box);
-    } 
-    else
-    {
-        ShowElem(page->EncounterSel->box); ShowElem(page->EncounterSel->label);
-        
-        HideInitField(page->MobFields, MOB_NUM);
-        HideInitField(page->AllyFields, ALLY_NUM);
-        ComboBox_SetCurSel(page->Mobs->box, 0);
-        ComboBox_SetCurSel(page->Allies->box, 0);
+    
+    for(u32 i = 0; i < PARTY_NUM; i++) {
+        Edit_SetReadOnly(page->PlayerFields[i].Bonus->box, TRUE);
     }
+    
+    for(u32 i = 0; i < MOB_NUM; i++)  { 
+        Edit_SetReadOnly(page->MobFields[i].Name->box, TRUE);
+        Edit_SetReadOnly(page->MobFields[i].Bonus->box, TRUE);
+        Edit_SetReadOnly(page->MobFields[i].Final->box, TRUE);
+    }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++) { 
+        Edit_SetReadOnly(page->AllyFields[i].Name->box, TRUE);
+        Edit_SetReadOnly(page->AllyFields[i].Bonus->box, TRUE);
+        Edit_SetReadOnly(page->AllyFields[i].Final->box, TRUE);
+    }
+    
+    ComboBox_SetCurSel(page->Mobs->box, page->VisibleMobs);
+    HideInitField(page->MobFields, MOB_NUM);
+    ShowInitField(page->MobFields, page->VisibleMobs, MOB_NUM);
+    ShowInitFieldAdd(page->MobFields, page->VisibleMobs, MOB_NUM);
+    
+    ComboBox_SetCurSel(page->Allies->box, page->VisibleAllies);
+    HideInitField(page->AllyFields, ALLY_NUM);
+    ShowInitField(page->AllyFields, page->VisibleAllies, ALLY_NUM);
+    ShowInitFieldAdd(page->AllyFields, page->VisibleAllies, ALLY_NUM);
+    
+    ShowOrder(page->Order, page->VisibleOrder);
+    
+    HideElem(page->EncounterSel->box); HideElem(page->EncounterSel->label);
+    HideElem(page->EncounterName->box); HideElem(page->Save->box);
+    
+    HideElem(page->Set->box);    HideElem(page->Roll->box);
+    HideElem(page->Mobs->box);   HideElem(page->Mobs->label);
+    HideElem(page->Allies->box); HideElem(page->Allies->label);
+    ShowElem(page->Next->box);   ShowElem(page->RoundCounter->box);
     
     return TRUE;
 }
