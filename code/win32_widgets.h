@@ -19,6 +19,7 @@ struct ListBox;
 struct OrderField;
 struct InitField;
 struct Counter;
+struct DiceThrow;
 
 string getText(HWND hwnd);
 
@@ -64,4 +65,6 @@ InitField AddInitField(HWND h, HWND **winA, const char *label, s32 x, s32 y,
                        u64 *id, u64 initId, b32 isParty);
 
 Counter AddCounter(HWND h, HWND **winA, const char *label, s32 x, s32 y, u64 *id);
+
+DiceThrow AddThrower(HWND h, HWND **winA, s32 x, s32 y, u64 *id);
 #endif //WIN32_WIDGETS_H

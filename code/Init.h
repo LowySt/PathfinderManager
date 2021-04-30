@@ -35,6 +35,8 @@ const u32 COUNTER_NUM = 8;
 const char *CounterNames[COUNTER_NUM] = { "Counter 1", "Counter 2", "Counter 3", "Counter 4", 
     "Counter 5", "Counter 6", "Counter 7", "Counter 8" };
 
+const u32 THROWER_NUM = 8;
+
 struct tmp_order {
     s32 init;
     HWND nameBox;

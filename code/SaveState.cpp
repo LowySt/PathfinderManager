@@ -27,6 +27,13 @@ void SaveState()
             ls_bufferAddData(buf, curr->allyNames[j], 32);
             ls_bufferAddDWord(buf, curr->allyBonus[j]);
         }
+        
+        for(u32 j = 0; j < THROWER_NUM; j++)
+        {
+            ls_bufferAddData(buf, curr->throwerNames[j], 64);
+            ls_bufferAddData(buf, curr->throwerHit[j], 64);
+            ls_bufferAddData(buf, curr->throwerDamage[j], 64);
+        }
     }
     
     //NOTE: Serialize Player Initiative
@@ -164,15 +171,22 @@ b32 LoadState()
         curr->numMobs = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numMobs; j++)
         {
-            ls_bufferReadData(buf, &curr->mobNames[j]);
+            ls_bufferReadData(buf, curr->mobNames[j]);
             curr->mobBonus[j] = ls_bufferReadDWord(buf);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numAllies; j++)
         {
-            ls_bufferReadData(buf, &curr->allyNames[j]);
+            ls_bufferReadData(buf, curr->allyNames[j]);
             curr->allyBonus[j] = ls_bufferReadDWord(buf);
+        }
+        
+        for(u32 j = 0; j < THROWER_NUM; j++)
+        {
+            ls_bufferReadData(buf, curr->throwerNames[j]);
+            ls_bufferReadData(buf, curr->throwerHit[j]);
+            ls_bufferReadData(buf, curr->throwerDamage[j]);
         }
         
         const u32 baseHeight = 20;

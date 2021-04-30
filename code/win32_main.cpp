@@ -38,6 +38,8 @@
 #include "StateGlobals.h"
 #include "buttonImage.h"
 
+#include "diceRoller.cpp"
+
 #include "Class.cpp"
 #include "Skills.cpp"
 #include "Feats.cpp"
@@ -642,6 +644,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         // Nothing should have been changed yet, so the program shouldn't be in a bad state...
     }
     
+    SYSTEMTIME endT, beginT;
+    GetSystemTime(&beginT);
     
     b32 Running = TRUE;
     while(Running)
@@ -697,6 +701,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
         
         State.hasMouseClicked = FALSE;
+        
+        GetSystemTime(&endT);
+        
+        State.timePassed += (endT.wSecond - beginT.wSecond);
+        if(State.timePassed >= 30)
+        {
+            State.timePassed = 0;
+            SaveState();
+        }
+        beginT = endT;
     }
     
     return 0;

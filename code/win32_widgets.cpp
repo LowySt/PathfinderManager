@@ -370,6 +370,24 @@ ListBox *AddSingleSelListBox(HWND win, HWND *pageArr, const char *label, LabelAl
 }
 
 
+DiceThrow AddThrower(HWND h, HWND **winA, s32 x, s32 y, u64 *id)
+{
+    HWND *wA = *winA;
+    
+    DiceThrow Result = {};
+    
+    Result.Name   = AddTextBox(h, wA, 0, LABEL_NULL, x, y,    112, 20, (*id)++, "");     wA += 1;
+    Result.ToHit  = AddTextBox(h, wA, 0, LABEL_NULL, x, y+24, 102, 20, (*id)++, "");     wA += 1;
+    Result.HitRes = AddStaticUnlabeledTextBox(h, wA, x+108, y+24, 32, 20, (*id)++); wA += 1;
+    Result.Damage = AddTextBox(h, wA, 0, LABEL_NULL, x, y+48, 102, 20, (*id)++, "");     wA += 1;
+    Result.DmgRes = AddStaticUnlabeledTextBox(h, wA, x+108, y+48, 32, 20, (*id)++); wA += 1;
+    Result.Throw  = AddButton(h, wA, "Go", x + 118, y, 22, 20, (*id)++, TRUE);           wA += 1;
+    
+    *winA = wA;
+    
+    return Result;
+}
+
 OrderField AddOrderField(HWND win, HWND **winA, s32 x, s32 y, u32 idx, u64 *id)
 {
     HWND *wA = *winA;

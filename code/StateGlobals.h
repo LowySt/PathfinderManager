@@ -3,7 +3,7 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 1;
+const u32 global_saveVersion = 2;
 
 enum LabelAlign : u8
 {
@@ -122,6 +122,10 @@ struct Encounter
     u32 numAllies;
     char allyNames[ALLY_NUM][32];
     u32  allyBonus[ALLY_NUM];
+    
+    char throwerNames[THROWER_NUM][32];
+    char throwerHit[THROWER_NUM][64];
+    char throwerDamage[THROWER_NUM][64];
 };
 
 struct EncList
@@ -174,6 +178,16 @@ struct InitField
     b32     isSelected;
 };
 
+struct DiceThrow
+{
+    TextBox *Name;
+    TextBox *ToHit;
+    TextBox *HitRes;
+    TextBox *Damage;
+    TextBox *DmgRes;
+    Button  *Throw;
+};
+
 struct InitPage
 {
     ComboBox   *Mobs;
@@ -206,8 +220,9 @@ struct InitPage
     Counter    Counters[COUNTER_NUM];
     TextBox    *RoundCounter;
     
+    DiceThrow  Throwers[THROWER_NUM];
     
-    HWND WindowsArray[512];
+    HWND WindowsArray[1024];
     u32 numWindows;
 };
 
@@ -229,6 +244,8 @@ struct ProgramState
     POINTS currWindowPos;
     
     b32 hasMouseClicked;
+    
+    u64 timePassed;
 };
 
 struct Element

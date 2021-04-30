@@ -52,10 +52,7 @@ inline void ShowElem(HWND box) { ShowWindow(box, SW_SHOW); }
 
 inline void HideInitElem(InitPage *p) {
     HideInitField(p->MobFields, MOB_NUM);
-    ShowElem(p->MobFields[0].New.Add->box);
-    
     HideInitField(p->AllyFields, ALLY_NUM);
-    ShowElem(p->AllyFields[0].New.Add->box);
     
     HideOrder(p->Order, ORDER_NUM);
     
@@ -273,6 +270,13 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
             Edit_SetText(Init->AllyFields[i].Bonus->box, bonus);
         }
         
+        for(u32 i = 0; i < THROWER_NUM; i++)
+        {
+            Edit_SetText(Init->Throwers[i].Name->box, Curr->throwerNames[i]);
+            Edit_SetText(Init->Throwers[i].ToHit->box, Curr->throwerHit[i]);
+            Edit_SetText(Init->Throwers[i].Damage->box, Curr->throwerDamage[i]);
+        }
+        
         return TRUE;
     }
     
@@ -353,6 +357,15 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     Page->RoundCounter = AddValueBox(WinH, wA, 0, LABEL_NULL, 1, 1180, 60, 30, 20, (*ElementId)++); wA += 1;
     
     Page->numWindows += 7;
+    
+    //NOTE: Dice Throwers
+    u32 xPos = 20;
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        Page->Throwers[i] = AddThrower(WinH, &wA, xPos, 642, ElementId);
+        Page->numWindows += 6;
+        xPos += 156;
+    }
     
     yPos = 142;
     for(u32 i = 0; i < COUNTER_NUM; i++)

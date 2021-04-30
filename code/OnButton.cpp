@@ -137,6 +137,13 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             curr->allyBonus[i] = ls_atoi(bonus, len);
         }
         
+        for(u32 i = 0; i < THROWER_NUM; i++)
+        {
+            Edit_GetText(State.Init->Throwers[i].Name->box, curr->throwerNames[i], 64);
+            Edit_GetText(State.Init->Throwers[i].ToHit->box, curr->throwerHit[i], 64);
+            Edit_GetText(State.Init->Throwers[i].Damage->box, curr->throwerDamage[i], 64);
+        }
+        
         State.encounters.numEncounters += 1;
         
         const u32 baseHeight = 20;
@@ -224,6 +231,12 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         HideElem(Init->Set->box);    HideElem(Init->Roll->box);
         HideElem(Init->Mobs->box);   HideElem(Init->Mobs->label);
         HideElem(Init->Allies->box); HideElem(Init->Allies->label);
+        
+        HideElem(Init->EncounterSel->box);
+        HideElem(Init->EncounterSel->label);
+        HideElem(Init->Save->box);
+        HideElem(Init->EncounterName->box);
+        
         ShowElem(Init->Next->box);   ShowElem(Init->RoundCounter->box);
     }
     
@@ -352,8 +365,13 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         
         ShowOrder(Init->Order, Init->VisibleOrder);
         ShowElem(Init->Set->box);
+        ShowElem(Init->Roll->box);
         ShowElem(Init->Mobs->box);
         ShowElem(Init->Allies->box);
+        ShowElem(Init->EncounterSel->box);
+        ShowElem(Init->EncounterSel->label);
+        ShowElem(Init->Save->box);
+        ShowElem(Init->EncounterName->box);
         
         ComboBox_SetCurSel(Init->Mobs->box, 0);
         ComboBox_SetCurSel(Init->Allies->box, 0);
@@ -377,6 +395,28 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Init->Counters[i].roundCounter = 0;
             
             return;
+        }
+    }
+    
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        if(commandID == Init->Throwers[i].Throw->id)
+        {
+            char toThrow[64] = {};
+            u32 len = Edit_GetText(Init->Throwers[i].ToHit->box, toThrow, 64);
+            f32 result = diceRoll(toThrow, len);
+            char toHitResult[8] = {};
+            ls_ftoa_t(result, toHitResult, 8);
+            
+            Edit_SetText(Init->Throwers[i].HitRes->box, toHitResult);
+            
+            char damage[64] = {};
+            len = Edit_GetText(Init->Throwers[i].Damage->box, damage, 64);
+            result = diceRoll(damage, len);
+            char damageResult[8] = {};
+            ls_ftoa_t(result, damageResult, 8);
+            
+            Edit_SetText(Init->Throwers[i].DmgRes->box, damageResult);
         }
     }
     
