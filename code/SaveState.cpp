@@ -151,7 +151,17 @@ b32 LoadState()
     
     if(ls_fileExists(fullPathBuff) == FALSE) { return FALSE; }
     
-    buffer state = ls_bufferInitFromFile(ls_strConst("testState"));
+#if __GNUG__
+    string filePath = {
+        (char *)"testState",
+        (sizeof("testState")/sizeof("testState"[0]))-1,
+        (sizeof("testState")/sizeof("testState"[0]))-1
+    };
+#else
+    string filePath = ls_strConst("testState");
+#endif
+    
+    buffer state = ls_bufferInitFromFile(filePath);
     buffer *buf = &state;
     
     u32 fileVersion = ls_bufferReadDWord(buf);

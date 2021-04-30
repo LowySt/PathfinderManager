@@ -18,7 +18,7 @@ enum DiceRoller_TokenType
 	TOKEN_DICE_THROW
 };
 
-char *tokenStr[] = {"BLOCK_START", "VAL", "OPEN_PAREN", "CLOSE_PAREN", "PLUS", "MINUS", "TIMES", "DICE_THROW"}; 
+const char *tokenStr[] = {"BLOCK_START", "VAL", "OPEN_PAREN", "CLOSE_PAREN", "PLUS", "MINUS", "TIMES", "DICE_THROW"}; 
 
 struct DiceRoller_Token
 {
