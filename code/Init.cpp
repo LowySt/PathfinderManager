@@ -25,6 +25,8 @@ inline void HideInitField(InitField *f, s32 n)
             ShowWindow(f[i].Final->box, SW_HIDE);
             ShowWindow(f[i].Bonus->box, SW_HIDE);
             
+            ShowWindow(f[i].AC->box, SW_HIDE);
+            
             ShowWindow(f[i].New.Name->box, SW_HIDE);
             ShowWindow(f[i].New.Bonus->box, SW_HIDE);
             ShowWindow(f[i].New.Add->box, SW_HIDE);
@@ -101,6 +103,8 @@ inline void ShowInitField(InitField *f, s32 n, s32 max)
             ShowWindow(f[i].Name->box, SW_SHOW);
             ShowWindow(f[i].Final->box, SW_SHOW);
             ShowWindow(f[i].Bonus->box, SW_SHOW);
+            
+            ShowWindow(f[i].AC->box, SW_SHOW);
         }
         else {
             ShowWindow(f[i].Bonus->box, SW_SHOW);
@@ -285,6 +289,7 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
             ls_itoa_t(Curr->mobBonus[i], bonus, 8);
             
             Edit_SetText(Init->MobFields[i].Bonus->box, bonus);
+            Edit_SetText(Init->MobFields[i].AC->box, Curr->mobAC[i]);
         }
         
         for(u32 i = 0; i < Init->VisibleAllies; i++)
@@ -295,6 +300,7 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
             ls_itoa_t(Curr->allyBonus[i], bonus, 8);
             
             Edit_SetText(Init->AllyFields[i].Bonus->box, bonus);
+            Edit_SetText(Init->AllyFields[i].AC->box, Curr->allyAC[i]);
         }
         
         for(u32 i = 0; i < THROWER_NUM; i++)
@@ -344,9 +350,9 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     yPos += 70;
     for(u32 i = 0; i < ALLY_NUM; i++)
     {
-        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 530, yPos, ElementId, i, FALSE);
+        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 546, yPos, ElementId, i, FALSE);
         yPos += 20;
-        Page->numWindows += 7;
+        Page->numWindows += 8;
     }
     
     // Mob Fields
@@ -355,7 +361,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     {
         Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 296, yPos, ElementId, i, FALSE);
         yPos += 20;
-        Page->numWindows += 7;
+        Page->numWindows += 8;
     }
     
     //ORDER

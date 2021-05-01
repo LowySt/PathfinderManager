@@ -3,7 +3,13 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 2;
+const u32 global_saveVersion = 3;
+
+const u32 WINARR_INIT_NUM  = 1024;
+const u32 WINARR_PC_NUM    = 64;
+const u32 WINARR_FEATS_NUM = 64;
+
+const u32 ELEM_MAP_NUM = WINARR_INIT_NUM + WINARR_PC_NUM + WINARR_FEATS_NUM;
 
 enum LabelAlign : u8
 {
@@ -95,7 +101,7 @@ struct PCPage
     TextBox *SavingThrows[3];
     TextBox *BaseAttackBonus;
     
-    HWND WindowsArray[64];
+    HWND WindowsArray[WINARR_PC_NUM];
     u32 numWindows;
 };
 
@@ -107,10 +113,11 @@ struct FeatsPage
     u32 ChosenFeatsIndices[64];
     u8 usedFeats;
     
-    HWND WindowsArray[64];
+    HWND WindowsArray[WINARR_FEATS_NUM];
     u32 numWindows;
 };
 
+//TODO: Convert Bonuses from u32 to char[] because we double convert anyway.
 struct Encounter
 {
     char name[32];
@@ -118,10 +125,12 @@ struct Encounter
     u32 numMobs;
     char mobNames[MOB_NUM][32];
     u32  mobBonus[MOB_NUM];
+    char mobAC[MOB_NUM][8];
     
     u32 numAllies;
     char allyNames[ALLY_NUM][32];
     u32  allyBonus[ALLY_NUM];
+    char allyAC[ALLY_NUM][8];
     
     char throwerNames[THROWER_NUM][32];
     char throwerHit[THROWER_NUM][64];
@@ -175,6 +184,10 @@ struct InitField
     TextBox *Bonus;
     TextBox *Final;
     
+    TextBox *AC;
+    TextBox *Touch;
+    TextBox *NoDex;
+    
     AddInit New;
     
     u64     id;
@@ -225,7 +238,7 @@ struct InitPage
     
     DiceThrow  Throwers[THROWER_NUM];
     
-    HWND WindowsArray[1024];
+    HWND WindowsArray[WINARR_INIT_NUM];
     u32 numWindows;
 };
 
@@ -296,6 +309,6 @@ HMENU MenuBar;
 HMENU SubMenu;
 
 //TODO: Can I manage to do things using this?
-Element ElementMap[512] = {};
+Element ElementMap[ELEM_MAP_NUM] = {};
 
 #endif //_STATE_GLOBALS_H

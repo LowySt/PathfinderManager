@@ -19,6 +19,7 @@ void SaveState()
         {
             ls_bufferAddData(buf, curr->mobNames[j], 32);
             ls_bufferAddDWord(buf, curr->mobBonus[j]);
+            ls_bufferAddData(buf, curr->mobAC[j], 8);
         }
         
         ls_bufferAddDWord(buf, curr->numAllies);
@@ -26,6 +27,7 @@ void SaveState()
         {
             ls_bufferAddData(buf, curr->allyNames[j], 32);
             ls_bufferAddDWord(buf, curr->allyBonus[j]);
+            ls_bufferAddData(buf, curr->allyAC[j], 8);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
@@ -183,6 +185,7 @@ b32 LoadState()
         {
             ls_bufferReadData(buf, curr->mobNames[j]);
             curr->mobBonus[j] = ls_bufferReadDWord(buf);
+            ls_bufferReadData(buf, curr->mobAC[j]);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
@@ -190,6 +193,7 @@ b32 LoadState()
         {
             ls_bufferReadData(buf, curr->allyNames[j]);
             curr->allyBonus[j] = ls_bufferReadDWord(buf);
+            ls_bufferReadData(buf, curr->allyAC[j]);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)

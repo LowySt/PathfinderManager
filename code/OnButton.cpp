@@ -114,34 +114,38 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         u32 numEncounters = State.encounters.numEncounters;
         Encounter *curr = &State.encounters.Enc[numEncounters];
         
-        Edit_GetText(State.Init->EncounterName->box, curr->name, 32);
+        Edit_GetText(Init->EncounterName->box, curr->name, 32);
         
-        curr->numMobs = State.Init->VisibleMobs;
-        curr->numAllies = State.Init->VisibleAllies;
+        curr->numMobs = Init->VisibleMobs;
+        curr->numAllies = Init->VisibleAllies;
         
         for(u32 i = 0; i < curr->numMobs; i++)
         {
-            Edit_GetText(State.Init->MobFields[i].Name->box, curr->mobNames[i], 32);
+            Edit_GetText(Init->MobFields[i].Name->box, curr->mobNames[i], 32);
             
             char bonus[32] = {};
-            u32 len = Edit_GetText(State.Init->MobFields[i].Bonus->box, bonus, 32);
+            u32 len = Edit_GetText(Init->MobFields[i].Bonus->box, bonus, 32);
             curr->mobBonus[i] = ls_atoi(bonus, len);
+            
+            Edit_GetText(Init->MobFields[i].AC->box, curr->mobAC[i], 8);
         }
         
         for(u32 i = 0; i < curr->numAllies; i++)
         {
-            Edit_GetText(State.Init->AllyFields[i].Name->box, curr->allyNames[i], 32);
+            Edit_GetText(Init->AllyFields[i].Name->box, curr->allyNames[i], 32);
             
             char bonus[32] = {};
-            u32 len = Edit_GetText(State.Init->AllyFields[i].Bonus->box, bonus, 32);
+            u32 len = Edit_GetText(Init->AllyFields[i].Bonus->box, bonus, 32);
             curr->allyBonus[i] = ls_atoi(bonus, len);
+            
+            Edit_GetText(Init->AllyFields[i].AC->box, curr->allyAC[i], 8);
         }
         
         for(u32 i = 0; i < THROWER_NUM; i++)
         {
-            Edit_GetText(State.Init->Throwers[i].Name->box, curr->throwerNames[i], 64);
-            Edit_GetText(State.Init->Throwers[i].ToHit->box, curr->throwerHit[i], 64);
-            Edit_GetText(State.Init->Throwers[i].Damage->box, curr->throwerDamage[i], 64);
+            Edit_GetText(Init->Throwers[i].Name->box, curr->throwerNames[i], 64);
+            Edit_GetText(Init->Throwers[i].ToHit->box, curr->throwerHit[i], 64);
+            Edit_GetText(Init->Throwers[i].Damage->box, curr->throwerDamage[i], 64);
         }
         
         State.encounters.numEncounters += 1;
@@ -325,6 +329,8 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Edit_SetText(Init->MobFields[i].Bonus->box, "");
             Edit_SetText(Init->MobFields[i].Final->box, "0");
             
+            Edit_SetText(Init->MobFields[i].AC->box, "0");
+            
             Edit_SetReadOnly(Init->MobFields[i].Name->box, FALSE);
             Edit_SetReadOnly(Init->MobFields[i].Bonus->box, FALSE);
             Edit_SetReadOnly(Init->MobFields[i].Final->box, FALSE);
@@ -336,6 +342,8 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Edit_SetText(Init->AllyFields[i].Name->box, AllyName[i]);
             Edit_SetText(Init->AllyFields[i].Bonus->box, "");
             Edit_SetText(Init->AllyFields[i].Final->box, "0");
+            
+            Edit_SetText(Init->AllyFields[i].AC->box, "0");
             
             Edit_SetReadOnly(Init->AllyFields[i].Name->box, FALSE);
             Edit_SetReadOnly(Init->AllyFields[i].Bonus->box, FALSE);
@@ -362,6 +370,15 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             ShowElem(Init->Counters[i].Start->box);
             HideElem(Init->Counters[i].PlusOne->box);
             HideElem(Init->Counters[i].Stop->box);
+        }
+        
+        for(u32 i = 0; i < THROWER_NUM; i++)
+        {
+            Edit_SetText(Init->Throwers[i].Name->box, "");
+            Edit_SetText(Init->Throwers[i].ToHit->box, "");
+            Edit_SetText(Init->Throwers[i].HitRes->box, "");
+            Edit_SetText(Init->Throwers[i].Damage->box, "");
+            Edit_SetText(Init->Throwers[i].DmgRes->box, "");
         }
         
         Init->VisibleMobs   = 0;
@@ -391,6 +408,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         
         ComboBox_SetCurSel(Init->Mobs->box, 0);
         ComboBox_SetCurSel(Init->Allies->box, 0);
+        ComboBox_SetCurSel(Init->EncounterSel->box, -1);
     }
     
     for(u32 i = 0; i < COUNTER_NUM; i++)
@@ -584,6 +602,10 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
                 Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].Final->box, final, 8);
                 Edit_SetText(toRemove->Final->box, final);
                 
+                char AC[8] = {};
+                Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].AC->box, AC, 8);
+                Edit_SetText(toRemove->AC->box, AC);
+                
                 toRemove->id = Init->MobFields[Init->VisibleMobs - 1].id;
                 
                 HideInitField(&Init->MobFields[Init->VisibleMobs - 1], 1);
@@ -614,6 +636,10 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
                 char final[8] = {};
                 Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].Final->box, final, 32);
                 Edit_SetText(toRemove->Final->box, final);
+                
+                char AC[8] = {};
+                Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].AC->box, AC, 8);
+                Edit_SetText(toRemove->AC->box, AC);
                 
                 toRemove->id = Init->AllyFields[Init->VisibleAllies - 1].id;
                 

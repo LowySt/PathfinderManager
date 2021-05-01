@@ -415,6 +415,11 @@ InitField AddInitField(HWND h, HWND **winA, const char *label, s32 x, s32 y,
         Result.Bonus   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++);   wA += 1;
         Result.Final   = AddNumberBox(h, wA, 0, LABEL_NULL, x + 150, y, 30, 20, (*id)++); wA += 1;
         
+        Result.AC      = AddNumberBox(h, wA, 0, LABEL_NULL, x - 30, y, 24, 20, (*id)++);   wA += 1;
+        //Result.Touch   = AddNumberBox(h, wA, 0, LABEL_NULL, x - 60, y, 24, 20, (*id)++);   wA += 1;
+        //Result.NoDex   = AddNumberBox(h, wA, 0, LABEL_NULL, x - 30, y, 24, 20, (*id)++);   wA += 1;
+        
+        
         Result.New.Name  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 100, 20, (*id)++, ""); wA += 1;
         Result.New.Bonus = AddNumberBox(h, wA, 0, LABEL_NULL, x + 110, y, 30, 20, (*id)++); wA += 1;
         Result.New.Add   = AddButton(h, wA, "+", x + 50, y, 11, 18, (*id)++, FALSE);        wA += 1;
