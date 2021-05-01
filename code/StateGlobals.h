@@ -3,7 +3,7 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 3;
+const u32 global_saveVersion = 4;
 
 const u32 WINARR_INIT_NUM  = 1024;
 const u32 WINARR_PC_NUM    = 64;
@@ -117,19 +117,18 @@ struct FeatsPage
     u32 numWindows;
 };
 
-//TODO: Convert Bonuses from u32 to char[] because we double convert anyway.
 struct Encounter
 {
     char name[32];
     
     u32 numMobs;
     char mobNames[MOB_NUM][32];
-    u32  mobBonus[MOB_NUM];
+    char mobBonus[MOB_NUM][8];
     char mobAC[MOB_NUM][8];
     
     u32 numAllies;
     char allyNames[ALLY_NUM][32];
-    u32  allyBonus[ALLY_NUM];
+    char allyBonus[ALLY_NUM][8];
     char allyAC[ALLY_NUM][8];
     
     char throwerNames[THROWER_NUM][32];

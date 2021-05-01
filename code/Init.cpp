@@ -284,22 +284,14 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
         for(u32 i = 0; i < Init->VisibleMobs; i++)
         {
             Edit_SetText(Init->MobFields[i].Name->box, Curr->mobNames[i]);
-            
-            char bonus[8] = {};
-            ls_itoa_t(Curr->mobBonus[i], bonus, 8);
-            
-            Edit_SetText(Init->MobFields[i].Bonus->box, bonus);
+            Edit_SetText(Init->MobFields[i].Bonus->box, Curr->mobBonus[i]);
             Edit_SetText(Init->MobFields[i].AC->box, Curr->mobAC[i]);
         }
         
         for(u32 i = 0; i < Init->VisibleAllies; i++)
         {
             Edit_SetText(Init->AllyFields[i].Name->box, Curr->allyNames[i]);
-            
-            char bonus[8] = {};
-            ls_itoa_t(Curr->allyBonus[i], bonus, 8);
-            
-            Edit_SetText(Init->AllyFields[i].Bonus->box, bonus);
+            Edit_SetText(Init->AllyFields[i].Bonus->box, Curr->allyBonus[i]);
             Edit_SetText(Init->AllyFields[i].AC->box, Curr->allyAC[i]);
         }
         

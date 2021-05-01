@@ -122,22 +122,14 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         for(u32 i = 0; i < curr->numMobs; i++)
         {
             Edit_GetText(Init->MobFields[i].Name->box, curr->mobNames[i], 32);
-            
-            char bonus[32] = {};
-            u32 len = Edit_GetText(Init->MobFields[i].Bonus->box, bonus, 32);
-            curr->mobBonus[i] = ls_atoi(bonus, len);
-            
+            Edit_GetText(Init->MobFields[i].Bonus->box, curr->mobBonus[i], 8);
             Edit_GetText(Init->MobFields[i].AC->box, curr->mobAC[i], 8);
         }
         
         for(u32 i = 0; i < curr->numAllies; i++)
         {
             Edit_GetText(Init->AllyFields[i].Name->box, curr->allyNames[i], 32);
-            
-            char bonus[32] = {};
-            u32 len = Edit_GetText(Init->AllyFields[i].Bonus->box, bonus, 32);
-            curr->allyBonus[i] = ls_atoi(bonus, len);
-            
+            Edit_GetText(Init->AllyFields[i].Bonus->box, curr->allyBonus[i], 8);
             Edit_GetText(Init->AllyFields[i].AC->box, curr->allyAC[i], 8);
         }
         
