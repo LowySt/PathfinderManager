@@ -47,6 +47,31 @@ inline void HideOrder(OrderField *o, s32 n)
     }
 }
 
+inline void ShowInactiveCounters(Counter *c, s32 n)
+{
+    for(u32 i = 0; i < n; i++)
+    {
+        if(!c[i].isActive) {
+            ShowWindow(c[i].PlusOne->box, SW_HIDE);
+            ShowWindow(c[i].Stop->box, SW_HIDE);
+            ShowWindow(c[i].Start->box, SW_SHOW);
+        }
+    }
+}
+
+inline void ShowActiveCounters(Counter *c, s32 n)
+{
+    for(u32 i = 0; i < n; i++)
+    {
+        if(c[i].isActive) {
+            ShowWindow(c[i].PlusOne->box, SW_SHOW);
+            ShowWindow(c[i].Stop->box, SW_SHOW);
+            ShowWindow(c[i].Start->box, SW_HIDE);
+        }
+    }
+}
+
+
 inline void HideElem(HWND box) { ShowWindow(box, SW_HIDE); }
 inline void ShowElem(HWND box) { ShowWindow(box, SW_SHOW); }
 
@@ -55,6 +80,8 @@ inline void HideInitElem(InitPage *p) {
     HideInitField(p->AllyFields, ALLY_NUM);
     
     HideOrder(p->Order, ORDER_NUM);
+    
+    ShowInactiveCounters(p->Counters, COUNTER_NUM);
     
     HideElem(p->RoundCounter->box);
 }
@@ -367,12 +394,13 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
         xPos += 156;
     }
     
+    //NOTE: Counters
     yPos = 142;
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
         Page->Counters[i] = AddCounter(WinH, &wA, CounterNames[i], 20, yPos, ElementId);
-        yPos += 40;
-        Page->numWindows += 4;
+        yPos += 44;
+        Page->numWindows += 6;
     }
     
     Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 594, 62, 100, 20, (*ElementId)++); wA += 1;

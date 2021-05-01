@@ -245,6 +245,10 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     
     if(commandID == Init->Next->id)
     {
+        //TODO:BUG:!!
+        //When the counter is set on an order at the extreme of the initiative
+        //If a new ally is added the counter will be fucked!
+        
         //NOTE: Make sure removing order fields doesn't fuck this up!
         Init->currIdx = (Init->currIdx + 1) % Init->VisibleOrder;
         if(Init->currIdx == 0) 
@@ -277,12 +281,17 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
                     
                     if((val - 1) == 0)
                     {
-                        Edit_SetReadOnly(Init->Counters[i].Field->box, FALSE);
-                        Edit_SetText(Init->Counters[i].Field->box, "");
-                        Edit_SetText(Init->Counters[i].Rounds->box, "");
+                        Edit_SetReadOnly(C->Field->box, FALSE);
+                        Edit_SetText(C->Field->box, "");
+                        Edit_SetText(C->Rounds->box, "");
                         
-                        Init->Counters[i].roundCounter = 0;
-                        Init->Counters[i].isActive     = FALSE;
+                        C->roundCounter = 0;
+                        C->isActive     = FALSE;
+                        
+                        HideElem(C->PlusOne->box);
+                        HideElem(C->Stop->box);
+                        ShowElem(C->Start->box);
+                        
                         continue;
                     }
                     
@@ -349,6 +358,10 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             
             Init->Counters[i].roundCounter = 0;
             Init->Counters[i].isActive     = FALSE;
+            
+            ShowElem(Init->Counters[i].Start->box);
+            HideElem(Init->Counters[i].PlusOne->box);
+            HideElem(Init->Counters[i].Stop->box);
         }
         
         Init->VisibleMobs   = 0;
@@ -382,20 +395,54 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
-        if(commandID == Init->Counters[i].Start->id)
+        Counter *C = &Init->Counters[i];
+        if(commandID == C->Start->id)
         {
             if(State.inBattle == FALSE) { return; }
             
             char rounds[8] = {};
             
-            Edit_SetReadOnly(Init->Counters[i].Field->box, TRUE);
-            u32 len = Edit_GetText(Init->Counters[i].Rounds->box, rounds, 8);
+            Edit_SetReadOnly(C->Field->box, TRUE);
+            u32 len = Edit_GetText(C->Rounds->box, rounds, 8);
             
             s32 val = ls_atoi(rounds, len);
             if(val <= 0) { return; }
             
-            Init->Counters[i].isActive     = TRUE;
-            Init->Counters[i].roundCounter = 0;
+            C->isActive     = TRUE;
+            C->roundCounter = 0;
+            
+            HideElem(C->Start->box);
+            ShowElem(C->PlusOne->box);
+            ShowElem(C->Stop->box);
+            
+            return;
+        }
+        
+        if(commandID == C->PlusOne->id)
+        {
+            char v[8] = {};
+            u32 len = Edit_GetText(C->Rounds->box, v, 8);
+            s32 val = ls_atoi(v, len);
+            
+            char newV[8] = {};
+            ls_itoa_t(val + 1, newV, 8);
+            Edit_SetText(C->Rounds->box, newV);
+            
+            return;
+        }
+        
+        if(commandID == C->Stop->id)
+        {
+            Edit_SetReadOnly(C->Field->box, FALSE);
+            Edit_SetText(C->Field->box, "");
+            Edit_SetText(C->Rounds->box, "");
+            
+            C->roundCounter = 0;
+            C->isActive     = FALSE;
+            
+            HideElem(C->PlusOne->box);
+            HideElem(C->Stop->box);
+            ShowElem(C->Start->box);
             
             return;
         }

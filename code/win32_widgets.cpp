@@ -436,13 +436,14 @@ Counter AddCounter(HWND h, HWND **winA, const char *label, s32 x, s32 y, u64 *id
     
     Counter Result = {};
     
-    Result.Field  = AddTextBox(h, wA, label, LABEL_UP, x, y, 100, 20, (*id)++);      wA += 2;
+    Result.Field  = AddTextBox(h, wA, label, LABEL_UP, x, y, 100, 20, (*id)++);       wA += 2;
     
-    //TODO: Fix AddEditNumberBox
-    Result.Rounds = AddNumberBox(h, wA, 0, LABEL_NULL, x + 105, y, 30, 20, (*id)++); wA += 1;
+    Result.Rounds = AddNumberBox(h, wA, 0, LABEL_NULL, x + 105, y, 30, 20, (*id)++);  wA += 1;
     Edit_SetText(Result.Rounds->box, "");
     
-    Result.Start  = AddButton(h, wA, "Start", x + 140, y, 35, 20, (*id)++);          wA += 1;
+    Result.Start    = AddButton(h, wA, "Start", x + 140, y, 35, 20, (*id)++);         wA += 1;
+    Result.PlusOne  = AddButton(h, wA, "+1", x + 140, y, 16, 20, (*id)++);            wA += 1;
+    Result.Stop     = AddButton(h, wA, "Stop", x + 65, y-22, 32, 20, (*id)++);       wA += 1;
     
     *winA = wA;
     return Result;

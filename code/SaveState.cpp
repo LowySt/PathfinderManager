@@ -352,6 +352,8 @@ b32 LoadState()
     ShowInitField(page->AllyFields, page->VisibleAllies, ALLY_NUM);
     ShowInitFieldAdd(page->AllyFields, page->VisibleAllies, ALLY_NUM);
     
+    ShowActiveCounters(page->Counters, COUNTER_NUM);
+    
     ShowOrder(page->Order, page->VisibleOrder);
     
     HideElem(page->EncounterSel->box); HideElem(page->EncounterSel->label);

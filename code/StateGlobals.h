@@ -140,6 +140,9 @@ struct Counter
     TextBox *Rounds;
     Button  *Start;
     
+    Button  *PlusOne;
+    Button  *Stop;
+    
     u32 roundCounter;
     
     b32 isActive;
