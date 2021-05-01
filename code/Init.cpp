@@ -310,6 +310,9 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
     return FALSE;
 }
 
+
+//NOTE: Adding+50
+
 //TODO: Init is improperly Initialized. Can't "Set" at program start without other commands prior.
 //      Can't add new enemies or allies if no other enemy/ally selection was previously made.
 void DrawInitTab(HWND WinH, u64 *ElementId)
@@ -318,13 +321,13 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     HWND *wA = Page->WindowsArray + Page->numWindows;
     
     Page->Mobs = AddUnsortedComboBox(WinH, wA, "Enemies", LABEL_UP,
-                                     276, 102, 100, 20, (*ElementId)++, ArraySize(Enemies));;
+                                     326, 102, 100, 20, (*ElementId)++, ArraySize(Enemies));;
     wA += 2;
     
     AddAllComboBoxItems(Page->Mobs->box, Enemies, ArraySize(Enemies));
     
     Page->Allies = AddUnsortedComboBox(WinH, wA, "Allies", LABEL_UP,
-                                       520, 282, 100, 20, (*ElementId)++, ArraySize(Allies));;
+                                       570, 282, 100, 20, (*ElementId)++, ArraySize(Allies));;
     wA += 2;
     AddAllComboBoxItems(Page->Allies->box, Allies, ArraySize(Allies));
     
@@ -334,7 +337,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     s32 yPos = 142;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 560, yPos, ElementId, i, TRUE);
+        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 640, yPos, ElementId, i, TRUE);
         yPos += 20;
         Page->numWindows += 2;
     }
@@ -343,7 +346,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     yPos += 70;
     for(u32 i = 0; i < ALLY_NUM; i++)
     {
-        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 480, yPos, ElementId, i, FALSE);
+        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 530, yPos, ElementId, i, FALSE);
         yPos += 20;
         Page->numWindows += 7;
     }
@@ -352,7 +355,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     yPos = 142;
     for(u32 i = 0; i < MOB_NUM; i++)
     {
-        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 246, yPos, ElementId, i, FALSE);
+        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 296, yPos, ElementId, i, FALSE);
         yPos += 20;
         Page->numWindows += 7;
     }
@@ -361,9 +364,9 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     yPos = 142;
     for(u32 i = 0; i < ORDER_NUM; i += 2)
     {
-        Page->Order[i]   = AddOrderField(WinH, &wA, 720, yPos, i, ElementId);
+        Page->Order[i]   = AddOrderField(WinH, &wA, 770, yPos, i, ElementId);
         if((i+1) < ORDER_NUM) { 
-            Page->Order[i+1] = AddOrderField(WinH, &wA, 880, yPos, i+1, ElementId); 
+            Page->Order[i+1] = AddOrderField(WinH, &wA, 930, yPos, i+1, ElementId); 
             Page->numWindows += 3;
         }
         Page->numWindows += 3;
@@ -373,13 +376,13 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     //TODO: Should this be initialized here???
     Page->VisibleOrder = PARTY_NUM;
     
-    Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 820, 112, 100, 20, (*ElementId)++); wA += 1;
+    Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 870, 112, 100, 20, (*ElementId)++); wA += 1;
     
-    Page->Roll  = AddButton(WinH, wA, "Roll",  406, 102, 45, 20, (*ElementId)++); wA += 1;
-    Page->Set   = AddButton(WinH, wA, "Set",   630, 102, 45, 20, (*ElementId)++); wA += 1;
-    Page->Next  = AddButton(WinH, wA, "Next",  850, 82, 45, 20, (*ElementId)++); wA += 1;
-    Page->Reset = AddButton(WinH, wA, "Reset", 520, 102, 45, 20, (*ElementId)++); wA += 1;
-    Page->Save  = AddButton(WinH, wA, "Save",  620, 42, 45, 20, (*ElementId)++); wA += 1;
+    Page->Roll  = AddButton(WinH, wA, "Roll",  486, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Set   = AddButton(WinH, wA, "Set",   710, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Next  = AddButton(WinH, wA, "Next",  900, 82, 45, 20, (*ElementId)++); wA += 1;
+    Page->Reset = AddButton(WinH, wA, "Reset", 600, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Save  = AddButton(WinH, wA, "Save",  670, 42, 45, 20, (*ElementId)++); wA += 1;
     
     Page->RoundCounter = AddValueBox(WinH, wA, 0, LABEL_NULL, 1, 1180, 60, 30, 20, (*ElementId)++); wA += 1;
     
@@ -403,13 +406,13 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
         Page->numWindows += 6;
     }
     
-    Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 594, 62, 100, 20, (*ElementId)++); wA += 1;
+    Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 644, 62, 100, 20, (*ElementId)++); wA += 1;
     Page->numWindows += 1;
     
     //NOTE:EncounterSelection
     {
         Page->EncounterSel = AddUnsortedComboBox(WinH, wA, "Encounters", LABEL_UP, 
-                                                 470, 60, 100, 20, (*ElementId)++, 1);
+                                                 520, 60, 100, 20, (*ElementId)++, 1);
         wA += 2;
         
         Page->numWindows += 2;
