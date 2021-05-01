@@ -311,8 +311,6 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
 }
 
 
-//NOTE: Adding+50
-
 //TODO: Init is improperly Initialized. Can't "Set" at program start without other commands prior.
 //      Can't add new enemies or allies if no other enemy/ally selection was previously made.
 void DrawInitTab(HWND WinH, u64 *ElementId)
@@ -321,7 +319,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     HWND *wA = Page->WindowsArray + Page->numWindows;
     
     Page->Mobs = AddUnsortedComboBox(WinH, wA, "Enemies", LABEL_UP,
-                                     326, 102, 100, 20, (*ElementId)++, ArraySize(Enemies));;
+                                     336, 102, 100, 20, (*ElementId)++, ArraySize(Enemies));;
     wA += 2;
     
     AddAllComboBoxItems(Page->Mobs->box, Enemies, ArraySize(Enemies));
