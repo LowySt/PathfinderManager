@@ -458,6 +458,17 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         }
     }
     
+    if(commandID == Init->GeneralThrower.Throw->id)
+    {
+        char toThrow[128] = {};
+        u32 len = Edit_GetText(Init->GeneralThrower.ToHit->box, toThrow, 128);
+        f32 result = diceRoll(toThrow, len);
+        char toHitResult[8] = {};
+        ls_ftoa_t(result, toHitResult, 8);
+        
+        Edit_SetText(Init->GeneralThrower.HitRes->box, toHitResult);
+    }
+    
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
         if(commandID == Init->Throwers[i].Throw->id)

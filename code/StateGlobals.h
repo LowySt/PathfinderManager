@@ -236,6 +236,7 @@ struct InitPage
     TextBox    *RoundCounter;
     
     DiceThrow  Throwers[THROWER_NUM];
+    DiceThrow  GeneralThrower;
     
     HWND WindowsArray[WINARR_INIT_NUM];
     u32 numWindows;

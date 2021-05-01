@@ -369,7 +369,6 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
         yPos += 20;
     }
     
-    //TODO: Should this be initialized here???
     Page->VisibleOrder = PARTY_NUM;
     
     Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 870, 112, 100, 20, (*ElementId)++); wA += 1;
@@ -392,6 +391,10 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
         Page->numWindows += 6;
         xPos += 156;
     }
+    
+    Page->GeneralThrower = AddGeneralThrower(WinH, &wA, 20, 752, ElementId);
+    Page->numWindows += 3;
+    
     
     //NOTE: Counters
     yPos = 142;

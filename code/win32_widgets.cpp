@@ -388,6 +388,21 @@ DiceThrow AddThrower(HWND h, HWND **winA, s32 x, s32 y, u64 *id)
     return Result;
 }
 
+DiceThrow AddGeneralThrower(HWND h, HWND **winA, s32 x, s32 y, u64 *id)
+{
+    HWND *wA = *winA;
+    
+    DiceThrow Result = {};
+    
+    Result.ToHit  = AddTextBox(h, wA, 0, LABEL_NULL, x, y, 260, 20, (*id)++, ""); wA += 1;
+    Result.HitRes = AddStaticUnlabeledTextBox(h, wA, x+266, y, 32, 20, (*id)++);  wA += 1;
+    Result.Throw  = AddButton(h, wA, "Go", x, y-22, 22, 20, (*id)++, TRUE);       wA += 1;
+    
+    *winA = wA;
+    
+    return Result;
+}
+
 OrderField AddOrderField(HWND win, HWND **winA, s32 x, s32 y, u32 idx, u64 *id)
 {
     HWND *wA = *winA;

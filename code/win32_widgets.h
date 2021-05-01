@@ -67,4 +67,6 @@ InitField AddInitField(HWND h, HWND **winA, const char *label, s32 x, s32 y,
 Counter AddCounter(HWND h, HWND **winA, const char *label, s32 x, s32 y, u64 *id);
 
 DiceThrow AddThrower(HWND h, HWND **winA, s32 x, s32 y, u64 *id);
+DiceThrow AddGeneralThrower(HWND h, HWND **winA, s32 x, s32 y, u64 *id);
+
 #endif //WIN32_WIDGETS_H
