@@ -33,7 +33,7 @@ struct DiceRoller_TokenList
     DiceRoller_Token t;
 };
 
-b32 isOperator(char c)
+b32 diceRoller_isOperator(char c)
 {
 	for(int i = 0; i < OP_ARR_LEN; i++)
 	{ if(c == operators[i]) { return TRUE; } }
@@ -41,7 +41,7 @@ b32 isOperator(char c)
 	return FALSE;
 }
 
-b32 isNum(char c)
+b32 diceRoller_isNum(char c)
 {
 	if((c <= '9') && (c >= '0')) { return TRUE; }
 	if(c == '.' ) { return TRUE; }
@@ -82,7 +82,7 @@ DiceRoller_TokenList *tokenize(const char *in, int len)
             At += (2 + parenLen);
             len -= (2 + parenLen);
         }
-        else if(isOperator(*At))
+        else if(diceRoller_isOperator(*At))
         {
             DiceRoller_Token op = {};
             switch(*At)
@@ -99,12 +99,12 @@ DiceRoller_TokenList *tokenize(const char *in, int len)
             At += 1;
             len -= 1;
         }
-        else
+        else if(diceRoller_isNum(*At))
         {
             DiceRoller_Token tok = {TOKEN_VAL, 0};
             u32 valLen = 0;
             char *Bt = At; 
-            while(isNum(*Bt)) { Bt += 1; valLen += 1; }
+            while(diceRoller_isNum(*Bt)) { Bt += 1; valLen += 1; }
             if(valLen == 0) { return 0x0; }
             
             f32 v = ls_atof(At, valLen);
@@ -115,6 +115,11 @@ DiceRoller_TokenList *tokenize(const char *in, int len)
             curr->t = tok;
             At += valLen;
             len -= valLen;
+        }
+        else
+        {
+            //NOTE: Invalid character.
+            return 0x0;
         }
     }
     
@@ -180,6 +185,8 @@ DiceRoller_TokenList *doOp(DiceRoller_TokenList *head, DiceRoller_TokenList *tai
     
     f32 nextVal = 0;
     f32 prevVal = prev->t.val;
+    if(next == NULL) { return 0x0; }
+    
 	if(next->t.t == TOKEN_OPEN_PAREN) 
 	{
 		nextVal = calc(next->next, tail);
@@ -208,7 +215,8 @@ DiceRoller_TokenList *doOp(DiceRoller_TokenList *head, DiceRoller_TokenList *tai
 	}
 	else 
 	{
-		Assert(next->t.t == TOKEN_VAL);
+        if(next->t.t != TOKEN_VAL) { return 0x0; }
+		
 		if(next->next != NULL) 
 		{
 			if(next->next->t.t == TOKEN_DICE_THROW)
@@ -256,7 +264,10 @@ DiceRoller_TokenList *doOp(DiceRoller_TokenList *head, DiceRoller_TokenList *tai
 			}
 		}
 		
-		//It's an operator.
+		//NOTE: It a binary operator. No Unary operators are supported.
+        
+        if(prev->t.t != TOKEN_VAL) { return 0x0; }
+        
         f32 resultVal = 0;
 		switch(opType)
 		{
@@ -416,9 +427,9 @@ f32 calc(DiceRoller_TokenList *head, DiceRoller_TokenList *tail)
 		{
 			case TOKEN_DICE_THROW:
 			{
-				Assert(prev->t.t == TOKEN_VAL);
-				Assert(next->t.t == TOKEN_VAL);
-                
+                if(prev->t.t != TOKEN_VAL) return 0.0f;
+                if(next->t.t != TOKEN_VAL) return 0.0f;
+				
 				curr = throwDie(curr);
 			} break;
             
@@ -430,7 +441,7 @@ f32 calc(DiceRoller_TokenList *head, DiceRoller_TokenList *tail)
 			case TOKEN_BLOCK_START: { curr = curr->next; } break;
 			case TOKEN_VAL:         { curr = curr->next; } break;
             
-			default: { Assert(FALSE); }
+			default: { return 0.0f; /*Assert(FALSE);*/ }
 		}
 	}
     
@@ -448,6 +459,8 @@ f32 diceRoll(const char *input, u32 inputLen)
 	if(inputLen == 0) { return 0.0f; }
     
     DiceRoller_TokenList *head = tokenize(input, inputLen);
+    if(head == 0x0) { return 0.0f; }
+    
     DiceRoller_TokenList *tail = head;
 	while(tail->next != NULL) { tail = tail->next; }
     
