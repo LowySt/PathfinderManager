@@ -523,7 +523,7 @@ HWND CreateWindow(HMENU MenuBar)
     //NOTE:TODO: Hardcoded!!
     HWND WindowHandle;
     if ((WindowHandle = CreateWindowExA(0, "WndClass",
-                                        "Name", style,
+                                        "PCMan", style,
                                         300, 50, //CW_USEDEFAULT, CW_USEDEFAULT,
                                         1280, 840,//1350, 900,
                                         0, MenuBar, MainInstance, 0)) == nullptr)
