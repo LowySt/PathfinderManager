@@ -187,7 +187,7 @@ DiceRoller_TokenList *doOp(DiceRoller_TokenList *head, DiceRoller_TokenList *tai
     f32 prevVal = prev->t.val;
     if(next == NULL) { return 0x0; }
     
-	if(next->t.t == TOKEN_OPEN_PAREN) 
+	if(next->t.t == TOKEN_OPEN_PAREN)
 	{
 		nextVal = calc(next->next, tail);
         

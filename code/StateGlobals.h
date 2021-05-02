@@ -151,8 +151,8 @@ struct Counter
     Button  *PlusOne;
     Button  *Stop;
     
+    u32 startIdxInOrder;
     u32 roundCounter;
-    
     b32 isActive;
 };
 

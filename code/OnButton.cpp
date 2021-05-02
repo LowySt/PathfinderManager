@@ -241,10 +241,6 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     
     if(commandID == Init->Next->id)
     {
-        //TODO:BUG:!!
-        //When the counter is set on an order at the extreme of the initiative
-        //If a new ally is added the counter will be fucked!
-        
         //NOTE: Make sure removing order fields doesn't fuck this up!
         Init->currIdx = (Init->currIdx + 1) % Init->VisibleOrder;
         if(Init->currIdx == 0) 
@@ -356,7 +352,8 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Edit_SetText(Init->Counters[i].Field->box, "");
             Edit_SetText(Init->Counters[i].Rounds->box, "");
             
-            Init->Counters[i].roundCounter = 0;
+            Init->Counters[i].roundCounter    = 0;
+            Init->Counters[i].startIdxInOrder = 0;
             Init->Counters[i].isActive     = FALSE;
             
             ShowElem(Init->Counters[i].Start->box);
@@ -418,8 +415,9 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             s32 val = ls_atoi(rounds, len);
             if(val <= 0) { return; }
             
-            C->isActive     = TRUE;
-            C->roundCounter = 0;
+            C->isActive        = TRUE;
+            C->roundCounter    = 0;
+            C->startIdxInOrder = Init->currIdx;
             
             HideElem(C->Start->box);
             ShowElem(C->PlusOne->box);
@@ -519,6 +517,26 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Init->VisibleOrder += 1;
             Init->turnsInRound += 1;
             
+            for(u32 j = 0; j < COUNTER_NUM; j++)
+            {
+                Counter *c = &Init->Counters[j];
+                if(c->isActive)
+                { 
+                    if(Init->turnsInRound < c->startIdxInOrder)
+                    {
+                        //TODO:NOTE: It means the startIdxInOrder is not reliable anymore...
+                        //   Not sure what to do about this?
+                        ls_printf("Big Problemoinowino\n");
+                        continue;
+                    }
+                    
+                    //This counter missed counting the new addition this round,
+                    // So we manually count up by one.
+                    if(Init->currIdx < c->startIdxInOrder) 
+                    { c->roundCounter += 1; }
+                }
+            }
+            
             HideElem(Init->MobFields[i].New.Name->box);
             HideElem(Init->MobFields[i].New.Bonus->box);
             HideElem(Init->MobFields[i].New.Ok->box);
@@ -560,6 +578,27 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
             Init->VisibleAllies += 1;
             Init->VisibleOrder += 1;
             Init->turnsInRound += 1;
+            
+            for(u32 j = 0; j < COUNTER_NUM; j++)
+            {
+                Counter *c = &Init->Counters[j];
+                if(c->isActive)
+                { 
+                    if(Init->turnsInRound < c->startIdxInOrder)
+                    {
+                        //TODO:NOTE: It means the startIdxInOrder is not reliable anymore...
+                        //   Not sure what to do about this?
+                        ls_printf("Big Problemoinowino\n");
+                        continue;
+                    }
+                    
+                    //This counter missed counting the new addition this round,
+                    // So we manually count up by one.
+                    if(Init->currIdx < c->startIdxInOrder) 
+                    { c->roundCounter += 1; }
+                }
+            }
+            
             
             HideElem(Init->AllyFields[i].New.Name->box);
             HideElem(Init->AllyFields[i].New.Bonus->box);
