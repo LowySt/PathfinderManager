@@ -63,6 +63,10 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             //      To get the position in the array using the control IDs. This way i don't need to for loop
             switch(w)
             {
+                case VK_DELETE: { return CallWindowProcA(mainWinProc, h, msg, w, l); } break;
+                case VK_LEFT:   { return CallWindowProcA(mainWinProc, h, msg, w, l); } break;
+                case VK_RIGHT:  { return CallWindowProcA(mainWinProc, h, msg, w, l); } break;
+                
                 case VK_DOWN:
                 {
                     for(u32 i = 0; i < Init->VisibleMobs; i++) 
