@@ -314,7 +314,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         { 
             Init->MobFields[i].id = i;
             Edit_SetText(Init->MobFields[i].Name->box, MobName[i]);
-            Edit_SetText(Init->MobFields[i].Bonus->box, "");
+            Edit_SetText(Init->MobFields[i].Bonus->box, "0");
             Edit_SetText(Init->MobFields[i].Final->box, "0");
             
             Edit_SetText(Init->MobFields[i].AC->box, "0");
@@ -328,7 +328,7 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
         { 
             Init->AllyFields[i].id = i;
             Edit_SetText(Init->AllyFields[i].Name->box, AllyName[i]);
-            Edit_SetText(Init->AllyFields[i].Bonus->box, "");
+            Edit_SetText(Init->AllyFields[i].Bonus->box, "0");
             Edit_SetText(Init->AllyFields[i].Final->box, "0");
             
             Edit_SetText(Init->AllyFields[i].AC->box, "0");

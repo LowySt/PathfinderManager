@@ -33,6 +33,7 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             for( u32 i = 0; i < Init->VisibleMobs; i++) {
                 if(h == Init->MobFields[i].Name->box)  { isValid = TRUE; break; }
                 if(h == Init->MobFields[i].Bonus->box) { isValid = TRUE; break; }
+                if(h == Init->MobFields[i].AC->box)    { isValid = TRUE; break; }
                 if(h == Init->MobFields[i].Final->box) { isValid = TRUE; break; }
             }
             
@@ -40,6 +41,7 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 for( u32 i = 0; i < Init->VisibleAllies; i++) {
                     if(h == Init->AllyFields[i].Name->box)  { isValid = TRUE; break; }
                     if(h == Init->AllyFields[i].Bonus->box) { isValid = TRUE; break; }
+                    if(h == Init->AllyFields[i].AC->box)    { isValid = TRUE; break; }
                     if(h == Init->AllyFields[i].Final->box) { isValid = TRUE; break; }
                 }
             }
@@ -63,14 +65,10 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             {
                 case VK_DOWN:
                 {
-                    for(u32 i = 0; i < Init->VisibleMobs; i++) {
-                        
-                        int breakHere = 0;
-                        
-                        if(h == Init->MobFields[i].Name->box) { 
-                            
-                            int breakThere = 0;
-                            
+                    for(u32 i = 0; i < Init->VisibleMobs; i++) 
+                    {
+                        if(h == Init->MobFields[i].Name->box) 
+                        {
                             if(i < Init->VisibleMobs - 1) 
                             { 
                                 char name[32] = {};
@@ -80,9 +78,9 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                                 char *BeginOfNumber = name;
                                 u32 alphaLen = 0;
                                 while(!ls_isANumber(*BeginOfNumber)) 
-                                { 
+                                {
                                     if(BeginOfNumber > name + len) 
-                                    { 
+                                    {
                                         SetFocus(MainWindow);
                                         return CallWindowProcA(mainWinProc, h, msg, w, l);
                                     }
@@ -93,6 +91,18 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                                 
                                 s64 newNumber = ls_atoi(BeginOfNumber, len - alphaLen) + 1;
                                 ls_itoa_t(newNumber, BeginOfNumber, 32 - alphaLen);
+                                
+                                char bonus[8] = {};
+                                char AC[8] = {};
+                                
+                                Edit_GetText(Init->MobFields[i].Bonus->box, bonus, 8);
+                                Edit_GetText(Init->MobFields[i].AC->box, AC, 8);
+                                
+                                if(!((bonus[0] == '0') || (bonus[0] == 0)))
+                                { Edit_SetText(Init->MobFields[i+1].Bonus->box, bonus); }
+                                
+                                if(!((AC[0] == '0') || (AC[0] == 0)))
+                                { Edit_SetText(Init->MobFields[i+1].AC->box, AC); }
                                 
                                 //NOTE: Just make sure the buffer is zero terminated.
                                 name[31] = 0;
@@ -106,12 +116,8 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     
                     for(u32 i = 0; i < Init->VisibleAllies; i++) {
                         
-                        int breakHere = 0;
-                        
-                        if(h == Init->AllyFields[i].Name->box) { 
-                            
-                            int breakThere = 0;
-                            
+                        if(h == Init->AllyFields[i].Name->box) 
+                        {
                             if(i < Init->VisibleAllies - 1) 
                             { 
                                 char name[32] = {};
@@ -135,13 +141,28 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                                 s64 newNumber = ls_atoi(BeginOfNumber, len - alphaLen) + 1;
                                 ls_itoa_t(newNumber, BeginOfNumber, 32 - alphaLen);
                                 
+                                char bonus[8] = {};
+                                char AC[8] = {};
+                                
+                                Edit_GetText(Init->AllyFields[i].Bonus->box, bonus, 8);
+                                Edit_GetText(Init->AllyFields[i].AC->box, AC, 8);
+                                
+                                if(!((bonus[0] == '0') || (bonus[0] == 0)))
+                                { Edit_SetText(Init->AllyFields[i+1].Bonus->box, bonus); }
+                                
+                                if(!((AC[0] == '0') || (AC[0] == 0)))
+                                { Edit_SetText(Init->AllyFields[i+1].AC->box, AC); }
+                                
                                 //NOTE: Just make sure the buffer is zero terminated.
                                 name[31] = 0;
                                 SetFocus(Init->AllyFields[i+1].Name->box);
                                 Edit_SetText(Init->AllyFields[i+1].Name->box, name);
                             }
                             else 
-                            { SetFocus(MainWindow); }
+                            { 
+                                SetFocus(MainWindow);
+                                return CallWindowProcA(mainWinProc, h, msg, w, l);
+                            }
                         }
                     }
                     
@@ -162,6 +183,14 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         if(h == Init->MobFields[i].Bonus->box) { 
                             
                             if(i < Init->VisibleMobs - 1) { SetFocus(Init->MobFields[i+1].Bonus->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                        
+                        if(h == Init->MobFields[i].AC->box) { 
+                            
+                            if(i < Init->VisibleMobs - 1) { SetFocus(Init->MobFields[i+1].AC->box); }
                             else { SetFocus(MainWindow); }
                             
                             return CallWindowProcA(mainWinProc, h, msg, w, l); 
@@ -200,11 +229,53 @@ LRESULT subEditProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                             return CallWindowProcA(mainWinProc, h, msg, w, l); 
                         }
                         
+                        if(h == Init->AllyFields[i].AC->box) { 
+                            if(i < Init->VisibleAllies - 1) { SetFocus(Init->AllyFields[i+1].AC->box); }
+                            else { SetFocus(MainWindow); }
+                            
+                            return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                        
                         if(h == Init->AllyFields[i].Final->box) { 
                             if(i < Init->VisibleAllies - 1) { SetFocus(Init->AllyFields[i+1].Final->box); }
                             else { SetFocus(MainWindow); }
                             
                             return CallWindowProcA(mainWinProc, h, msg, w, l); 
+                        }
+                    }
+                    
+                    for(u32 i = 0; i < THROWER_NUM; i++)
+                    {
+                        if(h == Init->Throwers[i].Name->box)   
+                        { 
+                            SetFocus(Init->Throwers[i].ToHit->box); 
+                            return CallWindowProcA(mainWinProc, h, msg, w, l);
+                        }
+                        
+                        if(h == Init->Throwers[i].ToHit->box)
+                        { 
+                            SetFocus(Init->Throwers[i].Damage->box); 
+                            return CallWindowProcA(mainWinProc, h, msg, w, l);
+                        }
+                        if(h == Init->Throwers[i].Damage->box)
+                        { 
+                            SetFocus(MainWindow);
+                            return CallWindowProcA(mainWinProc, h, msg, w, l);
+                        }
+                    }
+                    
+                    for(u32 i = 0; i < COUNTER_NUM; i++)
+                    {
+                        if(h == Init->Counters[i].Field->box)
+                        {
+                            SetFocus(Init->Counters[i].Rounds->box);
+                            return CallWindowProcA(mainWinProc, h, msg, w, l);
+                        }
+                        
+                        if(h == Init->Counters[i].Rounds->box)
+                        {
+                            SetFocus(MainWindow);
+                            return CallWindowProcA(mainWinProc, h, msg, w, l);
                         }
                     }
                     
