@@ -520,11 +520,27 @@ HWND CreateWindow(HMENU MenuBar)
     menuInfo.fMask   = MIM_APPLYTOSUBMENUS | MIM_BACKGROUND;
     menuInfo.hbrBack = appBkgBrush;  //RGB(0x38, 0x38, 0x38);
     
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
+    int screenWidth  = GetSystemMetrics(SM_CXSCREEN);
+    
+    int windowWidth = 1280;
+    int windowHeight = 840;
+    
+    int spaceX = (screenWidth - windowWidth) / 2;
+    int spaceY = (screenHeight - windowHeight) / 2;
+    if(spaceX < 0) {}
+    if(spaceY < 0) {}
+    
+    int yWinPos = spaceY;
+    int xWinPos = spaceX;
+    
+    
+    
     //NOTE:TODO: Hardcoded!!
     HWND WindowHandle;
     if ((WindowHandle = CreateWindowExA(0, "WndClass",
                                         "PCMan", style,
-                                        300, 50, //CW_USEDEFAULT, CW_USEDEFAULT,
+                                        spaceX, spaceY, //CW_USEDEFAULT, CW_USEDEFAULT,
                                         1280, 840,//1350, 900,
                                         0, MenuBar, MainInstance, 0)) == nullptr)
     {
@@ -535,7 +551,7 @@ HWND CreateWindow(HMENU MenuBar)
     RECT test = {100, 100, 200, 200};
     DrawCaption(WindowHandle, GetDC(WindowHandle), &test, DC_BUTTONS);
     
-    State.currWindowPos = { 300, 50 }; //NOTE:TODO: Hardcoded!!
+    State.currWindowPos = { (s16)spaceX, (s16)spaceY }; //NOTE:TODO: Hardcoded!!
     
     return WindowHandle;
 }
