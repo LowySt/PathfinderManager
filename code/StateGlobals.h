@@ -255,6 +255,9 @@ struct ProgramState
     b32 isInitialized;
     
     //Window management
+    u32 windowWidth;
+    u32 windowHeight;
+    
     b32    isDragging;
     POINTS prevMousePos;
     POINTS currWindowPos;

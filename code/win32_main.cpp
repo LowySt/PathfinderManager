@@ -52,6 +52,7 @@
 
 #include "win32_widgets.cpp"
 #include "subEdit.cpp"
+#include "ui.cpp"
 
 #define HidePage(page) for(u32 i = 0; i < page->numWindows; i++) { \
 ShowWindow(page->WindowsArray[i], SW_HIDE); }
@@ -61,7 +62,13 @@ ShowWindow(page->WindowsArray[i], SW_SHOW); }
 
 HBITMAP closeButton;
 HDC     closeButtonDC;
-void *backbuff;
+void    *closeButtBackbuff;
+
+//NOTE:TEST
+HDC WindowDC;
+HDC BackBufferDC;
+u8  *BackBuffer;
+//NOTE:TEST
 
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
@@ -69,6 +76,43 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
     
     switch (msg)
     {
+        case WM_ERASEBKGND: return TRUE; break;
+        
+        case WM_PAINT:
+        {
+            PAINTSTRUCT ps = {};
+            RECT r;
+            
+            //NOTE: I have to call BeginPaint() - EndPaint() Anyway.
+            //If I don't, the message loop is gonna get stuck in PAINT calls.
+            BeginPaint(h, &ps);
+            
+            //NOTE: Draw Background
+            GetClientRect(h, &r);
+            
+            BITMAPINFO BitmapInfo = {};
+            BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+            BitmapInfo.bmiHeader.biWidth = State.windowWidth;
+            BitmapInfo.bmiHeader.biHeight = State.windowHeight; //Should it be negative?
+            BitmapInfo.bmiHeader.biPlanes = 1;
+            BitmapInfo.bmiHeader.biBitCount = 32;
+            BitmapInfo.bmiHeader.biCompression = BI_RGB;
+            
+            StretchDIBits(BackBufferDC, 0, 0, State.windowWidth, State.windowHeight,
+                          0, 0, State.windowWidth, State.windowHeight,
+                          BackBuffer, &BitmapInfo, DIB_RGB_COLORS, SRCCOPY);
+            
+            Result = BitBlt(WindowDC, r.left, r.top, r.right, r.bottom,
+                            BackBufferDC, 0, 0, SRCCOPY);
+            
+            if(Result == 0) {
+                DWORD Err = GetLastError();
+                int breakHere = 0;
+            }
+            
+            EndPaint(h, &ps);
+        } break;
+        
         case WM_NCLBUTTONDOWN:
         {
             State.isDragging = TRUE;
@@ -503,10 +547,10 @@ HWND CreateWindow(HMENU MenuBar)
     BitmapInfo.bmiHeader.biCompression = BI_RGB;
     
     closeButton = CreateDIBSection(NULL, &BitmapInfo, DIB_RGB_COLORS, 
-                                   &backbuff, NULL, NULL);
+                                   &closeButtBackbuff, NULL, NULL);
     closeButtonDC = CreateCompatibleDC(NULL);
     SelectObject(closeButtonDC, closeButton);
-    ls_memcpy(pixelButtonData, backbuff, 16*16*3);
+    ls_memcpy(pixelButtonData, closeButtBackbuff, 16*16*3);
     
     MENUITEMINFOA CloseBitmap = {};
     CloseBitmap.cbSize     = sizeof(MENUITEMINFOA);
@@ -521,23 +565,42 @@ HWND CreateWindow(HMENU MenuBar)
     menuInfo.hbrBack = appBkgBrush;  //RGB(0x38, 0x38, 0x38);
     
     //NOTE:TODO: Hardcoded!!
+    State.windowWidth = 1280;
+    State.windowHeight = 840;
+    
     HWND WindowHandle;
     if ((WindowHandle = CreateWindowExA(0, "WndClass",
                                         "PCMan", style,
                                         300, 50, //CW_USEDEFAULT, CW_USEDEFAULT,
-                                        1280, 840,//1350, 900,
+                                        State.windowWidth, State.windowHeight,
                                         0, MenuBar, MainInstance, 0)) == nullptr)
     {
         DWORD Error = GetLastError();
         ls_printf("When Retrieving a WindowHandle in Win32_SetupScreen got error: %d", Error);
     }
     
-    RECT test = {100, 100, 200, 200};
-    DrawCaption(WindowHandle, GetDC(WindowHandle), &test, DC_BUTTONS);
+    BITMAPINFO BackBufferInfo = {};
+    BackBufferInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    BackBufferInfo.bmiHeader.biWidth = State.windowWidth;
+    BackBufferInfo.bmiHeader.biHeight = State.windowHeight;
+    BackBufferInfo.bmiHeader.biPlanes = 1;
+    BackBufferInfo.bmiHeader.biBitCount = 32;
+    BackBufferInfo.bmiHeader.biCompression = BI_RGB;
+    
+    WindowDC = GetDC(WindowHandle);
+    BackBufferDC = CreateCompatibleDC(WindowDC);
+    HBITMAP DibSection = CreateDIBSection(BackBufferDC, &BackBufferInfo,
+                                          DIB_RGB_COLORS, (void **)&BackBuffer, NULL, NULL);
+    SelectObject(BackBufferDC, DibSection);
     
     State.currWindowPos = { 300, 50 }; //NOTE:TODO: Hardcoded!!
     
     return WindowHandle;
+}
+
+void windows_Render()
+{
+    InvalidateRect(MainWindow, NULL, TRUE);
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -567,6 +630,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SetMenuInfo(MenuBar, &Info);
     
     MainWindow = CreateWindow(MenuBar);
+    
+    UIContext *uiContext = (UIContext *)ls_alloc(sizeof(UIContext));
+    uiContext->drawBuffer = BackBuffer;
+    uiContext->width = State.windowWidth;
+    uiContext->height = State.windowHeight;
+    uiContext->callbackRender = &windows_Render;
     
     State.isInitialized = FALSE;
 #if HAS_TABS
@@ -633,7 +702,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //Initialization of Init Page
     HideInitElem(State.Init);
     ShowOrder(State.Init->Order, PARTY_NUM);
-    HideElem(State.Init->Next->box);          
+    HideElem(State.Init->Next->box);
+    
+    HidePage(State.Init);
     
 #if HAS_TABS
     TabCtrl_SetCurSel(TabControl, 2);
@@ -704,6 +775,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             TranslateMessage(&Msg);
             DispatchMessageA(&Msg);
         }
+        
+        //NOTE:TEST
+        ls_uiBackground(uiContext, (u32)appBkgRGB);
+        
+        ls_uiButton(uiContext, 100, 700, 80, 20);
+        
+        ls_uiRender(uiContext);
+        //NOTE:TEST
         
         State.hasMouseClicked = FALSE;
         
