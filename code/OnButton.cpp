@@ -616,6 +616,8 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     
     for(u32 i = 0; i < Init->VisibleOrder; i++)
     {
+        //TODO: When removing the first entry, and the current in order IS also
+        //      the first entry, the round counter will count twice when advancing.
         if(commandID == Init->Order[i].Remove->id)
         {
             if(State.inBattle == FALSE) { return; }

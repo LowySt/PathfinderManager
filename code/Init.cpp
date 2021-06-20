@@ -322,8 +322,9 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     
     AddAllComboBoxItems(Page->Mobs->box, Enemies, ArraySize(Enemies));
     
+    s32 alliesYPos = 282;
     Page->Allies = AddUnsortedComboBox(WinH, wA, "Allies", LABEL_UP,
-                                       570, 282, 100, 20, (*ElementId)++, ArraySize(Allies));;
+                                       570, alliesYPos, 100, 20, (*ElementId)++, ArraySize(Allies));;
     wA += 2;
     AddAllComboBoxItems(Page->Allies->box, Allies, ArraySize(Allies));
     
@@ -339,7 +340,7 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     }
     
     // Ally Fields
-    yPos += 70;
+    yPos = alliesYPos + 40;
     for(u32 i = 0; i < ALLY_NUM; i++)
     {
         Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 546, yPos, ElementId, i, FALSE);
