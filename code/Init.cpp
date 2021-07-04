@@ -308,9 +308,6 @@ b32 InitTabOnComboSelect(u32 commandID, HWND handle)
     return FALSE;
 }
 
-
-//TODO: Init is improperly Initialized. Can't "Set" at program start without other commands prior.
-//      Can't add new enemies or allies if no other enemy/ally selection was previously made.
 void DrawInitTab(HWND WinH, u64 *ElementId)
 {
     InitPage *Page = State.Init;

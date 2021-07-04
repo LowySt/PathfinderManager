@@ -102,7 +102,7 @@ HWND AddStaticEditBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id,
     return Result;
 }
 
-//TODO: This is bad desing. 
+//TODO: This is bad design. 
 //   It should ask for a string/default_string to be passed, rather than a number to be converted.
 HWND AddEditNumberBox(HWND win, s32 x, s32 y, u32 width, u32 height, u64 id, s32 defaultNumber = 0)
 {

@@ -328,14 +328,14 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 #if HAS_TABS
                         LoadPC(&pc);
                         
-                        //TODO: Stop allocating and deallocating mem for stupid C Strings
-                        char *cStr = ls_strToCStr(pc.Name);
-                        Edit_SetText(State.PC->Name->box, cStr);
-                        ls_free(cStr);
+                        char nameBuff[128] = {};
+                        char playerBuff[128] = {};
                         
-                        cStr = ls_strToCStr(pc.Player);
-                        Edit_SetText(State.PC->Player->box, cStr);
-                        ls_free(cStr);
+                        ls_strToCStr_t(pc.Name, nameBuff, 128);
+                        Edit_SetText(State.PC->Name->box, nameBuff);
+                        
+                        ls_strToCStr_t(pc.Player, playerBuff, 128);
+                        Edit_SetText(State.PC->Player->box, playerBuff);
                         
                         ComboBox_SelectString(State.PC->Race->box, -1, Races[pc.Race]);
                         ComboBox_SelectString(State.PC->Class->box, -1, Classes[pc.Class]);
@@ -354,16 +354,16 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                         AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
                         
                         //TODO: Check why lvl is not being update at loading
-                        cStr = ls_itoa(pc.lvl);
-                        Edit_SetText(State.PC->currLevel->box, cStr);
-                        ls_free(cStr);
+                        char lvlBuff[32] = {}
+                        ls_itoa_t(pc.lvl, lvlBuff, 32);
+                        Edit_SetText(State.PC->currLevel->box, lvlBuff);
                         
                         Edit_SetText(State.PC->BaseAttackBonus->box,
                                      ClassBABString[pc.Class][0][pc.lvl]);
                         
-                        cStr = ls_itoa(pc.xp);
-                        Edit_SetText(State.PC->currXP->box, cStr);
-                        ls_free(cStr);
+                        char xpBuff[32] = {}
+                        ls_itoa(pc.xp, xpBuff, 32);
+                        Edit_SetText(State.PC->currXP->box, xpBuff);
                         
                         State.PC->xpIdx = pc.xpCurve;
                         ComboBox_SelectString(State.PC->XPCurve->box, -1,

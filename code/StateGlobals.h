@@ -308,7 +308,6 @@ const u32 MENU_CLOSE_APP_IDX = 1;
 HMENU MenuBar;
 HMENU SubMenu;
 
-//TODO: Can I manage to do things using this?
 Element ElementMap[ELEM_MAP_NUM] = {};
 
 #endif //_STATE_GLOBALS_H
