@@ -477,7 +477,7 @@ void RegisterWindow()
 
 HWND CreateWindow(HMENU MenuBar)
 {
-    u32 style = LS_VISIBLE | LS_THIN_BORDER | LS_POPUP; //| LS_OVERLAPPEDWINDOW;
+    u32 style = LS_VISIBLE | LS_THIN_BORDER | LS_POPUP | LS_MINIMIZE_BUTTON | LS_MAXIMIZE_BUTTON; //| LS_OVERLAPPEDWINDOW;
     BOOL Result;
     
     SubMenu = CreateMenu();
