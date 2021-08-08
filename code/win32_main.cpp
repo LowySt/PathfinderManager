@@ -598,6 +598,26 @@ HWND CreateWindow(HMENU MenuBar)
     return WindowHandle;
 }
 
+void Windows_LoadFont(string fontPath)
+{
+    HFONT f = CreateFontA(8, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+                          DEFAULT_PITCH | FF_DONTCARE, "Calibri");
+    
+    SelectObject(BackBufferDC, f);
+    
+    GLYPHMETRICS gm = {};
+    MAT2 mat = {};
+    const u32 buffSize = 4*64*64;
+    u8 charBuffer[buffSize] = {};
+    
+    DWORD res = GetGlyphOutlineA(BackBufferDC, 'A', GGO_BITMAP, &gm, buffSize, charBuffer, &mat);
+    
+    
+    
+    return;
+}
+
 void windows_Render()
 {
     InvalidateRect(MainWindow, NULL, TRUE);
@@ -630,6 +650,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SetMenuInfo(MenuBar, &Info);
     
     MainWindow = CreateWindow(MenuBar);
+    
+    string fontPath = ls_strConst("F:\\ProgrammingProjects\\Lowy_No_VS\\PCMan\\Exo.otf");
+    Windows_LoadFont(fontPath);
     
     UIContext *uiContext = (UIContext *)ls_alloc(sizeof(UIContext));
     uiContext->drawBuffer = BackBuffer;
