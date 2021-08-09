@@ -600,18 +600,22 @@ HWND CreateWindow(HMENU MenuBar)
 
 void Windows_LoadFont(string fontPath)
 {
-    HFONT f = CreateFontA(8, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
-                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+    HFONT f = CreateFontA(0, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
                           DEFAULT_PITCH | FF_DONTCARE, "Calibri");
     
-    SelectObject(BackBufferDC, f);
+    HGDIOBJ oldObj = SelectObject(BackBufferDC, f);
     
     GLYPHMETRICS gm = {};
-    MAT2 mat = {};
-    const u32 buffSize = 4*64*64;
-    u8 charBuffer[buffSize] = {};
+    MAT2 mat = {{1, 1}, {}, {}, {1, 1}};
     
-    DWORD res = GetGlyphOutlineA(BackBufferDC, 'A', GGO_BITMAP, &gm, buffSize, charBuffer, &mat);
+    //WORD index = 0;
+    //DWORD numBytes = GetGlyphIndicesA(BackBufferDC, "A", 1, &index, GGI_MARK_NONEXISTING_GLYPHS);
+    
+    const u32 buffSize = 4*64*64;
+    u8 *charBuffer = (u8 *)ls_alloc(buffSize);
+    DWORD size = GetGlyphOutlineA(BackBufferDC, 'A', GGO_BITMAP, &gm, buffSize, charBuffer, &mat);
+    
     
     
     
