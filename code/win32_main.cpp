@@ -110,6 +110,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 int breakHere = 0;
             }
             
+            
+            
             EndPaint(h, &ps);
         } break;
         
@@ -600,7 +602,7 @@ HWND CreateWindow(HMENU MenuBar)
 
 void Windows_LoadFont(string fontPath)
 {
-    HFONT f = CreateFontA(0, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+    HFONT f = CreateFontA(96, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
                           DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
                           DEFAULT_PITCH | FF_DONTCARE, "Calibri");
     
@@ -612,13 +614,47 @@ void Windows_LoadFont(string fontPath)
     //WORD index = 0;
     //DWORD numBytes = GetGlyphIndicesA(BackBufferDC, "A", 1, &index, GGI_MARK_NONEXISTING_GLYPHS);
     
-    const u32 buffSize = 4*64*64;
-    u8 *charBuffer = (u8 *)ls_alloc(buffSize);
-    DWORD size = GetGlyphOutlineA(BackBufferDC, 'A', GGO_BITMAP, &gm, buffSize, charBuffer, &mat);
+    char testC = 'A';
+    aLetterSize = GetGlyphOutlineA(BackBufferDC, testC, GGO_GRAY2_BITMAP, &gm, 0, NULL, &mat);
     
+    aLetterBuffer = (u8 *)ls_alloc(aLetterSize);
     
+    GetGlyphOutlineA(BackBufferDC, testC, GGO_GRAY2_BITMAP, &gm, aLetterSize, aLetterBuffer, &mat);
     
+    aLetterWidth  = gm.gmBlackBoxX;
+    aLetterHeight = gm.gmBlackBoxY;
     
+#if 0
+    u32 *block = (u32*)ls_alloc(aLetterWidth*aLetterHeight*4);
+    
+    u32 textColor1 = RGBg(0x32);
+    u32 textColor2 = ls_uiDarkenRGB(textColor1, 0x07);
+    u32 textColor3 = ls_uiDarkenRGB(textColor2, 0x07);
+    u32 textColor4 = ls_uiDarkenRGB(textColor3, 0x07);
+    
+    for(s32 y = aLetterHeight-1; y >= 0; y--)
+    {
+        for(s32 x = 0; x < aLetterWidth; x++)
+        {
+            if(x < 0 || x >= aLetterWidth)  continue;
+            if(y < 0 || y >= aLetterHeight) continue;
+            
+            u32 Color = 0;
+            switch(aLetterBuffer[y*aLetterWidth + x])
+            {
+                case 0: Color = (u32)appBkgRGB; break;
+                case 1: Color = textColor1; break;
+                case 2: Color = textColor2; break;
+                case 3: Color = textColor3; break;
+                case 4: Color = textColor4; break;
+            }
+            
+            block[y*aLetterWidth + x] = Color;
+        }
+    }
+    
+    ls_bitmapWrite(ls_strConst("TestBitmap.bmp"), (u8 *)block, aLetterWidth, aLetterHeight);
+#endif
     return;
 }
 
@@ -807,6 +843,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiBackground(uiContext, (u32)appBkgRGB);
         
         ls_uiButton(uiContext, 100, 700, 80, 20);
+        
+        //ls_uiBitmap(uiContext, 200, 700, (u32 *)aLetterBuffer, aLetterWidth, aLetterHeight);
+        ls_uiGrayscale2(uiContext, 200, 700, aLetterBuffer, aLetterWidth, aLetterHeight, RGBg(0x24));
         
         ls_uiRender(uiContext);
         //NOTE:TEST
