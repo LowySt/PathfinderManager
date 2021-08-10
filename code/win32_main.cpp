@@ -611,49 +611,46 @@ void Windows_LoadFont(string fontPath)
     GLYPHMETRICS gm = {};
     MAT2 mat = {{1, 1}, {}, {}, {1, 1}};
     
-    //WORD index = 0;
-    //DWORD numBytes = GetGlyphIndicesA(BackBufferDC, "A", 1, &index, GGI_MARK_NONEXISTING_GLYPHS);
+    WORD index = 0;
+    DWORD len = GetGlyphIndicesW(BackBufferDC, L"§", 1, &index, GGI_MARK_NONEXISTING_GLYPHS);
     
-    char testC = 'A';
-    aLetterSize = GetGlyphOutlineA(BackBufferDC, testC, GGO_GRAY2_BITMAP, &gm, 0, NULL, &mat);
+    testGlyph.idxInFont = index;
+    testGlyph.size = GetGlyphOutlineW(BackBufferDC, testGlyph.idxInFont, GGO_GRAY2_BITMAP|GGO_GLYPH_INDEX, &gm, 0, NULL, &mat);
     
-    aLetterBuffer = (u8 *)ls_alloc(aLetterSize);
+    testGlyph.data = (u8 *)ls_alloc(testGlyph.size);
     
-    GetGlyphOutlineA(BackBufferDC, testC, GGO_GRAY2_BITMAP, &gm, aLetterSize, aLetterBuffer, &mat);
+    GetGlyphOutlineW(BackBufferDC, testGlyph.idxInFont, GGO_GRAY2_BITMAP|GGO_GLYPH_INDEX, &gm, testGlyph.size, testGlyph.data, &mat);
     
-    aLetterWidth  = gm.gmBlackBoxX;
-    aLetterHeight = gm.gmBlackBoxY;
+    testGlyph.width  = gm.gmBlackBoxX;
+    testGlyph.height = gm.gmBlackBoxY;
+    testGlyph.xOrig  = gm.gmptGlyphOrigin.x;
+    testGlyph.yOrig  = gm.gmptGlyphOrigin.y;
+    testGlyph.xAdv   = gm.gmCellIncX;
+    testGlyph.yAdv   = gm.gmCellIncY;
     
 #if 0
-    u32 *block = (u32*)ls_alloc(aLetterWidth*aLetterHeight*4);
+    u32 *block = (u32*)ls_alloc(testGlyph.size*4);
     
     u32 textColor1 = RGBg(0x32);
     u32 textColor2 = ls_uiDarkenRGB(textColor1, 0x07);
     u32 textColor3 = ls_uiDarkenRGB(textColor2, 0x07);
     u32 textColor4 = ls_uiDarkenRGB(textColor3, 0x07);
     
-    for(s32 y = aLetterHeight-1; y >= 0; y--)
+    u32 colorTable[5] = {(u32)appBkgRGB, textColor1, textColor2, textColor3, textColor4 };
+    
+    for(s32 y = testGlyph.height-1; y >= 0; y--)
     {
-        for(s32 x = 0; x < aLetterWidth; x++)
+        for(s32 x = 0; x < testGlyph.width; x++)
         {
-            if(x < 0 || x >= aLetterWidth)  continue;
-            if(y < 0 || y >= aLetterHeight) continue;
+            if(x < 0 || x >= testGlyph.width)  continue;
+            if(y < 0 || y >= testGlyph.height) continue;
             
-            u32 Color = 0;
-            switch(aLetterBuffer[y*aLetterWidth + x])
-            {
-                case 0: Color = (u32)appBkgRGB; break;
-                case 1: Color = textColor1; break;
-                case 2: Color = textColor2; break;
-                case 3: Color = textColor3; break;
-                case 4: Color = textColor4; break;
-            }
-            
-            block[y*aLetterWidth + x] = Color;
+            u32 Color = colorTable[testGlyph.data[y*testGlyph.width + x]];
+            block[y*testGlyph.width + x] = Color;
         }
     }
     
-    ls_bitmapWrite(ls_strConst("TestBitmap.bmp"), (u8 *)block, aLetterWidth, aLetterHeight);
+    ls_bitmapWrite(ls_strConst("TestBitmap.bmp"), (u8 *)block, testGlyph.width, testGlyph.height);
 #endif
     return;
 }
@@ -845,7 +842,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiButton(uiContext, 100, 700, 80, 20);
         
         //ls_uiBitmap(uiContext, 200, 700, (u32 *)aLetterBuffer, aLetterWidth, aLetterHeight);
-        ls_uiGrayscale2(uiContext, 200, 700, aLetterBuffer, aLetterWidth, aLetterHeight, RGBg(0x24));
+        ls_uiGrayscale2(uiContext, 200, 700, testGlyph, RGBg(0x24));
         
         ls_uiRender(uiContext);
         //NOTE:TEST

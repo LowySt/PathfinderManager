@@ -2,6 +2,23 @@
 #define RGB(r,g,b) (u32)((0xFF<<24)|(r<<16)|(g<<8)|b)
 #define RGBg(v) (u32)((0xFF<<24)|(v<<16)|(v<<8)|v)
 
+struct UIGlyph
+{
+    u8 *data;
+    u32 size;
+    
+    u32 idxInFont;
+    
+    u32 width;
+    u32 height;
+    
+    u32 xOrig;
+    u32 yOrig;
+    
+    u32 xAdv;
+    u32 yAdv;
+};
+
 struct UIContext
 {
     u8 *drawBuffer;
@@ -66,7 +83,7 @@ void ls_uiBitmap(UIContext *c, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
     }
 }
 
-void ls_uiGrayscale2(UIContext *c, s32 xPos, s32 yPos, u8 *data, s32 w, s32 h, u32 textColor)
+void ls_uiGrayscale2(UIContext *c, s32 xPos, s32 yPos, UIGlyph glyph, u32 textColor)
 {
     u32 *At = (u32 *)c->drawBuffer;
     
@@ -75,23 +92,18 @@ void ls_uiGrayscale2(UIContext *c, s32 xPos, s32 yPos, u8 *data, s32 w, s32 h, u
     u32 textColor3 = ls_uiDarkenRGB(textColor2, 0x04);
     u32 textColor4 = ls_uiDarkenRGB(textColor3, 0x04);
     
-    for(s32 y = yPos, eY = h-1; y < yPos+h; y++, eY--)
+    u32 colorTable[5] = {(u32)appBkgRGB, textColor1, textColor2, textColor3, textColor4 };
+    
+    u32 realWidth = glyph.size / glyph.height;
+    
+    for(s32 y = yPos, eY = glyph.height-1; eY >= 0; y++, eY--)
     {
-        for(s32 x = xPos, eX = 0; x < xPos+w; x++, eX++)
+        for(s32 x = xPos, eX = 0; eX < realWidth; x++, eX++)
         {
             if(x < 0 || x >= c->width)  continue;
             if(y < 0 || y >= c->height) continue;
             
-            u32 Color = 0;
-            switch(data[eY*w + eX])
-            {
-                case 0: Color = (u32)appBkgRGB; break;
-                case 1: Color = textColor1; break;
-                case 2: Color = textColor2; break;
-                case 3: Color = textColor3; break;
-                case 4: Color = textColor4; break;
-            }
-            
+            u32 Color = colorTable[glyph.data[eY*realWidth + eX]];
             At[y*c->width + x] = Color;
         }
     }
@@ -103,9 +115,4 @@ void ls_uiRender(UIContext *c)
     return;
 }
 
-//const u32 aLetterBufferSize = 4*128*128;
-//u8 aLetterBuffer[aLetterBufferSize] = {};
-u8 *aLetterBuffer = NULL;
-DWORD aLetterSize = 0;
-u32 aLetterWidth = 0;
-u32 aLetterHeight = 0;
+UIGlyph testGlyph = {};
