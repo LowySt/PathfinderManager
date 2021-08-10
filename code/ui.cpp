@@ -19,11 +19,20 @@ struct UIGlyph
     u32 yAdv;
 };
 
+struct UIFont
+{
+    UIGlyph glyph[256];
+    char face[64];
+    u32 pointSize;
+};
+
 struct UIContext
 {
     u8 *drawBuffer;
     u32 width;
     u32 height;
+    
+    UIFont font;
     
     void (*callbackRender)();
 };
@@ -83,7 +92,7 @@ void ls_uiBitmap(UIContext *c, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
     }
 }
 
-void ls_uiGrayscale2(UIContext *c, s32 xPos, s32 yPos, UIGlyph glyph, u32 textColor)
+void ls_uiGS2Glyph(UIContext *c, s32 xPos, s32 yPos, UIGlyph *glyph, u32 textColor)
 {
     u32 *At = (u32 *)c->drawBuffer;
     
@@ -94,18 +103,29 @@ void ls_uiGrayscale2(UIContext *c, s32 xPos, s32 yPos, UIGlyph glyph, u32 textCo
     
     u32 colorTable[5] = {(u32)appBkgRGB, textColor1, textColor2, textColor3, textColor4 };
     
-    u32 realWidth = glyph.size / glyph.height;
+    u32 realWidth = glyph->size / glyph->height;
     
-    for(s32 y = yPos, eY = glyph.height-1; eY >= 0; y++, eY--)
+    for(s32 y = yPos, eY = glyph->height-1; eY >= 0; y++, eY--)
     {
         for(s32 x = xPos, eX = 0; eX < realWidth; x++, eX++)
         {
             if(x < 0 || x >= c->width)  continue;
             if(y < 0 || y >= c->height) continue;
             
-            u32 Color = colorTable[glyph.data[eY*realWidth + eX]];
+            u32 Color = colorTable[glyph->data[eY*realWidth + eX]];
             At[y*c->width + x] = Color;
         }
+    }
+}
+
+void ls_uiGS2String(UIContext *c, s32 xPos, s32 yPos, string text, u32 textColor)
+{
+    s32 currXPos = xPos;
+    for(u32 i = 0; i < text.len; i++)
+    {
+        UIGlyph *currGlyph = &c->font.glyph[text.data[i]];
+        ls_uiGS2Glyph(c, currXPos, yPos, currGlyph, textColor);
+        currXPos += currGlyph->xAdv;
     }
 }
 
@@ -114,5 +134,3 @@ void ls_uiRender(UIContext *c)
     c->callbackRender();
     return;
 }
-
-UIGlyph testGlyph = {};

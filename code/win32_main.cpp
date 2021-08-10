@@ -600,58 +600,49 @@ HWND CreateWindow(HMENU MenuBar)
     return WindowHandle;
 }
 
-void Windows_LoadFont(string fontPath)
+void Windows_LoadFont(UIFont *uiFont, u32 pointSize)
 {
-    HFONT f = CreateFontA(96, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
-                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
-                          DEFAULT_PITCH | FF_DONTCARE, "Calibri");
+    char *fontFace = "Calibri";
+    ls_memcpy(fontFace, uiFont->face, ls_len(fontFace));
+    
+    uiFont->pointSize = pointSize;
+    
+    HFONT f = CreateFontA(pointSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
+                          DEFAULT_PITCH | FF_DONTCARE, fontFace);
     
     HGDIOBJ oldObj = SelectObject(BackBufferDC, f);
     
-    GLYPHMETRICS gm = {};
     MAT2 mat = {{1, 1}, {}, {}, {1, 1}};
     
-    WORD index = 0;
-    DWORD len = GetGlyphIndicesW(BackBufferDC, L"§", 1, &index, GGI_MARK_NONEXISTING_GLYPHS);
-    
-    testGlyph.idxInFont = index;
-    testGlyph.size = GetGlyphOutlineW(BackBufferDC, testGlyph.idxInFont, GGO_GRAY2_BITMAP|GGO_GLYPH_INDEX, &gm, 0, NULL, &mat);
-    
-    testGlyph.data = (u8 *)ls_alloc(testGlyph.size);
-    
-    GetGlyphOutlineW(BackBufferDC, testGlyph.idxInFont, GGO_GRAY2_BITMAP|GGO_GLYPH_INDEX, &gm, testGlyph.size, testGlyph.data, &mat);
-    
-    testGlyph.width  = gm.gmBlackBoxX;
-    testGlyph.height = gm.gmBlackBoxY;
-    testGlyph.xOrig  = gm.gmptGlyphOrigin.x;
-    testGlyph.yOrig  = gm.gmptGlyphOrigin.y;
-    testGlyph.xAdv   = gm.gmCellIncX;
-    testGlyph.yAdv   = gm.gmCellIncY;
-    
-#if 0
-    u32 *block = (u32*)ls_alloc(testGlyph.size*4);
-    
-    u32 textColor1 = RGBg(0x32);
-    u32 textColor2 = ls_uiDarkenRGB(textColor1, 0x07);
-    u32 textColor3 = ls_uiDarkenRGB(textColor2, 0x07);
-    u32 textColor4 = ls_uiDarkenRGB(textColor3, 0x07);
-    
-    u32 colorTable[5] = {(u32)appBkgRGB, textColor1, textColor2, textColor3, textColor4 };
-    
-    for(s32 y = testGlyph.height-1; y >= 0; y--)
+    for(u32 idx = 33; idx <= 126; idx++)
     {
-        for(s32 x = 0; x < testGlyph.width; x++)
-        {
-            if(x < 0 || x >= testGlyph.width)  continue;
-            if(y < 0 || y >= testGlyph.height) continue;
-            
-            u32 Color = colorTable[testGlyph.data[y*testGlyph.width + x]];
-            block[y*testGlyph.width + x] = Color;
-        }
+        UIGlyph *currGlyph = &uiFont->glyph[idx];
+        GLYPHMETRICS gm = {};
+        
+        wchar_t charString[2] = {};
+        charString[0] = (wchar_t)idx;
+        
+        WORD index = 0;
+        DWORD len = GetGlyphIndicesW(BackBufferDC, charString, 1, &index, GGI_MARK_NONEXISTING_GLYPHS);
+        
+        currGlyph->idxInFont = index;
+        currGlyph->size = GetGlyphOutlineW(BackBufferDC, currGlyph->idxInFont, GGO_GRAY2_BITMAP|GGO_GLYPH_INDEX, &gm, 0, NULL, &mat);
+        
+        currGlyph->data = (u8 *)ls_alloc(currGlyph->size);
+        
+        GetGlyphOutlineW(BackBufferDC, currGlyph->idxInFont, GGO_GRAY2_BITMAP|GGO_GLYPH_INDEX, &gm, currGlyph->size, currGlyph->data, &mat);
+        
+        currGlyph->width  = gm.gmBlackBoxX;
+        currGlyph->height = gm.gmBlackBoxY;
+        currGlyph->xOrig  = gm.gmptGlyphOrigin.x;
+        currGlyph->yOrig  = gm.gmptGlyphOrigin.y;
+        currGlyph->xAdv   = gm.gmCellIncX;
+        currGlyph->yAdv   = gm.gmCellIncY;
     }
     
-    ls_bitmapWrite(ls_strConst("TestBitmap.bmp"), (u8 *)block, testGlyph.width, testGlyph.height);
-#endif
+    DeleteObject(f);
+    
     return;
 }
 
@@ -688,14 +679,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     MainWindow = CreateWindow(MenuBar);
     
-    string fontPath = ls_strConst("F:\\ProgrammingProjects\\Lowy_No_VS\\PCMan\\Exo.otf");
-    Windows_LoadFont(fontPath);
+    UIFont font = {};
+    Windows_LoadFont(&font, 32);
     
-    UIContext *uiContext = (UIContext *)ls_alloc(sizeof(UIContext));
+    UIContext *uiContext  = (UIContext *)ls_alloc(sizeof(UIContext));
     uiContext->drawBuffer = BackBuffer;
-    uiContext->width = State.windowWidth;
-    uiContext->height = State.windowHeight;
+    uiContext->width      = State.windowWidth;
+    uiContext->height     = State.windowHeight;
+    uiContext->font       = font; //TODO: Copy
     uiContext->callbackRender = &windows_Render;
+    
     
     State.isInitialized = FALSE;
 #if HAS_TABS
@@ -841,8 +834,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiButton(uiContext, 100, 700, 80, 20);
         
-        //ls_uiBitmap(uiContext, 200, 700, (u32 *)aLetterBuffer, aLetterWidth, aLetterHeight);
-        ls_uiGrayscale2(uiContext, 200, 700, testGlyph, RGBg(0x24));
+        ls_uiGS2String(uiContext, 200, 700, ls_strConst("hello!"), RGBg(200));
         
         ls_uiRender(uiContext);
         //NOTE:TEST
