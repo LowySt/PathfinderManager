@@ -2,6 +2,8 @@
 #define RGB(r,g,b) (u32)((0xFF<<24)|(r<<16)|(g<<8)|b)
 #define RGBg(v) (u32)((0xFF<<24)|(v<<16)|(v<<8)|v)
 
+typedef u32 Color;
+
 struct UIGlyph
 {
     u8 *data;
@@ -45,6 +47,33 @@ u32 ls_uiDarkenRGB(u32 Color, u32 factor)
     c8[2] -= factor;
     
     return Color;
+}
+
+u32 ls_uiLightenRGB(u32 Color, u32 factor)
+{
+    u8 *c8 = (u8 *)&Color;
+    c8[0] += factor;
+    c8[1] += factor;
+    c8[2] += factor;
+    
+    return Color;
+}
+
+void ls_uiFillGSColorTable(u32 c, u32 baseColor, u8 darkenFactor, u32 *table, u32 tableSize)
+{
+    b32 darken = c > baseColor ? TRUE : FALSE;
+    
+    table[0] = baseColor;
+    
+    u32 currColor = c; 
+    for(u32 i = 1; i < tableSize; i++)
+    {
+        table[i] = currColor;
+        if(darken && (currColor < baseColor)) { currColor = ls_uiDarkenRGB(currColor, darkenFactor); }
+        if(!darken && (currColor > baseColor)) { currColor = ls_uiLightenRGB(currColor, darkenFactor); }
+    }
+    
+    return;
 }
 
 void ls_uiBackground(UIContext *c, u32 color)
@@ -96,12 +125,32 @@ void ls_uiGS2Glyph(UIContext *c, s32 xPos, s32 yPos, UIGlyph *glyph, u32 textCol
 {
     u32 *At = (u32 *)c->drawBuffer;
     
-    u32 textColor1 = textColor;
-    u32 textColor2 = ls_uiDarkenRGB(textColor1, 0x04);
-    u32 textColor3 = ls_uiDarkenRGB(textColor2, 0x04);
-    u32 textColor4 = ls_uiDarkenRGB(textColor3, 0x04);
+    const u32 colorTableSize = 5;
+    u32 colorTable[colorTableSize] = {};
+    ls_uiFillGSColorTable(textColor, appBkgRGB, 0x04, colorTable, colorTableSize);
     
-    u32 colorTable[5] = {(u32)appBkgRGB, textColor1, textColor2, textColor3, textColor4 };
+    u32 realWidth = glyph->size / glyph->height;
+    
+    for(s32 y = yPos, eY = glyph->height-1; eY >= 0; y++, eY--)
+    {
+        for(s32 x = xPos, eX = 0; eX < realWidth; x++, eX++)
+        {
+            if(x < 0 || x >= c->width)  continue;
+            if(y < 0 || y >= c->height) continue;
+            
+            u32 Color = colorTable[glyph->data[eY*realWidth + eX]];
+            At[y*c->width + x] = Color;
+        }
+    }
+}
+
+void ls_uiGS4Glyph(UIContext *c, s32 xPos, s32 yPos, UIGlyph *glyph, u32 textColor)
+{
+    u32 *At = (u32 *)c->drawBuffer;
+    
+    const u32 colorTableSize = 17;
+    u32 colorTable[colorTableSize] = {};
+    ls_uiFillGSColorTable(textColor, appBkgRGB, 0x01, colorTable, colorTableSize);
     
     u32 realWidth = glyph->size / glyph->height;
     
@@ -125,6 +174,17 @@ void ls_uiGS2String(UIContext *c, s32 xPos, s32 yPos, string text, u32 textColor
     {
         UIGlyph *currGlyph = &c->font.glyph[text.data[i]];
         ls_uiGS2Glyph(c, currXPos, yPos, currGlyph, textColor);
+        currXPos += currGlyph->xAdv;
+    }
+}
+
+void ls_uiGS4String(UIContext *c, s32 xPos, s32 yPos, string text, u32 textColor)
+{
+    s32 currXPos = xPos;
+    for(u32 i = 0; i < text.len; i++)
+    {
+        UIGlyph *currGlyph = &c->font.glyph[text.data[i]];
+        ls_uiGS4Glyph(c, currXPos, yPos, currGlyph, textColor);
         currXPos += currGlyph->xAdv;
     }
 }

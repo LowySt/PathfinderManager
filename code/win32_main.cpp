@@ -627,11 +627,11 @@ void Windows_LoadFont(UIFont *uiFont, u32 pointSize)
         DWORD len = GetGlyphIndicesW(BackBufferDC, charString, 1, &index, GGI_MARK_NONEXISTING_GLYPHS);
         
         currGlyph->idxInFont = index;
-        currGlyph->size = GetGlyphOutlineW(BackBufferDC, currGlyph->idxInFont, GGO_GRAY2_BITMAP|GGO_GLYPH_INDEX, &gm, 0, NULL, &mat);
+        currGlyph->size = GetGlyphOutlineW(BackBufferDC, currGlyph->idxInFont, GGO_GRAY4_BITMAP|GGO_GLYPH_INDEX, &gm, 0, NULL, &mat);
         
         currGlyph->data = (u8 *)ls_alloc(currGlyph->size);
         
-        GetGlyphOutlineW(BackBufferDC, currGlyph->idxInFont, GGO_GRAY2_BITMAP|GGO_GLYPH_INDEX, &gm, currGlyph->size, currGlyph->data, &mat);
+        GetGlyphOutlineW(BackBufferDC, currGlyph->idxInFont, GGO_GRAY4_BITMAP|GGO_GLYPH_INDEX, &gm, currGlyph->size, currGlyph->data, &mat);
         
         currGlyph->width  = gm.gmBlackBoxX;
         currGlyph->height = gm.gmBlackBoxY;
@@ -680,7 +680,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     MainWindow = CreateWindow(MenuBar);
     
     UIFont font = {};
-    Windows_LoadFont(&font, 32);
+    Windows_LoadFont(&font, 96);
     
     UIContext *uiContext  = (UIContext *)ls_alloc(sizeof(UIContext));
     uiContext->drawBuffer = BackBuffer;
@@ -834,7 +834,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiButton(uiContext, 100, 700, 80, 20);
         
-        ls_uiGS2String(uiContext, 200, 700, ls_strConst("hello!"), RGBg(200));
+        ls_uiGS4String(uiContext, 200, 700, ls_strConst("hello!"), RGBg(0x17));
         
         ls_uiRender(uiContext);
         //NOTE:TEST
