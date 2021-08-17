@@ -9,6 +9,7 @@ struct UIGlyph
     u8 *data;
     u32 size;
     
+    u32 codepoint;
     u32 idxInFont;
     
     u32 width;
@@ -39,94 +40,140 @@ struct UIContext
     void (*callbackRender)();
 };
 
-u32 ls_uiDarkenRGB(u32 Color, u32 factor)
+Color ls_uiDarkenRGB(Color c, u32 factor)
 {
-    u8 *c8 = (u8 *)&Color;
+    u8 *c8 = (u8 *)&c;
     c8[0] -= factor;
     c8[1] -= factor;
     c8[2] -= factor;
     
-    return Color;
+    return c;
 }
 
-u32 ls_uiLightenRGB(u32 Color, u32 factor)
+Color ls_uiLightenRGB(Color c, u32 factor)
 {
-    u8 *c8 = (u8 *)&Color;
+    u8 *c8 = (u8 *)&c;
     c8[0] += factor;
     c8[1] += factor;
     c8[2] += factor;
     
-    return Color;
+    return c;
 }
 
-void ls_uiFillGSColorTable(u32 c, u32 baseColor, u8 darkenFactor, u32 *table, u32 tableSize)
+Color ls_uiAlphaBlend(Color source, Color dest, u8 alpha)
 {
-    b32 darken = c > baseColor ? TRUE : FALSE;
+    u8 *c8 = (u8 *)&source;
+    u8 bS = c8[0];
+    u8 gS = c8[1];
+    u8 rS = c8[2];
+    u8 aS = alpha;
     
+    c8 = (u8 *)&dest;
+    u8 bD = c8[0];
+    u8 gD = c8[1];
+    u8 rD = c8[2];
+    u8 aD = c8[3];
+    
+    f32 factor = (f32)(255 - aS) / 255.0f;
+    f32 aMulti = (f32)aS / 255.0f;
+    
+    Color Result = 0;
+    c8 = (u8 *)&Result;
+    
+    c8[0] = bS*aMulti + bD*factor;
+    c8[1] = gS*aMulti + gD*factor;
+    c8[2] = rS*aMulti + rD*factor;
+    c8[3] = aS + aD*factor;
+    
+    return Result;
+}
+
+Color ls_uiRGBAtoARGB(Color c)
+{
+    u8 *c8 = (u8 *)&c;
+    
+    u8 A = c8[0];
+    
+    c8[0] = c8[1];
+    c8[1] = c8[2];
+    c8[2] = c8[3];
+    c8[3] = A;
+    
+    return c;
+}
+
+void ls_uiFillGSColorTable(Color c, Color baseColor, u8 darkenFactor, Color *table, u32 tableSize)
+{
     table[0] = baseColor;
     
-    u32 currColor = c; 
-    for(u32 i = 1; i < tableSize; i++)
+    u8 alphaCurr = (u32)ls_ceil((( 1.0f / (f32) tableSize ) * 255.0f));
+    Color currColor = ls_uiAlphaBlend(c, baseColor, alphaCurr);
+    table[1] = currColor;
+    
+    for(u32 i = 2; i < tableSize-1; i++)
     {
         table[i] = currColor;
-        if(darken && (currColor < baseColor)) { currColor = ls_uiDarkenRGB(currColor, darkenFactor); }
-        if(!darken && (currColor > baseColor)) { currColor = ls_uiLightenRGB(currColor, darkenFactor); }
+        
+        alphaCurr = (u32)ls_ceil((((f32)i / (f32) tableSize) * 255.0f));
+        currColor = ls_uiAlphaBlend(c, baseColor, alphaCurr);
     }
+    
+    table[tableSize-1] = c;
     
     return;
 }
 
-void ls_uiBackground(UIContext *c, u32 color)
+void ls_uiBackground(UIContext *cxt, Color c)
 {
-    for(u32 y = 0; y < c->height; y++)
+    for(u32 y = 0; y < cxt->height; y++)
     {
-        for(u32 x = 0; x < c->width; x++)
+        for(u32 x = 0; x < cxt->width; x++)
         {
-            ((u32 *)c->drawBuffer)[y*c->width + x] = color;
+            ((u32 *)cxt->drawBuffer)[y*cxt->width + x] = c;
         }
     }
 }
 
-void ls_uiButton(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h)
+void ls_uiButton(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    u32 *At = (u32 *)c->drawBuffer;
+    u32 *At = (u32 *)cxt->drawBuffer;
     
     for(s32 y = yPos; y < yPos+h; y++)
     {
         for(s32 x = xPos; x < xPos+w; x++)
         {
-            if(x < 0 || x >= c->width)  continue;
-            if(y < 0 || y >= c->height) continue;
+            if(x < 0 || x >= cxt->width)  continue;
+            if(y < 0 || y >= cxt->height) continue;
             
-            At[y*c->width + x] = RGBg(0x22);
+            At[y*cxt->width + x] = RGBg(0x22);
         }
     }
     
 }
 
-void ls_uiBitmap(UIContext *c, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
+void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
 {
-    u32 *At = (u32 *)c->drawBuffer;
+    u32 *At = (u32 *)cxt->drawBuffer;
     
     for(s32 y = yPos, eY = 0; y < yPos+h; y++, eY++)
     {
         for(s32 x = xPos, eX = 0; x < xPos+w; x++, eX++)
         {
-            if(x < 0 || x >= c->width)  continue;
-            if(y < 0 || y >= c->height) continue;
+            if(x < 0 || x >= cxt->width)  continue;
+            if(y < 0 || y >= cxt->height) continue;
             
-            u32 Color = data[eY*w + eX];
-            At[y*c->width + x] = Color;
+            Color c = ls_uiRGBAtoARGB(data[eY*w + eX]);
+            At[y*cxt->width + x] = c;
         }
     }
 }
 
-void ls_uiGS2Glyph(UIContext *c, s32 xPos, s32 yPos, UIGlyph *glyph, u32 textColor)
+void ls_uiGS2Glyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor)
 {
-    u32 *At = (u32 *)c->drawBuffer;
+    u32 *At = (u32 *)cxt->drawBuffer;
     
     const u32 colorTableSize = 5;
-    u32 colorTable[colorTableSize] = {};
+    Color colorTable[colorTableSize] = {};
     ls_uiFillGSColorTable(textColor, appBkgRGB, 0x04, colorTable, colorTableSize);
     
     u32 realWidth = glyph->size / glyph->height;
@@ -135,18 +182,18 @@ void ls_uiGS2Glyph(UIContext *c, s32 xPos, s32 yPos, UIGlyph *glyph, u32 textCol
     {
         for(s32 x = xPos, eX = 0; eX < realWidth; x++, eX++)
         {
-            if(x < 0 || x >= c->width)  continue;
-            if(y < 0 || y >= c->height) continue;
+            if(x < 0 || x >= cxt->width)  continue;
+            if(y < 0 || y >= cxt->height) continue;
             
-            u32 Color = colorTable[glyph->data[eY*realWidth + eX]];
-            At[y*c->width + x] = Color;
+            Color c = colorTable[glyph->data[eY*realWidth + eX]];
+            At[y*cxt->width + x] = c;
         }
     }
 }
 
-void ls_uiGS4Glyph(UIContext *c, s32 xPos, s32 yPos, UIGlyph *glyph, u32 textColor)
+void ls_uiGS4Glyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor)
 {
-    u32 *At = (u32 *)c->drawBuffer;
+    u32 *At = (u32 *)cxt->drawBuffer;
     
     const u32 colorTableSize = 17;
     u32 colorTable[colorTableSize] = {};
@@ -158,33 +205,65 @@ void ls_uiGS4Glyph(UIContext *c, s32 xPos, s32 yPos, UIGlyph *glyph, u32 textCol
     {
         for(s32 x = xPos, eX = 0; eX < realWidth; x++, eX++)
         {
-            if(x < 0 || x >= c->width)  continue;
-            if(y < 0 || y >= c->height) continue;
+            if(x < 0 || x >= cxt->width)  continue;
+            if(y < 0 || y >= cxt->height) continue;
             
             u32 Color = colorTable[glyph->data[eY*realWidth + eX]];
-            At[y*c->width + x] = Color;
+            At[y*cxt->width + x] = Color;
         }
     }
 }
 
-void ls_uiGS2String(UIContext *c, s32 xPos, s32 yPos, string text, u32 textColor)
+void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor)
+{
+    u32 *At = (u32 *)cxt->drawBuffer;
+    
+    const u32 colorTableSize = 256;
+    u32 colorTable[colorTableSize] = {};
+    ls_uiFillGSColorTable(textColor, appBkgRGB, 0x01, colorTable, colorTableSize);
+    
+    for(s32 y = yPos, eY = glyph->height-1; eY >= 0; y++, eY--)
+    {
+        for(s32 x = xPos, eX = 0; eX < glyph->width; x++, eX++)
+        {
+            if(x < 0 || x >= cxt->width)  continue;
+            if(y < 0 || y >= cxt->height) continue;
+            
+            u32 Color = colorTable[glyph->data[eY*glyph->width + eX]];
+            At[y*cxt->width + x] = Color;
+        }
+    }
+}
+
+void ls_uiGS2String(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor)
 {
     s32 currXPos = xPos;
     for(u32 i = 0; i < text.len; i++)
     {
-        UIGlyph *currGlyph = &c->font.glyph[text.data[i]];
-        ls_uiGS2Glyph(c, currXPos, yPos, currGlyph, textColor);
+        UIGlyph *currGlyph = &cxt->font.glyph[text.data[i]];
+        ls_uiGS2Glyph(cxt, currXPos, yPos, currGlyph, textColor);
         currXPos += currGlyph->xAdv;
     }
 }
 
-void ls_uiGS4String(UIContext *c, s32 xPos, s32 yPos, string text, u32 textColor)
+void ls_uiGS4String(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor)
 {
     s32 currXPos = xPos;
     for(u32 i = 0; i < text.len; i++)
     {
-        UIGlyph *currGlyph = &c->font.glyph[text.data[i]];
-        ls_uiGS4Glyph(c, currXPos, yPos, currGlyph, textColor);
+        UIGlyph *currGlyph = &cxt->font.glyph[text.data[i]];
+        ls_uiGS4Glyph(cxt, currXPos, yPos, currGlyph, textColor);
+        currXPos += currGlyph->xAdv;
+    }
+}
+
+void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor)
+{
+    s32 currXPos = xPos;
+    for(u32 i = 0; i < text.len; i++)
+    {
+        UIGlyph *currGlyph = &cxt->font.glyph[text.data[i]];
+        ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor);
         currXPos += currGlyph->xAdv;
     }
 }

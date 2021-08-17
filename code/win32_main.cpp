@@ -23,6 +23,15 @@
 #include "lsBitmap.h"
 #undef LS_BITMAP_IMPLEMENTATION
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#define STBTT_ifloor(x)     ls_floor(x)
+#define STBTT_iceil(x)      ls_ceil(x)
+#define STBTT_malloc(x, u) ((void)(u),ls_alloc(x))
+#define STBTT_free(x, u)   ((void)(u),ls_free(x))
+#define STBTT_assert(x)    Assert(x)
+
+#include "..\lib\stb_truetype.h"
+#undef STB_TRUETYPE_IMPLEMENTATION
 
 #define HAS_TABS 0
 
@@ -600,14 +609,16 @@ HWND CreateWindow(HMENU MenuBar)
     return WindowHandle;
 }
 
-void Windows_LoadFont(UIFont *uiFont, u32 pointSize)
+void Windows_LoadFont(UIFont *uiFont, u32 pixelSize)
 {
+#define MSDN_GLYPH 0
+#if MSDN_GLYPH
     char *fontFace = "Calibri";
     ls_memcpy(fontFace, uiFont->face, ls_len(fontFace));
     
-    uiFont->pointSize = pointSize;
+    uiFont->pointSize = pixelSize;
     
-    HFONT f = CreateFontA(pointSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
+    HFONT f = CreateFontA(pixelSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
                           DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
                           DEFAULT_PITCH | FF_DONTCARE, fontFace);
     
@@ -644,6 +655,41 @@ void Windows_LoadFont(UIFont *uiFont, u32 pointSize)
     DeleteObject(f);
     
     return;
+#else
+    char *fontName = "c:/windows/fonts/calibri.ttf";
+    u8 *fileBuffer;
+    ls_readFile(fontName, (char **)&fileBuffer, 0);
+    
+    stbtt_fontinfo *font = (stbtt_fontinfo *)ls_alloc(sizeof(stbtt_fontinfo));
+    stbtt_InitFont(font, fileBuffer, 0);
+    
+    for(u32 codepoint = 33; codepoint <= 126; codepoint++)
+    {
+        UIGlyph *currGlyph = &uiFont->glyph[codepoint];
+        currGlyph->codepoint = codepoint;
+        
+        f32 scale = stbtt_ScaleForPixelHeight(font, pixelSize);
+        
+        s32 x0, x1, y0, y1;
+        s32 advWidth, leftSB;
+        
+        stbtt_GetCodepointBitmapBox(font, codepoint, scale, scale, &x0, &y0, &x1, &y1);
+        stbtt_GetCodepointHMetrics(font, codepoint, &advWidth, &leftSB);
+        s32 bmWidth  = x1 - x0;
+        s32 bmHeight = y1 - y0;
+        u32 bitmapSize = bmWidth*bmHeight;
+        
+        currGlyph->data   = (u8 *)ls_alloc(bitmapSize);
+        currGlyph->width  = bmWidth;
+        currGlyph->height = bmHeight;
+        currGlyph->xAdv   = advWidth*scale;
+        
+        stbtt_MakeCodepointBitmap(font, currGlyph->data, bmWidth, bmHeight, bmWidth, scale, scale, codepoint);
+    }
+    
+    ls_free(fileBuffer);
+    ls_free(font);
+#endif
 }
 
 void windows_Render()
@@ -680,7 +726,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     MainWindow = CreateWindow(MenuBar);
     
     UIFont font = {};
-    Windows_LoadFont(&font, 96);
+    Windows_LoadFont(&font, 32);
     
     UIContext *uiContext  = (UIContext *)ls_alloc(sizeof(UIContext));
     uiContext->drawBuffer = BackBuffer;
@@ -834,7 +880,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiButton(uiContext, 100, 700, 80, 20);
         
-        ls_uiGS4String(uiContext, 200, 700, ls_strConst("hello!"), RGBg(0x17));
+#if MSDN_GLYPH
+        ls_uiGS4String(uiContext, 200, 700, ls_strConst("hello!"),  RGBg(0x55));
+#else
+        ls_uiGlyphString(uiContext, 200, 700, ls_strConst("hello!"), RGBg(0xFF));
+#endif
+        //ls_uiBitmap(uiContext, 200, 700, (u32 *)font.glyph['h'].data, font.glyph['h'].width, font.glyph['h'].height);
         
         ls_uiRender(uiContext);
         //NOTE:TEST
