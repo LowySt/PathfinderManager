@@ -25,8 +25,7 @@ struct UIGlyph
 struct UIFont
 {
     UIGlyph glyph[256];
-    char face[64];
-    u32 pointSize;
+    u32 pixelHeight;
 };
 
 struct UIContext
@@ -35,7 +34,10 @@ struct UIContext
     u32 width;
     u32 height;
     
-    UIFont font;
+    UIFont font[4]; //TODO: Hardcoded
+    char   face[128];
+    
+    UIFont *currFont;
     
     void (*callbackRender)();
 };
@@ -168,52 +170,6 @@ void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
     }
 }
 
-void ls_uiGS2Glyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor)
-{
-    u32 *At = (u32 *)cxt->drawBuffer;
-    
-    const u32 colorTableSize = 5;
-    Color colorTable[colorTableSize] = {};
-    ls_uiFillGSColorTable(textColor, appBkgRGB, 0x04, colorTable, colorTableSize);
-    
-    u32 realWidth = glyph->size / glyph->height;
-    
-    for(s32 y = yPos, eY = glyph->height-1; eY >= 0; y++, eY--)
-    {
-        for(s32 x = xPos, eX = 0; eX < realWidth; x++, eX++)
-        {
-            if(x < 0 || x >= cxt->width)  continue;
-            if(y < 0 || y >= cxt->height) continue;
-            
-            Color c = colorTable[glyph->data[eY*realWidth + eX]];
-            At[y*cxt->width + x] = c;
-        }
-    }
-}
-
-void ls_uiGS4Glyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor)
-{
-    u32 *At = (u32 *)cxt->drawBuffer;
-    
-    const u32 colorTableSize = 17;
-    u32 colorTable[colorTableSize] = {};
-    ls_uiFillGSColorTable(textColor, appBkgRGB, 0x01, colorTable, colorTableSize);
-    
-    u32 realWidth = glyph->size / glyph->height;
-    
-    for(s32 y = yPos, eY = glyph->height-1; eY >= 0; y++, eY--)
-    {
-        for(s32 x = xPos, eX = 0; eX < realWidth; x++, eX++)
-        {
-            if(x < 0 || x >= cxt->width)  continue;
-            if(y < 0 || y >= cxt->height) continue;
-            
-            u32 Color = colorTable[glyph->data[eY*realWidth + eX]];
-            At[y*cxt->width + x] = Color;
-        }
-    }
-}
-
 void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor)
 {
     u32 *At = (u32 *)cxt->drawBuffer;
@@ -235,37 +191,28 @@ void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textCo
     }
 }
 
-void ls_uiGS2String(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor)
-{
-    s32 currXPos = xPos;
-    for(u32 i = 0; i < text.len; i++)
-    {
-        UIGlyph *currGlyph = &cxt->font.glyph[text.data[i]];
-        ls_uiGS2Glyph(cxt, currXPos, yPos, currGlyph, textColor);
-        currXPos += currGlyph->xAdv;
-    }
-}
-
-void ls_uiGS4String(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor)
-{
-    s32 currXPos = xPos;
-    for(u32 i = 0; i < text.len; i++)
-    {
-        UIGlyph *currGlyph = &cxt->font.glyph[text.data[i]];
-        ls_uiGS4Glyph(cxt, currXPos, yPos, currGlyph, textColor);
-        currXPos += currGlyph->xAdv;
-    }
-}
-
 void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor)
 {
     s32 currXPos = xPos;
     for(u32 i = 0; i < text.len; i++)
     {
-        UIGlyph *currGlyph = &cxt->font.glyph[text.data[i]];
+        u32 indexInGlyphArray = text.data[i];
+        AssertMsg(indexInGlyphArray <= 256, "GlyphIndex OutOfBounds\n"); //TODO: HARDCODED //TODO: Only handling ASCII
+        
+        UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
         ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor);
         currXPos += currGlyph->xAdv;
     }
+}
+
+void ls_uiSelectFontByPixelHeight(UIContext *cxt, u32 pixelHeight)
+{
+    //TODO: Hardcoded
+    b32 found = FALSE;
+    for(u32 i = 0; i < 4; i++)
+    { if(cxt->font[i].pixelHeight == pixelHeight) { found = TRUE; cxt->currFont = &cxt->font[i]; } }
+    
+    AssertMsg(found, "Asked pixelHeight not available\n");
 }
 
 void ls_uiRender(UIContext *c)

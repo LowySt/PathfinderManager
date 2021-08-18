@@ -609,11 +609,12 @@ HWND CreateWindow(HMENU MenuBar)
     return WindowHandle;
 }
 
-void Windows_LoadFont(UIFont *uiFont, u32 pixelSize)
+void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
 {
-    char *fontName = "c:/windows/fonts/calibri.ttf";
     u8 *fileBuffer;
     ls_readFile(fontName, (char **)&fileBuffer, 0);
+    
+    uiFont->pixelHeight = pixelHeight;
     
     stbtt_fontinfo *font = (stbtt_fontinfo *)ls_alloc(sizeof(stbtt_fontinfo));
     stbtt_InitFont(font, fileBuffer, 0);
@@ -623,7 +624,7 @@ void Windows_LoadFont(UIFont *uiFont, u32 pixelSize)
         UIGlyph *currGlyph = &uiFont->glyph[codepoint];
         currGlyph->codepoint = codepoint;
         
-        f32 scale = stbtt_ScaleForPixelHeight(font, pixelSize);
+        f32 scale = stbtt_ScaleForPixelHeight(font, pixelHeight);
         
         s32 x0, x1, y0, y1;
         s32 advWidth, leftSB;
@@ -679,15 +680,28 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     MainWindow = CreateWindow(MenuBar);
     
-    UIFont font = {};
-    Windows_LoadFont(&font, 32);
+    char *fontName = "c:/windows/fonts/calibri.ttf";
+    
+    UIFont fontPx12 = {};
+    UIFont fontPx16 = {};
+    UIFont fontPx32 = {};
+    UIFont fontPx64 = {};
+    Windows_LoadFont(&fontPx12, fontName, 12);
+    Windows_LoadFont(&fontPx16, fontName, 16);
+    Windows_LoadFont(&fontPx32, fontName, 32);
+    Windows_LoadFont(&fontPx64, fontName, 64);
     
     UIContext *uiContext  = (UIContext *)ls_alloc(sizeof(UIContext));
     uiContext->drawBuffer = BackBuffer;
     uiContext->width      = State.windowWidth;
     uiContext->height     = State.windowHeight;
-    uiContext->font       = font; //TODO: Copy
     uiContext->callbackRender = &windows_Render;
+    
+    uiContext->font[0] = fontPx12;
+    uiContext->font[1] = fontPx16;
+    uiContext->font[2] = fontPx32;
+    uiContext->font[3] = fontPx64;
+    ls_memcpy(fontName, uiContext->face, ls_len(fontName));
     
     
     State.isInitialized = FALSE;
@@ -834,9 +848,17 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiButton(uiContext, 100, 700, 80, 20);
         
-        ls_uiGlyphString(uiContext, 200, 700, ls_strConst("hello!"), RGBg(0xFF));
+        ls_uiSelectFontByPixelHeight(uiContext, 64);
+        ls_uiGlyphString(uiContext, 200, 700, ls_strConst("hello!"), RGB(0xbf, 0x41, 0x37));
         
-        //ls_uiBitmap(uiContext, 200, 700, (u32 *)font.glyph['h'].data, font.glyph['h'].width, font.glyph['h'].height);
+        ls_uiSelectFontByPixelHeight(uiContext, 32);
+        ls_uiGlyphString(uiContext, 200, 670, ls_strConst("hello!"), RGB(0x52, 0xa3, 0x22));
+        
+        ls_uiSelectFontByPixelHeight(uiContext, 16);
+        ls_uiGlyphString(uiContext, 200, 650, ls_strConst("hello!"), RGB(0x16, 0x64, 0x91));
+        
+        ls_uiSelectFontByPixelHeight(uiContext, 12);
+        ls_uiGlyphString(uiContext, 200, 636, ls_strConst("hello!"), RGB(0x5b, 0x24, 0xbf));
         
         ls_uiRender(uiContext);
         //NOTE:TEST
