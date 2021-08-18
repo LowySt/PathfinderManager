@@ -611,51 +611,6 @@ HWND CreateWindow(HMENU MenuBar)
 
 void Windows_LoadFont(UIFont *uiFont, u32 pixelSize)
 {
-#define MSDN_GLYPH 0
-#if MSDN_GLYPH
-    char *fontFace = "Calibri";
-    ls_memcpy(fontFace, uiFont->face, ls_len(fontFace));
-    
-    uiFont->pointSize = pixelSize;
-    
-    HFONT f = CreateFontA(pixelSize, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, 
-                          DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY,
-                          DEFAULT_PITCH | FF_DONTCARE, fontFace);
-    
-    HGDIOBJ oldObj = SelectObject(BackBufferDC, f);
-    
-    MAT2 mat = {{1, 1}, {}, {}, {1, 1}};
-    
-    for(u32 idx = 33; idx <= 126; idx++)
-    {
-        UIGlyph *currGlyph = &uiFont->glyph[idx];
-        GLYPHMETRICS gm = {};
-        
-        wchar_t charString[2] = {};
-        charString[0] = (wchar_t)idx;
-        
-        WORD index = 0;
-        DWORD len = GetGlyphIndicesW(BackBufferDC, charString, 1, &index, GGI_MARK_NONEXISTING_GLYPHS);
-        
-        currGlyph->idxInFont = index;
-        currGlyph->size = GetGlyphOutlineW(BackBufferDC, currGlyph->idxInFont, GGO_GRAY4_BITMAP|GGO_GLYPH_INDEX, &gm, 0, NULL, &mat);
-        
-        currGlyph->data = (u8 *)ls_alloc(currGlyph->size);
-        
-        GetGlyphOutlineW(BackBufferDC, currGlyph->idxInFont, GGO_GRAY4_BITMAP|GGO_GLYPH_INDEX, &gm, currGlyph->size, currGlyph->data, &mat);
-        
-        currGlyph->width  = gm.gmBlackBoxX;
-        currGlyph->height = gm.gmBlackBoxY;
-        currGlyph->xOrig  = gm.gmptGlyphOrigin.x;
-        currGlyph->yOrig  = gm.gmptGlyphOrigin.y;
-        currGlyph->xAdv   = gm.gmCellIncX;
-        currGlyph->yAdv   = gm.gmCellIncY;
-    }
-    
-    DeleteObject(f);
-    
-    return;
-#else
     char *fontName = "c:/windows/fonts/calibri.ttf";
     u8 *fileBuffer;
     ls_readFile(fontName, (char **)&fileBuffer, 0);
@@ -689,7 +644,6 @@ void Windows_LoadFont(UIFont *uiFont, u32 pixelSize)
     
     ls_free(fileBuffer);
     ls_free(font);
-#endif
 }
 
 void windows_Render()
@@ -880,11 +834,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiButton(uiContext, 100, 700, 80, 20);
         
-#if MSDN_GLYPH
-        ls_uiGS4String(uiContext, 200, 700, ls_strConst("hello!"),  RGBg(0x55));
-#else
         ls_uiGlyphString(uiContext, 200, 700, ls_strConst("hello!"), RGBg(0xFF));
-#endif
+        
         //ls_uiBitmap(uiContext, 200, 700, (u32 *)font.glyph['h'].data, font.glyph['h'].width, font.glyph['h'].height);
         
         ls_uiRender(uiContext);
