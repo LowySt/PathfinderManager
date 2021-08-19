@@ -25,13 +25,18 @@ struct KeyboardInput
 {
     keyMap currentState = {};
     keyMap prevState    = {};
+    
+    b32 hasPrintableKey;
+    u32 keyCodepoint;
 };
 
-#define KeySet(k)     (Keyboard->currentState.k = 1)
-#define KeyUnset(k)   (Keyboard->currentState.k = 0)
-#define KeyPress(k)   (Keyboard->currentState.k == 1 && Keyboard->prevState.k == 0)
-#define KeyHeld(k)    (Keyboard->currentState.k == 1 && Keyboard->prevState.k == 1)
+#define KeySet(k)       (UserInput.Keyboard.currentState.k = 1)
+#define KeyUnset(k)     (UserInput.Keyboard.currentState.k = 0)
+#define KeyPress(k)     (UserInput.Keyboard.currentState.k == 1 && UserInput.Keyboard.prevState.k == 0)
+#define KeyHeld(k)      (UserInput.Keyboard.currentState.k == 1 && UserInput.Keyboard.prevState.k == 1)
 
+#define HasPrintableKey() (UserInput.Keyboard.hasPrintableKey == TRUE)
+#define GetPrintableKey() (UserInput.Keyboard.keyCodepoint)
 
 struct MouseInput
 {
@@ -45,27 +50,27 @@ struct MouseInput
     b32 wasRightPressed;
 };
 
-#define MouseWithin(rgn)      (((Mouse->pos.x >= rgn.x) && (Mouse->pos.x <= rgn.z)) && \
-((Mouse->pos.y <= rgn.y) && (Mouse->pos.y >= rgn.w)))
+#define MouseWithin(rgn)      (((UserInput.Mouse.pos.x >= rgn.x) && (UserInput.Mouse.pos.x <= rgn.z)) && \
+((UserInput.Mouse.pos.y <= rgn.y) && (UserInput.Mouse.pos.y >= rgn.w)))
 
-#define MouseWithinV2(tl, br) (((Mouse->pos.x >= tl.x) && (Mouse->pos.x <= br.x)) && \
-((Mouse->pos.y >= tl.y) && (Mouse->pos.y <= br.y)))
+#define MouseWithinV2(tl, br) (((UserInput.Mouse.pos.x >= tl.x) && (UserInput.Mouse.pos.x <= br.x)) && \
+((UserInput.Mouse.pos.y >= tl.y) && (UserInput.Mouse.pos.y <= br.y)))
 
-#define LeftClick    ((Mouse->isLeftPressed && !Mouse->wasLeftPressed))
-#define MiddleClick  ((Mouse->isMiddlePressed && !Mouse->wasMiddlePressed))
-#define RightClick   ((Mouse->isRightPressed && !Mouse->wasRightPressed))
+#define LeftClick    ((UserInput.Mouse.isLeftPressed && !UserInput.Mouse.wasLeftPressed))
+#define MiddleClick  ((UserInput.Mouse.isMiddlePressed && !UserInput.Mouse.wasMiddlePressed))
+#define RightClick   ((UserInput.Mouse.isRightPressed && !UserInput.Mouse.wasRightPressed))
 
-#define LeftHold     ((Mouse->isLeftPressed && Mouse->wasLeftPressed))
-#define MiddleHold   ((Mouse->isMiddlePressed && Mouse->wasMiddlePressed))
-#define RightHold    ((Mouse->isRightPressed && Mouse->wasRightPressed))
+#define LeftHold     ((UserInput.Mouse.isLeftPressed && UserInput.Mouse.wasLeftPressed))
+#define MiddleHold   ((UserInput.Mouse.isMiddlePressed && UserInput.Mouse.wasMiddlePressed))
+#define RightHold    ((UserInput.Mouse.isRightPressed && UserInput.Mouse.wasRightPressed))
 
-#define LeftUp       (!Mouse->isLeftPressed)
-#define MiddleUp     (!Mouse->isMiddlePressed)
-#define RightUp      (!Mouse->isRightPressed)
+#define LeftUp       (!UserInput.Mouse.isLeftPressed)
+#define MiddleUp     (!UserInput.Mouse.isMiddlePressed)
+#define RightUp      (!UserInput.Mouse.isRightPressed)
 
-#define LeftClear    ((!Mouse->isLeftPressed && !Mouse->wasLeftPressed))
-#define MiddleClear  ((!Mouse->isMiddlePressed && !Mouse->wasMiddlePressed))
-#define RightClear   ((!Mouse->isRightPressed && !Mouse->wasRightPressed))
+#define LeftClear    ((!UserInput.Mouse.isLeftPressed && !UserInput.Mouse.wasLeftPressed))
+#define MiddleClear  ((!UserInput.Mouse.isMiddlePressed && !UserInput.Mouse.wasMiddlePressed))
+#define RightClear   ((!UserInput.Mouse.isRightPressed && !UserInput.Mouse.wasRightPressed))
 
 struct Input
 {

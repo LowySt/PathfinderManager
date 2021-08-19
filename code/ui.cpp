@@ -28,6 +28,11 @@ struct UIFont
     u32 pixelHeight;
 };
 
+struct UITextBox
+{
+    string text;
+};
+
 struct UIContext
 {
     u8 *drawBuffer;
@@ -125,29 +130,63 @@ void ls_uiFillGSColorTable(Color c, Color baseColor, u8 darkenFactor, Color *tab
     return;
 }
 
-void ls_uiFillSquare(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
+void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
 {
-    u32 *At = (u32 *)cxt->drawBuffer;
+    s32 diffWidth = (w % 4);
+    s32 simdWidth = w - diffWidth;
     
-    for(s32 y = yPos; y < yPos+h; y++)
+    s32 diffHeight = (h % 4);
+    s32 simdHeight = h - diffHeight;
+    
+    //NOTE: Do the first Sub-Rectangle divisible by 4.
+    __m128i color = _mm_set1_epi32 ((int)c);
+    for(s32 y = yPos; y < yPos+simdHeight; y++)
     {
-        for(s32 x = xPos; x < xPos+w; x++)
+        for(s32 x = xPos; x < xPos+simdWidth; x+=4)
         {
             if(x < 0 || x >= cxt->width)  continue;
             if(y < 0 || y >= cxt->height) continue;
             
-            At[y*cxt->width + x] = c;
+            u32 idx = ((y*cxt->width) + x)*sizeof(s32);
+            __m128i *At = (__m128i *)(cxt->drawBuffer + idx);
+            _mm_storeu_si128(At, color);
+        }
+    }
+    
+    //NOTE: Complete the 2 remaining Sub-Rectangles at the right and top. (if there are).
+    u32 *At = (u32 *)cxt->drawBuffer;
+    
+    if(diffWidth) 
+    {
+        for(s32 y = yPos; y < yPos+h; y++)
+        {
+            for(s32 x = xPos+simdWidth; x < xPos+w; x++)
+            {
+                if(x < 0 || x >= cxt->width)  continue;
+                if(y < 0 || y >= cxt->height) continue;
+                
+                At[y*cxt->width + x] = c;
+            }
+        }
+    }
+    
+    if(diffHeight)
+    {
+        for(s32 y = yPos+simdHeight; y < yPos+h; y++)
+        {
+            for(s32 x = xPos; x < xPos+w; x++)
+            {
+                if(x < 0 || x >= cxt->width)  continue;
+                if(y < 0 || y >= cxt->height) continue;
+                
+                At[y*cxt->width + x] = c;
+            }
         }
     }
 }
 
 void ls_uiBackground(UIContext *cxt, Color c)
 {
-    //TODO: Try counting the number of cycles
-    RegionTimer fillTimer = {};
-    DebugTimerBegin(fillTimer);
-    
-#if 1
     AssertMsg((cxt->height % 4) == 0, "Window Height not divisible by 4 (SIMD)\n");
     AssertMsg((cxt->width % 4) == 0, "Window Width not divisible by 4 (SIMD)\n");
     
@@ -161,20 +200,6 @@ void ls_uiBackground(UIContext *cxt, Color c)
         __m128i *At = (__m128i *)(cxt->drawBuffer + idx);
         _mm_storeu_si128(At, color);
     }
-#else
-    for(u32 y = 0; y < cxt->height; y++)
-    {
-        for(u32 x = 0; x < cxt->width; x++)
-        {
-            ((u32 *)cxt->drawBuffer)[y*cxt->width + x] = c;
-        }
-    }
-#endif
-    
-    DebugTimerEnd(fillTimer);
-    u64 finalMicro = DebugTimerEnd(fillTimer);
-    
-    ls_printf("Microseconds for Background Fill: %ld\n", finalMicro);
 }
 
 void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
@@ -188,8 +213,7 @@ void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
             if(x < 0 || x >= cxt->width)  continue;
             if(y < 0 || y >= cxt->height) continue;
             
-            Color c = ls_uiRGBAtoARGB(data[eY*w + eX]);
-            At[y*cxt->width + x] = c;
+            At[y*cxt->width + x] = data[eY*w + eX];
         }
     }
 }
@@ -244,11 +268,30 @@ void ls_uiButton(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, b32 isPressed
     Color bkgColor = isPressed ? RGBg(0x65) : RGBg(0x45);
     
     //TODO: Draw the border without wasting CPU time.
-    ls_uiFillSquare(cxt, xPos-1, yPos-1, w+2, h+2, RGBg(0x22)); //NOTE:Border
-    ls_uiFillSquare(cxt, xPos, yPos, w, h, bkgColor);
+    ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, bkgColor);
     
     ls_uiSelectFontByPixelHeight(cxt, 16);
     ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, ls_strConst("Button"), RGBg(0xCC), bkgColor);
+}
+
+void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h, b32 isSelected)
+{
+    //NOTE: Draw the box
+    ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, RGBg(0x45));
+    
+    //TODO: Draw the caret
+    
+    //NOTE: Draw characters.
+    
+    if(HasPrintableKey()) { ls_strAppendChar(&box->text, GetPrintableKey()); }
+    
+    if(box->text.len > 0)
+    {
+        ls_uiSelectFontByPixelHeight(cxt, 16);
+        ls_uiGlyphString(cxt, xPos+10, yPos+4, box->text, RGBg(0xCC), RGBg(0x45));
+    }
 }
 
 void ls_uiRender(UIContext *c)

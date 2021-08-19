@@ -84,7 +84,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
     LRESULT Result = 0;
     
-    KeyboardInput *Keyboard = &UserInput.Keyboard;
     MouseInput    *Mouse    = &UserInput.Mouse;
     
     switch (msg)
@@ -126,6 +125,38 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             
             EndPaint(h, &ps);
+        } break;
+        
+        case WM_CHAR:
+        {
+            b32 wasPressed = (l >> 30) & 0x1;
+            u16 repeat     = (u16)l;
+            
+            //TODO: Doesn't check if the key is actually a printable character.
+            if(!wasPressed || repeat > 0)
+            {
+                UserInput.Keyboard.hasPrintableKey = TRUE;
+                UserInput.Keyboard.keyCodepoint    = w;
+            }
+            
+        } break;
+        
+        case WM_UNICHAR:
+        {
+            if(w == UNICODE_NOCHAR) { return TRUE; }
+            
+            b32 wasPressed = (l >> 30) & 0x1;
+            u16 repeat     = (u16)l;
+            
+            //TODO: Doesn't check if the key is actually a printable character.
+            if(!wasPressed || repeat > 0)
+            {
+                UserInput.Keyboard.hasPrintableKey = TRUE;
+                UserInput.Keyboard.keyCodepoint    = w;
+            }
+            
+            //NOTE: MSDN if an application processes this message it should return TRUE
+            return FALSE;
         } break;
         
         case WM_KEYDOWN:
@@ -643,6 +674,8 @@ void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
     stbtt_fontinfo *font = (stbtt_fontinfo *)ls_alloc(sizeof(stbtt_fontinfo));
     stbtt_InitFont(font, fileBuffer, 0);
     
+    //TODO: Vertical Metrics needed for proper string rendering.
+    //TODO: The top scanline of some glyphs seems cut off, even at high pixel height. Why? Bug?
     for(u32 codepoint = 33; codepoint <= 126; codepoint++)
     {
         UIGlyph *currGlyph = &uiFont->glyph[codepoint];
@@ -708,6 +741,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     char *fontName = "c:/windows/fonts/verdana.ttf";
     
+    
+    //TODO: Make Fonts live in their own Arena.
     UIFont fontPx12 = {};
     UIFont fontPx16 = {};
     UIFont fontPx32 = {};
@@ -815,16 +850,20 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
+    //TODO:Remove with ID system
+    UITextBox box = {};
+    box.text = ls_strAlloc(16);
+    
     b32 Running = TRUE;
     while(Running)
     {
-        KeyboardInput *Keyboard = &UserInput.Keyboard;
-        Keyboard->prevState = Keyboard->currentState;
+        UserInput.Keyboard.prevState = UserInput.Keyboard.currentState;
+        UserInput.Keyboard.hasPrintableKey = FALSE;
+        UserInput.Keyboard.keyCodepoint    = 0;
         
-        MouseInput *Mouse = &UserInput.Mouse;
-        Mouse->wasLeftPressed   = Mouse->isLeftPressed;
-        Mouse->wasRightPressed  = Mouse->isRightPressed;
-        Mouse->wasMiddlePressed = Mouse->isMiddlePressed;
+        UserInput.Mouse.wasLeftPressed   = UserInput.Mouse.isLeftPressed;
+        UserInput.Mouse.wasRightPressed  = UserInput.Mouse.isRightPressed;
+        UserInput.Mouse.wasMiddlePressed = UserInput.Mouse.isMiddlePressed;
         
         // Process Input
         MSG Msg;
@@ -879,30 +918,23 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE:TEST
         ls_uiBackground(uiContext, (u32)appBkgRGB);
         
-        v2i tl = {100, 700};
-        v2i br = {100+80, 700+20};
-        
-        //ls_printf("MousePos: (%d, %d)\n", Mouse->pos.x, Mouse->pos.y);
-        
+        //TODO: Make sure UI bounding boxes for input are pixel perfect aligned.
+        v2i tl = {100, 700+1};
+        v2i br = {100+80-1, 700+20};
         if(LeftHold && MouseWithinV2(tl, br))
         { 
             ls_uiButton(uiContext, 100, 700, 80, 20, TRUE);
-        }
-        else
-        {
-            ls_uiButton(uiContext, 100, 700, 80, 20, FALSE);
-        }
-        
-        if(KeyHeld(keyMap::G))
-        {
             ls_uiSelectFontByPixelHeight(uiContext, 64);
             ls_uiGlyphString(uiContext, 200, 700, ls_strConst("World!"), RGB(0xbf, 0x41, 0x37));
         }
         else
         {
+            ls_uiButton(uiContext, 100, 700, 80, 20, FALSE);
             ls_uiSelectFontByPixelHeight(uiContext, 64);
             ls_uiGlyphString(uiContext, 200, 700, ls_strConst("Hello"), RGB(0xbf, 0x41, 0x37));
         }
+        
+        ls_uiTextBox(uiContext, &box, 100, 600, 80, 20, FALSE);
         
         ls_uiRender(uiContext);
         //NOTE:TEST
