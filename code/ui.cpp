@@ -125,18 +125,7 @@ void ls_uiFillGSColorTable(Color c, Color baseColor, u8 darkenFactor, Color *tab
     return;
 }
 
-void ls_uiBackground(UIContext *cxt, Color c)
-{
-    for(u32 y = 0; y < cxt->height; y++)
-    {
-        for(u32 x = 0; x < cxt->width; x++)
-        {
-            ((u32 *)cxt->drawBuffer)[y*cxt->width + x] = c;
-        }
-    }
-}
-
-void ls_uiButton(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
+void ls_uiFillSquare(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
 {
     u32 *At = (u32 *)cxt->drawBuffer;
     
@@ -147,10 +136,45 @@ void ls_uiButton(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
             if(x < 0 || x >= cxt->width)  continue;
             if(y < 0 || y >= cxt->height) continue;
             
-            At[y*cxt->width + x] = RGBg(0x22);
+            At[y*cxt->width + x] = c;
         }
     }
+}
+
+void ls_uiBackground(UIContext *cxt, Color c)
+{
+    //TODO: Try counting the number of cycles
+    RegionTimer fillTimer = {};
+    DebugTimerBegin(fillTimer);
     
+#if 1
+    AssertMsg((cxt->height % 4) == 0, "Window Height not divisible by 4 (SIMD)\n");
+    AssertMsg((cxt->width % 4) == 0, "Window Width not divisible by 4 (SIMD)\n");
+    
+    __m128i color = _mm_set1_epi32 ((int)c);
+    
+    u32 numIterations = (cxt->height*cxt->width) / 4;
+    for(u32 i = 0; i < numIterations; i++)
+    {
+        u32 idx = i*sizeof(s32)*4;
+        
+        __m128i *At = (__m128i *)(cxt->drawBuffer + idx);
+        _mm_storeu_si128(At, color);
+    }
+#else
+    for(u32 y = 0; y < cxt->height; y++)
+    {
+        for(u32 x = 0; x < cxt->width; x++)
+        {
+            ((u32 *)cxt->drawBuffer)[y*cxt->width + x] = c;
+        }
+    }
+#endif
+    
+    DebugTimerEnd(fillTimer);
+    u64 finalMicro = DebugTimerEnd(fillTimer);
+    
+    ls_printf("Microseconds for Background Fill: %ld\n", finalMicro);
 }
 
 void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
@@ -170,13 +194,13 @@ void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
     }
 }
 
-void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor)
+void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor, Color bkgColor)
 {
     u32 *At = (u32 *)cxt->drawBuffer;
     
     const u32 colorTableSize = 256;
     u32 colorTable[colorTableSize] = {};
-    ls_uiFillGSColorTable(textColor, appBkgRGB, 0x01, colorTable, colorTableSize);
+    ls_uiFillGSColorTable(textColor, bkgColor, 0x01, colorTable, colorTableSize);
     
     for(s32 y = yPos, eY = glyph->height-1; eY >= 0; y++, eY--)
     {
@@ -191,7 +215,7 @@ void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textCo
     }
 }
 
-void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor)
+void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor, Color bkgColor = appBkgRGB)
 {
     s32 currXPos = xPos;
     for(u32 i = 0; i < text.len; i++)
@@ -200,7 +224,7 @@ void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color tex
         AssertMsg(indexInGlyphArray <= 256, "GlyphIndex OutOfBounds\n"); //TODO: HARDCODED //TODO: Only handling ASCII
         
         UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
-        ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor);
+        ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor, bkgColor);
         currXPos += currGlyph->xAdv;
     }
 }
@@ -213,6 +237,18 @@ void ls_uiSelectFontByPixelHeight(UIContext *cxt, u32 pixelHeight)
     { if(cxt->font[i].pixelHeight == pixelHeight) { found = TRUE; cxt->currFont = &cxt->font[i]; } }
     
     AssertMsg(found, "Asked pixelHeight not available\n");
+}
+
+void ls_uiButton(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, b32 isPressed)
+{
+    Color bkgColor = isPressed ? RGBg(0x65) : RGBg(0x45);
+    
+    //TODO: Draw the border without wasting CPU time.
+    ls_uiFillSquare(cxt, xPos-1, yPos-1, w+2, h+2, RGBg(0x22)); //NOTE:Border
+    ls_uiFillSquare(cxt, xPos, yPos, w, h, bkgColor);
+    
+    ls_uiSelectFontByPixelHeight(cxt, 16);
+    ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, ls_strConst("Button"), RGBg(0xCC), bkgColor);
 }
 
 void ls_uiRender(UIContext *c)

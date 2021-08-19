@@ -49,6 +49,7 @@
 
 #include "diceRoller.cpp"
 
+#include "Input.cpp"
 #include "Class.cpp"
 #include "Skills.cpp"
 #include "Feats.cpp"
@@ -83,6 +84,9 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
     LRESULT Result = 0;
     
+    KeyboardInput *Keyboard = &UserInput.Keyboard;
+    MouseInput    *Mouse    = &UserInput.Mouse;
+    
     switch (msg)
     {
         case WM_ERASEBKGND: return TRUE; break;
@@ -102,7 +106,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             BITMAPINFO BitmapInfo = {};
             BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
             BitmapInfo.bmiHeader.biWidth = State.windowWidth;
-            BitmapInfo.bmiHeader.biHeight = State.windowHeight; //Should it be negative?
+            BitmapInfo.bmiHeader.biHeight = State.windowHeight;
             BitmapInfo.bmiHeader.biPlanes = 1;
             BitmapInfo.bmiHeader.biBitCount = 32;
             BitmapInfo.bmiHeader.biCompression = BI_RGB;
@@ -122,6 +126,16 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             
             EndPaint(h, &ps);
+        } break;
+        
+        case WM_KEYDOWN:
+        {
+            switch(w) { case 'G':     KeySet(keyMap::G); break; }
+        } break;
+        
+        case WM_KEYUP:
+        {
+            switch(w) { case 'G':   KeyUnset(keyMap::G); break; }
         } break;
         
         case WM_NCLBUTTONDOWN:
@@ -152,16 +166,26 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
         } break;
         
+        case WM_LBUTTONDOWN:
+        {
+            Mouse->isLeftPressed = TRUE;
+        } break;
+        
         case WM_LBUTTONUP:
         {
+            Mouse->isLeftPressed = FALSE;
+            
             State.isDragging = FALSE;
             BOOL success = ReleaseCapture();
         } break;
         
         case WM_MOUSEMOVE:
         {
+            POINTS currMouseClient = *((POINTS *)&l);
+            Mouse->pos = { currMouseClient.x, State.windowHeight - currMouseClient.y };
+            
             if(State.isDragging) {
-                POINTS currMouseClient = *((POINTS *)&l);
+                
                 POINT currMouse = {currMouseClient.x, currMouseClient.y};
                 BOOL success = ClientToScreen(h, &currMouse);
                 
@@ -656,6 +680,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
     
+    windows_initRegionTimer(RT_NANO);
+    
 #ifdef __GNUG__
     u64 rand_init_state = 2349879125314230;
     u64 rand_init_seq = 9827346259348;
@@ -680,7 +706,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     MainWindow = CreateWindow(MenuBar);
     
-    char *fontName = "c:/windows/fonts/calibri.ttf";
+    char *fontName = "c:/windows/fonts/verdana.ttf";
     
     UIFont fontPx12 = {};
     UIFont fontPx16 = {};
@@ -702,7 +728,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->font[2] = fontPx32;
     uiContext->font[3] = fontPx64;
     ls_memcpy(fontName, uiContext->face, ls_len(fontName));
-    
     
     State.isInitialized = FALSE;
 #if HAS_TABS
@@ -793,6 +818,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 Running = TRUE;
     while(Running)
     {
+        KeyboardInput *Keyboard = &UserInput.Keyboard;
+        Keyboard->prevState = Keyboard->currentState;
+        
+        MouseInput *Mouse = &UserInput.Mouse;
+        Mouse->wasLeftPressed   = Mouse->isLeftPressed;
+        Mouse->wasRightPressed  = Mouse->isRightPressed;
+        Mouse->wasMiddlePressed = Mouse->isMiddlePressed;
+        
         // Process Input
         MSG Msg;
         
@@ -846,19 +879,30 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE:TEST
         ls_uiBackground(uiContext, (u32)appBkgRGB);
         
-        ls_uiButton(uiContext, 100, 700, 80, 20);
+        v2i tl = {100, 700};
+        v2i br = {100+80, 700+20};
         
-        ls_uiSelectFontByPixelHeight(uiContext, 64);
-        ls_uiGlyphString(uiContext, 200, 700, ls_strConst("hello!"), RGB(0xbf, 0x41, 0x37));
+        //ls_printf("MousePos: (%d, %d)\n", Mouse->pos.x, Mouse->pos.y);
         
-        ls_uiSelectFontByPixelHeight(uiContext, 32);
-        ls_uiGlyphString(uiContext, 200, 670, ls_strConst("hello!"), RGB(0x52, 0xa3, 0x22));
+        if(LeftHold && MouseWithinV2(tl, br))
+        { 
+            ls_uiButton(uiContext, 100, 700, 80, 20, TRUE);
+        }
+        else
+        {
+            ls_uiButton(uiContext, 100, 700, 80, 20, FALSE);
+        }
         
-        ls_uiSelectFontByPixelHeight(uiContext, 16);
-        ls_uiGlyphString(uiContext, 200, 650, ls_strConst("hello!"), RGB(0x16, 0x64, 0x91));
-        
-        ls_uiSelectFontByPixelHeight(uiContext, 12);
-        ls_uiGlyphString(uiContext, 200, 636, ls_strConst("hello!"), RGB(0x5b, 0x24, 0xbf));
+        if(KeyHeld(keyMap::G))
+        {
+            ls_uiSelectFontByPixelHeight(uiContext, 64);
+            ls_uiGlyphString(uiContext, 200, 700, ls_strConst("World!"), RGB(0xbf, 0x41, 0x37));
+        }
+        else
+        {
+            ls_uiSelectFontByPixelHeight(uiContext, 64);
+            ls_uiGlyphString(uiContext, 200, 700, ls_strConst("Hello"), RGB(0xbf, 0x41, 0x37));
+        }
         
         ls_uiRender(uiContext);
         //NOTE:TEST
