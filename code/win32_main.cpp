@@ -676,7 +676,7 @@ void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
     
     //TODO: Vertical Metrics needed for proper string rendering.
     //TODO: The top scanline of some glyphs seems cut off, even at high pixel height. Why? Bug?
-    for(u32 codepoint = 33; codepoint <= 126; codepoint++)
+    for(u32 codepoint = 32; codepoint <= 126; codepoint++)
     {
         UIGlyph *currGlyph = &uiFont->glyph[codepoint];
         currGlyph->codepoint = codepoint;
@@ -713,7 +713,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
     
-    windows_initRegionTimer(RT_NANO);
+    windows_initRegionTimer(RT_MILLISECOND);
     
 #ifdef __GNUG__
     u64 rand_init_state = 2349879125314230;
@@ -854,9 +854,13 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     UITextBox box = {};
     box.text = ls_strAlloc(16);
     
+    RegionTimer frameTime = {};
+    
     b32 Running = TRUE;
     while(Running)
     {
+        RegionTimerBegin(frameTime);
+        
         UserInput.Keyboard.prevState = UserInput.Keyboard.currentState;
         UserInput.Keyboard.hasPrintableKey = FALSE;
         UserInput.Keyboard.keyCodepoint    = 0;
@@ -935,7 +939,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
         
         tl = {100, 600}; br = {100+80, 600+20};
-        if(LeftClick && MouseWithinV2(tl, br)) { box.isSelected = TRUE; }
+        if(LeftClick && MouseWithinV2(tl, br)) { box.isSelected = TRUE; box.isCaretOn = TRUE; }
         ls_uiTextBox(uiContext, &box, 100, 600, 80, 20);
         
         ls_uiRender(uiContext);
@@ -951,7 +955,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             State.timePassed = 0;
             SaveState();
         }
+        
         beginT = endT;
+        
+        RegionTimerEnd(frameTime);
+        State.dt = RegionTimerGet(frameTime);
     }
     
     return 0;

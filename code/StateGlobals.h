@@ -265,6 +265,7 @@ struct ProgramState
     b32 hasMouseClicked;
     
     u64 timePassed;
+    u64 dt = 0;
 };
 
 struct Element
