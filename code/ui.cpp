@@ -31,6 +31,7 @@ struct UIFont
 struct UITextBox
 {
     string text;
+    b32 isSelected;
 };
 
 struct UIContext
@@ -275,21 +276,27 @@ void ls_uiButton(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, b32 isPressed
     ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, ls_strConst("Button"), RGBg(0xCC), bkgColor);
 }
 
-void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h, b32 isSelected)
+void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
+    ls_uiSelectFontByPixelHeight(cxt, 16);
+    
     //NOTE: Draw the box
     ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
     ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, RGBg(0x45));
     
-    //TODO: Draw the caret
+    //TODO: Draw the caret in the right position
+    if(box->isSelected)
+    {
+        UIGlyph *caretGlyph = &cxt->currFont->glyph['|'];
+        ls_uiGlyph(cxt, xPos+8, yPos+4, caretGlyph, RGBg(0xCC), RGBg(0x45));
+    }
     
     //NOTE: Draw characters.
     
     if(HasPrintableKey()) { ls_strAppendChar(&box->text, GetPrintableKey()); }
     
     if(box->text.len > 0)
-    {
-        ls_uiSelectFontByPixelHeight(cxt, 16);
+    { 
         ls_uiGlyphString(cxt, xPos+10, yPos+4, box->text, RGBg(0xCC), RGBg(0x45));
     }
 }

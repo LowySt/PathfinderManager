@@ -934,7 +934,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_uiGlyphString(uiContext, 200, 700, ls_strConst("Hello"), RGB(0xbf, 0x41, 0x37));
         }
         
-        ls_uiTextBox(uiContext, &box, 100, 600, 80, 20, FALSE);
+        tl = {100, 600}; br = {100+80, 600+20};
+        if(LeftClick && MouseWithinV2(tl, br)) { box.isSelected = TRUE; }
+        ls_uiTextBox(uiContext, &box, 100, 600, 80, 20);
         
         ls_uiRender(uiContext);
         //NOTE:TEST
