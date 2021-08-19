@@ -28,6 +28,14 @@ struct UIFont
     u32 pixelHeight;
 };
 
+struct UIScissor
+{
+    struct UIRect { s32 x, y, w, h; };
+    stack rects;
+    
+    UIRect *currRect;
+};
+
 struct UITextBox
 {
     string text;
@@ -48,8 +56,39 @@ struct UIContext
     
     UIFont *currFont;
     
+    UIScissor scissor;
+    
     void (*callbackRender)();
 };
+
+void ls_uiPushScissor(UIContext *cxt, s32 x, s32 y, s32 w, s32 h)
+{
+    UIScissor *scissor = &cxt->scissor;
+    
+    if(!scissor->rects.data) { scissor->rects = ls_stackInit(sizeof(UIScissor::UIRect), 8); }
+    UIScissor::UIRect rect = { x, y, w, h };
+    
+    ls_stackPush(&scissor->rects, (void *)&rect);
+    scissor->currRect = (UIScissor::UIRect *)ls_stackTop(&scissor->rects);
+}
+
+void ls_uiPopScissor(UIContext *cxt)
+{
+    UIScissor *scissor = &cxt->scissor;
+    AssertMsg(scissor->rects.data, "Scissor stack is null\n");
+    AssertMsg(scissor->rects.count > 0, "Scissor stack is already empty\n");
+    
+    ls_stackPop(&scissor->rects);
+    if(scissor->rects.count > 0) //TODO: Top doesn't care if the count == 0
+    {
+        scissor->currRect = (UIScissor::UIRect *)ls_stackTop(&scissor->rects);
+    }
+    else
+    {
+        scissor->currRect = NULL;
+    }
+    
+}
 
 Color ls_uiDarkenRGB(Color c, u32 factor)
 {

@@ -14,6 +14,10 @@
 #include "lsBuffer.h"
 #undef LS_BUFFER_IMPLEMENTATION
 
+#define LS_STACK_IMPLEMENTATION
+#include "lsStack.h"
+#undef LS_STACK_IMPLEMENTATION
+
 //NOTE: Used by bitmap
 #define LS_MATH_IMPLEMENTATION
 #include "lsMath.h"
