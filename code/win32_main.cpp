@@ -762,6 +762,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->height     = State.windowHeight;
     uiContext->callbackRender = &windows_Render;
     
+    ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
+    
     uiContext->font[0] = fontPx12;
     uiContext->font[1] = fontPx16;
     uiContext->font[2] = fontPx32;

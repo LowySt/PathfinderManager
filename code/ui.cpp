@@ -175,6 +175,8 @@ void ls_uiFillGSColorTable(Color c, Color baseColor, u8 darkenFactor, Color *tab
 
 void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
 {
+    UIScissor::UIRect *scRect = cxt->scissor.currRect;
+    
     s32 diffWidth = (w % 4);
     s32 simdWidth = w - diffWidth;
     
@@ -189,6 +191,9 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
         {
             if(x < 0 || x >= cxt->width)  continue;
             if(y < 0 || y >= cxt->height) continue;
+            
+            if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+            if(y < scRect->y || y >= scRect->y+scRect->h) continue;
             
             u32 idx = ((y*cxt->width) + x)*sizeof(s32);
             __m128i *At = (__m128i *)(cxt->drawBuffer + idx);
@@ -208,6 +213,9 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
                 if(x < 0 || x >= cxt->width)  continue;
                 if(y < 0 || y >= cxt->height) continue;
                 
+                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+                
                 At[y*cxt->width + x] = c;
             }
         }
@@ -221,6 +229,9 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
             {
                 if(x < 0 || x >= cxt->width)  continue;
                 if(y < 0 || y >= cxt->height) continue;
+                
+                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
                 
                 At[y*cxt->width + x] = c;
             }
@@ -263,6 +274,8 @@ void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
 
 void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor, Color bkgColor)
 {
+    UIScissor::UIRect *scRect = cxt->scissor.currRect;
+    
     u32 *At = (u32 *)cxt->drawBuffer;
     
     const u32 colorTableSize = 256;
@@ -275,6 +288,9 @@ void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textCo
         {
             if(x < 0 || x >= cxt->width)  continue;
             if(y < 0 || y >= cxt->height) continue;
+            
+            if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+            if(y < scRect->y || y >= scRect->y+scRect->h) continue;
             
             u32 Color = colorTable[glyph->data[eY*glyph->width + eX]];
             At[y*cxt->width + x] = Color;
@@ -326,6 +342,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
     ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, RGBg(0x45));
     
+    ls_uiPushScissor(cxt, xPos+4, yPos, w-8, h);
+    
     if(box->isSelected)
     {
         //NOTE: Draw the Caret
@@ -346,6 +364,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             ls_uiGlyphString(cxt, xPos+10, yPos+4, box->text, RGBg(0xCC), RGBg(0x45));
         }
     }
+    
+    ls_uiPopScissor(cxt);
 }
 
 void ls_uiRender(UIContext *c)
