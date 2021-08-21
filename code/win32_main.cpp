@@ -165,12 +165,20 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_KEYDOWN:
         {
-            switch(w) { case 'G':     KeySet(keyMap::G); break; }
+            switch(w)
+            { 
+                case VK_BACK: KeySet(keyMap::Backspace); break;
+                case 'G':     KeySet(keyMap::G); break; 
+            }
         } break;
         
         case WM_KEYUP:
         {
-            switch(w) { case 'G':   KeyUnset(keyMap::G); break; }
+            switch(w)
+            { 
+                case VK_BACK: KeyUnset(keyMap::Backspace); break;
+                case 'G':     KeyUnset(keyMap::G); break;
+            }
         } break;
         
         case WM_NCLBUTTONDOWN:
@@ -678,6 +686,10 @@ void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
     stbtt_fontinfo *font = (stbtt_fontinfo *)ls_alloc(sizeof(stbtt_fontinfo));
     stbtt_InitFont(font, fileBuffer, 0);
     
+    f32 scale = stbtt_ScaleForPixelHeight(font, pixelHeight);
+    s32 ascent, descent, lineGap;
+    stbtt_GetFontVMetrics(font, &ascent, &descent, &lineGap);
+    
     //TODO: Vertical Metrics needed for proper string rendering.
     //TODO: The top scanline of some glyphs seems cut off, even at high pixel height. Why? Bug?
     for(u32 codepoint = 32; codepoint <= 126; codepoint++)
@@ -685,13 +697,12 @@ void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
         UIGlyph *currGlyph = &uiFont->glyph[codepoint];
         currGlyph->codepoint = codepoint;
         
-        f32 scale = stbtt_ScaleForPixelHeight(font, pixelHeight);
-        
         s32 x0, x1, y0, y1;
         s32 advWidth, leftSB;
         
         stbtt_GetCodepointBitmapBox(font, codepoint, scale, scale, &x0, &y0, &x1, &y1);
         stbtt_GetCodepointHMetrics(font, codepoint, &advWidth, &leftSB);
+        
         s32 bmWidth  = x1 - x0;
         s32 bmHeight = y1 - y0;
         u32 bitmapSize = bmWidth*bmHeight;
@@ -699,9 +710,28 @@ void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
         currGlyph->data   = (u8 *)ls_alloc(bitmapSize);
         currGlyph->width  = bmWidth;
         currGlyph->height = bmHeight;
-        currGlyph->xAdv   = advWidth*scale;
+        currGlyph->xAdv   = scale*advWidth;
+        currGlyph->yAdv   = scale*(ascent - descent + lineGap);
+        
+        //TODO: This is actually wrong. x0,y0 are not the origin. (I should be able to get that with another call.)
+        currGlyph->x0  = x0;
+        currGlyph->y0  = y0;
+        currGlyph->x1  = x1;
+        currGlyph->y1  = y1;
         
         stbtt_MakeCodepointBitmap(font, currGlyph->data, bmWidth, bmHeight, bmWidth, scale, scale, codepoint);
+    }
+    
+    uiFont->kernAdvanceTable = (s32 **)ls_alloc(sizeof(s32 *)*256);
+    for(u32 i = 0; i < 256; i++) { uiFont->kernAdvanceTable[i] = (s32 *)ls_alloc(sizeof(s32)*256); }
+    
+    for(u32 cp1 = 32; cp1 <= 126; cp1++)
+    {
+        for(u32 cp2 = 32; cp2 <= 126; cp2++)
+        {
+            s32 kernAdvance = scale*stbtt_GetCodepointKernAdvance(font, cp1, cp2);
+            uiFont->kernAdvanceTable[cp1][cp2] = kernAdvance;
+        }
     }
     
     ls_free(fileBuffer);
@@ -935,7 +965,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         { 
             ls_uiButton(uiContext, 100, 700, 80, 20, TRUE);
             ls_uiSelectFontByPixelHeight(uiContext, 64);
-            ls_uiGlyphString(uiContext, 200, 700, ls_strConst("World!"), RGB(0xbf, 0x41, 0x37));
+            ls_uiGlyphString(uiContext, 200, 700, ls_strConst("gouda,!"), RGB(0xbf, 0x41, 0x37));
         }
         else
         {

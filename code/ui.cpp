@@ -15,16 +15,18 @@ struct UIGlyph
     u32 width;
     u32 height;
     
-    u32 xOrig;
-    u32 yOrig;
+    s32 x0, x1;
+    s32 y0, y1;
     
-    u32 xAdv;
-    u32 yAdv;
+    s32 xAdv;
+    s32 yAdv;
 };
 
 struct UIFont
 {
     UIGlyph glyph[256];
+    s32 **kernAdvanceTable; //NOTE: Needs to keep this in the heap cause it stack-overflows.
+    
     u32 pixelHeight;
 };
 
@@ -283,6 +285,7 @@ void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textCo
     ls_uiFillGSColorTable(textColor, bkgColor, 0x01, colorTable, colorTableSize);
     
     for(s32 y = yPos, eY = glyph->height-1; eY >= 0; y++, eY--)
+        //for(s32 y = yPos, eY = 0; eY < glyph->height; y--, eY++)
     {
         for(s32 x = xPos, eX = 0; eX < glyph->width; x++, eX++)
         {
@@ -298,18 +301,50 @@ void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textCo
     }
 }
 
+s32 ls_uiGetKernAdvance(UIContext *cxt, s32 codepoint1, s32 codepoint2)
+{
+    UIFont *font = cxt->currFont;
+    s32 kernAdvance = font->kernAdvanceTable[codepoint1][codepoint2];
+    
+    return kernAdvance;
+}
+
 void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor, Color bkgColor = appBkgRGB)
 {
     s32 currXPos = xPos;
+    s32 currYPos = yPos;
     for(u32 i = 0; i < text.len; i++)
     {
         u32 indexInGlyphArray = text.data[i];
         AssertMsg(indexInGlyphArray <= 256, "GlyphIndex OutOfBounds\n"); //TODO: HARDCODED //TODO: Only handling ASCII
         
         UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
-        ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor, bkgColor);
-        currXPos += currGlyph->xAdv;
+        ls_uiGlyph(cxt, currXPos+currGlyph->x0, yPos-currGlyph->y1, currGlyph, textColor, bkgColor);
+        
+        s32 kernAdvance = 0;
+        if(i < text.len-1) { kernAdvance = ls_uiGetKernAdvance(cxt, text.data[i], text.data[i+1]); }
+        
+        currXPos += (currGlyph->xAdv + kernAdvance);
     }
+}
+
+s32 ls_uiGlyphStringLen(UIContext *cxt, string text)
+{
+    s32 totalLen = 0;
+    for(u32 i = 0; i < text.len; i++)
+    {
+        u32 indexInGlyphArray = text.data[i];
+        AssertMsg(indexInGlyphArray <= 256, "GlyphIndex OutOfBounds\n"); //TODO: HARDCODED //TODO: Only handling ASCII
+        
+        UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
+        
+        s32 kernAdvance = 0;
+        if(i < text.len-1) { kernAdvance = ls_uiGetKernAdvance(cxt, text.data[i], text.data[i+1]); }
+        
+        totalLen += (currGlyph->xAdv + kernAdvance);
+    }
+    
+    return totalLen;
 }
 
 void ls_uiSelectFontByPixelHeight(UIContext *cxt, u32 pixelHeight)
@@ -346,6 +381,15 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     
     if(box->isSelected)
     {
+        //NOTE: Draw characters.
+        if(HasPrintableKey()) { ls_strAppendChar(&box->text, GetPrintableKey()); }
+        if(KeyPress(keyMap::Backspace)) { ls_strTrimRight(&box->text, 1); }
+        
+        if(box->text.len > 0)
+        { 
+            ls_uiGlyphString(cxt, xPos+10, yPos+4, box->text, RGBg(0xCC), RGBg(0x45));
+        }
+        
         //NOTE: Draw the Caret
         box->dtCaret += State.dt;
         if(box->dtCaret >= 600) { box->dtCaret = 0; box->isCaretOn = !box->isCaretOn; }
@@ -353,16 +397,10 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         if(box->isCaretOn)
         {
             UIGlyph *caretGlyph = &cxt->currFont->glyph['|'];
-            ls_uiGlyph(cxt, xPos+8, yPos+4, caretGlyph, RGBg(0xCC), RGBg(0x45));
+            u32 stringLen = ls_uiGlyphStringLen(cxt, box->text);
+            ls_uiGlyph(cxt, xPos+12+stringLen, yPos+4, caretGlyph, RGBg(0xCC), RGBg(0x45));
         }
         
-        //NOTE: Draw characters.
-        if(HasPrintableKey()) { ls_strAppendChar(&box->text, GetPrintableKey()); }
-        
-        if(box->text.len > 0)
-        { 
-            ls_uiGlyphString(cxt, xPos+10, yPos+4, box->text, RGBg(0xCC), RGBg(0x45));
-        }
     }
     
     ls_uiPopScissor(cxt);

@@ -19,6 +19,8 @@ struct keyMap
     u8 Enter : 1, Shift : 1;                                    // 58 +  2 = 60
     
     u8 LArrow : 1, RArrow : 1, UArrow : 1, DArrow : 1;          // 60 +  4 = 64
+    
+    u8 Backspace : 1; // 65
 };
 
 struct KeyboardInput
