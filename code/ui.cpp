@@ -383,7 +383,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     {
         //NOTE: Draw characters.
         if(HasPrintableKey()) { ls_strAppendChar(&box->text, GetPrintableKey()); }
-        if(KeyPress(keyMap::Backspace)) { ls_strTrimRight(&box->text, 1); }
+        if(KeyPress(keyMap::Backspace) && box->text.len > 0) { ls_strTrimRight(&box->text, 1); }
         
         if(box->text.len > 0)
         { 

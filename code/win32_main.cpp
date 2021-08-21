@@ -136,13 +136,14 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             b32 wasPressed = (l >> 30) & 0x1;
             u16 repeat     = (u16)l;
             
-            //TODO: Doesn't check if the key is actually a printable character.
-            if(!wasPressed || repeat > 0)
+            if(w >= 32 && w <= 126)
             {
-                UserInput.Keyboard.hasPrintableKey = TRUE;
-                UserInput.Keyboard.keyCodepoint    = w;
+                if(!wasPressed || repeat > 0)
+                {
+                    UserInput.Keyboard.hasPrintableKey = TRUE;
+                    UserInput.Keyboard.keyCodepoint    = w;
+                }
             }
-            
         } break;
         
         case WM_UNICHAR:
