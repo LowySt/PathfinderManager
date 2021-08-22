@@ -53,11 +53,16 @@ struct MouseInput
     b32 wasRightPressed;
 };
 
+#define MouseInRect(xP,yP,w,h) (((UserInput.Mouse.pos.x >= xP) && (UserInput.Mouse.pos.x <= xP+w)) && \
+((UserInput.Mouse.pos.y >= yP) && (UserInput.Mouse.pos.y <= yP+h)))
+
+#if 0
 #define MouseWithin(rgn)      (((UserInput.Mouse.pos.x >= rgn.x) && (UserInput.Mouse.pos.x <= rgn.z)) && \
 ((UserInput.Mouse.pos.y <= rgn.y) && (UserInput.Mouse.pos.y >= rgn.w)))
 
 #define MouseWithinV2(tl, br) (((UserInput.Mouse.pos.x >= tl.x) && (UserInput.Mouse.pos.x <= br.x)) && \
 ((UserInput.Mouse.pos.y >= tl.y) && (UserInput.Mouse.pos.y <= br.y)))
+#endif
 
 #define LeftClick    ((UserInput.Mouse.isLeftPressed && !UserInput.Mouse.wasLeftPressed))
 #define MiddleClick  ((UserInput.Mouse.isMiddlePressed && !UserInput.Mouse.wasMiddlePressed))

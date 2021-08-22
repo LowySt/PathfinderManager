@@ -38,6 +38,18 @@ struct UIScissor
     UIRect *currRect;
 };
 
+struct UIContext;
+typedef void(*ButtonProc)(UIContext *cxt);
+struct UIButton
+{
+    string name;
+    b32 isHot;
+    b32 isHeld;
+    
+    ButtonProc onClick;
+    ButtonProc onHold;
+};
+
 struct UITextBox
 {
     string text;
@@ -358,16 +370,30 @@ void ls_uiSelectFontByPixelHeight(UIContext *cxt, u32 pixelHeight)
     AssertMsg(found, "Asked pixelHeight not available\n");
 }
 
-void ls_uiButton(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, b32 isPressed)
+void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    Color bkgColor = isPressed ? RGBg(0x65) : RGBg(0x45);
+    if(MouseInRect(xPos, yPos, w, h))
+    { 
+        button.isHot = TRUE; //TODO: Not used.
+        if(LeftClick)
+        {
+            button.onClick(cxt);
+        }
+        if(LeftHold) 
+        {
+            button.isHeld = TRUE; 
+            button.onHold(cxt); 
+        }
+    }
+    
+    Color bkgColor = button.isHeld ? RGBg(0x65) : RGBg(0x45);
     
     //TODO: Draw the border without wasting CPU time.
     ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
     ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, bkgColor);
     
     ls_uiSelectFontByPixelHeight(cxt, 16);
-    ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, ls_strConst("Button"), RGBg(0xCC), bkgColor);
+    ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, button.name, RGBg(0xCC), bkgColor);
 }
 
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
@@ -404,8 +430,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         }
         if(KeyPress(keyMap::LArrow) && box->caretIndex > 0) { box->caretIndex -= 1; }
         if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len) { box->caretIndex += 1; }
-        
-        //TODO: There's a bug with Going home and trying to write something?? It fucks the text buffer...
         if(KeyPress(keyMap::Home)) { box->caretIndex = 0; }
         if(KeyPress(keyMap::End)) { box->caretIndex = box->text.len; }
         

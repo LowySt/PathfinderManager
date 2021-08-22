@@ -78,10 +78,13 @@ HBITMAP closeButton;
 HDC     closeButtonDC;
 void    *closeButtBackbuff;
 
-//NOTE:TEST
+
 HDC WindowDC;
 HDC BackBufferDC;
 u8  *BackBuffer;
+
+//NOTE:TEST
+static b32 showText = FALSE;
 //NOTE:TEST
 
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
@@ -758,6 +761,19 @@ void windows_Render()
     InvalidateRect(MainWindow, NULL, TRUE);
 }
 
+//TODO:RemoveThisShit
+void testProc(UIContext *cxt)
+{
+    showText = !showText;
+    return;
+}
+
+void testHold(UIContext *cxt)
+{
+    ls_uiSelectFontByPixelHeight(cxt, 64);
+    ls_uiGlyphString(cxt, 200, 300, ls_strConst("I exist only when the button is held!"), RGB(0x3f, 0xa1, 0x37));
+}
+
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
@@ -905,6 +921,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     UITextBox box = {};
     box.text = ls_strAlloc(16);
     
+    UIButton button = {};
+    button.name = ls_strInit("Button :)");
+    button.onClick = testProc;
+    button.onHold = testHold;
+    
     RegionTimer frameTime = {};
     
     b32 Running = TRUE;
@@ -976,21 +997,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //TODO: Make sure UI bounding boxes for input are pixel perfect aligned.
         v2i tl = {100, 700+1};
         v2i br = {100+80-1, 700+20};
-        if(LeftHold && MouseWithinV2(tl, br))
-        { 
-            ls_uiButton(uiContext, 100, 700, 80, 20, TRUE);
-            ls_uiSelectFontByPixelHeight(uiContext, 64);
-            ls_uiGlyphString(uiContext, 200, 700, ls_strConst("gouda,!"), RGB(0xbf, 0x41, 0x37));
-        }
-        else
+        
+        ls_uiButton(uiContext, button, 100, 700, 80, 20);
+        
+        if(showText) 
         {
-            ls_uiButton(uiContext, 100, 700, 80, 20, FALSE);
             ls_uiSelectFontByPixelHeight(uiContext, 64);
-            ls_uiGlyphString(uiContext, 200, 700, ls_strConst("Hello"), RGB(0xbf, 0x41, 0x37));
+            ls_uiGlyphString(uiContext, 200, 700, ls_strConst("Hello gouda! 'Bitch'"), RGB(0xbf, 0x41, 0x37));
         }
         
-        tl = {100, 600}; br = {100+1000, 600+36};
-        if(LeftClick && MouseWithinV2(tl, br)) { box.isSelected = TRUE; box.isCaretOn = TRUE; }
+        if(LeftClick && MouseInRect(100, 600, 1000, 36)) { box.isSelected = TRUE; box.isCaretOn = TRUE; }
         ls_uiTextBox(uiContext, &box, 100, 600, 1000, 36);
         
         ls_uiRender(uiContext);
