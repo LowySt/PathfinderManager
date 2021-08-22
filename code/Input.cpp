@@ -20,7 +20,8 @@ struct keyMap
     
     u8 LArrow : 1, RArrow : 1, UArrow : 1, DArrow : 1;          // 60 +  4 = 64
     
-    u8 Backspace : 1; // 65
+    u8 Backspace : 1, Delete : 1, Home : 1, End : 1; // 66
+    
 };
 
 struct KeyboardInput
