@@ -1,3 +1,4 @@
+#if 0
 string getText(HWND hwnd);
 void UpdateSavingThrows();
 void HideElem(HWND box);
@@ -719,3 +720,4 @@ void OnButton(u32 commandID, u32 notificationCode, HWND handle)
     }
     
 }
+#endif

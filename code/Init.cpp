@@ -1,4 +1,4 @@
-
+#if 0
 inline void SwitchInitAddToSelect(InitField *f, u32 idx, s32 max)
 {
     if(idx < max) { 
@@ -419,3 +419,4 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     
     return;
 }
+#endif

@@ -1,3 +1,4 @@
+#if 0
 void SaveState()
 {
     buffer state = ls_bufferInit(MBytes(1));
@@ -370,3 +371,4 @@ b32 LoadState()
     
     return TRUE;
 }
+#endif

@@ -44,7 +44,6 @@
 #include "pcg.c"
 
 
-#include "win32_widgets.h"
 #include "Init.h"
 #include "Class.h"
 #include "PlayerChar.h"
@@ -64,20 +63,11 @@
 #include "OnButton.cpp"
 #include "SaveState.cpp"
 
-#include "win32_widgets.cpp"
-#include "subEdit.cpp"
 #include "ui.cpp"
-
-#define HidePage(page) for(u32 i = 0; i < page->numWindows; i++) { \
-ShowWindow(page->WindowsArray[i], SW_HIDE); }
-
-#define ShowPage(page) for(u32 i = 0; i < page->numWindows; i++) { \
-ShowWindow(page->WindowsArray[i], SW_SHOW); }
 
 HBITMAP closeButton;
 HDC     closeButtonDC;
 void    *closeButtBackbuff;
-
 
 HDC WindowDC;
 HDC BackBufferDC;
@@ -245,6 +235,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             POINTS currMouseClient = *((POINTS *)&l);
             Mouse->pos = { currMouseClient.x, State.windowHeight - currMouseClient.y };
             
+            //TODO: Convert this to the input file, rather than the bad stateglobals thing.
             if(State.isDragging) {
                 
                 POINT currMouse = {currMouseClient.x, currMouseClient.y};
@@ -267,7 +258,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_DESTROY:
         {
-            SaveState();
+            //TODO:Reinstate SaveState();
             ExitProcess(0);
         } break;
         
@@ -303,19 +294,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             //NOTE: Only owner drawn right now are static (labels)
             DRAWITEMSTRUCT *item = (DRAWITEMSTRUCT *)l;
-            
-            if(item->CtlType == ODT_STATIC)
-            {
-                //NOTE: Why does this work on the Labels, but it works differently on the
-                // read only edit boxes, for which I am using the CTLCOLOR message?
-                FillRect(item->hDC, &item->rcItem, appBkgBrush);
-                
-                SetBkColor(item->hDC, appBkgRGB);
-                SetTextColor(item->hDC, whiteRGB);
-                char text[32] = {};
-                int len = SendMessageA(item->hwndItem, WM_GETTEXT, 32, (LPARAM)text);
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, text, len);
-            }
             
             if(item->CtlType == ODT_MENU)
             {
@@ -360,78 +338,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 }
             }
             
-            if(item->CtlType == ODT_COMBOBOX)
-            {
-                FillRect(item->hDC, &item->rcItem, controlBkgBrush);
-                
-                SetBkColor(item->hDC, controlBkgRGB);
-                SetTextColor(item->hDC, whiteRGB);
-                
-                u32 count = SendMessageA(item->hwndItem, CB_GETCOUNT, 0, 0);
-                
-                //for(u32 i = 0; i < count; i++)
-                //{
-                char text[32] = {};
-                u32 textLen = SendMessageA(item->hwndItem, CB_GETLBTEXTLEN , item->itemID, 0);
-                SendMessageA(item->hwndItem, CB_GETLBTEXT, item->itemID, (LPARAM)text);
-                
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
-                //}
-            }
-            
-            if(item->CtlType == ODT_LISTBOX)
-            {
-                u32 count = SendMessageA(item->hwndItem, LB_GETCOUNT, 0, 0);
-                u32 textLen = SendMessageA(item->hwndItem, LB_GETTEXTLEN , item->itemID, 0);
-                
-                char *text = (char *)ls_alloc(sizeof(char)*(textLen + 1));
-                SendMessageA(item->hwndItem, LB_GETTEXT, item->itemID, (LPARAM)text);
-                
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
-                ls_free(text);
-            }
-            
-            if(item->CtlType == ODT_BUTTON)
-            {
-                int textLen = GetWindowTextLengthA(item->hwndItem) + 1; //Add the null
-                char *text = (char *)ls_alloc(sizeof(char)*textLen);
-                
-                GetWindowTextA(item->hwndItem, text, textLen);
-                
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
-                ls_free(text);
-            }
-            
-        } break;
-        
-        case WM_CTLCOLORBTN:
-        {
-            HDC buttonHDC   = (HDC)w;
-            
-            SetBkColor(buttonHDC, RGB(0x56, 0x56, 0x56));
-            SetTextColor(buttonHDC, RGB(255, 255, 255));
-            
-            return (LRESULT)controlBkgBrush;
-        } break;
-        
-        case WM_CTLCOLORLISTBOX:
-        {
-            HDC listboxHDC = (HDC)w;
-            
-            SetBkColor(listboxHDC, RGB(0x56, 0x56, 0x56));
-            SetTextColor(listboxHDC, RGB(255, 255, 255));
-            
-            return (LRESULT)controlBkgBrush;
-        } break;
-        
-        case WM_CTLCOLOREDIT:
-        {
-            HDC editHDC = (HDC)w;
-            
-            SetBkColor(editHDC, RGB(0x56, 0x56, 0x56));
-            SetTextColor(editHDC, RGB(255, 255, 255));
-            
-            return (LRESULT)controlBkgBrush;
         } break;
         
         case WM_CTLCOLORSTATIC:
@@ -443,149 +349,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             return (LRESULT)controlBkgBrush;
         };
-        
-        case WM_MENUCOMMAND:
-        {
-            u32 itemIdx = w;
-            HMENU menuHandle = (HMENU)l;
-            
-            if(menuHandle == SubMenu)
-            {
-                switch(itemIdx)
-                {
-                    case FILE_MENU_SAVE_IDX:
-                    {
-#if HAS_TABS
-                        //First update Ability Scores then serialize.
-                        saveAS();
-                        SerializePC(&pc);
-#endif
-                        SaveState();
-                    } break;
-                    
-                    case FILE_MENU_LOAD_IDX:
-                    {
-#if HAS_TABS
-                        LoadPC(&pc);
-                        
-                        //TODO: Stop allocating and deallocating mem for stupid C Strings
-                        char *cStr = ls_strToCStr(pc.Name);
-                        Edit_SetText(State.PC->Name->box, cStr);
-                        ls_free(cStr);
-                        
-                        cStr = ls_strToCStr(pc.Player);
-                        Edit_SetText(State.PC->Player->box, cStr);
-                        ls_free(cStr);
-                        
-                        ComboBox_SelectString(State.PC->Race->box, -1, Races[pc.Race]);
-                        ComboBox_SelectString(State.PC->Class->box, -1, Classes[pc.Class]);
-                        
-                        State.PC->wasClassChosen = TRUE;
-                        
-                        loadAS();
-                        
-                        char **TraitsList;
-                        u32 arrSize = 0;
-                        
-                        TraitsList = (char **)RaceTraits[pc.Race];
-                        arrSize = RaceTraitsArraySize[pc.Race];
-                        
-                        ListBox_ResetContent(State.PC->RacialTraits->box);
-                        AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
-                        
-                        //TODO: Check why lvl is not being update at loading
-                        cStr = ls_itoa(pc.lvl);
-                        Edit_SetText(State.PC->currLevel->box, cStr);
-                        ls_free(cStr);
-                        
-                        Edit_SetText(State.PC->BaseAttackBonus->box,
-                                     ClassBABString[pc.Class][0][pc.lvl]);
-                        
-                        cStr = ls_itoa(pc.xp);
-                        Edit_SetText(State.PC->currXP->box, cStr);
-                        ls_free(cStr);
-                        
-                        State.PC->xpIdx = pc.xpCurve;
-                        ComboBox_SelectString(State.PC->XPCurve->box, -1,
-                                              XPCurvesString[pc.xpCurve]);
-                        
-                        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
-                        Edit_SetText(State.PC->nextLevelXP->box, xpCurve[pc.lvl]);
-                        
-                        UpdateSavingThrows();
-#endif
-                        
-                    } break;
-                }
-            }
-            else if(menuHandle == MenuBar) { }
-        } break;
-        
-        case WM_COMMAND:
-        {
-            u32 commandID = LOWORD(w);
-            u32 notificationCode = HIWORD(w);
-            HWND handle = (HWND)l;
-            
-            //TODO: NOTE: ASBonus doesn't check Out Of Bounds
-            switch(notificationCode)
-            {
-                case EN_KILLFOCUS:
-                {
-                    //NOTE: Handles storing data for save on the fields in the PC Tab
-                    //TODO: Could probably be handled better if it was moved in the subEditProc
-                    //      CAREFUL! If more is added a found flag has to be returned.
-#if HAS_TABS
-                    PCTabOnKillFocus(commandID, handle);
-#endif
-                } break;
-                
-                case CBN_SELENDOK:
-                {
-                    b32 found = FALSE;
-                    //NOTE:TODO: This is easier to read. But it forces me to add a check
-                    //           for the early break. Bad or Acceptable??
-#if HAS_TABS
-                    found = PCTabOnComboSelect(commandID, handle);
-                    if(found) break;
-#endif
-                    found = InitTabOnComboSelect(commandID, handle);
-                    if(found) break;
-                    
-                } break;
-                
-                case LBN_SELCHANGE:
-                {
-                    //TODO: THIS DOESN'T MAKE ANY SENSE!!!
-                    // THERE'S NO DIFFERENTIATION BETWEEN THE FEATS AND THE CHOSEN ONES!
-#if HAS_TABS
-                    if(commandID == State.Feats->Feats->id)
-                    {
-                        u32 index = ListBox_GetCurSel(handle);
-                        if(index > ArraySize(FeatsDesc))
-                        {
-                            ls_printf("Not implemented description of Feat n°%d\n", index);
-                            Assert(FALSE);
-                        }
-                        char *Desc = (char *)FeatsDesc[index];
-                        
-                        Edit_SetText(State.Feats->FeatsDesc->box, Desc);
-                    }
-#endif
-                } break;
-                
-                case LBN_DBLCLK:
-                {
-                    //NOTE: Handles selecting feats and chosen feats from the ListBoxes
-#if HAS_TABS
-                    FeatsTabOnDoubleClick(commandID, handle);
-#endif
-                } break;
-                
-                case BN_CLICKED: { OnButton(commandID, notificationCode, handle); } break;
-            }
-            
-        } break;
         
         default:
         {
@@ -802,10 +565,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     Info.hbrBack = appBkgBrush;
     SetMenuInfo(MenuBar, &Info);
     
-    MainWindow = CreateWindow(MenuBar);
+    MainWindow = CreateWindow(MenuBar); //TODO: Stop flashing on window creation.
     
     char *fontName = "c:/windows/fonts/verdana.ttf";
-    
     
     //TODO: Make Fonts live in their own Arena.
     UIFont fontPx12 = {};
@@ -831,88 +593,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->font[3] = fontPx64;
     ls_memcpy(fontName, uiContext->face, ls_len(fontName));
     
-    State.isInitialized = FALSE;
-#if HAS_TABS
-    State.PC    = (PCPage *)ls_alloc(sizeof(PCPage));
-    State.Feats = (FeatsPage *)ls_alloc(sizeof(FeatsPage));
-#endif
-    
-    State.Init  = (InitPage *)ls_alloc(sizeof(InitPage));
-    
-    u64 ElementId = 0;
-    
-#if HAS_TABS
-    for(size_t i = 0; i < ArraySize(State.Feats->ChosenFeatsIndices); i++)
-    { State.Feats->ChosenFeatsIndices[i] = u32(-1); }
-#endif
-    
-    
-    //
-    // Create Tabs
-    //
-    
-#if HAS_TABS
-    HWND TabControl = CreateWindowExA(0, WC_TABCONTROL, "",
-                                      WS_CHILD | WS_VISIBLE | WS_BORDER,
-                                      0, 0, 300, 20,
-                                      MainWindow, (HMENU)99, MainInstance, 0);
-    State.PC->TabControl = TabControl;
-    TCITEMA TabItem = {};
-    TabItem.mask = TCIF_TEXT;
-    TabItem.pszText = (char *)"PC";
-    TabItem.cchTextMax = 3;
-    TabItem.iImage = -1;
-    Tab_InsertItem(TabControl, 0, &TabItem);
-    
-    TCITEMA TabItem2 = {};
-    TabItem2.mask = TCIF_TEXT;
-    TabItem2.pszText = (char *)"Feats";
-    TabItem2.cchTextMax = 6;
-    TabItem2.iImage = -1;
-    Tab_InsertItem(TabControl, 1, &TabItem2);
-    
-    TCITEMA TabItem3 = {};
-    TabItem3.mask = TCIF_TEXT;
-    TabItem3.pszText = (char *)"Init";
-    TabItem3.cchTextMax = 4;
-    TabItem3.iImage = -1;
-    Tab_InsertItem(TabControl, 2, &TabItem3);
-    
-    DrawPCTab(MainWindow, &ElementId);
-    DrawFeatsTab(MainWindow, &ElementId);
-#endif
-    
-    DrawInitTab(MainWindow, &ElementId);
-    
     State.isInitialized = TRUE;
     
-#if HAS_TABS
-    HidePage(State.Feats);
-    HidePage(State.PC);
-#endif
-    
-    ShowPage(State.Init);
-    
-    //Initialization of Init Page
-    HideInitElem(State.Init);
-    ShowOrder(State.Init->Order, PARTY_NUM);
-    HideElem(State.Init->Next->box);
-    
-    HidePage(State.Init);
-    
-#if HAS_TABS
-    TabCtrl_SetCurSel(TabControl, 2);
-    
-    u32 oldPageIdx = 2;
-    u32 newPageIdx = 0;
-#endif
-    
-    b32 success = LoadState();
+    /*
+    //TODO: Reinstate this b32 success = LoadState();
     if(success == FALSE)
     {
         //NOTE:TODO: How to fail?
         // Nothing should have been changed yet, so the program shouldn't be in a bad state...
     }
+    */
     
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
@@ -943,47 +633,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         // Process Input
         MSG Msg;
-        
-#if HAS_TABS
-        newPageIdx = TabCtrl_GetCurSel(TabControl);
-        
-        if(newPageIdx != oldPageIdx)
-        {
-            switch(newPageIdx)
-            {
-                case 0:
-                {
-                    HidePage(State.Feats);
-                    HidePage(State.Init);
-                    ShowPage(State.PC);
-                } break;
-                
-                case 1:
-                {
-                    HidePage(State.PC);
-                    //HidePage(State.Init);
-                    
-                    for(u32 i = 0; i < State.Init->numWindows; i++) 
-                    {
-                        ShowWindow(State.Init->WindowsArray[i], SW_HIDE);
-                    }
-                    
-                    ShowPage(State.Feats);
-                } break;
-                
-                case 2:
-                {
-                    HidePage(State.PC);
-                    HidePage(State.Feats);
-                    ShowPage(State.Init);
-                    HideInitElem(State.Init);
-                    
-                } break;
-            }
-        }
-        
-        oldPageIdx = newPageIdx;
-#endif
         
         while (PeekMessageA(&Msg, NULL, 0, 0, PM_REMOVE))
         {
@@ -1020,7 +669,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(State.timePassed >= 30)
         {
             State.timePassed = 0;
-            SaveState();
+            //TODO: Reinstate this. SaveState();
         }
         
         beginT = endT;

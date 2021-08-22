@@ -1,4 +1,4 @@
-
+#if 0
 //TODO: Why is this here...
 b32 ArrayContains(u32 *a, u32 v)
 {
@@ -69,3 +69,4 @@ void DrawFeatsTab(HWND WindowHandle, u64 *ElementId)
     
     Page->numWindows += 6;
 }
+#endif
