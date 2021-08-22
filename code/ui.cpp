@@ -285,10 +285,10 @@ void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textCo
     u32 colorTable[colorTableSize] = {};
     ls_uiFillGSColorTable(textColor, bkgColor, 0x01, colorTable, colorTableSize);
     
-    for(s32 y = yPos, eY = glyph->height-1; eY >= 0; y++, eY--)
+    for(s32 y = yPos-glyph->y1, eY = glyph->height-1; eY >= 0; y++, eY--)
         //for(s32 y = yPos, eY = 0; eY < glyph->height; y--, eY++)
     {
-        for(s32 x = xPos, eX = 0; eX < glyph->width; x++, eX++)
+        for(s32 x = xPos+glyph->x0, eX = 0; eX < glyph->width; x++, eX++)
         {
             if(x < 0 || x >= cxt->width)  continue;
             if(y < 0 || y >= cxt->height) continue;
@@ -320,7 +320,7 @@ void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color tex
         AssertMsg(indexInGlyphArray <= 256, "GlyphIndex OutOfBounds\n"); //TODO: HARDCODED //TODO: Only handling ASCII
         
         UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
-        ls_uiGlyph(cxt, currXPos+currGlyph->x0, yPos-currGlyph->y1, currGlyph, textColor, bkgColor);
+        ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor, bkgColor);
         
         s32 kernAdvance = 0;
         if(i < text.len-1) { kernAdvance = ls_uiGetKernAdvance(cxt, text.data[i], text.data[i+1]); }
@@ -383,26 +383,36 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     if(box->isSelected)
     {
         //NOTE: Draw characters.
-        if(HasPrintableKey()) {
-            
+        if(HasPrintableKey()) 
+        {
             if(box->caretIndex == box->text.len) { ls_strAppendChar(&box->text, GetPrintableKey()); }
             else { ls_strInsertChar(&box->text, GetPrintableKey(), box->caretIndex); }
             
             box->caretIndex += 1; 
         }
-        if(KeyPress(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) { 
-            
+        if(KeyPress(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) 
+        {
             if(box->caretIndex == box->text.len) { ls_strTrimRight(&box->text, 1); }
             else { ls_strRmIdx(&box->text, box->caretIndex-1); }
             
             box->caretIndex -= 1;
         }
+        if(KeyPress(keyMap::Delete) && box->text.len > 0 && box->caretIndex < box->text.len)
+        {
+            if(box->caretIndex == box->text.len-1) { ls_strTrimRight(&box->text, 1); }
+            else { ls_strRmIdx(&box->text, box->caretIndex); }
+        }
         if(KeyPress(keyMap::LArrow) && box->caretIndex > 0) { box->caretIndex -= 1; }
         if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len) { box->caretIndex += 1; }
         
+        //TODO: There's a bug with Going home and trying to write something?? It fucks the text buffer...
+        if(KeyPress(keyMap::Home)) { box->caretIndex = 0; }
+        if(KeyPress(keyMap::End)) { box->caretIndex = box->text.len; }
+        
+        //TODO: The positioning is hardcoded. Bad Pasta.
         if(box->text.len > 0)
         { 
-            ls_uiGlyphString(cxt, xPos+10, yPos+4, box->text, RGBg(0xCC), RGBg(0x45));
+            ls_uiGlyphString(cxt, xPos+10, yPos+8, box->text, RGBg(0xCC), RGBg(0x45));
         }
         
         //NOTE: Draw the Caret
@@ -416,7 +426,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             string tmp = {box->text.data, (u32)box->caretIndex, (u32)box->caretIndex};
             
             u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
-            ls_uiGlyph(cxt, xPos+12+stringLen, yPos+4, caretGlyph, RGBg(0xCC), RGBg(0x45));
+            ls_uiGlyph(cxt, xPos+12+stringLen, yPos+10, caretGlyph, RGBg(0xCC), RGBg(0x45));
         }
         
     }
