@@ -168,12 +168,15 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             switch(w)
             { 
-                case VK_BACK:  KeySet(keyMap::Backspace); break;
-                case VK_LEFT:  KeySet(keyMap::LArrow);    break;
-                case VK_RIGHT: KeySet(keyMap::RArrow);    break;
-                case VK_UP:    KeySet(keyMap::UArrow);    break;
-                case VK_DOWN:  KeySet(keyMap::DArrow);    break;
-                case 'G':      KeySet(keyMap::G);         break; 
+                case VK_BACK:   KeySet(keyMap::Backspace); break;
+                case VK_DELETE: KeySet(keyMap::Delete);    break;
+                case VK_HOME:   KeySet(keyMap::Home);      break;
+                case VK_END:    KeySet(keyMap::End);       break;
+                case VK_LEFT:   KeySet(keyMap::LArrow);    break;
+                case VK_RIGHT:  KeySet(keyMap::RArrow);    break;
+                case VK_UP:     KeySet(keyMap::UArrow);    break;
+                case VK_DOWN:   KeySet(keyMap::DArrow);    break;
+                case 'G':       KeySet(keyMap::G);         break; 
             }
         } break;
         
@@ -181,12 +184,15 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             switch(w)
             { 
-                case VK_BACK:  KeyUnset(keyMap::Backspace); break;
-                case VK_LEFT:  KeyUnset(keyMap::LArrow);    break;
-                case VK_RIGHT: KeyUnset(keyMap::RArrow);    break;
-                case VK_UP:    KeyUnset(keyMap::UArrow);    break;
-                case VK_DOWN:  KeyUnset(keyMap::DArrow);    break;
-                case 'G':      KeyUnset(keyMap::G);         break;
+                case VK_BACK:   KeyUnset(keyMap::Backspace); break;
+                case VK_DELETE: KeyUnset(keyMap::Delete);    break;
+                case VK_HOME:   KeyUnset(keyMap::Home);      break;
+                case VK_END:    KeyUnset(keyMap::End);       break;
+                case VK_LEFT:   KeyUnset(keyMap::LArrow);    break;
+                case VK_RIGHT:  KeyUnset(keyMap::RArrow);    break;
+                case VK_UP:     KeyUnset(keyMap::UArrow);    break;
+                case VK_DOWN:   KeyUnset(keyMap::DArrow);    break;
+                case 'G':       KeyUnset(keyMap::G);         break;
             }
         } break;
         
@@ -983,9 +989,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_uiGlyphString(uiContext, 200, 700, ls_strConst("Hello"), RGB(0xbf, 0x41, 0x37));
         }
         
-        tl = {100, 600}; br = {100+80, 600+20};
+        tl = {100, 600}; br = {100+1000, 600+36};
         if(LeftClick && MouseWithinV2(tl, br)) { box.isSelected = TRUE; box.isCaretOn = TRUE; }
-        ls_uiTextBox(uiContext, &box, 100, 600, 200, 60);
+        ls_uiTextBox(uiContext, &box, 100, 600, 1000, 36);
         
         ls_uiRender(uiContext);
         //NOTE:TEST
