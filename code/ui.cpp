@@ -45,6 +45,7 @@ struct UITextBox
     
     u32 dtCaret;
     b32 isCaretOn;
+    s32 caretIndex;
 };
 
 struct UIContext
@@ -371,7 +372,7 @@ void ls_uiButton(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, b32 isPressed
 
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    ls_uiSelectFontByPixelHeight(cxt, 16);
+    ls_uiSelectFontByPixelHeight(cxt, 32);
     
     //NOTE: Draw the box
     ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
@@ -382,8 +383,22 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     if(box->isSelected)
     {
         //NOTE: Draw characters.
-        if(HasPrintableKey()) { ls_strAppendChar(&box->text, GetPrintableKey()); }
-        if(KeyPress(keyMap::Backspace) && box->text.len > 0) { ls_strTrimRight(&box->text, 1); }
+        if(HasPrintableKey()) {
+            
+            if(box->caretIndex == box->text.len) { ls_strAppendChar(&box->text, GetPrintableKey()); }
+            else { ls_strInsertChar(&box->text, GetPrintableKey(), box->caretIndex); }
+            
+            box->caretIndex += 1; 
+        }
+        if(KeyPress(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) { 
+            
+            if(box->caretIndex == box->text.len) { ls_strTrimRight(&box->text, 1); }
+            else { ls_strRmIdx(&box->text, box->caretIndex-1); }
+            
+            box->caretIndex -= 1;
+        }
+        if(KeyPress(keyMap::LArrow) && box->caretIndex > 0) { box->caretIndex -= 1; }
+        if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len) { box->caretIndex += 1; }
         
         if(box->text.len > 0)
         { 
@@ -397,7 +412,10 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         if(box->isCaretOn)
         {
             UIGlyph *caretGlyph = &cxt->currFont->glyph['|'];
-            u32 stringLen = ls_uiGlyphStringLen(cxt, box->text);
+            
+            string tmp = {box->text.data, (u32)box->caretIndex, (u32)box->caretIndex};
+            
+            u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
             ls_uiGlyph(cxt, xPos+12+stringLen, yPos+4, caretGlyph, RGBg(0xCC), RGBg(0x45));
         }
         
