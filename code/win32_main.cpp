@@ -161,15 +161,18 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             switch(w)
             { 
-                case VK_BACK:   KeySet(keyMap::Backspace); break;
-                case VK_DELETE: KeySet(keyMap::Delete);    break;
-                case VK_HOME:   KeySet(keyMap::Home);      break;
-                case VK_END:    KeySet(keyMap::End);       break;
-                case VK_LEFT:   KeySet(keyMap::LArrow);    break;
-                case VK_RIGHT:  KeySet(keyMap::RArrow);    break;
-                case VK_UP:     KeySet(keyMap::UArrow);    break;
-                case VK_DOWN:   KeySet(keyMap::DArrow);    break;
-                case 'G':       KeySet(keyMap::G);         break; 
+                case VK_BACK:    KeySet(keyMap::Backspace); break;
+                case VK_DELETE:  KeySet(keyMap::Delete);    break;
+                case VK_HOME:    KeySet(keyMap::Home);      break;
+                case VK_END:     KeySet(keyMap::End);       break;
+                case VK_LEFT:    KeySet(keyMap::LArrow);    break;
+                case VK_RIGHT:   KeySet(keyMap::RArrow);    break;
+                case VK_UP:      KeySet(keyMap::UArrow);    break;
+                case VK_DOWN:    KeySet(keyMap::DArrow);    break;
+                case VK_CONTROL: KeySet(keyMap::Control);   break;
+                case 'C':        KeySet(keyMap::C);         break; 
+                case 'G':        KeySet(keyMap::G);         break;
+                case 'V':        KeySet(keyMap::V);         break; 
             }
         } break;
         
@@ -177,15 +180,18 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             switch(w)
             { 
-                case VK_BACK:   KeyUnset(keyMap::Backspace); break;
-                case VK_DELETE: KeyUnset(keyMap::Delete);    break;
-                case VK_HOME:   KeyUnset(keyMap::Home);      break;
-                case VK_END:    KeyUnset(keyMap::End);       break;
-                case VK_LEFT:   KeyUnset(keyMap::LArrow);    break;
-                case VK_RIGHT:  KeyUnset(keyMap::RArrow);    break;
-                case VK_UP:     KeyUnset(keyMap::UArrow);    break;
-                case VK_DOWN:   KeyUnset(keyMap::DArrow);    break;
-                case 'G':       KeyUnset(keyMap::G);         break;
+                case VK_BACK:    KeyUnset(keyMap::Backspace); break;
+                case VK_DELETE:  KeyUnset(keyMap::Delete);    break;
+                case VK_HOME:    KeyUnset(keyMap::Home);      break;
+                case VK_END:     KeyUnset(keyMap::End);       break;
+                case VK_LEFT:    KeyUnset(keyMap::LArrow);    break;
+                case VK_RIGHT:   KeyUnset(keyMap::RArrow);    break;
+                case VK_UP:      KeyUnset(keyMap::UArrow);    break;
+                case VK_DOWN:    KeyUnset(keyMap::DArrow);    break;
+                case VK_CONTROL: KeyUnset(keyMap::Control);   break;
+                case 'C':        KeyUnset(keyMap::C);         break;
+                case 'G':        KeyUnset(keyMap::G);         break;
+                case 'V':        KeyUnset(keyMap::V);         break;
             }
         } break;
         
@@ -357,6 +363,45 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
     }
     
     return Result;
+}
+
+u32 win32_GetClipboard(void *buff, u32 maxLen)
+{
+    if(OpenClipboard(NULL) == 0) { return 0; }
+    
+    HANDLE Clipboard = GetClipboardData(CF_TEXT);
+    
+    u8 *data = (u8 *)GlobalLock(Clipboard);
+    
+    u32 dataLen = ls_len((char *)data);
+    u32 copyLen = dataLen <= maxLen ? dataLen : maxLen;
+    ls_memcpy(data, buff, maxLen);
+    GlobalUnlock(Clipboard);
+    
+    CloseClipboard();
+    
+    return copyLen;
+}
+
+u32 win32_SetClipboard(void *data, u32 len)
+{
+    if(OpenClipboard(NULL) == 0) { return 0; }
+    
+    HANDLE Clipboard = GetClipboardData(CF_TEXT);
+    EmptyClipboard();
+    
+    HGLOBAL clipMem = GlobalAlloc(GMEM_MOVEABLE, len+1);
+    
+    u8 *buff = (u8 *)GlobalLock(clipMem);
+    ls_memcpy(data, buff, len);
+    buff[len] = 0;
+    GlobalUnlock(clipMem);
+    
+    SetClipboardData(CF_TEXT, clipMem);
+    
+    CloseClipboard();
+    
+    return len;
 }
 
 void RegisterWindow()
@@ -578,6 +623,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     Windows_LoadFont(&fontPx16, fontName, 16);
     Windows_LoadFont(&fontPx32, fontName, 32);
     Windows_LoadFont(&fontPx64, fontName, 64);
+    
+    UserInput.Keyboard.getClipboard = win32_GetClipboard;
+    UserInput.Keyboard.setClipboard = win32_SetClipboard;
     
     UIContext *uiContext  = (UIContext *)ls_alloc(sizeof(UIContext));
     uiContext->drawBuffer = BackBuffer;

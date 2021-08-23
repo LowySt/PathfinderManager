@@ -444,6 +444,23 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         if(KeyPress(keyMap::Home)) { box->caretIndex = 0; }
         if(KeyPress(keyMap::End)) { box->caretIndex = box->text.len; }
         
+        if(KeyHeld(keyMap::Control) && KeyPress(keyMap::V))
+        {
+            //TODO: This could be inserting strange multiple-byte character... need to look into it.
+            u8 buff[128] = {};
+            u32 copiedLen = GetClipboard(buff, 128);
+            
+            if(box->caretIndex == box->text.len) { ls_strAppendCStr(&box->text, (char *)buff); }
+            else { ls_strInsertCStr(&box->text, (char *)buff, box->caretIndex); }
+            
+            box->caretIndex += copiedLen;
+        }
+        
+        if(KeyHeld(keyMap::Control) && KeyPress(keyMap::C))
+        {
+            SetClipboard(box->text.data, box->text.len);
+        }
+        
         //TODO: The positioning is hardcoded. Bad Pasta.
         if(box->text.len > 0)
         { 
@@ -509,16 +526,15 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     
     ls_uiDrawArrow(cxt, xPos + w - 20, yPos);
     
-    if(LeftClick && MouseInRect(xPos+w-20, yPos+7, 30, 30) && !list->isOpening)
+    if(LeftClick && MouseInRect(xPos+w-20, yPos+7, 30, 30))
     {
-        ls_printf("Clicked\n");
-        list->isOpening = TRUE;
+        if(list->isOpen) { list->isOpen = FALSE; }
+        else { list->isOpening = TRUE; }
     }
     
     ls_uiPopScissor(cxt);
     
     //TODO: Add another Scissor??
-#if 1
     if(list->isOpening)
     {
         list->dtOpen += cxt->dt;
@@ -531,15 +547,15 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
         
         if(!list->isOpen)
         {
-            ls_uiFillRect(cxt, xPos, yPos-h, w, height, RGBg(0x45)); //TODO: FillRect fills bottom-up
+            ls_uiFillRect(cxt, xPos, yPos-height, w, height, RGBg(0x45)); //TODO: FillRect fills bottom-up
         }
     }
     
     if(list->isOpen)
     {
-        ls_uiFillRect(cxt, xPos, yPos-h, w, 100, RGBg(0x45)); //TODO: FillRect fills bottom-up
+        ls_uiFillRect(cxt, xPos, yPos-100, w, 100, RGBg(0x45)); //TODO: FillRect fills bottom-up
     }
-#endif
+    
     
 }
 
