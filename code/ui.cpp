@@ -60,6 +60,16 @@ struct UITextBox
     s32 caretIndex;
 };
 
+struct UIListBox
+{
+    string *list;
+    u32 numElements;
+    
+    u32 dtOpen;
+    b32 isOpening;
+    b32 isOpen;
+};
+
 struct UIContext
 {
     u8 *drawBuffer;
@@ -74,6 +84,7 @@ struct UIContext
     UIScissor scissor;
     
     void (*callbackRender)();
+    u32 dt;
 };
 
 void ls_uiPushScissor(UIContext *cxt, s32 x, s32 y, s32 w, s32 h)
@@ -440,7 +451,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         }
         
         //NOTE: Draw the Caret
-        box->dtCaret += State.dt;
+        box->dtCaret += cxt->dt;
         if(box->dtCaret >= 600) { box->dtCaret = 0; box->isCaretOn = !box->isCaretOn; }
         
         if(box->isCaretOn)
@@ -456,6 +467,80 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     }
     
     ls_uiPopScissor(cxt);
+}
+
+void ls_uiDrawArrow(UIContext *cxt, s32 xPos, s32 yPos)
+{
+    UIScissor::UIRect *scRect = cxt->scissor.currRect;
+    u32 *At = (u32 *)cxt->drawBuffer;
+    
+    //TODO: Hardcoded positions.
+    s32 xBase = xPos;
+    s32 xEnd  = xBase + 10;
+    
+    for(s32 y = yPos+18; y >= yPos; y--)
+    {
+        for(s32 x = xBase; x < xEnd; x++)
+        {
+            if(x < 0 || x >= cxt->width)  continue;
+            if(y < 0 || y >= cxt->height) continue;
+            
+            if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+            if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+            
+            At[y*cxt->width + x] = RGBg(0x00);
+        }
+        
+        xBase += 1;
+        xEnd  -= 1;
+    }
+}
+
+void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h)
+{
+    ls_uiSelectFontByPixelHeight(cxt, 16);
+    
+    //NOTE: Draw the box
+    ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, RGBg(0x45));
+    
+    ls_uiPushScissor(cxt, xPos+4, yPos, w-8, h);
+    
+    
+    ls_uiDrawArrow(cxt, xPos + w - 20, yPos);
+    
+    if(LeftClick && MouseInRect(xPos+w-20, yPos+7, 30, 30) && !list->isOpening)
+    {
+        ls_printf("Clicked\n");
+        list->isOpening = TRUE;
+    }
+    
+    ls_uiPopScissor(cxt);
+    
+    //TODO: Add another Scissor??
+#if 1
+    if(list->isOpening)
+    {
+        list->dtOpen += cxt->dt;
+        
+        s32 height = 0;
+        if(list->dtOpen > 17)  { height = 5; }
+        if(list->dtOpen > 34)  { height = 25; }
+        if(list->dtOpen > 52)  { height = 65; }
+        if(list->dtOpen > 70) { list->isOpen = TRUE; list->isOpening = FALSE; list->dtOpen = 0; }
+        
+        if(!list->isOpen)
+        {
+            ls_uiFillRect(cxt, xPos, yPos-h, w, height, RGBg(0x45)); //TODO: FillRect fills bottom-up
+        }
+    }
+    
+    if(list->isOpen)
+    {
+        ls_uiFillRect(cxt, xPos, yPos-h, w, 100, RGBg(0x45)); //TODO: FillRect fills bottom-up
+    }
+#endif
+    
 }
 
 void ls_uiRender(UIContext *c)

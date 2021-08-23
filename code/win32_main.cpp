@@ -616,6 +616,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     button.onClick = testProc;
     button.onHold = testHold;
     
+    UIListBox listBox = {};
+    
     RegionTimer frameTime = {};
     
     b32 Running = TRUE;
@@ -644,12 +646,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiBackground(uiContext, (u32)appBkgRGB);
         
         //TODO: Make sure UI bounding boxes for input are pixel perfect aligned.
-        v2i tl = {100, 700+1};
-        v2i br = {100+80-1, 700+20};
-        
         ls_uiButton(uiContext, button, 100, 700, 80, 20);
         
-        if(showText) 
+        
+        if(showText)  //NOTETODO: This is just a test, controlled by a global var.
         {
             ls_uiSelectFontByPixelHeight(uiContext, 64);
             ls_uiGlyphString(uiContext, 200, 700, ls_strConst("Hello gouda! 'Bitch'"), RGB(0xbf, 0x41, 0x37));
@@ -657,6 +657,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(LeftClick && MouseInRect(100, 600, 1000, 36)) { box.isSelected = TRUE; box.isCaretOn = TRUE; }
         ls_uiTextBox(uiContext, &box, 100, 600, 1000, 36);
+        
+        ls_uiListBox(uiContext, &listBox, 100, 400, 200, 36);
         
         ls_uiRender(uiContext);
         //NOTE:TEST
@@ -675,7 +677,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         beginT = endT;
         
         RegionTimerEnd(frameTime);
-        State.dt = RegionTimerGet(frameTime);
+        uiContext->dt = RegionTimerGet(frameTime);
     }
     
     return 0;
