@@ -271,12 +271,49 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
     }
 }
 
-void ls_uiBackground(UIContext *cxt, Color c)
+inline
+void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
+{
+    Color C = cxt->borderColor;
+    
+    ls_uiFillRect(cxt, xPos,     yPos,     w, 1, C);
+    ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, C);
+    ls_uiFillRect(cxt, xPos,     yPos,     1, h, C);
+    ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, C);
+    
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, cxt->widgetColor);
+}
+
+inline
+void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor)
+{
+    Color C = cxt->borderColor;
+    
+    ls_uiFillRect(cxt, xPos,     yPos,     w, 1, C);
+    ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, C);
+    ls_uiFillRect(cxt, xPos,     yPos,     1, h, C);
+    ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, C);
+    
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, widgetColor);
+}
+
+inline
+void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor, Color borderColor)
+{
+    ls_uiFillRect(cxt, xPos,     yPos,     w, 1, borderColor);
+    ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, borderColor);
+    ls_uiFillRect(cxt, xPos,     yPos,     1, h, borderColor);
+    ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, borderColor);
+    
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, widgetColor);
+}
+
+void ls_uiBackground(UIContext *cxt)
 {
     AssertMsg((cxt->height % 4) == 0, "Window Height not divisible by 4 (SIMD)\n");
     AssertMsg((cxt->width % 4) == 0, "Window Width not divisible by 4 (SIMD)\n");
     
-    __m128i color = _mm_set1_epi32 ((int)c);
+    __m128i color = _mm_set1_epi32 ((int)cxt->backgroundColor);
     
     u32 numIterations = (cxt->height*cxt->width) / 4;
     for(u32 i = 0; i < numIterations; i++)
@@ -405,9 +442,7 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
     
     Color bkgColor = button.isHeld ? cxt->highliteColor : cxt->widgetColor;
     
-    //TODO: Draw the border without wasting CPU time.
-    ls_uiFillRect(cxt, xPos, yPos, w, h, cxt->borderColor); //NOTE:Border
-    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, cxt->widgetColor);
+    ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
     
     ls_uiSelectFontByPixelHeight(cxt, 16);
     ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, button.name, cxt->textColor, bkgColor);
@@ -417,9 +452,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
 {
     ls_uiSelectFontByPixelHeight(cxt, 32);
     
-    //TODO: Draw the border without wasting CPU time.
-    ls_uiFillRect(cxt, xPos, yPos, w, h, cxt->borderColor); //NOTE:Border
-    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, cxt->widgetColor);
+    ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
     ls_uiPushScissor(cxt, xPos+4, yPos, w-8, h);
     
@@ -529,12 +562,9 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
 {
     ls_uiSelectFontByPixelHeight(cxt, 16);
     
-    //TODO: Draw the border without wasting CPU time.
-    ls_uiFillRect(cxt, xPos, yPos, w, h, cxt->borderColor); //NOTE:Border
-    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, cxt->widgetColor);
+    ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
     ls_uiPushScissor(cxt, xPos+4, yPos, w-8, h);
-    
     
     ls_uiDrawArrow(cxt, xPos + w - 20, yPos);
     
