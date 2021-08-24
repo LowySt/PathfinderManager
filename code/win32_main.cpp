@@ -409,12 +409,15 @@ void RegisterWindow()
     
     u32 prop = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
     
+    HCURSOR cursor = LoadCursorA(NULL, IDC_ARROW);
+    
     WNDCLASSA WindowClass = { 0 };
     WindowClass.style = prop;
     WindowClass.lpfnWndProc = WindowProc;
     WindowClass.hInstance = MainInstance;
     WindowClass.hbrBackground = appBkgBrush; //RGB(0x38, 0x38, 0x38);
     WindowClass.lpszClassName = "WndClass";
+    WindowClass.hCursor = cursor;
     
     if (!RegisterClassA(&WindowClass))
     {
@@ -482,6 +485,7 @@ HWND CreateWindow(HMENU MenuBar)
         DWORD Error = GetLastError();
         ls_printf("When Retrieving a WindowHandle in Win32_SetupScreen got error: %d", Error);
     }
+    
     
     BITMAPINFO BackBufferInfo = {};
     BackBufferInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -665,6 +669,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     button.onHold = testHold;
     
     UIListBox listBox = {};
+    listBox.list = ls_strAllocArr(4, 0);
+    listBox.list[0] = ls_strInit("Test");
+    listBox.list[1] = ls_strInit("Test2");
+    listBox.list[2] = ls_strInit("Test3");
+    listBox.numElements = 3;
     
     RegionTimer frameTime = {};
     

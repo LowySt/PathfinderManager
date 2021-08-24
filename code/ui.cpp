@@ -65,6 +65,8 @@ struct UIListBox
     string *list;
     u32 numElements;
     
+    s32 selectedIndex;
+    
     u32 dtOpen;
     b32 isOpening;
     b32 isOpen;
@@ -532,31 +534,44 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
         else { list->isOpening = TRUE; }
     }
     
+    if(list->numElements > 0)
+    {
+        string selected = list->list[list->selectedIndex];
+        ls_uiGlyphString(cxt, xPos+10, yPos+8, selected, RGBg(0xCC), RGBg(0x45));
+    }
+    
     ls_uiPopScissor(cxt);
     
-    //TODO: Add another Scissor??
+    
+    //TODO: Should I try adding another Scissor? Has to be added inside the branches.
     if(list->isOpening)
     {
         list->dtOpen += cxt->dt;
+        s32 maxHeight = list->numElements*h;
         
         s32 height = 0;
-        if(list->dtOpen > 17)  { height = 5; }
-        if(list->dtOpen > 34)  { height = 25; }
-        if(list->dtOpen > 52)  { height = 65; }
+        if(list->dtOpen > 17)  { height = maxHeight*0.10f; }
+        if(list->dtOpen > 34)  { height = maxHeight*0.35f; }
+        if(list->dtOpen > 52)  { height = maxHeight*0.70f; }
         if(list->dtOpen > 70) { list->isOpen = TRUE; list->isOpening = FALSE; list->dtOpen = 0; }
         
         if(!list->isOpen)
         {
-            ls_uiFillRect(cxt, xPos, yPos-height, w, height, RGBg(0x45)); //TODO: FillRect fills bottom-up
+            ls_uiFillRect(cxt, xPos+1, yPos-height, w-2, height, RGBg(0x45));
         }
     }
     
     if(list->isOpen)
     {
-        ls_uiFillRect(cxt, xPos, yPos-100, w, 100, RGBg(0x45)); //TODO: FillRect fills bottom-up
+        s32 maxHeight = list->numElements*h;
+        ls_uiFillRect(cxt, xPos+1, yPos-100, w-2, maxHeight, RGBg(0x45));
+        
+        for(u32 i = 0; i < list->numElements; i++) 
+        {
+            string currStr = list->list[i];
+            ls_uiGlyphString(cxt, xPos+10, yPos+8-(h*i), currStr, RGBg(0xCC), RGBg(0x45));
+        }
     }
-    
-    
 }
 
 void ls_uiRender(UIContext *c)
