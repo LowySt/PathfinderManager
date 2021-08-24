@@ -631,11 +631,18 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     UserInput.Keyboard.getClipboard = win32_GetClipboard;
     UserInput.Keyboard.setClipboard = win32_SetClipboard;
     
-    UIContext *uiContext  = (UIContext *)ls_alloc(sizeof(UIContext));
-    uiContext->drawBuffer = BackBuffer;
-    uiContext->width      = State.windowWidth;
-    uiContext->height     = State.windowHeight;
-    uiContext->callbackRender = &windows_Render;
+    //TODO: Maybe make this less manual?
+    UIContext *uiContext       = (UIContext *)ls_alloc(sizeof(UIContext));
+    uiContext->drawBuffer      = BackBuffer;
+    uiContext->width           = State.windowWidth;
+    uiContext->height          = State.windowHeight;
+    uiContext->callbackRender  = &windows_Render;
+    uiContext->backgroundColor = RGBg(0x38);
+    uiContext->highliteColor   = RGBg(0x65);
+    uiContext->widgetColor     = RGBg(0x45);
+    uiContext->borderColor     = RGBg(0x22);
+    uiContext->textColor       = RGBg(0xCC);
+    
     
     ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
     

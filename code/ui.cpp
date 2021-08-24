@@ -81,6 +81,12 @@ struct UIContext
     
     UIFont *currFont;
     
+    Color backgroundColor;
+    Color widgetColor;
+    Color highliteColor;
+    Color borderColor;
+    Color textColor;
+    
     UIScissor scissor;
     
     void (*callbackRender)();
@@ -397,23 +403,23 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
         }
     }
     
-    Color bkgColor = button.isHeld ? RGBg(0x65) : RGBg(0x45);
+    Color bkgColor = button.isHeld ? cxt->highliteColor : cxt->widgetColor;
     
     //TODO: Draw the border without wasting CPU time.
-    ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
-    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, bkgColor);
+    ls_uiFillRect(cxt, xPos, yPos, w, h, cxt->borderColor); //NOTE:Border
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, cxt->widgetColor);
     
     ls_uiSelectFontByPixelHeight(cxt, 16);
-    ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, button.name, RGBg(0xCC), bkgColor);
+    ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, button.name, cxt->textColor, bkgColor);
 }
 
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     ls_uiSelectFontByPixelHeight(cxt, 32);
     
-    //NOTE: Draw the box
-    ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
-    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, RGBg(0x45));
+    //TODO: Draw the border without wasting CPU time.
+    ls_uiFillRect(cxt, xPos, yPos, w, h, cxt->borderColor); //NOTE:Border
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, cxt->widgetColor);
     
     ls_uiPushScissor(cxt, xPos+4, yPos, w-8, h);
     
@@ -464,7 +470,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         //TODO: The positioning is hardcoded. Bad Pasta.
         if(box->text.len > 0)
         { 
-            ls_uiGlyphString(cxt, xPos+10, yPos+8, box->text, RGBg(0xCC), RGBg(0x45));
+            ls_uiGlyphString(cxt, xPos+10, yPos+8, box->text, cxt->textColor, cxt->widgetColor);
         }
         
         //NOTE: Draw the Caret
@@ -478,7 +484,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             string tmp = {box->text.data, (u32)box->caretIndex, (u32)box->caretIndex};
             
             u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
-            ls_uiGlyph(cxt, xPos+12+stringLen, yPos+10, caretGlyph, RGBg(0xCC), RGBg(0x45));
+            ls_uiGlyph(cxt, xPos+12+stringLen, yPos+10, caretGlyph, cxt->textColor, cxt->widgetColor);
         }
         
     }
@@ -523,9 +529,9 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
 {
     ls_uiSelectFontByPixelHeight(cxt, 16);
     
-    //NOTE: Draw the box
-    ls_uiFillRect(cxt, xPos, yPos, w, h, RGBg(0x22)); //NOTE:Border
-    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, RGBg(0x45));
+    //TODO: Draw the border without wasting CPU time.
+    ls_uiFillRect(cxt, xPos, yPos, w, h, cxt->borderColor); //NOTE:Border
+    ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, cxt->widgetColor);
     
     ls_uiPushScissor(cxt, xPos+4, yPos, w-8, h);
     
@@ -541,7 +547,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     if(list->list.count)
     {
         string selected = list->list[list->selectedIndex];
-        ls_uiGlyphString(cxt, xPos+10, yPos+12, selected, RGBg(0xCC), RGBg(0x45));
+        ls_uiGlyphString(cxt, xPos+10, yPos+12, selected, cxt->textColor, cxt->widgetColor);
     }
     
     ls_uiPopScissor(cxt);
@@ -561,19 +567,19 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
         
         if(!list->isOpen)
         {
-            ls_uiFillRect(cxt, xPos+1, yPos-height, w-2, height, RGBg(0x45));
+            ls_uiFillRect(cxt, xPos+1, yPos-height, w-2, height, cxt->widgetColor);
         }
     }
     
     if(list->isOpen)
     {
         s32 maxHeight = (list->list.count-1)*h;
-        ls_uiFillRect(cxt, xPos+1, yPos-maxHeight, w-2, maxHeight, RGBg(0x45));
+        ls_uiFillRect(cxt, xPos+1, yPos-maxHeight, w-2, maxHeight, cxt->widgetColor);
         
         for(u32 i = 0; i < list->list.count; i++) 
         {
             string currStr = list->list[i];
-            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*i), currStr, RGBg(0xCC), RGBg(0x45));
+            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*i), currStr, cxt->textColor, cxt->widgetColor);
         }
     }
 }
