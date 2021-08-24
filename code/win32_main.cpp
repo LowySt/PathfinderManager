@@ -669,11 +669,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     button.onHold = testHold;
     
     UIListBox listBox = {};
-    listBox.list = ls_strAllocArr(4, 0);
-    listBox.list[0] = ls_strInit("Test");
-    listBox.list[1] = ls_strInit("Test2");
-    listBox.list[2] = ls_strInit("Test3");
-    listBox.numElements = 3;
+    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 1"));
+    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 2"));
+    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 3"));
+    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 4"));
+    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 5"));
+    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 6"));
+    
+    ls_uiListBoxRemoveEntry(uiContext, &listBox, 3);
     
     RegionTimer frameTime = {};
     

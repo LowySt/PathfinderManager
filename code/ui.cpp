@@ -62,9 +62,7 @@ struct UITextBox
 
 struct UIListBox
 {
-    string *list;
-    u32 numElements;
-    
+    Array<string> list;
     s32 selectedIndex;
     
     u32 dtOpen;
@@ -515,6 +513,12 @@ void ls_uiDrawArrow(UIContext *cxt, s32 xPos, s32 yPos)
     }
 }
 
+inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, string s)
+{ list->list.push(s); }
+
+inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
+{ list->list.remove(index); }
+
 void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     ls_uiSelectFontByPixelHeight(cxt, 16);
@@ -534,10 +538,10 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
         else { list->isOpening = TRUE; }
     }
     
-    if(list->numElements > 0)
+    if(list->list.count)
     {
         string selected = list->list[list->selectedIndex];
-        ls_uiGlyphString(cxt, xPos+10, yPos+8, selected, RGBg(0xCC), RGBg(0x45));
+        ls_uiGlyphString(cxt, xPos+10, yPos+12, selected, RGBg(0xCC), RGBg(0x45));
     }
     
     ls_uiPopScissor(cxt);
@@ -547,7 +551,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     if(list->isOpening)
     {
         list->dtOpen += cxt->dt;
-        s32 maxHeight = list->numElements*h;
+        s32 maxHeight = (list->list.count-1)*h;
         
         s32 height = 0;
         if(list->dtOpen > 17)  { height = maxHeight*0.10f; }
@@ -563,13 +567,13 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     
     if(list->isOpen)
     {
-        s32 maxHeight = list->numElements*h;
-        ls_uiFillRect(cxt, xPos+1, yPos-100, w-2, maxHeight, RGBg(0x45));
+        s32 maxHeight = (list->list.count-1)*h;
+        ls_uiFillRect(cxt, xPos+1, yPos-maxHeight, w-2, maxHeight, RGBg(0x45));
         
-        for(u32 i = 0; i < list->numElements; i++) 
+        for(u32 i = 0; i < list->list.count; i++) 
         {
             string currStr = list->list[i];
-            ls_uiGlyphString(cxt, xPos+10, yPos+8-(h*i), currStr, RGBg(0xCC), RGBg(0x45));
+            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*i), currStr, RGBg(0xCC), RGBg(0x45));
         }
     }
 }
