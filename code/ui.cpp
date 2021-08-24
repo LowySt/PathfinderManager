@@ -273,7 +273,7 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
 }
 
 inline
-void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
+void ls_uiBorder(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     Color C = cxt->borderColor;
     
@@ -281,32 +281,50 @@ void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
     ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, C);
     ls_uiFillRect(cxt, xPos,     yPos,     1, h, C);
     ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, C);
+}
+
+inline
+void ls_uiBorder(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color borderColor)
+{
+    Color C = borderColor;
     
+    ls_uiFillRect(cxt, xPos,     yPos,     w, 1, C);
+    ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, C);
+    ls_uiFillRect(cxt, xPos,     yPos,     1, h, C);
+    ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, C);
+}
+
+inline
+void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
+{
+    ls_uiBorder(cxt, xPos, yPos, w, h);
     ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, cxt->widgetColor);
 }
 
 inline
 void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor)
 {
-    Color C = cxt->borderColor;
-    
-    ls_uiFillRect(cxt, xPos,     yPos,     w, 1, C);
-    ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, C);
-    ls_uiFillRect(cxt, xPos,     yPos,     1, h, C);
-    ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, C);
-    
+    ls_uiBorder(cxt, xPos, yPos, w, h);
     ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, widgetColor);
 }
 
 inline
 void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor, Color borderColor)
 {
-    ls_uiFillRect(cxt, xPos,     yPos,     w, 1, borderColor);
-    ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, borderColor);
-    ls_uiFillRect(cxt, xPos,     yPos,     1, h, borderColor);
-    ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, borderColor);
-    
+    ls_uiBorder(cxt, xPos, yPos, w, h, borderColor);
     ls_uiFillRect(cxt, xPos+1, yPos+1, w-2, h-2, widgetColor);
+}
+
+inline
+void ls_uiRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
+{
+    ls_uiFillRect(cxt, xPos, yPos, w, h, cxt->widgetColor);
+}
+
+inline
+void ls_uiRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor)
+{
+    ls_uiFillRect(cxt, xPos, yPos, w, h, widgetColor);
 }
 
 void ls_uiBackground(UIContext *cxt)
@@ -601,11 +619,11 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     ls_uiPopScissor(cxt);
     
     
+    s32 maxHeight = (list->list.count-1)*h;
     //TODO: Should I try adding another Scissor? Has to be added inside the branches.
     if(list->isOpening)
     {
         list->dtOpen += cxt->dt;
-        s32 maxHeight = (list->list.count-1)*h;
         
         s32 height = 0;
         if(list->dtOpen > 17)  { height = maxHeight*0.10f; }
@@ -621,14 +639,22 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     
     if(list->isOpen)
     {
-        s32 maxHeight = (list->list.count-1)*h;
-        ls_uiFillRect(cxt, xPos+1, yPos-maxHeight, w-2, maxHeight, cxt->widgetColor);
+        Color bkgColor = cxt->widgetColor;
         
-        for(u32 i = 0; i < list->list.count; i++) 
+        for(u32 i = 1; i < list->list.count; i++) 
         {
+            s32 currY = yPos - (h*i);
             string currStr = list->list[i];
-            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*i), currStr, cxt->textColor, cxt->widgetColor);
+            
+            if(MouseInRect(xPos+1, currY, w-2, h)) { bkgColor = cxt->highliteColor; }
+            
+            ls_uiRect(cxt, xPos+1, currY, w-2, h, bkgColor);
+            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*i), currStr, cxt->textColor, bkgColor);
+            
+            bkgColor = cxt->widgetColor;
         }
+        
+        ls_uiBorder(cxt, xPos, yPos-maxHeight, w, maxHeight+1);
     }
 }
 
