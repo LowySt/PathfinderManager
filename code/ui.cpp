@@ -82,8 +82,9 @@ struct UIContext
     UIFont *currFont;
     
     Color backgroundColor;
-    Color widgetColor;
     Color highliteColor;
+    Color pressedColor;
+    Color widgetColor;
     Color borderColor;
     Color textColor;
     
@@ -426,21 +427,24 @@ void ls_uiSelectFontByPixelHeight(UIContext *cxt, u32 pixelHeight)
 
 void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32 h)
 {
+    Color bkgColor = cxt->widgetColor;
+    
     if(MouseInRect(xPos, yPos, w, h))
     { 
-        button.isHot = TRUE; //TODO: Not used.
+        button.isHot = TRUE;
+        bkgColor = cxt->highliteColor;
+        
         if(LeftClick)
         {
             button.onClick(cxt);
         }
         if(LeftHold) 
         {
-            button.isHeld = TRUE; 
-            button.onHold(cxt); 
+            button.isHeld = TRUE;
+            bkgColor = cxt->pressedColor;
+            button.onHold(cxt);
         }
     }
-    
-    Color bkgColor = button.isHeld ? cxt->highliteColor : cxt->widgetColor;
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
     
@@ -525,16 +529,29 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     ls_uiPopScissor(cxt);
 }
 
-void ls_uiDrawArrow(UIContext *cxt, s32 xPos, s32 yPos)
+void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h)
 {
     UIScissor::UIRect *scRect = cxt->scissor.currRect;
     u32 *At = (u32 *)cxt->drawBuffer;
     
-    //TODO: Hardcoded positions.
-    s32 xBase = xPos;
-    s32 xEnd  = xBase + 10;
+    s32 xPos = x-1;
     
-    for(s32 y = yPos+18; y >= yPos; y--)
+    Color bkgColor = cxt->widgetColor;
+    if(MouseInRect(xPos, yPos, w, h)) { bkgColor = cxt->highliteColor; }
+    
+    ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
+    
+    s32 arrowWidth = 12;
+    s32 hBearing = (w - arrowWidth)/2;
+    
+    s32 xBase = xPos+hBearing;
+    s32 xEnd  = xBase + arrowWidth;
+    
+    s32 arrowHeight = 6;
+    s32 vBearing = (h - arrowHeight)/2;
+    s32 yStart = yPos + h - vBearing;
+    
+    for(s32 y = yStart-1; y >= (yStart-1)-arrowHeight; y--)
     {
         for(s32 x = xBase; x < xEnd; x++)
         {
@@ -564,11 +581,12 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
-    ls_uiPushScissor(cxt, xPos+4, yPos, w-8, h);
+    const s32 arrowBoxWidth = 30;
+    ls_uiPushScissor(cxt, xPos, yPos, w+arrowBoxWidth, h);
     
-    ls_uiDrawArrow(cxt, xPos + w - 20, yPos);
+    ls_uiDrawArrow(cxt, xPos + w, yPos, arrowBoxWidth, h);
     
-    if(LeftClick && MouseInRect(xPos+w-20, yPos+7, 30, 30))
+    if(LeftClick && MouseInRect(xPos+w, yPos, arrowBoxWidth, h))
     {
         if(list->isOpen) { list->isOpen = FALSE; }
         else { list->isOpening = TRUE; }

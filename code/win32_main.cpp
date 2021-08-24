@@ -639,6 +639,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->callbackRender  = &windows_Render;
     uiContext->backgroundColor = RGBg(0x38);
     uiContext->highliteColor   = RGBg(0x65);
+    uiContext->pressedColor    = RGBg(0x75);
     uiContext->widgetColor     = RGBg(0x45);
     uiContext->borderColor     = RGBg(0x22);
     uiContext->textColor       = RGBg(0xCC);
