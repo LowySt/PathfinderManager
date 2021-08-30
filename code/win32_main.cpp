@@ -129,7 +129,10 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             b32 wasPressed = (l >> 30) & 0x1;
             u16 repeat     = (u16)l;
             
-            if(w >= 32 && w <= 126)
+            b32 asciiRange  = ((w >= 32) && (w <= 126));
+            b32 plane0Latin = ((w >= 0x00A1) && (w <= 0x024F));
+            
+            if(asciiRange || plane0Latin)
             {
                 if(!wasPressed || repeat > 0)
                 {
@@ -137,24 +140,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                     UserInput.Keyboard.keyCodepoint    = w;
                 }
             }
-        } break;
-        
-        case WM_UNICHAR:
-        {
-            if(w == UNICODE_NOCHAR) { return TRUE; }
-            
-            b32 wasPressed = (l >> 30) & 0x1;
-            u16 repeat     = (u16)l;
-            
-            //TODO: Doesn't check if the key is actually a printable character.
-            if(!wasPressed || repeat > 0)
-            {
-                UserInput.Keyboard.hasPrintableKey = TRUE;
-                UserInput.Keyboard.keyCodepoint    = w;
-            }
-            
-            //NOTE: MSDN if an application processes this message it should return TRUE
-            return FALSE;
         } break;
         
         case WM_KEYDOWN:
@@ -365,17 +350,64 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
     return Result;
 }
 
-u32 win32_GetClipboard(void *buff, u32 maxLen)
+u32 win32_convertUTF16To32(u32 *utf32Buff, u32 maxBuff, wchar_t* data, u32 u16Len)
+{
+    //NOTE: isSurrogate is checking if the code is in range [0xD800 - 0xDFFF], with smartypants unsined math.
+    auto isSurrogate     = [](wchar_t code) -> b32 { return ((u16)code - (u16)0xD800) < (u16)2048; };
+    auto isHighSurrogate = [](wchar_t code) -> b32 { return (code & 0xFFFFFC00) == 0xD800; };
+    auto isLowSurrogate  = [](wchar_t code) -> b32 { return (code & 0xFFFFFC00) == 0xDC00; };
+    auto surrogateTo32   = [](wchar_t h, wchar_t l) -> u32 { return ((h << 10) + l - 0x35FDC00); };
+    
+    u32 idx = 0;
+    
+    wchar_t *In = data;
+    while(In < (data + u16Len))
+    {
+        wchar_t curr16 = *In; 
+        In += 1;
+        
+        b32 isSurr = (curr16 >= 0xD800) && (curr16 <= 0xDFFF);
+        if(!isSurr) { utf32Buff[idx] = (u32)curr16; idx += 1; }
+        else
+        {
+            AssertMsg(In < (data + u16Len), "Input cut off low surrogate??\n");
+            
+            wchar_t next16 = *In;
+            In += 1;
+            
+            b32 hS = isHighSurrogate(curr16);
+            b32 lS = isLowSurrogate(next16);
+            
+            AssertMsg((hS && lS) == TRUE, "Surrogate missing either High or Low\n");
+            
+            utf32Buff[idx] = surrogateTo32(curr16, next16);
+        }
+        
+        AssertMsg(idx < maxBuff, "UTF32 buffer provided is too small\n");
+    }
+    
+    return idx;
+}
+
+u32 win32_GetClipboard(void *buff, u32 maxUTF32Len)
 {
     if(OpenClipboard(NULL) == 0) { return 0; }
     
-    HANDLE Clipboard = GetClipboardData(CF_TEXT);
+    HANDLE Clipboard = GetClipboardData(CF_UNICODETEXT);
     
-    u8 *data = (u8 *)GlobalLock(Clipboard);
+    wchar_t* data = (wchar_t *)GlobalLock(Clipboard);
     
-    u32 dataLen = ls_len((char *)data);
-    u32 copyLen = dataLen <= maxLen ? dataLen : maxLen;
-    ls_memcpy(data, buff, maxLen);
+    wchar_t* At = data;
+    u32 strLen = 0;
+    while(*At != 0) { strLen += 1; At += 1; }
+    
+    u32 utf32Buff[256] = {}; //TODO: I am unsure about this.
+    
+    u32 utf32Len = win32_convertUTF16To32(utf32Buff, 256, data, strLen);
+    
+    u32 copyLen = utf32Len < maxUTF32Len ? utf32Len : maxUTF32Len;
+    
+    ls_memcpy(utf32Buff, buff, copyLen*sizeof(u32));
     GlobalUnlock(Clipboard);
     
     CloseClipboard();
@@ -506,6 +538,35 @@ HWND CreateWindow(HMENU MenuBar)
     return WindowHandle;
 }
 
+void __makeGlyphByCodepoint(stbtt_fontinfo *font, f32 scale, UIGlyph *currGlyph, u32 codepoint)
+{
+    currGlyph->codepoint = codepoint;
+    
+    s32 x0, x1, y0, y1;
+    s32 advWidth, leftSB;
+    
+    stbtt_GetCodepointBitmapBox(font, codepoint, scale, scale, &x0, &y0, &x1, &y1);
+    stbtt_GetCodepointHMetrics(font, codepoint, &advWidth, &leftSB);
+    
+    s32 bmWidth  = x1 - x0;
+    s32 bmHeight = y1 - y0;
+    u32 bitmapSize = bmWidth*bmHeight;
+    
+    currGlyph->data   = (u8 *)ls_alloc(bitmapSize);
+    currGlyph->width  = bmWidth;
+    currGlyph->height = bmHeight;
+    currGlyph->xAdv   = scale*advWidth;
+    currGlyph->yAdv   = 0; //scale*(ascent - descent + lineGap);
+    
+    //TODO: This is actually wrong. x0,y0 are not the origin. (I should be able to get that with another call.)
+    currGlyph->x0  = x0;
+    currGlyph->y0  = y0;
+    currGlyph->x1  = x1;
+    currGlyph->y1  = y1;
+    
+    stbtt_MakeCodepointBitmap(font, currGlyph->data, bmWidth, bmHeight, bmWidth, scale, scale, codepoint);
+}
+
 void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
 {
     u8 *fileBuffer;
@@ -522,38 +583,28 @@ void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
     
     //TODO: Vertical Metrics needed for proper string rendering.
     //TODO: The top scanline of some glyphs seems cut off, even at high pixel height. Why? Bug?
+    
+    uiFont->glyph = (UIGlyph *)ls_alloc(sizeof(UIGlyph) * 0x024F);
+    
+    //NOTE: ASCII codepoints
     for(u32 codepoint = 32; codepoint <= 126; codepoint++)
     {
         UIGlyph *currGlyph = &uiFont->glyph[codepoint];
-        currGlyph->codepoint = codepoint;
-        
-        s32 x0, x1, y0, y1;
-        s32 advWidth, leftSB;
-        
-        stbtt_GetCodepointBitmapBox(font, codepoint, scale, scale, &x0, &y0, &x1, &y1);
-        stbtt_GetCodepointHMetrics(font, codepoint, &advWidth, &leftSB);
-        
-        s32 bmWidth  = x1 - x0;
-        s32 bmHeight = y1 - y0;
-        u32 bitmapSize = bmWidth*bmHeight;
-        
-        currGlyph->data   = (u8 *)ls_alloc(bitmapSize);
-        currGlyph->width  = bmWidth;
-        currGlyph->height = bmHeight;
-        currGlyph->xAdv   = scale*advWidth;
-        currGlyph->yAdv   = scale*(ascent - descent + lineGap);
-        
-        //TODO: This is actually wrong. x0,y0 are not the origin. (I should be able to get that with another call.)
-        currGlyph->x0  = x0;
-        currGlyph->y0  = y0;
-        currGlyph->x1  = x1;
-        currGlyph->y1  = y1;
-        
-        stbtt_MakeCodepointBitmap(font, currGlyph->data, bmWidth, bmHeight, bmWidth, scale, scale, codepoint);
+        __makeGlyphByCodepoint(font, scale, currGlyph, codepoint);
     }
     
-    uiFont->kernAdvanceTable = (s32 **)ls_alloc(sizeof(s32 *)*256);
-    for(u32 i = 0; i < 256; i++) { uiFont->kernAdvanceTable[i] = (s32 *)ls_alloc(sizeof(s32)*256); }
+    //NOTE: Plane 0 Latin Glyphs
+    for(u32 codepoint = 0x00A1; codepoint <= 0x024F; codepoint++)
+    {
+        UIGlyph *currGlyph = &uiFont->glyph[codepoint];
+        __makeGlyphByCodepoint(font, scale, currGlyph, codepoint);
+    }
+    
+    uiFont->maxCodepoint = 0x024F;
+    
+    //NOTE: Maybe make kerning table s64 so the 2 entries for each glyph couples are in a single var?
+    uiFont->kernAdvanceTable = (s32 **)ls_alloc(sizeof(s32 *) * 0x0250);
+    for(u32 i = 0; i < 0x0250; i++) { uiFont->kernAdvanceTable[i] = (s32 *)ls_alloc(sizeof(s32) * 0x0250); }
     
     for(u32 cp1 = 32; cp1 <= 126; cp1++)
     {
@@ -563,6 +614,16 @@ void Windows_LoadFont(UIFont *uiFont, char *fontName, u32 pixelHeight)
             uiFont->kernAdvanceTable[cp1][cp2] = kernAdvance;
         }
     }
+    
+    for(u32 cp1 = 0x00A1; cp1 <= 0x024F; cp1++)
+    {
+        for(u32 cp2 = 0x00A1; cp2 <= 0x024F; cp2++)
+        {
+            s32 kernAdvance = scale*stbtt_GetCodepointKernAdvance(font, cp1, cp2);
+            uiFont->kernAdvanceTable[cp1][cp2] = kernAdvance;
+        }
+    }
+    
     
     ls_free(fileBuffer);
     ls_free(font);
@@ -583,7 +644,9 @@ void testProc(UIContext *cxt)
 void testHold(UIContext *cxt)
 {
     ls_uiSelectFontByPixelHeight(cxt, 64);
-    ls_uiGlyphString(cxt, 200, 300, ls_strConst("I exist only when the button is held!"), RGB(0x3f, 0xa1, 0x37));
+    
+    unistring text = ls_unistrFromAscii("I exist only when the button is held!");
+    ls_uiGlyphString(cxt, 200, 300, text, RGB(0x3f, 0xa1, 0x37));
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -623,10 +686,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     UIFont fontPx16 = {};
     UIFont fontPx32 = {};
     UIFont fontPx64 = {};
-    Windows_LoadFont(&fontPx12, fontName, 12);
+    //Windows_LoadFont(&fontPx12, fontName, 12);
     Windows_LoadFont(&fontPx16, fontName, 16);
     Windows_LoadFont(&fontPx32, fontName, 32);
-    Windows_LoadFont(&fontPx64, fontName, 64);
+    //Windows_LoadFont(&fontPx64, fontName, 64);
     
     UserInput.Keyboard.getClipboard = win32_GetClipboard;
     UserInput.Keyboard.setClipboard = win32_SetClipboard;
@@ -669,24 +732,26 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     //TODO:Remove with ID system
     UITextBox box = {};
-    box.text = ls_strAlloc(16);
+    box.text = ls_unistrAlloc(16);
     
     UIButton button = {};
-    button.name = ls_strInit("Button :)");
+    button.name = ls_unistrFromAscii("Button :)");
     button.onClick = testProc;
     button.onHold = testHold;
     
     UIListBox listBox = {};
-    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 1"));
-    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 2"));
-    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 3"));
-    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 4"));
-    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 5"));
-    ls_uiListBoxAddEntry(uiContext, &listBox, ls_strConstant("Test 6"));
+    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 1");
+    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 2");
+    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 3");
+    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 4");
+    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 5");
+    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 6");
     
     ls_uiListBoxRemoveEntry(uiContext, &listBox, 3);
     
     RegionTimer frameTime = {};
+    
+    unistring buttonTestString = ls_unistrFromAscii("Hello gouda! 'Bitch'");
     
     b32 Running = TRUE;
     while(Running)
@@ -720,7 +785,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(showText)  //NOTETODO: This is just a test, controlled by a global var.
         {
             ls_uiSelectFontByPixelHeight(uiContext, 64);
-            ls_uiGlyphString(uiContext, 200, 700, ls_strConst("Hello gouda! 'Bitch'"), RGB(0xbf, 0x41, 0x37));
+            ls_uiGlyphString(uiContext, 200, 700, buttonTestString, RGB(0xbf, 0x41, 0x37));
         }
         
         if(LeftClick && MouseInRect(100, 600, 1000, 36)) { box.isSelected = TRUE; box.isCaretOn = TRUE; }

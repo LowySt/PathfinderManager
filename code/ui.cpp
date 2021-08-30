@@ -10,7 +10,6 @@ struct UIGlyph
     u32 size;
     
     u32 codepoint;
-    u32 idxInFont;
     
     u32 width;
     u32 height;
@@ -24,10 +23,11 @@ struct UIGlyph
 
 struct UIFont
 {
-    UIGlyph glyph[256];
+    UIGlyph *glyph;
     s32 **kernAdvanceTable; //NOTE: Needs to keep this in the heap cause it stack-overflows.
     
     u32 pixelHeight;
+    u32 maxCodepoint;
 };
 
 struct UIScissor
@@ -42,7 +42,7 @@ struct UIContext;
 typedef void(*ButtonProc)(UIContext *cxt);
 struct UIButton
 {
-    string name;
+    unistring name;
     b32 isHot;
     b32 isHeld;
     
@@ -52,7 +52,7 @@ struct UIButton
 
 struct UITextBox
 {
-    string text;
+    unistring text;
     b32 isSelected;
     
     u32 dtCaret;
@@ -62,7 +62,7 @@ struct UITextBox
 
 struct UIListBox
 {
-    Array<string> list;
+    Array<unistring> list;
     s32 selectedIndex;
     
     u32 dtOpen;
@@ -395,14 +395,14 @@ s32 ls_uiGetKernAdvance(UIContext *cxt, s32 codepoint1, s32 codepoint2)
     return kernAdvance;
 }
 
-void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color textColor, Color bkgColor = appBkgRGB)
+void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, unistring text, Color textColor, Color bkgColor = appBkgRGB)
 {
     s32 currXPos = xPos;
     s32 currYPos = yPos;
     for(u32 i = 0; i < text.len; i++)
     {
         u32 indexInGlyphArray = text.data[i];
-        AssertMsg(indexInGlyphArray <= 256, "GlyphIndex OutOfBounds\n"); //TODO: HARDCODED //TODO: Only handling ASCII
+        AssertMsg(indexInGlyphArray <= cxt->currFont->maxCodepoint, "GlyphIndex OutOfBounds\n");
         
         UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
         ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor, bkgColor);
@@ -414,13 +414,13 @@ void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, string text, Color tex
     }
 }
 
-s32 ls_uiGlyphStringLen(UIContext *cxt, string text)
+s32 ls_uiGlyphStringLen(UIContext *cxt, unistring text)
 {
     s32 totalLen = 0;
     for(u32 i = 0; i < text.len; i++)
     {
         u32 indexInGlyphArray = text.data[i];
-        AssertMsg(indexInGlyphArray <= 256, "GlyphIndex OutOfBounds\n"); //TODO: HARDCODED //TODO: Only handling ASCII
+        AssertMsg(indexInGlyphArray <= cxt->currFont->maxCodepoint, "GlyphIndex OutOfBounds\n");
         
         UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
         
@@ -483,44 +483,50 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         //NOTE: Draw characters.
         if(HasPrintableKey()) 
         {
-            if(box->caretIndex == box->text.len) { ls_strAppendChar(&box->text, GetPrintableKey()); }
-            else { ls_strInsertChar(&box->text, GetPrintableKey(), box->caretIndex); }
+            if(box->caretIndex == box->text.len) { ls_unistrAppendChar(&box->text, GetPrintableKey()); }
+            else { ls_unistrInsertChar(&box->text, GetPrintableKey(), box->caretIndex); }
             
             box->caretIndex += 1; 
         }
         if(KeyPress(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) 
         {
-            if(box->caretIndex == box->text.len) { ls_strTrimRight(&box->text, 1); }
-            else { ls_strRmIdx(&box->text, box->caretIndex-1); }
+            if(box->caretIndex == box->text.len) { ls_unistrTrimRight(&box->text, 1); }
+            else { ls_unistrRmIdx(&box->text, box->caretIndex-1); }
             
             box->caretIndex -= 1;
         }
         if(KeyPress(keyMap::Delete) && box->text.len > 0 && box->caretIndex < box->text.len)
         {
-            if(box->caretIndex == box->text.len-1) { ls_strTrimRight(&box->text, 1); }
-            else { ls_strRmIdx(&box->text, box->caretIndex); }
+            if(box->caretIndex == box->text.len-1) { ls_unistrTrimRight(&box->text, 1); }
+            else { ls_unistrRmIdx(&box->text, box->caretIndex); }
         }
-        if(KeyPress(keyMap::LArrow) && box->caretIndex > 0) { box->caretIndex -= 1; }
-        if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len) { box->caretIndex += 1; }
-        if(KeyPress(keyMap::Home)) { box->caretIndex = 0; }
-        if(KeyPress(keyMap::End)) { box->caretIndex = box->text.len; }
+        
+        if(KeyPress(keyMap::LArrow) && box->caretIndex > 0) 
+        { box->isCaretOn = TRUE; box->dtCaret = 0; box->caretIndex -= 1; }
+        if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len) 
+        { box->isCaretOn = TRUE; box->dtCaret = 0; box->caretIndex += 1; }
+        if(KeyPress(keyMap::Home)) 
+        { box->isCaretOn = TRUE; box->dtCaret = 0; box->caretIndex = 0; }
+        if(KeyPress(keyMap::End)) 
+        { box->isCaretOn = TRUE; box->dtCaret = 0; box->caretIndex = box->text.len; }
         
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::V))
         {
-            //TODO: This could be inserting strange multiple-byte character... need to look into it.
-            u8 buff[128] = {};
+            u32 buff[128] = {};
             u32 copiedLen = GetClipboard(buff, 128);
             
-            if(box->caretIndex == box->text.len) { ls_strAppendCStr(&box->text, (char *)buff); }
-            else { ls_strInsertCStr(&box->text, (char *)buff, box->caretIndex); }
+            if(box->caretIndex == box->text.len) { ls_unistrAppendBuffer(&box->text, buff, copiedLen); }
+            else { ls_unistrInsertBuffer(&box->text, buff, copiedLen, box->caretIndex); }
             
             box->caretIndex += copiedLen;
         }
         
+#if 0
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::C))
         {
             SetClipboard(box->text.data, box->text.len);
         }
+#endif
         
         //TODO: The positioning is hardcoded. Bad Pasta.
         if(box->text.len > 0)
@@ -530,13 +536,13 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         
         //NOTE: Draw the Caret
         box->dtCaret += cxt->dt;
-        if(box->dtCaret >= 600) { box->dtCaret = 0; box->isCaretOn = !box->isCaretOn; }
+        if(box->dtCaret >= 400) { box->dtCaret = 0; box->isCaretOn = !box->isCaretOn; }
         
         if(box->isCaretOn)
         {
             UIGlyph *caretGlyph = &cxt->currFont->glyph['|'];
             
-            string tmp = {box->text.data, (u32)box->caretIndex, (u32)box->caretIndex};
+            unistring tmp = {box->text.data, (u32)box->caretIndex, (u32)box->caretIndex};
             
             u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
             ls_uiGlyph(cxt, xPos+12+stringLen, yPos+10, caretGlyph, cxt->textColor, cxt->widgetColor);
@@ -587,7 +593,15 @@ void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h)
     }
 }
 
-inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, string s)
+inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, char *s)
+{ 
+    //TODO: Terrible.
+    unistring text = ls_unistrFromAscii(s);
+    list->list.push(text); 
+    ls_unistrFree(&text);
+}
+
+inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, unistring s)
 { list->list.push(s); }
 
 inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
@@ -612,7 +626,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     
     if(list->list.count)
     {
-        string selected = list->list[list->selectedIndex];
+        unistring selected = list->list[list->selectedIndex];
         ls_uiGlyphString(cxt, xPos+10, yPos+12, selected, cxt->textColor, cxt->widgetColor);
     }
     
@@ -644,7 +658,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
         for(u32 i = 1; i < list->list.count; i++) 
         {
             s32 currY = yPos - (h*i);
-            string currStr = list->list[i];
+            unistring currStr = list->list[i];
             
             if(MouseInRect(xPos+1, currY, w-2, h)) { bkgColor = cxt->highliteColor; }
             
