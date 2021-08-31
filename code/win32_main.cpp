@@ -629,7 +629,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     box.text = ls_unistrAlloc(16);
     
     UIButton button = {};
-    button.name = ls_unistrFromAscii("Button :)");
+    button.name = ls_unistrFromAscii("Button");
     button.onClick = testProc;
     button.onHold = testHold;
     
