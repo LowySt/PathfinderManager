@@ -476,8 +476,19 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
     
+    
+    ls_uiPushScissor(cxt, xPos+2, yPos+2, w-4, h-4);
+    
     ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-    ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, button.name, cxt->textColor, bkgColor);
+    
+    s32 strWidth  = ls_uiGlyphStringLen(cxt, button.name);
+    s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
+    s32 strHeight = cxt->currFont->pixelHeight;
+    s32 yOff      = strHeight*0.25;
+    
+    ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button.name, cxt->textColor, bkgColor);
+    
+    ls_uiPopScissor(cxt);
 }
 
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
@@ -643,7 +654,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     ls_uiPopScissor(cxt);
     
     
-    s32 maxHeight = (list->list.count-1)*h;
+    s32 maxHeight = (list->list.count)*h;
     //TODO: Should I try adding another Scissor? Has to be added inside the branches.
     if(list->isOpening)
     {
@@ -661,25 +672,43 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
         }
     }
     
+    s32 toBeChanged = 9999;
     if(list->isOpen)
     {
         Color bkgColor = cxt->widgetColor;
         
-        for(u32 i = 1; i < list->list.count; i++) 
+        for(u32 i = 0; i < list->list.count; i++)
         {
-            s32 currY = yPos - (h*i);
+            s32 currY = yPos - (h*(i+1));
             unistring currStr = list->list[i];
             
-            if(MouseInRect(xPos+1, currY, w-2, h)) { bkgColor = cxt->highliteColor; }
+            if(MouseInRect(xPos+1, currY+1, w-2, h-1)) 
+            { 
+                bkgColor = cxt->highliteColor;
+                
+                if(LeftHold)
+                {
+                    bkgColor = cxt->pressedColor;
+                }
+                
+                if(LeftUp)
+                {
+                    toBeChanged = i;
+                }
+            }
             
             ls_uiRect(cxt, xPos+1, currY, w-2, h, bkgColor);
-            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*i), currStr, cxt->textColor, bkgColor);
+            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*(i+1)), currStr, cxt->textColor, bkgColor);
             
             bkgColor = cxt->widgetColor;
         }
         
         ls_uiBorder(cxt, xPos, yPos-maxHeight, w, maxHeight+1);
     }
+    
+    //NOTE: We defer the selectedIndex change to the end of the frame 
+    //      to avoid the for loop blinking wrongly for a frame
+    if(toBeChanged != 9999) { list->selectedIndex = toBeChanged; list->isOpen = FALSE; }
 }
 
 void ls_uiRender(UIContext *c)
