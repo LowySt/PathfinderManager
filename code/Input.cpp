@@ -72,9 +72,9 @@ struct MouseInput
 #define MiddleHold   ((UserInput.Mouse.isMiddlePressed && UserInput.Mouse.wasMiddlePressed))
 #define RightHold    ((UserInput.Mouse.isRightPressed && UserInput.Mouse.wasRightPressed))
 
-#define LeftUp       (!UserInput.Mouse.isLeftPressed)
-#define MiddleUp     (!UserInput.Mouse.isMiddlePressed)
-#define RightUp      (!UserInput.Mouse.isRightPressed)
+#define LeftUp       ((!UserInput.Mouse.isLeftPressed && UserInput.Mouse.wasLeftPressed))
+#define MiddleUp     ((!UserInput.Mouse.isMiddlePressed && UserInput.Mouse.wasMiddlePressed))
+#define RightUp      ((!UserInput.Mouse.isRightPressed && UserInput.Mouse.wasRightPressed))
 
 #define LeftClear    ((!UserInput.Mouse.isLeftPressed && !UserInput.Mouse.wasLeftPressed))
 #define MiddleClear  ((!UserInput.Mouse.isMiddlePressed && !UserInput.Mouse.wasMiddlePressed))
