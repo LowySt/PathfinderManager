@@ -9,8 +9,6 @@ struct UIGlyph
     u8 *data;
     u32 size;
     
-    u32 codepoint;
-    
     u32 width;
     u32 height;
     
@@ -19,6 +17,14 @@ struct UIGlyph
     
     s32 xAdv;
     s32 yAdv;
+};
+
+enum UIFontSize
+{
+    FS_SMALL = 0,
+    FS_MEDIUM = 1,
+    FS_LARGE = 2,
+    FS_EXTRALARGE = 3
 };
 
 struct UIFont
@@ -76,8 +82,8 @@ struct UIContext
     u32 width;
     u32 height;
     
-    UIFont font[4]; //TODO: Hardcoded
-    char   face[128];
+    UIFont *fonts;
+    u32 numFonts;
     
     UIFont *currFont;
     
@@ -438,10 +444,14 @@ void ls_uiSelectFontByPixelHeight(UIContext *cxt, u32 pixelHeight)
     //TODO: Hardcoded
     b32 found = FALSE;
     for(u32 i = 0; i < 4; i++)
-    { if(cxt->font[i].pixelHeight == pixelHeight) { found = TRUE; cxt->currFont = &cxt->font[i]; } }
+    { if(cxt->fonts[i].pixelHeight == pixelHeight) { found = TRUE; cxt->currFont = &cxt->fonts[i]; } }
     
     AssertMsg(found, "Asked pixelHeight not available\n");
 }
+
+inline
+void ls_uiSelectFontByFontSize(UIContext *cxt, UIFontSize fontSize)
+{ cxt->currFont = &cxt->fonts[fontSize]; }
 
 void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32 h)
 {
@@ -466,13 +476,13 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
     
-    ls_uiSelectFontByPixelHeight(cxt, 16);
+    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
     ls_uiGlyphString(cxt, xPos+(w/4), yPos+4, button.name, cxt->textColor, bkgColor);
 }
 
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    ls_uiSelectFontByPixelHeight(cxt, 32);
+    ls_uiSelectFontByFontSize(cxt, FS_MEDIUM);
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
@@ -609,7 +619,7 @@ inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
 
 void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    ls_uiSelectFontByPixelHeight(cxt, 16);
+    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
