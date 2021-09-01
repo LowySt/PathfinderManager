@@ -76,6 +76,22 @@ struct UIListBox
     b32 isOpen;
 };
 
+
+enum SliderStyle { SL_LINE, SL_BOX };
+
+struct UISlider
+{
+    b32 isHot;
+    b32 isHeld;
+    
+    s32 currValue;
+    s32 maxValue;
+    s32 minValue;
+    
+    SliderStyle style;
+    Color color;
+};
+
 struct UIContext
 {
     u8 *drawBuffer;
@@ -331,6 +347,170 @@ inline
 void ls_uiRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor)
 {
     ls_uiFillRect(cxt, xPos, yPos, w, h, widgetColor);
+}
+
+void ls_uiCircle(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
+{
+    s32 radSq = selRadius*selRadius;
+    
+    auto getBest = [radSq](s32 x, s32 y, s32 *bX, s32 *bY)
+    {
+        s32 bestX = 0;
+        s32 bestY = 0;
+        s32 bestSum = 0;
+        
+        s32 rx = x+1;
+        s32 ry = y;
+        s32 sum = (rx*rx) + (ry*ry);
+        if(sum <= radSq) { bestX = rx; bestY = ry; bestSum = sum; }
+        
+        rx = x;
+        ry = y-1;
+        sum = (rx*rx) + (ry*ry);
+        if((sum <= radSq) && sum > bestSum) { bestX = rx; bestY = ry; bestSum = sum; }
+        
+        rx = x+1;
+        ry = y-1;
+        sum = (rx*rx) + (ry*ry);
+        if((sum <= radSq) && sum > bestSum) { bestX = rx; bestY = ry; bestSum = sum; }
+        
+        *bX = bestX;
+        *bY = bestY;
+    };
+    
+    f64 sin = 0;
+    f64 cos = 0;
+    
+    //NOTE: Everything is done relative to (0,0) until when drawing happens
+    
+    //NOTE: We start at the top middle pixel of the Circle
+    s32 startX = 0;
+    s32 startY = selRadius;
+    
+    //NOTE: And end at the first octant swept going clockwise.
+    ls_sincos(PI_64/4.0, &sin, &cos);
+    s32 endX = (cos*selRadius);
+    s32 endY = (sin*selRadius);
+    
+    s32 currX = startX;
+    s32 currY = startY;
+    
+    UIScissor::UIRect *scRect = cxt->scissor.currRect;
+    u32 *At = (u32 *)cxt->drawBuffer;
+    
+    Color bCol = cxt->borderColor;
+    
+    while((currX != endX) && (currY != endY))
+    {
+        s32 drawX1 = xPos + currX;
+        s32 drawY1 = yPos + currY;
+        
+        s32 drawX2 = xPos - currX;
+        s32 drawY2 = yPos + currY;
+        
+        //TODO: Missing pixel in point of contact between 1/3 and 2/4
+        s32 drawX3 = xPos + currY;
+        s32 drawY3 = yPos + currX;
+        
+        s32 drawX4 = xPos - currY;
+        s32 drawY4 = yPos + currX;
+        
+        
+        s32 drawX5 = xPos + currX;
+        s32 drawY5 = yPos - currY;
+        
+        s32 drawX6 = xPos - currX;
+        s32 drawY6 = yPos - currY;
+        
+        s32 drawX7 = xPos + currY;
+        s32 drawY7 = yPos - currX;
+        
+        s32 drawX8 = xPos - currY;
+        s32 drawY8 = yPos - currX;
+        
+        
+        s32 nextX = 0;
+        s32 nextY = 0;
+        
+        getBest(currX, currY, &nextX, &nextY);
+        
+        currX = nextX;
+        currY = nextY;
+        
+        //TODO: I think some of these checks can be avoided on every octant 
+        //      because those are restricted in the direction of draw
+        if(drawX1 < 0 || drawX1 >= cxt->width)  continue;
+        if(drawY1 < 0 || drawY1 >= cxt->height) continue;
+        
+        if(drawX1 < scRect->x || drawX1 >= scRect->x+scRect->w) continue;
+        if(drawY1 < scRect->y || drawY1 >= scRect->y+scRect->h) continue;
+        
+        At[drawY1*cxt->width + drawX1] = bCol;
+        
+        
+        if(drawX2 < 0 || drawX2 >= cxt->width)  continue;
+        if(drawY2 < 0 || drawY2 >= cxt->height) continue;
+        
+        if(drawX2 < scRect->x || drawX2 >= scRect->x+scRect->w) continue;
+        if(drawY2 < scRect->y || drawY2 >= scRect->y+scRect->h) continue;
+        
+        At[drawY2*cxt->width + drawX2] = bCol;
+        
+        
+        if(drawX3 < 0 || drawX3 >= cxt->width)  continue;
+        if(drawY3 < 0 || drawY3 >= cxt->height) continue;
+        
+        if(drawX3 < scRect->x || drawX3 >= scRect->x+scRect->w) continue;
+        if(drawY3 < scRect->y || drawY3 >= scRect->y+scRect->h) continue;
+        
+        At[drawY3*cxt->width + drawX3] = bCol;
+        
+        
+        if(drawX4 < 0 || drawX4 >= cxt->width)  continue;
+        if(drawY4 < 0 || drawY4 >= cxt->height) continue;
+        
+        if(drawX4 < scRect->x || drawX4 >= scRect->x+scRect->w) continue;
+        if(drawY4 < scRect->y || drawY4 >= scRect->y+scRect->h) continue;
+        
+        At[drawY4*cxt->width + drawX4] = bCol;
+        
+        if(drawX5 < 0 || drawX5 >= cxt->width)  continue;
+        if(drawY5 < 0 || drawY5 >= cxt->height) continue;
+        
+        if(drawX5 < scRect->x || drawX5 >= scRect->x+scRect->w) continue;
+        if(drawY5 < scRect->y || drawY5 >= scRect->y+scRect->h) continue;
+        
+        At[drawY5*cxt->width + drawX5] = bCol;
+        
+        
+        if(drawX6 < 0 || drawX6 >= cxt->width)  continue;
+        if(drawY6 < 0 || drawY6 >= cxt->height) continue;
+        
+        if(drawX6 < scRect->x || drawX6 >= scRect->x+scRect->w) continue;
+        if(drawY6 < scRect->y || drawY6 >= scRect->y+scRect->h) continue;
+        
+        At[drawY6*cxt->width + drawX6] = bCol;
+        
+        
+        if(drawX7 < 0 || drawX7 >= cxt->width)  continue;
+        if(drawY7 < 0 || drawY7 >= cxt->height) continue;
+        
+        if(drawX7 < scRect->x || drawX7 >= scRect->x+scRect->w) continue;
+        if(drawY7 < scRect->y || drawY7 >= scRect->y+scRect->h) continue;
+        
+        At[drawY7*cxt->width + drawX7] = bCol;
+        
+        
+        if(drawX8 < 0 || drawX8 >= cxt->width)  continue;
+        if(drawY8 < 0 || drawY8 >= cxt->height) continue;
+        
+        if(drawX8 < scRect->x || drawX8 >= scRect->x+scRect->w) continue;
+        if(drawY8 < scRect->y || drawY8 >= scRect->y+scRect->h) continue;
+        
+        At[drawY8*cxt->width + drawX8] = bCol;
+    }
+    
+    //AssertMsg(FALSE, "To Be Implemented!\n");
 }
 
 void ls_uiBackground(UIContext *cxt)
@@ -709,6 +889,19 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     //NOTE: We defer the selectedIndex change to the end of the frame 
     //      to avoid the for loop blinking wrongly for a frame
     if(toBeChanged != 9999) { list->selectedIndex = toBeChanged; list->isOpen = FALSE; }
+}
+
+void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32 h)
+{
+    ls_uiBorderedRect(cxt, xPos, yPos, w, h);
+    
+    s32 selRadius = 60;
+    
+    //ls_uiPushScissor(cxt, xPos-selRadius, yPos-selRadius, w+selRadius, h+selRadius);
+    
+    ls_uiCircle(cxt, xPos+400, yPos, selRadius);
+    
+    //ls_uiPopScissor(cxt);
 }
 
 void ls_uiRender(UIContext *c)
