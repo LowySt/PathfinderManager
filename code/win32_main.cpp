@@ -654,6 +654,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     b32 Running = TRUE;
     u32 lastFrameTime = 0;
+    
     while(Running)
     {
         RegionTimerBegin(frameTime);

@@ -400,21 +400,23 @@ void ls_uiCircle(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
     
     Color bCol = cxt->borderColor;
     
-    while((currX != endX) && (currY != endY))
+    //TODO: Should be SIMDable
+    b32 Running = TRUE;
+    while(Running)
     {
+        if((currX == endX) || (currY == endY)) { Running = FALSE; }
+        
         s32 drawX1 = xPos + currX;
         s32 drawY1 = yPos + currY;
         
         s32 drawX2 = xPos - currX;
         s32 drawY2 = yPos + currY;
         
-        //TODO: Missing pixel in point of contact between 1/3 and 2/4
         s32 drawX3 = xPos + currY;
         s32 drawY3 = yPos + currX;
         
         s32 drawX4 = xPos - currY;
         s32 drawY4 = yPos + currX;
-        
         
         s32 drawX5 = xPos + currX;
         s32 drawY5 = yPos - currY;
@@ -437,80 +439,47 @@ void ls_uiCircle(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
         currX = nextX;
         currY = nextY;
         
-        //TODO: I think some of these checks can be avoided on every octant 
-        //      because those are restricted in the direction of draw
-        if(drawX1 < 0 || drawX1 >= cxt->width)  continue;
-        if(drawY1 < 0 || drawY1 >= cxt->height) continue;
+#define CIRCLE_DRAW_BORD(xP, yP, r, c) \
+if((xP) >= r->x && (xP) < r->x+r->w && (yP) >= r->y && (yP) < r->y+r->h) \
+{ At[(yP)*cxt->width + (xP)] = c; }
         
-        if(drawX1 < scRect->x || drawX1 >= scRect->x+scRect->w) continue;
-        if(drawY1 < scRect->y || drawY1 >= scRect->y+scRect->h) continue;
+        CIRCLE_DRAW_BORD(drawX1, drawY1,   scRect, bCol);
+        //CIRCLE_DRAW_BORD(drawX1, drawY1-1, scRect, bCol);
+        CIRCLE_DRAW_BORD(drawX2, drawY2,   scRect, bCol);
+        //CIRCLE_DRAW_BORD(drawX2, drawY2-1, scRect, bCol);
         
-        At[drawY1*cxt->width + drawX1] = bCol;
-        
-        
-        if(drawX2 < 0 || drawX2 >= cxt->width)  continue;
-        if(drawY2 < 0 || drawY2 >= cxt->height) continue;
-        
-        if(drawX2 < scRect->x || drawX2 >= scRect->x+scRect->w) continue;
-        if(drawY2 < scRect->y || drawY2 >= scRect->y+scRect->h) continue;
-        
-        At[drawY2*cxt->width + drawX2] = bCol;
+        //ls_uiFillRect(cxt, drawX2+1, drawY2-1, (drawX1-drawX2)-1, 1, cxt->widgetColor);
+        ls_uiFillRect(cxt, drawX2+1, drawY2, (drawX1-drawX2)-1, 1, cxt->widgetColor);
         
         
-        if(drawX3 < 0 || drawX3 >= cxt->width)  continue;
-        if(drawY3 < 0 || drawY3 >= cxt->height) continue;
+        CIRCLE_DRAW_BORD(drawX3,   drawY3, scRect, bCol);
+        //CIRCLE_DRAW_BORD(drawX3-1, drawY3, scRect, bCol);
+        CIRCLE_DRAW_BORD(drawX4,   drawY4, scRect, bCol);
+        //CIRCLE_DRAW_BORD(drawX4+1, drawY4, scRect, bCol);
         
-        if(drawX3 < scRect->x || drawX3 >= scRect->x+scRect->w) continue;
-        if(drawY3 < scRect->y || drawY3 >= scRect->y+scRect->h) continue;
+        //ls_uiFillRect(cxt, drawX4+2, drawY4, (drawX3-drawX4)-3, 1, cxt->widgetColor);
+        ls_uiFillRect(cxt, drawX4+1, drawY4, (drawX3-drawX4)-1, 1, cxt->widgetColor);
         
-        At[drawY3*cxt->width + drawX3] = bCol;
+        CIRCLE_DRAW_BORD(drawX5, drawY5,   scRect, bCol);
+        //CIRCLE_DRAW_BORD(drawX5, drawY5+1, scRect, bCol);
+        CIRCLE_DRAW_BORD(drawX6, drawY6,   scRect, bCol);
+        //CIRCLE_DRAW_BORD(drawX6, drawY6+1, scRect, bCol);
         
+        //ls_uiFillRect(cxt, drawX6+1, drawY6+1, (drawX5-drawX6)-1, 1, cxt->widgetColor);
+        ls_uiFillRect(cxt, drawX6+1, drawY6, (drawX5-drawX6)-1, 1, cxt->widgetColor);
         
-        if(drawX4 < 0 || drawX4 >= cxt->width)  continue;
-        if(drawY4 < 0 || drawY4 >= cxt->height) continue;
+        CIRCLE_DRAW_BORD(drawX7,   drawY7, scRect, bCol);
+        //CIRCLE_DRAW_BORD(drawX7-1, drawY7, scRect, bCol);
+        CIRCLE_DRAW_BORD(drawX8,   drawY8, scRect, bCol);
+        //CIRCLE_DRAW_BORD(drawX8+1, drawY8, scRect, bCol);
         
-        if(drawX4 < scRect->x || drawX4 >= scRect->x+scRect->w) continue;
-        if(drawY4 < scRect->y || drawY4 >= scRect->y+scRect->h) continue;
-        
-        At[drawY4*cxt->width + drawX4] = bCol;
-        
-        if(drawX5 < 0 || drawX5 >= cxt->width)  continue;
-        if(drawY5 < 0 || drawY5 >= cxt->height) continue;
-        
-        if(drawX5 < scRect->x || drawX5 >= scRect->x+scRect->w) continue;
-        if(drawY5 < scRect->y || drawY5 >= scRect->y+scRect->h) continue;
-        
-        At[drawY5*cxt->width + drawX5] = bCol;
-        
-        
-        if(drawX6 < 0 || drawX6 >= cxt->width)  continue;
-        if(drawY6 < 0 || drawY6 >= cxt->height) continue;
-        
-        if(drawX6 < scRect->x || drawX6 >= scRect->x+scRect->w) continue;
-        if(drawY6 < scRect->y || drawY6 >= scRect->y+scRect->h) continue;
-        
-        At[drawY6*cxt->width + drawX6] = bCol;
-        
-        
-        if(drawX7 < 0 || drawX7 >= cxt->width)  continue;
-        if(drawY7 < 0 || drawY7 >= cxt->height) continue;
-        
-        if(drawX7 < scRect->x || drawX7 >= scRect->x+scRect->w) continue;
-        if(drawY7 < scRect->y || drawY7 >= scRect->y+scRect->h) continue;
-        
-        At[drawY7*cxt->width + drawX7] = bCol;
-        
-        
-        if(drawX8 < 0 || drawX8 >= cxt->width)  continue;
-        if(drawY8 < 0 || drawY8 >= cxt->height) continue;
-        
-        if(drawX8 < scRect->x || drawX8 >= scRect->x+scRect->w) continue;
-        if(drawY8 < scRect->y || drawY8 >= scRect->y+scRect->h) continue;
-        
-        At[drawY8*cxt->width + drawX8] = bCol;
+        //ls_uiFillRect(cxt, drawX8+2, drawY8, (drawX7-drawX8)-3, 1, cxt->widgetColor);
+        ls_uiFillRect(cxt, drawX8+1, drawY8, (drawX7-drawX8)-1, 1, cxt->widgetColor);
     }
     
-    //AssertMsg(FALSE, "To Be Implemented!\n");
+#undef CIRCLE_DRAW_BORD
+    
+    
 }
 
 void ls_uiBackground(UIContext *cxt)
@@ -895,13 +864,13 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
 {
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
-    s32 selRadius = 60;
+    s32 selRadius = 11;
     
-    //ls_uiPushScissor(cxt, xPos-selRadius, yPos-selRadius, w+selRadius, h+selRadius);
+    ls_uiPushScissor(cxt, xPos-selRadius, yPos-selRadius, w+selRadius, h+(selRadius*2));
     
-    ls_uiCircle(cxt, xPos+400, yPos, selRadius);
+    ls_uiCircle(cxt, xPos, yPos+(h/2), selRadius);
     
-    //ls_uiPopScissor(cxt);
+    ls_uiPopScissor(cxt);
 }
 
 void ls_uiRender(UIContext *c)
