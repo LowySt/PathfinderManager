@@ -643,11 +643,17 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     ls_uiListBoxRemoveEntry(uiContext, &listBox, 3);
     
+    UISlider slider = {};
+    slider.maxValue = 100;
+    slider.minValue = 0;
+    slider.style    = SL_LINE;
+    
     RegionTimer frameTime = {};
     
     unistring buttonTestString = ls_unistrFromAscii("Hello gouda! 'Bitch'");
     
     b32 Running = TRUE;
+    u32 lastFrameTime = 0;
     while(Running)
     {
         RegionTimerBegin(frameTime);
@@ -687,6 +693,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiListBox(uiContext, &listBox, 100, 400, 200, 36);
         
+        ls_uiSlider(uiContext, &slider, 400, 420, 200, 8);
+        
+#if _DEBUG
+        char buff[32] = {};
+        ls_itoa_t(lastFrameTime, buff, 32);
+        ls_uiGlyphString(uiContext, 1240, 820, ls_unistrFromAscii(buff), RGBg(0xEE));
+#endif
+        
         ls_uiRender(uiContext);
         //NOTE:TEST
         
@@ -705,6 +719,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         RegionTimerEnd(frameTime);
         uiContext->dt = RegionTimerGet(frameTime);
+        lastFrameTime = uiContext->dt;
     }
     
     return 0;
