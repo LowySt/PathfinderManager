@@ -648,6 +648,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     slider.minValue  = 0;
     slider.currPos   = 0.5;
     slider.style     = SL_BOX;
+    slider.lColor    = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), uiContext->widgetColor);
+    slider.rColor    = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), uiContext->widgetColor);
     
     RegionTimer frameTime = {};
     
@@ -696,7 +698,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiListBox(uiContext, &listBox, 100, 400, 200, 36);
         
-        ls_uiSlider(uiContext, &slider, 400, 420, 200, 36);
+        ls_uiSlider(uiContext, &slider, 400, 420, 400, 72);
         
 #if _DEBUG
         char buff[32] = {};

@@ -91,7 +91,8 @@ struct UISlider
     f64 currPos;
     
     SliderStyle style;
-    Color color;
+    Color lColor;
+    Color rColor;
 };
 
 struct UIContext
@@ -193,6 +194,12 @@ Color ls_uiAlphaBlend(Color source, Color dest, u8 alpha)
     c8[3] = aS + aD*factor;
     
     return Result;
+}
+
+Color ls_uiAlphaBlend(Color source, Color dest)
+{
+    u8 Alpha = (u8)((source >> 24) & 0x000000FF);
+    return ls_uiAlphaBlend(source, dest, Alpha);
 }
 
 Color ls_uiRGBAtoARGB(Color c)
@@ -925,10 +932,13 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     }
     else if(slider->style == SL_BOX)
     {
-        ls_uiBorderedRect(cxt, xPos, yPos, w, h);
+        ls_uiBorder(cxt, xPos, yPos, w, h);
         
         slider->currValue = slider->maxValue * slider->currPos;
         s32 slidePos = w*slider->currPos;
+        
+        ls_uiFillRect(cxt, xPos+1, yPos+1, slidePos, h-2, slider->lColor);
+        ls_uiFillRect(cxt, xPos+slidePos, yPos+1, w-slidePos-1, h-2, slider->rColor);
         
         ls_uiPushScissor(cxt, xPos-4, yPos-3, w+8, h+6);
         
