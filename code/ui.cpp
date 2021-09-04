@@ -88,6 +88,8 @@ struct UISlider
     s32 maxValue;
     s32 minValue;
     
+    f64 currPos;
+    
     SliderStyle style;
     Color color;
 };
@@ -355,9 +357,7 @@ void ls_uiCircle(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
     
     auto getBest = [radSq](s32 x, s32 y, s32 *bX, s32 *bY)
     {
-        s32 bestX = 0;
-        s32 bestY = 0;
-        s32 bestSum = 0;
+        s32 bestX = 0, bestY = 0, bestSum = 0;
         
         s32 rx = x+1;
         s32 ry = y;
@@ -378,17 +378,15 @@ void ls_uiCircle(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
         *bY = bestY;
     };
     
-    f64 sin = 0;
-    f64 cos = 0;
+    f64 sin = 0, cos = 0;
     
     //NOTE: Everything is done relative to (0,0) until when drawing happens
-    
     //NOTE: We start at the top middle pixel of the Circle
     s32 startX = 0;
     s32 startY = selRadius;
     
     //NOTE: And end at the first octant swept going clockwise.
-    ls_sincos(PI_64/4.0, &sin, &cos);
+    ls_sincos(PI/4.0, &sin, &cos);
     s32 endX = (cos*selRadius);
     s32 endY = (sin*selRadius);
     
@@ -398,7 +396,8 @@ void ls_uiCircle(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
     UIScissor::UIRect *scRect = cxt->scissor.currRect;
     u32 *At = (u32 *)cxt->drawBuffer;
     
-    Color bCol = cxt->borderColor;
+    Color bCol   = cxt->borderColor;
+    Color bCol50 = ls_uiAlphaBlend(cxt->borderColor, cxt->backgroundColor, 128);
     
     //TODO: Should be SIMDable
     b32 Running = TRUE;
@@ -406,33 +405,17 @@ void ls_uiCircle(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
     {
         if((currX == endX) || (currY == endY)) { Running = FALSE; }
         
-        s32 drawX1 = xPos + currX;
-        s32 drawY1 = yPos + currY;
-        
-        s32 drawX2 = xPos - currX;
-        s32 drawY2 = yPos + currY;
-        
-        s32 drawX3 = xPos + currY;
-        s32 drawY3 = yPos + currX;
-        
-        s32 drawX4 = xPos - currY;
-        s32 drawY4 = yPos + currX;
-        
-        s32 drawX5 = xPos + currX;
-        s32 drawY5 = yPos - currY;
-        
-        s32 drawX6 = xPos - currX;
-        s32 drawY6 = yPos - currY;
-        
-        s32 drawX7 = xPos + currY;
-        s32 drawY7 = yPos - currX;
-        
-        s32 drawX8 = xPos - currY;
-        s32 drawY8 = yPos - currX;
+        s32 drawX1 = xPos + currX; s32 drawY1 = yPos + currY;
+        s32 drawX2 = xPos - currX; s32 drawY2 = yPos + currY;
+        s32 drawX3 = xPos + currY; s32 drawY3 = yPos + currX;
+        s32 drawX4 = xPos - currY; s32 drawY4 = yPos + currX;
+        s32 drawX5 = xPos + currX; s32 drawY5 = yPos - currY;
+        s32 drawX6 = xPos - currX; s32 drawY6 = yPos - currY;
+        s32 drawX7 = xPos + currY; s32 drawY7 = yPos - currX;
+        s32 drawX8 = xPos - currY; s32 drawY8 = yPos - currX;
         
         
-        s32 nextX = 0;
-        s32 nextY = 0;
+        s32 nextX = 0, nextY = 0;
         
         getBest(currX, currY, &nextX, &nextY);
         
@@ -476,11 +459,74 @@ if((xP) >= r->x && (xP) < r->x+r->w && (yP) >= r->y && (yP) < r->y+r->h) \
         //ls_uiFillRect(cxt, drawX8+2, drawY8, (drawX7-drawX8)-3, 1, cxt->widgetColor);
         ls_uiFillRect(cxt, drawX8+1, drawY8, (drawX7-drawX8)-1, 1, cxt->widgetColor);
     }
-    
 #undef CIRCLE_DRAW_BORD
+}
+
+
+void ls_uiCircleFloat(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
+{
+    f64 radSq = selRadius*selRadius;
+    f64 sin = 0, cos = 0;
     
+    //NOTE: Everything is done relative to (0,0) until when drawing happens
+    //NOTE: We start at the top middle pixel of the Circle
+    f64 startX = 0.0;
+    f64 startY = selRadius;
+    
+    //NOTE: And end at the first octant swept going clockwise.
+    
+    f64 currX = startX;
+    f64 currY = startY;
+    
+    UIScissor::UIRect *scRect = cxt->scissor.currRect;
+    u32 *At = (u32 *)cxt->drawBuffer;
+    
+    for(f64 Angle = 0.0; Angle < TAU; Angle += TAU/360.0)
+    {
+        ls_sincos(Angle, &sin, &cos);
+        
+        startX = cos*selRadius;
+        startY = sin*selRadius;
+        
+        s32 x1  = ls_floor(startX);
+        f64 floatXA1 = 1.0 - ls_fabs(startX - x1);
+        
+        s32 x2 = ls_ceil(startX);
+        f64 floatXA2 = 1.0 - ls_fabs(startX - x2);
+        
+        s32 y1 = ls_floor(startY);
+        f64 floatYA1 = 1.0 - ls_fabs(startY - y1);
+        
+        s32 y2 = ls_ceil(startY);
+        f64 floatYA2 = 1.0 - ls_fabs(startY - y2);
+        
+        s32 alpha1 = (s32)((floatXA1*floatYA1)*255);
+        s32 alpha2 = (s32)((floatXA2*floatYA2)*255);
+        
+        s32 alpha3 = (s32)((floatXA1*floatYA2)*255);
+        s32 alpha4 = (s32)((floatXA2*floatYA1)*255);
+        
+        Color c1 = ls_uiAlphaBlend(cxt->borderColor, cxt->backgroundColor, alpha1);
+        Color c2 = ls_uiAlphaBlend(cxt->borderColor, cxt->backgroundColor, alpha2);
+        
+        Color c3 = ls_uiAlphaBlend(cxt->borderColor, cxt->backgroundColor, alpha3);
+        Color c4 = ls_uiAlphaBlend(cxt->borderColor, cxt->backgroundColor, alpha4);
+        
+#define CIRCLE_DRAW_BORD(xP, yP, r, c) \
+if((xP) >= r->x && (xP) < r->x+r->w && (yP) >= r->y && (yP) < r->y+r->h) \
+{ At[(yP)*cxt->width + (xP)] = c; }
+        
+        CIRCLE_DRAW_BORD(xPos+x1, yPos+y1, scRect, c1);
+        CIRCLE_DRAW_BORD(xPos+x2, yPos+y2, scRect, c2);
+        
+        CIRCLE_DRAW_BORD(xPos+x1, yPos+y2, scRect, c3);
+        CIRCLE_DRAW_BORD(xPos+x2, yPos+y1, scRect, c4);
+        
+#undef CIRCLE_DRAW_BORD
+    }
     
 }
+
 
 void ls_uiBackground(UIContext *cxt)
 {
@@ -862,15 +908,69 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
 
 void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    ls_uiBorderedRect(cxt, xPos, yPos, w, h);
+    if(LeftUp) { slider->isHeld = FALSE; }
     
-    s32 selRadius = 11;
     
-    ls_uiPushScissor(cxt, xPos-selRadius, yPos-selRadius, w+selRadius, h+(selRadius*2));
+    if(slider->style == SL_LINE) 
+    {
+        ls_uiBorderedRect(cxt, xPos, yPos, w, h);
+        
+        s32 selRadius = 50;
+        
+        ls_uiPushScissor(cxt, xPos-selRadius, yPos-selRadius, w+selRadius, h+(selRadius*2));
+        
+        ls_uiCircleFloat(cxt, xPos+400, yPos+(h/2), selRadius);
+        
+        ls_uiPopScissor(cxt);
+    }
+    else if(slider->style == SL_BOX)
+    {
+        ls_uiBorderedRect(cxt, xPos, yPos, w, h);
+        
+        slider->currValue = slider->maxValue * slider->currPos;
+        s32 slidePos = w*slider->currPos;
+        
+        ls_uiPushScissor(cxt, xPos-4, yPos-3, w+8, h+6);
+        
+        s32 slideWidth = 3;
+        
+        if(MouseInRect(xPos + slidePos-5, yPos, 10, h)) 
+        {
+            slider->isHot = TRUE; 
+            if(LeftHold) { slider->isHeld = TRUE; }
+            
+            
+            s32 actualX = (xPos + slidePos) - 1;
+            s32 actualY = yPos - 2;
+            
+            s32 actualWidth  = slideWidth+2;
+            s32 actualHeight = 4 + h;
+            
+            ls_uiFillRect(cxt, actualX, actualY, actualWidth, actualHeight, cxt->borderColor);
+        }
+        else
+        {
+            ls_uiFillRect(cxt, xPos+slidePos, yPos, slideWidth, h, cxt->borderColor);
+        }
+        
+        ls_uiPopScissor(cxt);
+    }
     
-    ls_uiCircle(cxt, xPos, yPos+(h/2), selRadius);
+    if(slider->isHeld) { 
+        s32 deltaX = (UserInput.Mouse.prevPos.x - UserInput.Mouse.currPos.x);//*cxt->dt;
+        
+        if(deltaX != 0) {
+            int breakHere = 0;
+        }
+        
+        f64 fractionMove = (f64)deltaX / (f64)w;
+        
+        slider->currPos -= fractionMove;
+        
+        slider->currPos = ls_mathClamp(slider->currPos, 1.0, 0.0);
+    }
     
-    ls_uiPopScissor(cxt);
+    slider->isHot = FALSE;
 }
 
 void ls_uiRender(UIContext *c)

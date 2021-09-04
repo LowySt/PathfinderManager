@@ -51,7 +51,8 @@ struct KeyboardInput
 
 struct MouseInput
 {
-    v2i pos;
+    v2i currPos;
+    v2i prevPos;
     
     b32 isLeftPressed;
     b32 wasLeftPressed;
@@ -61,8 +62,11 @@ struct MouseInput
     b32 wasRightPressed;
 };
 
-#define MouseInRect(xP,yP,w,h) (((UserInput.Mouse.pos.x >= xP) && (UserInput.Mouse.pos.x <= xP+w)) && \
-((UserInput.Mouse.pos.y >= yP) && (UserInput.Mouse.pos.y <= yP+h)))
+
+#define MouseInRect(xP,yP,w,h) (((UserInput.Mouse.currPos.x >= xP) && (UserInput.Mouse.currPos.x <= xP+w)) && \
+((UserInput.Mouse.currPos.y >= yP) && (UserInput.Mouse.currPos.y <= yP+h)))
+
+
 
 #define LeftClick    ((UserInput.Mouse.isLeftPressed && !UserInput.Mouse.wasLeftPressed))
 #define MiddleClick  ((UserInput.Mouse.isMiddlePressed && !UserInput.Mouse.wasMiddlePressed))

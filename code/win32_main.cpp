@@ -225,7 +225,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         case WM_MOUSEMOVE:
         {
             POINTS currMouseClient = *((POINTS *)&l);
-            Mouse->pos = { currMouseClient.x, State.windowHeight - currMouseClient.y };
+            Mouse->currPos = { currMouseClient.x, State.windowHeight - currMouseClient.y };
             
             //TODO: Convert this to the input file, rather than the bad stateglobals thing.
             if(State.isDragging) {
@@ -643,10 +643,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     ls_uiListBoxRemoveEntry(uiContext, &listBox, 3);
     
-    UISlider slider = {};
-    slider.maxValue = 100;
-    slider.minValue = 0;
-    slider.style    = SL_LINE;
+    UISlider slider  = {};
+    slider.maxValue  = 100;
+    slider.minValue  = 0;
+    slider.currPos   = 0.5;
+    slider.style     = SL_BOX;
     
     RegionTimer frameTime = {};
     
@@ -663,6 +664,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         UserInput.Keyboard.hasPrintableKey = FALSE;
         UserInput.Keyboard.keyCodepoint    = 0;
         
+        UserInput.Mouse.prevPos          = UserInput.Mouse.currPos;
         UserInput.Mouse.wasLeftPressed   = UserInput.Mouse.isLeftPressed;
         UserInput.Mouse.wasRightPressed  = UserInput.Mouse.isRightPressed;
         UserInput.Mouse.wasMiddlePressed = UserInput.Mouse.isMiddlePressed;
@@ -694,7 +696,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiListBox(uiContext, &listBox, 100, 400, 200, 36);
         
-        ls_uiSlider(uiContext, &slider, 400, 420, 200, 8);
+        ls_uiSlider(uiContext, &slider, 400, 420, 200, 36);
         
 #if _DEBUG
         char buff[32] = {};
