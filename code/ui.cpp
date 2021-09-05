@@ -934,13 +934,19 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     {
         ls_uiBorder(cxt, xPos, yPos, w, h);
         
+        ls_uiPushScissor(cxt, xPos-4, yPos-3, w+8, h+6);
+        
         slider->currValue = slider->maxValue * slider->currPos;
         s32 slidePos = w*slider->currPos;
         
         ls_uiFillRect(cxt, xPos+1, yPos+1, slidePos, h-2, slider->lColor);
         ls_uiFillRect(cxt, xPos+slidePos, yPos+1, w-slidePos-1, h-2, slider->rColor);
         
-        ls_uiPushScissor(cxt, xPos-4, yPos-3, w+8, h+6);
+        unistring val = ls_unistrIntToStr(slider->currValue);
+        
+        ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+        u32 textLen = ls_uiGlyphStringLen(cxt, val);
+        ls_uiGlyphString(cxt, xPos + slidePos - textLen - 2, yPos + h - 20, val, RGBg(0x22 ), slider->lColor);
         
         s32 slideWidth = 3;
         
