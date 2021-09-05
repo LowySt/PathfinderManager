@@ -645,7 +645,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     UISlider slider  = {};
     slider.maxValue  = 100;
-    slider.minValue  = 0;
+    slider.minValue  = -50;
     slider.currPos   = 0.5;
     slider.style     = SL_BOX;
     slider.lColor    = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), uiContext->widgetColor);
