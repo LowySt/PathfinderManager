@@ -390,6 +390,40 @@ u32 win32_convertUTF16To32(u32 *utf32Buff, u32 maxBuff, wchar_t* data, u32 u16Le
     return idx;
 }
 
+//NOTE:TODO: Stuff copy-pasted from the internet. Those left and right shifts are just masking bits...
+u32 win32_convertUTF32To16(wchar_t* utf16Buff, u32 maxBuff, u32 *data, u32 u32Len)
+{
+    u32 *In = data;
+    
+    u32 index = 0;
+    while(In < (data + u32Len))
+    {
+        u32 codepoint = *In;
+        In += 1;
+        
+        wchar_t high = 0;
+        wchar_t low  = 0;
+        
+        if(codepoint < 0x10000) 
+        { 
+            utf16Buff[index] = (wchar_t)codepoint; 
+            index += 1; 
+            continue; 
+        }
+        
+        u32 temp = codepoint -  0x10000;
+        high = (((temp << 12) >> 22) + 0xD800);
+        low  = (((temp << 22) >> 22) + 0xDC00);
+        
+        utf16Buff[index]   = high;
+        utf16Buff[index+1] = low;
+        
+        index += 1;
+    }
+    
+    return index;
+}
+
 u32 win32_GetClipboard(void *buff, u32 maxUTF32Len)
 {
     if(OpenClipboard(NULL) == 0) { return 0; }
@@ -420,17 +454,21 @@ u32 win32_SetClipboard(void *data, u32 len)
 {
     if(OpenClipboard(NULL) == 0) { return 0; }
     
-    HANDLE Clipboard = GetClipboardData(CF_TEXT);
+    HANDLE Clipboard = GetClipboardData(CF_UNICODETEXT);
     EmptyClipboard();
     
-    HGLOBAL clipMem = GlobalAlloc(GMEM_MOVEABLE, len+1);
+    wchar_t charBuff[256] = {};
+    u32 buffLen = win32_convertUTF32To16(charBuff, 256, (u32 *)data, len);
     
-    u8 *buff = (u8 *)GlobalLock(clipMem);
-    ls_memcpy(data, buff, len);
-    buff[len] = 0;
+    HGLOBAL clipMem = GlobalAlloc(GMEM_MOVEABLE, (buffLen+1)*sizeof(u32));
+    wchar_t *clipData = (wchar_t *)GlobalLock(clipMem);
+    
+    ls_memcpy(charBuff, clipData, buffLen*sizeof(wchar_t));
+    clipData[buffLen] = 0;
+    
     GlobalUnlock(clipMem);
     
-    SetClipboardData(CF_TEXT, clipMem);
+    SetClipboardData(CF_UNICODETEXT, clipMem);
     
     CloseClipboard();
     
