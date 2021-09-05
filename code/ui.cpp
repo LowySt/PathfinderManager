@@ -767,12 +767,10 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             box->caretIndex += copiedLen;
         }
         
-#if 0
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::C))
         {
             SetClipboard(box->text.data, box->text.len);
         }
-#endif
         
         //TODO: The positioning is hardcoded. Bad Pasta.
         if(box->text.len > 0)
@@ -1031,12 +1029,6 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff+(h/3), slider->text, textColor);
     
     ls_uiPopScissor(cxt);
-    
-    
-    if(KeyPress(keyMap::C))
-    {
-        DebugBreak();
-    }
     
     
     if(slider->isHeld) { 
