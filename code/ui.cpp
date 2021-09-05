@@ -1,6 +1,8 @@
-#define RGBA(r,g,b,a) (u32)((a<<24)|(r<<16)|(g<<8)|b)
-#define RGB(r,g,b) (u32)((0xFF<<24)|(r<<16)|(g<<8)|b)
-#define RGBg(v) (u32)((0xFF<<24)|(v<<16)|(v<<8)|v)
+#define RGBA(r,g,b,a)  (u32)((a<<24)|(r<<16)|(g<<8)|b)
+#define RGB(r,g,b)     (u32)((0xFF<<24)|(r<<16)|(g<<8)|b)
+#define RGBg(v)        (u32)((0xFF<<24)|(v<<16)|(v<<8)|v)
+#define SetAlpha(v, a) (u32)((v & 0x00FFFFFF) | (((u32)a)<<24))
+#define GetAlpha(v)    ( u8)(((v) & 0xFF000000) >> 24)
 
 typedef u32 Color;
 
@@ -83,6 +85,8 @@ struct UISlider
 {
     b32 isHot;
     b32 isHeld;
+    
+    unistring text;
     
     s32 currValue;
     s32 maxValue;
@@ -247,8 +251,11 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
     s32 diffHeight = (h % 4);
     s32 simdHeight = h - diffHeight;
     
+    //TODO: Make AlphaBlending happen with SSE!!!
+    
     //NOTE: Do the first Sub-Rectangle divisible by 4.
-    __m128i color = _mm_set1_epi32 ((int)c);
+    //__m128i color = _mm_set1_epi32((int)c);
+    
     for(s32 y = yPos; y < yPos+simdHeight; y++)
     {
         for(s32 x = xPos; x < xPos+simdWidth; x+=4)
@@ -261,6 +268,14 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
             
             u32 idx = ((y*cxt->width) + x)*sizeof(s32);
             __m128i *At = (__m128i *)(cxt->drawBuffer + idx);
+            
+            Color c1 = ls_uiAlphaBlend(c, At->m128i_u32[0]);
+            Color c2 = ls_uiAlphaBlend(c, At->m128i_u32[1]);
+            Color c3 = ls_uiAlphaBlend(c, At->m128i_u32[2]);
+            Color c4 = ls_uiAlphaBlend(c, At->m128i_u32[3]);
+            
+            __m128i color = _mm_setr_epi32(c1, c2, c3, c4);
+            
             _mm_storeu_si128(At, color);
         }
     }
@@ -280,7 +295,9 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
                 if(x < scRect->x || x >= scRect->x+scRect->w) continue;
                 if(y < scRect->y || y >= scRect->y+scRect->h) continue;
                 
-                At[y*cxt->width + x] = c;
+                Color base = At[y*cxt->width + x];
+                Color blendedColor = ls_uiAlphaBlend(c, base);
+                At[y*cxt->width + x] = blendedColor;
             }
         }
     }
@@ -297,7 +314,9 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
                 if(x < scRect->x || x >= scRect->x+scRect->w) continue;
                 if(y < scRect->y || y >= scRect->y+scRect->h) continue;
                 
-                At[y*cxt->width + x] = c;
+                Color base = At[y*cxt->width + x];
+                Color blendedColor = ls_uiAlphaBlend(c, base);
+                At[y*cxt->width + x] = blendedColor;
             }
         }
     }
@@ -404,7 +423,6 @@ void ls_uiCircle(UIContext *cxt, s32 xPos, s32 yPos, s32 selRadius)
     u32 *At = (u32 *)cxt->drawBuffer;
     
     Color bCol   = cxt->borderColor;
-    Color bCol50 = ls_uiAlphaBlend(cxt->borderColor, cxt->backgroundColor, 128);
     
     //TODO: Should be SIMDable
     b32 Running = TRUE;
@@ -568,18 +586,13 @@ void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
     }
 }
 
-void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor, Color bkgColor)
+void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textColor)
 {
     UIScissor::UIRect *scRect = cxt->scissor.currRect;
     
     u32 *At = (u32 *)cxt->drawBuffer;
     
-    const u32 colorTableSize = 256;
-    u32 colorTable[colorTableSize] = {};
-    ls_uiFillGSColorTable(textColor, bkgColor, 0x01, colorTable, colorTableSize);
-    
     for(s32 y = yPos-glyph->y1, eY = glyph->height-1; eY >= 0; y++, eY--)
-        //for(s32 y = yPos, eY = 0; eY < glyph->height; y--, eY++)
     {
         for(s32 x = xPos+glyph->x0, eX = 0; eX < glyph->width; x++, eX++)
         {
@@ -589,8 +602,18 @@ void ls_uiGlyph(UIContext *cxt, s32 xPos, s32 yPos, UIGlyph *glyph, Color textCo
             if(x < scRect->x || x >= scRect->x+scRect->w) continue;
             if(y < scRect->y || y >= scRect->y+scRect->h) continue;
             
-            u32 Color = colorTable[glyph->data[eY*glyph->width + eX]];
-            At[y*cxt->width + x] = Color;
+            Color base = At[y*cxt->width + x];
+            
+            u8 sourceA = GetAlpha(textColor);
+            u8 dstA = glyph->data[eY*glyph->width + eX];
+            
+            f64 sA = (f64)sourceA / 255.0;
+            f64 dA = (f64)dstA / 255.0;
+            
+            u8 Alpha = (sA * dA) * 255;
+            
+            Color blendedColor = ls_uiAlphaBlend(textColor, base, Alpha);
+            At[y*cxt->width + x] = blendedColor;
         }
     }
 }
@@ -603,7 +626,7 @@ s32 ls_uiGetKernAdvance(UIContext *cxt, s32 codepoint1, s32 codepoint2)
     return kernAdvance;
 }
 
-void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, unistring text, Color textColor, Color bkgColor = appBkgRGB)
+void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, unistring text, Color textColor)
 {
     s32 currXPos = xPos;
     s32 currYPos = yPos;
@@ -613,7 +636,7 @@ void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, unistring text, Color 
         AssertMsg(indexInGlyphArray <= cxt->currFont->maxCodepoint, "GlyphIndex OutOfBounds\n");
         
         UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
-        ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor, bkgColor);
+        ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor);
         
         s32 kernAdvance = 0;
         if(i < text.len-1) { kernAdvance = ls_uiGetKernAdvance(cxt, text.data[i], text.data[i+1]); }
@@ -688,7 +711,7 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
     s32 strHeight = cxt->currFont->pixelHeight;
     s32 yOff      = strHeight*0.25;
     
-    ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button.name, cxt->textColor, bkgColor);
+    ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button.name, cxt->textColor);
     
     ls_uiPopScissor(cxt);
 }
@@ -754,7 +777,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         //TODO: The positioning is hardcoded. Bad Pasta.
         if(box->text.len > 0)
         { 
-            ls_uiGlyphString(cxt, xPos+10, yPos+8, box->text, cxt->textColor, cxt->widgetColor);
+            ls_uiGlyphString(cxt, xPos+10, yPos+8, box->text, cxt->textColor);
         }
         
         //NOTE: Draw the Caret
@@ -768,7 +791,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             unistring tmp = {box->text.data, (u32)box->caretIndex, (u32)box->caretIndex};
             
             u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
-            ls_uiGlyph(cxt, xPos+12+stringLen, yPos+10, caretGlyph, cxt->textColor, cxt->widgetColor);
+            ls_uiGlyph(cxt, xPos+12+stringLen, yPos+10, caretGlyph, cxt->textColor);
         }
         
     }
@@ -850,7 +873,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     if(list->list.count)
     {
         unistring selected = list->list[list->selectedIndex];
-        ls_uiGlyphString(cxt, xPos+10, yPos+12, selected, cxt->textColor, cxt->widgetColor);
+        ls_uiGlyphString(cxt, xPos+10, yPos+12, selected, cxt->textColor);
     }
     
     ls_uiPopScissor(cxt);
@@ -900,7 +923,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
             }
             
             ls_uiRect(cxt, xPos+1, currY, w-2, h, bkgColor);
-            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*(i+1)), currStr, cxt->textColor, bkgColor);
+            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*(i+1)), currStr, cxt->textColor);
             
             bkgColor = cxt->widgetColor;
         }
@@ -913,10 +936,14 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     if(toBeChanged != 9999) { list->selectedIndex = toBeChanged; list->isOpen = FALSE; }
 }
 
+//TODO: The things are rendered in a logical order, but that makes the function's flow very annoying
+//      going in and out of if blocks to check hot/held and style.
 void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(LeftUp) { slider->isHeld = FALSE; }
     
+    //NOTE: Box Slider Branchless Opacity Check
+    u8 opacity = 0xEE - (0xB0*slider->isHeld);
     
     if(slider->style == SL_LINE) 
     {
@@ -953,10 +980,12 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
         
         
         s32 strXPos = xPos + slidePos - textLen - 2;
+        s32 strHeight = cxt->currFont->pixelHeight;
         Color textBkgC = slider->lColor;
         if(strXPos < xPos+1) { strXPos = xPos + slidePos + slideWidth + 2; textBkgC = slider->rColor; }
         
-        ls_uiGlyphString(cxt, strXPos, yPos + h - 20, val, RGBg(0x22), textBkgC);
+        Color valueColor = RGBA(0x22, 0x22, 0x22, 0x00 + (slider->isHeld*0xFF));
+        ls_uiGlyphString(cxt, strXPos, yPos + h - strHeight, val, valueColor);
         
         ls_uiPopScissor(cxt);
         
@@ -982,12 +1011,36 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
         ls_uiPopScissor(cxt);
     }
     
+    //NOTE: Draw the displayed text, and hide through Alpha the slider info.
+    ls_uiPushScissor(cxt, xPos, yPos, w, h);
+    
+    Color rectColor = cxt->widgetColor;
+    rectColor = SetAlpha(rectColor, opacity);
+    ls_uiBorderedRect(cxt, xPos, yPos, w, h, rectColor);
+    
+    ls_uiSelectFontByFontSize(cxt, FS_MEDIUM);
+    
+    s32 strWidth  = ls_uiGlyphStringLen(cxt, slider->text);
+    s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
+    s32 strHeight = cxt->currFont->pixelHeight;
+    s32 yOff      = strHeight*0.25;
+    
+    Color textColor = cxt->textColor;
+    textColor = SetAlpha(textColor, opacity);
+    
+    ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff+(h/3), slider->text, textColor);
+    
+    ls_uiPopScissor(cxt);
+    
+    
+    if(KeyPress(keyMap::C))
+    {
+        DebugBreak();
+    }
+    
+    
     if(slider->isHeld) { 
         s32 deltaX = (UserInput.Mouse.prevPos.x - UserInput.Mouse.currPos.x);//*cxt->dt;
-        
-        if(deltaX != 0) {
-            int breakHere = 0;
-        }
         
         f64 fractionMove = (f64)deltaX / (f64)w;
         

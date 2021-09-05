@@ -644,6 +644,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiListBoxRemoveEntry(uiContext, &listBox, 3);
     
     UISlider slider  = {};
+    slider.text = ls_unistrFromAscii("Il Nome di un Nemico");
     slider.maxValue  = 100;
     slider.minValue  = -50;
     slider.currPos   = 0.5;
@@ -700,7 +701,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiSlider(uiContext, &slider, 400, 420, 400, 72);
         
-#if _DEBUG
+#if 1//_DEBUG
         char buff[32] = {};
         ls_itoa_t(lastFrameTime, buff, 32);
         ls_uiGlyphString(uiContext, 1240, 820, ls_unistrFromAscii(buff), RGBg(0xEE));
