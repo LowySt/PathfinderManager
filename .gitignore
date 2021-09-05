@@ -9,7 +9,6 @@
 *.png
 *.otf
 *.ttf
-assetFile
 code/asset_main.cpp
 testState
 Releases/
