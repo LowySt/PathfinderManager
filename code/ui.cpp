@@ -71,6 +71,10 @@ struct UITextBox
     
     s32 viewBeginIdx;
     s32 viewEndIdx;
+    
+    s32 selectBeginIdx;
+    s32 selectEndIdx;
+    b32 isSelecting;
 };
 
 struct UIListBox
@@ -769,17 +773,56 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             if(box->text.len < box->viewEndIdx) { box->viewEndIdx -= 1; }
         }
         
-        if(KeyPress(keyMap::LArrow) && box->caretIndex > 0) 
+        if(KeyPress(keyMap::LArrow) && box->caretIndex > 0)
         { 
             box->isCaretOn = TRUE; box->dtCaret = 0; 
             box->caretIndex -= 1;
             if(box->caretIndex < box->viewBeginIdx) { box->viewBeginIdx -= 1; box->viewEndIdx -= 1; }
+            
+            if(KeyHeld(keyMap::Shift))
+            {
+                if(!box->isSelecting) 
+                { 
+                    box->selectEndIdx   = box->caretIndex + 1;
+                    box->selectBeginIdx = box->caretIndex;
+                    box->isSelecting    = TRUE;
+                }
+                else
+                {
+                    Assert(FALSE); //TBI
+                    box->selectBeginIdx -= 1;
+                    if(box->selectBeginIdx == box->selectEndIdx) 
+                    { 
+                        box->isSelecting = FALSE;
+                    }
+                }
+            }
         }
         if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len)
         { 
             box->isCaretOn = TRUE; box->dtCaret = 0; 
             box->caretIndex += 1; 
             if(box->caretIndex > box->viewEndIdx) { box->viewBeginIdx += 1; box->viewEndIdx += 1; }
+            
+            
+            if(KeyHeld(keyMap::Shift))
+            {
+                if(!box->isSelecting) 
+                { 
+                    box->selectEndIdx   = box->caretIndex;
+                    box->selectBeginIdx = box->caretIndex - 1;
+                    box->isSelecting    = TRUE;
+                }
+                else
+                {
+                    Assert(FALSE); //TBI
+                    box->selectEndIdx += 1;
+                    if(box->selectBeginIdx == box->selectEndIdx) 
+                    { 
+                        box->isSelecting = FALSE;
+                    }
+                }
+            }
         }
         if(KeyPress(keyMap::Home)) 
         { 
@@ -814,6 +857,11 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::C))
         { 
             SetClipboard(box->text.data, box->text.len); 
+        }
+        
+        if(box->isSelecting)
+        {
+            ls_printf("Current Selection: %d - %d\n", box->selectBeginIdx, box->selectEndIdx);
         }
         
         s32 strPixelHeight = cxt->currFont->pixelHeight;
