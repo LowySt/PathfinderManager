@@ -745,7 +745,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
         
         if(LeftClick && MouseInRect(100, 600, 1000, 36)) { box.isSelected = TRUE; box.isCaretOn = TRUE; }
-        ls_uiTextBox(uiContext, &box, 100, 600, 1000, 36);
+        ls_uiTextBox(uiContext, &box, 100, 600, 200, 36);
         
         ls_uiListBox(uiContext, &listBox, 100, 400, 200, 36);
         
