@@ -29,6 +29,7 @@ enum UIFontSize
     FS_EXTRALARGE = 3
 };
 
+//TODO: Add max descent of font to adjust text vertical position in text boxes.
 struct UIFont
 {
     UIGlyph *glyph;
@@ -61,11 +62,15 @@ struct UIButton
 struct UITextBox
 {
     unistring text;
+    
     b32 isSelected;
     
     u32 dtCaret;
     b32 isCaretOn;
     s32 caretIndex;
+    
+    s32 viewBeginIdx;
+    s32 viewEndIdx;
 };
 
 struct UIListBox
@@ -718,11 +723,18 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
 
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
+    if(GetPrintableKey() > 127) {
+        int breakHere = 0;
+    }
+    
     ls_uiSelectFontByFontSize(cxt, FS_MEDIUM);
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
-    ls_uiPushScissor(cxt, xPos+4, yPos, w-8, h);
+    const s32 horzOff   = 8;
+    s32 scissorWidth    = w-8;
+    s32 viewAddWidth    = scissorWidth - horzOff;
+    ls_uiPushScissor(cxt, xPos+4, yPos, scissorWidth, h);
     
     if(box->isSelected)
     {
@@ -732,7 +744,13 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             if(box->caretIndex == box->text.len) { ls_unistrAppendChar(&box->text, GetPrintableKey()); }
             else { ls_unistrInsertChar(&box->text, GetPrintableKey(), box->caretIndex); }
             
-            box->caretIndex += 1; 
+            box->caretIndex += 1;
+            box->viewEndIdx += 1;
+            
+            //TODO: This should check view string not actual text
+            if(ls_uiGlyphStringLen(cxt, box->text) > viewAddWidth)
+            { box->viewBeginIdx += 1; }
+            
         }
         if(KeyPress(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) 
         {
@@ -740,21 +758,47 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             else { ls_unistrRmIdx(&box->text, box->caretIndex-1); }
             
             box->caretIndex -= 1;
+            box->viewEndIdx -= 1;
+            if(box->viewBeginIdx != 0) { box->viewBeginIdx -= 1; }
         }
         if(KeyPress(keyMap::Delete) && box->text.len > 0 && box->caretIndex < box->text.len)
         {
             if(box->caretIndex == box->text.len-1) { ls_unistrTrimRight(&box->text, 1); }
             else { ls_unistrRmIdx(&box->text, box->caretIndex); }
+            
+            if(box->text.len < box->viewEndIdx) { box->viewEndIdx -= 1; }
         }
         
         if(KeyPress(keyMap::LArrow) && box->caretIndex > 0) 
-        { box->isCaretOn = TRUE; box->dtCaret = 0; box->caretIndex -= 1; }
-        if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len) 
-        { box->isCaretOn = TRUE; box->dtCaret = 0; box->caretIndex += 1; }
+        { 
+            box->isCaretOn = TRUE; box->dtCaret = 0; 
+            box->caretIndex -= 1;
+            if(box->caretIndex < box->viewBeginIdx) { box->viewBeginIdx -= 1; box->viewEndIdx -= 1; }
+        }
+        if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len)
+        { 
+            box->isCaretOn = TRUE; box->dtCaret = 0; 
+            box->caretIndex += 1; 
+            if(box->caretIndex > box->viewEndIdx) { box->viewBeginIdx += 1; box->viewEndIdx += 1; }
+        }
         if(KeyPress(keyMap::Home)) 
-        { box->isCaretOn = TRUE; box->dtCaret = 0; box->caretIndex = 0; }
+        { 
+            box->isCaretOn = TRUE; box->dtCaret = 0; 
+            box->caretIndex = 0;
+            
+            s32 vLen = box->viewEndIdx - box->viewBeginIdx;
+            box->viewBeginIdx = 0;
+            box->viewEndIdx = vLen;
+        }
         if(KeyPress(keyMap::End)) 
-        { box->isCaretOn = TRUE; box->dtCaret = 0; box->caretIndex = box->text.len; }
+        { 
+            box->isCaretOn = TRUE; box->dtCaret = 0; 
+            box->caretIndex = box->text.len;
+            
+            s32 vLen = box->viewEndIdx - box->viewBeginIdx;
+            box->viewEndIdx = box->caretIndex;
+            box->viewBeginIdx = box->viewEndIdx - vLen;
+        }
         
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::V))
         {
@@ -768,15 +812,18 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         }
         
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::C))
-        {
-            SetClipboard(box->text.data, box->text.len);
+        { 
+            SetClipboard(box->text.data, box->text.len); 
         }
         
-        //TODO: The positioning is hardcoded. Bad Pasta.
-        if(box->text.len > 0)
-        { 
-            ls_uiGlyphString(cxt, xPos+10, yPos+8, box->text, cxt->textColor);
-        }
+        s32 strPixelHeight = cxt->currFont->pixelHeight;
+        s32 vertOff = ((h - strPixelHeight) / 2) + 5;
+        
+        u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
+        u32 actualLen = viewLen <= box->text.len ? viewLen : box->text.len;
+        unistring viewString = {box->text.data + box->viewBeginIdx, actualLen, actualLen};
+        
+        ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
         
         //NOTE: Draw the Caret
         box->dtCaret += cxt->dt;
@@ -786,10 +833,11 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         {
             UIGlyph *caretGlyph = &cxt->currFont->glyph['|'];
             
-            unistring tmp = {box->text.data, (u32)box->caretIndex, (u32)box->caretIndex};
+            u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
+            unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
             
             u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
-            ls_uiGlyph(cxt, xPos+12+stringLen, yPos+10, caretGlyph, cxt->textColor);
+            ls_uiGlyph(cxt, xPos + horzOff + stringLen, yPos+vertOff, caretGlyph, cxt->textColor);
         }
         
     }
@@ -1019,7 +1067,7 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     ls_uiSelectFontByFontSize(cxt, FS_MEDIUM);
     
     s32 strWidth  = ls_uiGlyphStringLen(cxt, slider->text);
-    s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
+    s32 xOff      = (w - strWidth) / 2;
     s32 strHeight = cxt->currFont->pixelHeight;
     s32 yOff      = strHeight*0.25;
     
