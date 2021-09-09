@@ -729,6 +729,7 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
     ls_uiPopScissor(cxt);
 }
 
+//TODO: Selection is bugged when text is too long and scrolling is happening.
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(GetPrintableKey() > 127) {
@@ -841,6 +842,30 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         }
         if(KeyPress(keyMap::Home)) 
         { 
+            if(KeyHeld(keyMap::Shift))
+            {
+                if(!box->isSelecting) 
+                { 
+                    box->selectEndIdx   = box->caretIndex;
+                    box->selectBeginIdx = 0;
+                    box->isSelecting    = TRUE;
+                }
+                else
+                {
+                    if(box->caretIndex == box->selectBeginIdx)
+                    { box->selectBeginIdx = 0; }
+                    else if(box->caretIndex == box->selectEndIdx)
+                    { box->selectEndIdx   = box->selectBeginIdx; box->selectBeginIdx = 0; }
+                    else
+                    { AssertMsg(FALSE, "Home -> Caret is not aligned with select anymore\n"); }
+                    
+                    if(box->selectBeginIdx == box->selectEndIdx) 
+                    { box->isSelecting = FALSE; }
+                }
+            }
+            else 
+            { if(box->isSelecting) { box->isSelecting = FALSE; box->selectEndIdx = 0; box->selectBeginIdx = 0; } }
+            
             box->isCaretOn = TRUE; box->dtCaret = 0; 
             box->caretIndex = 0;
             
@@ -850,6 +875,30 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         }
         if(KeyPress(keyMap::End)) 
         { 
+            if(KeyHeld(keyMap::Shift))
+            {
+                if(!box->isSelecting) 
+                { 
+                    box->selectEndIdx   = box->text.len;
+                    box->selectBeginIdx = box->caretIndex;
+                    box->isSelecting    = TRUE;
+                }
+                else
+                {
+                    if(box->caretIndex == box->selectBeginIdx)
+                    { box->selectBeginIdx = box->selectEndIdx; box->selectEndIdx = box->text.len; }
+                    else if(box->caretIndex == box->selectEndIdx)
+                    { box->selectEndIdx   = box->text.len; }
+                    else
+                    { AssertMsg(FALSE, "End -> Caret is not aligned with select anymore\n"); }
+                    
+                    if(box->selectBeginIdx == box->selectEndIdx) 
+                    { box->isSelecting = FALSE; }
+                }
+            }
+            else 
+            { if(box->isSelecting) { box->isSelecting = FALSE; box->selectEndIdx = 0; box->selectBeginIdx = 0; } }
+            
             box->isCaretOn = TRUE; box->dtCaret = 0; 
             box->caretIndex = box->text.len;
             
