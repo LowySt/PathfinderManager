@@ -884,6 +884,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
         
         
+        //TODO: When there's a space in the string the selection is rendered improperly
         //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
         u32 selLen = box->selectEndIdx - box->selectBeginIdx;
         actualLen  = selLen <= box->text.len ? selLen : box->text.len; //NOTE: This should never happen.
