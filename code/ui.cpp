@@ -883,6 +883,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         
         ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
         
+        
+        //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
         u32 selLen = box->selectEndIdx - box->selectBeginIdx;
         actualLen  = selLen <= box->text.len ? selLen : box->text.len; //NOTE: This should never happen.
         unistring selString = {box->text.data + box->selectBeginIdx, actualLen, actualLen};
@@ -890,8 +892,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         
         unistring diffString = { box->text.data, (u32)box->selectBeginIdx, (u32)box->selectBeginIdx };
         s32 diffStringWidth = ls_uiGlyphStringLen(cxt, diffString);
-        
-        //TODO: Store these in the context
         
         ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
         ls_uiGlyphString(cxt, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, cxt->invTextColor);
