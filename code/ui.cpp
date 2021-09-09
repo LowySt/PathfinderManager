@@ -120,11 +120,15 @@ struct UIContext
     UIFont *currFont;
     
     Color backgroundColor;
+    Color borderColor;
+    
     Color highliteColor;
     Color pressedColor;
+    
     Color widgetColor;
-    Color borderColor;
     Color textColor;
+    Color invWidgetColor;
+    Color invTextColor;
     
     UIScissor scissor;
     
@@ -775,36 +779,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         
         if(KeyPress(keyMap::LArrow) && box->caretIndex > 0)
         { 
-            box->isCaretOn = TRUE; box->dtCaret = 0; 
-            box->caretIndex -= 1;
-            if(box->caretIndex < box->viewBeginIdx) { box->viewBeginIdx -= 1; box->viewEndIdx -= 1; }
-            
-            if(KeyHeld(keyMap::Shift))
-            {
-                if(!box->isSelecting) 
-                { 
-                    box->selectEndIdx   = box->caretIndex + 1;
-                    box->selectBeginIdx = box->caretIndex;
-                    box->isSelecting    = TRUE;
-                }
-                else
-                {
-                    Assert(FALSE); //TBI
-                    box->selectBeginIdx -= 1;
-                    if(box->selectBeginIdx == box->selectEndIdx) 
-                    { 
-                        box->isSelecting = FALSE;
-                    }
-                }
-            }
-        }
-        if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len)
-        { 
-            box->isCaretOn = TRUE; box->dtCaret = 0; 
-            box->caretIndex += 1; 
-            if(box->caretIndex > box->viewEndIdx) { box->viewBeginIdx += 1; box->viewEndIdx += 1; }
-            
-            
             if(KeyHeld(keyMap::Shift))
             {
                 if(!box->isSelecting) 
@@ -815,14 +789,55 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
                 }
                 else
                 {
-                    Assert(FALSE); //TBI
-                    box->selectEndIdx += 1;
+                    if(box->caretIndex == box->selectBeginIdx)
+                    { box->selectBeginIdx -= 1; }
+                    else if(box->caretIndex == box->selectEndIdx)
+                    { box->selectEndIdx   -= 1;}
+                    else
+                    { AssertMsg(FALSE, "LArrow -> Caret is not aligned with select anymore\n"); }
+                    
                     if(box->selectBeginIdx == box->selectEndIdx) 
-                    { 
-                        box->isSelecting = FALSE;
-                    }
+                    { box->isSelecting = FALSE; }
                 }
             }
+            else 
+            { if(box->isSelecting) { box->isSelecting = FALSE; box->selectEndIdx = 0; box->selectBeginIdx = 0; } }
+            
+            box->isCaretOn = TRUE; box->dtCaret = 0; 
+            box->caretIndex -= 1;
+            if(box->caretIndex < box->viewBeginIdx) { box->viewBeginIdx -= 1; box->viewEndIdx -= 1; }
+            
+        }
+        if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len)
+        { 
+            if(KeyHeld(keyMap::Shift))
+            {
+                if(!box->isSelecting) 
+                { 
+                    box->selectEndIdx   = box->caretIndex + 1;
+                    box->selectBeginIdx = box->caretIndex;
+                    box->isSelecting    = TRUE;
+                }
+                else
+                {
+                    if(box->caretIndex == box->selectBeginIdx)
+                    { box->selectBeginIdx += 1; }
+                    else if(box->caretIndex == box->selectEndIdx)
+                    { box->selectEndIdx   += 1;}
+                    else
+                    { AssertMsg(FALSE, "RArrow -> Caret is not aligned with select anymore\n"); }
+                    
+                    if(box->selectBeginIdx == box->selectEndIdx) 
+                    { box->isSelecting = FALSE; }
+                }
+            }
+            else 
+            { if(box->isSelecting) { box->isSelecting = FALSE; box->selectEndIdx = 0; box->selectBeginIdx = 0; } }
+            
+            box->isCaretOn = TRUE; box->dtCaret = 0; 
+            box->caretIndex += 1; 
+            if(box->caretIndex > box->viewEndIdx) { box->viewBeginIdx += 1; box->viewEndIdx += 1; }
+            
         }
         if(KeyPress(keyMap::Home)) 
         { 
@@ -859,11 +874,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             SetClipboard(box->text.data, box->text.len); 
         }
         
-        if(box->isSelecting)
-        {
-            ls_printf("Current Selection: %d - %d\n", box->selectBeginIdx, box->selectEndIdx);
-        }
-        
         s32 strPixelHeight = cxt->currFont->pixelHeight;
         s32 vertOff = ((h - strPixelHeight) / 2) + 5;
         
@@ -872,6 +882,19 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         unistring viewString = {box->text.data + box->viewBeginIdx, actualLen, actualLen};
         
         ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
+        
+        u32 selLen = box->selectEndIdx - box->selectBeginIdx;
+        actualLen  = selLen <= box->text.len ? selLen : box->text.len; //NOTE: This should never happen.
+        unistring selString = {box->text.data + box->selectBeginIdx, actualLen, actualLen};
+        s32 selStringWidth  = ls_uiGlyphStringLen(cxt, selString);
+        
+        unistring diffString = { box->text.data, (u32)box->selectBeginIdx, (u32)box->selectBeginIdx };
+        s32 diffStringWidth = ls_uiGlyphStringLen(cxt, diffString);
+        
+        //TODO: Store these in the context
+        
+        ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
+        ls_uiGlyphString(cxt, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, cxt->invTextColor);
         
         //NOTE: Draw the Caret
         box->dtCaret += cxt->dt;

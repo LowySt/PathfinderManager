@@ -656,7 +656,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->widgetColor     = RGBg(0x45);
     uiContext->borderColor     = RGBg(0x22);
     uiContext->textColor       = RGBg(0xCC);
-    
+    uiContext->invWidgetColor  = RGBg(0xBA);
+    uiContext->invTextColor    = RGBg(0x33);
     
     ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
     
