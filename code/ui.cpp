@@ -739,6 +739,9 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
+    
+    Color caretColor = cxt->textColor;
+    
     const s32 horzOff   = 8;
     s32 scissorWidth    = w-8;
     s32 viewAddWidth    = scissorWidth - horzOff;
@@ -952,6 +955,9 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             
             ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
             ls_uiGlyphString(cxt, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, cxt->invTextColor);
+            
+            if(box->caretIndex == box->selectBeginIdx)
+            { caretColor = cxt->invTextColor; }
         }
         
         //NOTE: Draw the Caret
@@ -966,7 +972,9 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
             
             u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
-            ls_uiGlyph(cxt, xPos + horzOff + stringLen, yPos+vertOff, caretGlyph, cxt->textColor);
+            
+            const s32 randffset = 4; //TODO: Maybe try to remove this?
+            ls_uiGlyph(cxt, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
         }
         
     }
