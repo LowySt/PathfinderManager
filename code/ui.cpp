@@ -1195,13 +1195,13 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     }
     
     //NOTE: Draw the displayed text, and hide through Alpha the slider info.
-    ls_uiPushScissor(cxt, xPos, yPos, w, h);
+    ls_uiPushScissor(cxt, xPos+1, yPos, w-2, h);
     
     Color rectColor = cxt->widgetColor;
     rectColor = SetAlpha(rectColor, opacity);
     ls_uiBorderedRect(cxt, xPos, yPos, w, h, rectColor);
     
-    ls_uiSelectFontByFontSize(cxt, FS_MEDIUM);
+    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
     
     s32 strWidth  = ls_uiGlyphStringLen(cxt, slider->text);
     s32 xOff      = (w - strWidth) / 2;

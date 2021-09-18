@@ -737,9 +737,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE:TEST
         ls_uiBackground(uiContext);
         
-        //TODO: Make sure UI bounding boxes for input are pixel perfect aligned.
         ls_uiButton(uiContext, button, 100, 700, 80, 20);
-        
         
         if(showText)  //NOTETODO: This is just a test, controlled by a global var.
         {
@@ -752,7 +750,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiListBox(uiContext, &listBox, 100, 400, 200, 36);
         
-        ls_uiSlider(uiContext, &slider, 400, 420, 400, 72);
+        ls_uiSlider(uiContext, &slider, 400, 420, 160, 28);
         
 #if 1//_DEBUG
         char buff[32] = {};
