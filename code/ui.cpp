@@ -729,7 +729,6 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
     ls_uiPopScissor(cxt);
 }
 
-//TODO: Selection is bugged when text is too long and scrolling is happening.
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(GetPrintableKey() > 127) {
@@ -874,9 +873,10 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             box->viewEndIdx = vLen;
         }
         if(KeyPress(keyMap::End)) 
-        { 
+        {
             if(KeyHeld(keyMap::Shift))
             {
+                //TODO: Crash here when string is longer than viewport.
                 if(!box->isSelecting) 
                 { 
                     box->selectEndIdx   = box->text.len;
@@ -933,14 +933,21 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
         
         
-        //TODO: When there's a space in the string the selection is rendered improperly
         //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
-        u32 selLen = box->selectEndIdx - box->selectBeginIdx;
+        s32 realSelEnd = 0;
+        s32 realSelBegin = 0;
+        if(box->isSelecting) 
+        {
+            realSelEnd   = box->selectEndIdx - box->viewBeginIdx;
+            realSelBegin = box->selectBeginIdx - box->viewBeginIdx;
+        }
+        
+        u32 selLen = realSelEnd - realSelBegin;
         actualLen  = selLen <= box->text.len ? selLen : box->text.len; //NOTE: This should never happen.
         unistring selString = {box->text.data + box->selectBeginIdx, actualLen, actualLen};
         s32 selStringWidth  = ls_uiGlyphStringLen(cxt, selString);
         
-        unistring diffString = { box->text.data, (u32)box->selectBeginIdx, (u32)box->selectBeginIdx };
+        unistring diffString = { box->text.data + box->viewBeginIdx, (u32)realSelBegin, (u32)realSelBegin };
         s32 diffStringWidth = ls_uiGlyphStringLen(cxt, diffString);
         
         ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
