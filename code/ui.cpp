@@ -876,7 +876,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         {
             if(KeyHeld(keyMap::Shift))
             {
-                //TODO: Crash here when string is longer than viewport.
                 if(!box->isSelecting) 
                 { 
                     box->selectEndIdx   = box->text.len;
@@ -927,31 +926,33 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         s32 vertOff = ((h - strPixelHeight) / 2) + 5;
         
         u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
-        u32 actualLen = viewLen <= box->text.len ? viewLen : box->text.len;
-        unistring viewString = {box->text.data + box->viewBeginIdx, actualLen, actualLen};
+        u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
+        unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
         
         ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
         
-        
-        //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
-        s32 realSelEnd = 0;
-        s32 realSelBegin = 0;
-        if(box->isSelecting) 
+        if(box->isSelecting)
         {
-            realSelEnd   = box->selectEndIdx - box->viewBeginIdx;
-            realSelBegin = box->selectBeginIdx - box->viewBeginIdx;
+            //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
+            s32 viewSelBegin = box->selectBeginIdx;
+            if(viewSelBegin <= box->viewBeginIdx) { viewSelBegin = box->viewBeginIdx; }
+            
+            s32 viewSelEnd = box->selectEndIdx;
+            if(box->viewEndIdx != 0 && viewSelEnd >= box->viewEndIdx) { viewSelEnd = box->viewEndIdx; }
+            
+            u32 selLen = viewSelEnd -  viewSelBegin;
+            unistring selString = {box->text.data + viewSelBegin, selLen, selLen};
+            s32 selStringWidth  = ls_uiGlyphStringLen(cxt, selString);
+            
+            u32 diffLen = 0;
+            if(box->selectBeginIdx > box->viewBeginIdx) { diffLen = box->selectBeginIdx - box->viewBeginIdx; }
+            
+            unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
+            s32 diffStringWidth = ls_uiGlyphStringLen(cxt, diffString);
+            
+            ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
+            ls_uiGlyphString(cxt, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, cxt->invTextColor);
         }
-        
-        u32 selLen = realSelEnd - realSelBegin;
-        actualLen  = selLen <= box->text.len ? selLen : box->text.len; //NOTE: This should never happen.
-        unistring selString = {box->text.data + box->selectBeginIdx, actualLen, actualLen};
-        s32 selStringWidth  = ls_uiGlyphStringLen(cxt, selString);
-        
-        unistring diffString = { box->text.data + box->viewBeginIdx, (u32)realSelBegin, (u32)realSelBegin };
-        s32 diffStringWidth = ls_uiGlyphStringLen(cxt, diffString);
-        
-        ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
-        ls_uiGlyphString(cxt, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, cxt->invTextColor);
         
         //NOTE: Draw the Caret
         box->dtCaret += cxt->dt;
