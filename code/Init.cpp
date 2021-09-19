@@ -447,7 +447,11 @@ void DrawInitTab(UIContext *cxt)
     {
         ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 580, yPos);
         
-        if(LeftClick && MouseInRect(680, yPos, 20, 20)) { Page->PlayerInit[i].isSelected = TRUE; Page->PlayerInit[i].isCaretOn = TRUE; }
+        if(LeftClick && MouseInRect(680, yPos, 20, 20)) {
+            cxt->currentFocus = (u64 *)(Page->PlayerInit + i);
+            cxt->focusWasSetThisFrame = TRUE;
+            Page->PlayerInit[i].isCaretOn = TRUE; 
+        }
         ls_uiTextBox(cxt, Page->PlayerInit + i, 680, yPos, 32, 20);
         yPos -= 20;
     }

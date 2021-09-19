@@ -732,6 +732,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         UserInput.Mouse.wasRightPressed  = UserInput.Mouse.isRightPressed;
         UserInput.Mouse.wasMiddlePressed = UserInput.Mouse.isMiddlePressed;
         
+        uiContext->focusWasSetThisFrame = FALSE;
+        
         // Process Input
         MSG Msg;
         
@@ -770,6 +772,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiGlyphString(uiContext, 1240, 780, ls_unistrFromAscii(buff), RGBg(0xEE));
 #endif
         
+        //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
+        if(LeftClick && !uiContext->focusWasSetThisFrame)
+        { uiContext->currentFocus = 0; }
         
         ls_uiRender(uiContext);
         //NOTE:TEST

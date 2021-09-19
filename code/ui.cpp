@@ -132,6 +132,9 @@ struct UIContext
     
     UIScissor scissor;
     
+    u64 *currentFocus;
+    b32 focusWasSetThisFrame;
+    
     void (*callbackRender)();
     u32 dt;
 };
@@ -760,7 +763,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     s32 viewAddWidth    = scissorWidth - horzOff;
     ls_uiPushScissor(cxt, xPos+4, yPos, scissorWidth, h);
     
-    if(box->isSelected)
+    //if(box->isSelected)
+    if(cxt->currentFocus == (u64 *)box)
     {
         //NOTE: Draw characters.
         if(HasPrintableKey()) 
