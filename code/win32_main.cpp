@@ -552,13 +552,13 @@ HWND CreateWindow(HMENU MenuBar)
     const int taskbarHeight = 20;
     
     int spaceX = (screenWidth - windowWidth) / 2;
-    int spaceY = ((screenHeight - windowHeight) / 2) - taskbarHeight;
+    int spaceY = ((screenHeight - windowHeight) / 2);// - taskbarHeight;
     if(spaceX < 0) { spaceX = 0; }
     if(spaceY < 0) { spaceY = 0; }
     
     //NOTE:TODO: Hardcoded!!
     State.windowWidth = 1280;
-    State.windowHeight = 840;
+    State.windowHeight = 800;
     
     HWND WindowHandle;
     if ((WindowHandle = CreateWindowExA(0, "WndClass",
