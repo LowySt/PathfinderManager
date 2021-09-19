@@ -760,14 +760,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiSlider(uiContext, &slider, 400, 420, 160, 28);
         
+#endif
+        DrawInitTab(uiContext);
+        
+        
 #if 1//_DEBUG
         char buff[32] = {};
         ls_itoa_t(lastFrameTime, buff, 32);
         ls_uiGlyphString(uiContext, 1240, 780, ls_unistrFromAscii(buff), RGBg(0xEE));
 #endif
         
-#endif
-        DrawInitTab(uiContext);
         
         ls_uiRender(uiContext);
         //NOTE:TEST

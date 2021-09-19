@@ -430,6 +430,8 @@ void SetInitTab(UIContext *cxt)
     
     for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Mobs, (char *)Enemies[i]); }
     for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Allies, (char *)Allies[i]); }
+    
+    for(u32 i = 0; i < PARTY_NUM; i++) { Page->PlayerInit[i].text = ls_unistrAlloc(16); }
 }
 
 
@@ -439,6 +441,16 @@ void DrawInitTab(UIContext *cxt)
     
     ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
     ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
+    
+    s32 yPos = 658;
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    {
+        ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 580, yPos);
+        
+        if(LeftClick && MouseInRect(680, yPos, 20, 20)) { Page->PlayerInit[i].isSelected = TRUE; Page->PlayerInit[i].isCaretOn = TRUE; }
+        ls_uiTextBox(cxt, Page->PlayerInit + i, 680, yPos, 32, 20);
+        yPos -= 20;
+    }
     
 #if 0
     

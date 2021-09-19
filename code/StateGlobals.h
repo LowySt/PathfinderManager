@@ -151,8 +151,10 @@ struct DiceThrow
 
 struct InitPage
 {
-    UIListBox Mobs;
-    UIListBox Allies;
+    UIListBox  Mobs;
+    UIListBox  Allies;
+    
+    UITextBox  PlayerInit[PARTY_NUM];
     
 #if 0
     InitField  PlayerFields[PARTY_NUM];

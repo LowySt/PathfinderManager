@@ -5,7 +5,7 @@
 #define _INIT_H
 
 const u32 PARTY_NUM = 5;
-const char *PartyName[PARTY_NUM] = { "Lumbar", "Mogora", "Refonil", "Armitage", "Fanny" };
+const char32_t *PartyName[PARTY_NUM] = { U"Lumbar", U"Mogora", U"Refonil", U"Armitage", U"Fanny" };
 
 const u32 MOB_NUM = 24;
 const char *MobName[MOB_NUM] = { "Enemy 1", "Enemy 2", "Enemy 3", "Enemy 4",

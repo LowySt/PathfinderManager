@@ -729,13 +729,26 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
     ls_uiPopScissor(cxt);
 }
 
+void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
+{
+    s32 strPixelHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+    
+    s32 strWidth = ls_uiGlyphStringLen(cxt, label);
+    
+    ls_uiPushScissor(cxt, xPos, yPos-1, strWidth, strPixelHeight+2);
+    
+    ls_uiGlyphString(cxt, xPos, yPos, label, cxt->textColor);
+    
+    ls_uiPopScissor(cxt);
+}
+
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(GetPrintableKey() > 127) {
         int breakHere = 0;
     }
     
-    s32 strPixelHeight = ls_uiSelectFontByFontSize(cxt, FS_MEDIUM);
+    s32 strPixelHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
@@ -1023,6 +1036,8 @@ void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h)
 
 //NOTETODO: ListBox manages the data of the entry itself, even when a unistring is already passed.
 //          This feels strange, and probably error-prone.
+
+//TODO I really think ListBox shouldn't manage memory. Fix This.
 inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, char *s)
 { 
     unistring text = ls_unistrFromAscii(s);
