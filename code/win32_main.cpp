@@ -609,6 +609,7 @@ void testHold(UIContext *cxt)
     
     unistring text = ls_unistrFromAscii("I exist only when the button is held!");
     ls_uiGlyphString(cxt, 200, 300, text, RGB(0x3f, 0xa1, 0x37));
+    ls_unistrFree(&text);
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -705,10 +706,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     slider.lColor    = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), uiContext->widgetColor);
     slider.rColor    = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), uiContext->widgetColor);
     
-    RegionTimer frameTime = {};
-    
     unistring buttonTestString = ls_unistrFromAscii("Hello gouda! 'Bitch'");
     
+    
+    RegionTimer frameTime = {};
     b32 Running = TRUE;
     u32 lastFrameTime = 0;
     
@@ -755,7 +756,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 #if 1//_DEBUG
         char buff[32] = {};
         ls_itoa_t(lastFrameTime, buff, 32);
-        ls_uiGlyphString(uiContext, 1240, 820, ls_unistrFromAscii(buff), RGBg(0xEE));
+        ls_uiGlyphString(uiContext, 1240, 780, ls_unistrFromAscii(buff), RGBg(0xEE));
 #endif
         
         ls_uiRender(uiContext);
