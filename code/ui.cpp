@@ -688,8 +688,8 @@ void ls_uiSelectFontByPixelHeight(UIContext *cxt, u32 pixelHeight)
 }
 
 inline
-void ls_uiSelectFontByFontSize(UIContext *cxt, UIFontSize fontSize)
-{ cxt->currFont = &cxt->fonts[fontSize]; }
+s32 ls_uiSelectFontByFontSize(UIContext *cxt, UIFontSize fontSize)
+{ cxt->currFont = &cxt->fonts[fontSize]; return cxt->currFont->pixelHeight; }
 
 void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32 h)
 {
@@ -735,7 +735,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         int breakHere = 0;
     }
     
-    ls_uiSelectFontByFontSize(cxt, FS_MEDIUM);
+    s32 strPixelHeight = ls_uiSelectFontByFontSize(cxt, FS_MEDIUM);
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
@@ -925,7 +925,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             SetClipboard(box->text.data, box->text.len); 
         }
         
-        s32 strPixelHeight = cxt->currFont->pixelHeight;
         s32 vertOff = ((h - strPixelHeight) / 2) + 5;
         
         u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
@@ -1044,11 +1043,12 @@ inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
 
 void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+    s32 strHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+    s32 vertOff = ((h - strHeight) / 2) + 4;
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
-    const s32 arrowBoxWidth = 30;
+    const s32 arrowBoxWidth = 24;
     ls_uiPushScissor(cxt, xPos, yPos, w+arrowBoxWidth, h);
     
     ls_uiDrawArrow(cxt, xPos + w, yPos, arrowBoxWidth, h);
@@ -1062,7 +1062,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     if(list->list.count)
     {
         unistring selected = list->list[list->selectedIndex];
-        ls_uiGlyphString(cxt, xPos+10, yPos+12, selected, cxt->textColor);
+        ls_uiGlyphString(cxt, xPos+10, yPos + vertOff, selected, cxt->textColor);
     }
     
     ls_uiPopScissor(cxt);
@@ -1112,7 +1112,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
             }
             
             ls_uiRect(cxt, xPos+1, currY, w-2, h, bkgColor);
-            ls_uiGlyphString(cxt, xPos+10, yPos+12-(h*(i+1)), currStr, cxt->textColor);
+            ls_uiGlyphString(cxt, xPos+10, yPos + vertOff - (h*(i+1)), currStr, cxt->textColor);
             
             bkgColor = cxt->widgetColor;
         }

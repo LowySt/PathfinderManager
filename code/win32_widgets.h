@@ -1,3 +1,4 @@
+#if 0
 /* date = April 28th 2021 0:01 pm */
 
 #ifndef WIN32_WIDGETS_H
@@ -70,3 +71,4 @@ DiceThrow AddThrower(HWND h, HWND **winA, s32 x, s32 y, u64 *id);
 DiceThrow AddGeneralThrower(HWND h, HWND **winA, s32 x, s32 y, u64 *id);
 
 #endif //WIN32_WIDGETS_H
+#endif

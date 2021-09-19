@@ -11,64 +11,7 @@ const u32 WINARR_FEATS_NUM = 64;
 
 const u32 ELEM_MAP_NUM = WINARR_INIT_NUM + WINARR_PC_NUM + WINARR_FEATS_NUM;
 
-enum LabelAlign : u8
-{
-    LABEL_NULL,
-    
-    LABEL_UP,
-    LABEL_DOWN,
-    LABEL_LEFT,
-    LABEL_RIGHT,
-    
-    LABEL_COUNT
-};
-
-struct dim
-{
-    u32 width;
-    u32 height;
-};
-
-//TODO: Support Unicode in WindowCreation
-struct TextBox
-{
-    HWND box;
-    HWND label;
-    
-    u64 id;
-};
-
-struct ComboBox
-{
-    HWND box;
-    HWND label;
-    
-    u64 id;
-};
-
-struct ListBox
-{
-    HWND box;
-    HWND label;
-    
-    u64 id;
-};
-
-struct Button
-{
-    HWND box;
-    
-    union
-    {
-        TextBox *LinkedText;
-    };
-    u32 value;
-    
-    u64 id;
-    
-    b32 hasBackground;
-};
-
+#if 0
 struct AbilityScores
 {
     TextBox *Box[6];
@@ -116,6 +59,7 @@ struct FeatsPage
     HWND WindowsArray[WINARR_FEATS_NUM];
     u32 numWindows;
 };
+#endif
 
 struct Encounter
 {
@@ -142,6 +86,7 @@ struct EncList
     Encounter Enc[64];
 };
 
+#if 0
 struct Counter
 {
     TextBox *Field;
@@ -202,12 +147,14 @@ struct DiceThrow
     TextBox *DmgRes;
     Button  *Throw;
 };
+#endif
 
 struct InitPage
 {
-    ComboBox   *Mobs;
-    ComboBox   *Allies;
+    UIListBox Mobs;
+    UIListBox Allies;
     
+#if 0
     InitField  PlayerFields[PARTY_NUM];
     
     InitField  MobFields[MOB_NUM];
@@ -240,12 +187,16 @@ struct InitPage
     
     HWND WindowsArray[WINARR_INIT_NUM];
     u32 numWindows;
+#endif
 };
 
 struct ProgramState
 {
+#if 0
     PCPage    *PC;
     FeatsPage *Feats;
+#endif
+    
     InitPage  *Init;
     
     //State Management

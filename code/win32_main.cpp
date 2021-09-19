@@ -44,6 +44,9 @@
 #include "pcg.c"
 
 
+#include "Input.cpp"
+#include "ui.cpp"
+
 #include "Init.h"
 #include "Class.h"
 #include "PlayerChar.h"
@@ -52,7 +55,6 @@
 
 #include "diceRoller.cpp"
 
-#include "Input.cpp"
 #include "Class.cpp"
 #include "Skills.cpp"
 #include "Feats.cpp"
@@ -63,7 +65,6 @@
 #include "OnButton.cpp"
 #include "SaveState.cpp"
 
-#include "ui.cpp"
 #include "AssetLoader.cpp"
 
 HBITMAP closeButton;
@@ -678,6 +679,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
+#if 0
     //TODO:Remove with ID system
     UITextBox box = {};
     box.text = ls_unistrAlloc(16);
@@ -707,7 +709,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     slider.rColor    = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), uiContext->widgetColor);
     
     unistring buttonTestString = ls_unistrFromAscii("Hello gouda! 'Bitch'");
+#endif
     
+    State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
+    
+    SetInitTab(uiContext);
     
     RegionTimer frameTime = {};
     b32 Running = TRUE;
@@ -738,6 +744,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE:TEST
         ls_uiBackground(uiContext);
         
+#if 0
         ls_uiButton(uiContext, button, 100, 700, 80, 20);
         
         if(showText)  //NOTETODO: This is just a test, controlled by a global var.
@@ -758,6 +765,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_itoa_t(lastFrameTime, buff, 32);
         ls_uiGlyphString(uiContext, 1240, 780, ls_unistrFromAscii(buff), RGBg(0xEE));
 #endif
+        
+#endif
+        DrawInitTab(uiContext);
         
         ls_uiRender(uiContext);
         //NOTE:TEST

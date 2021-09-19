@@ -420,3 +420,152 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
     return;
 }
 #endif
+
+
+
+
+void SetInitTab(UIContext *cxt)
+{
+    InitPage *Page = State.Init;
+    
+    for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Mobs, (char *)Enemies[i]); }
+    for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Allies, (char *)Allies[i]); }
+}
+
+
+void DrawInitTab(UIContext *cxt)
+{
+    InitPage *Page = State.Init;
+    
+    ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
+    ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
+    
+#if 0
+    
+    // Party Fields
+    s32 yPos = 142;
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    {
+        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 640, yPos, ElementId, i, TRUE);
+        yPos += 20;
+        Page->numWindows += 2;
+    }
+    
+    // Ally Fields
+    yPos += 70;
+    for(u32 i = 0; i < ALLY_NUM; i++)
+    {
+        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 546, yPos, ElementId, i, FALSE);
+        yPos += 20;
+        Page->numWindows += 8;
+    }
+    
+    // Mob Fields
+    yPos = 142;
+    for(u32 i = 0; i < MOB_NUM; i++)
+    {
+        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 296, yPos, ElementId, i, FALSE);
+        yPos += 20;
+        Page->numWindows += 8;
+    }
+    
+    //ORDER
+    yPos = 142;
+    for(u32 i = 0; i < ORDER_NUM; i += 2)
+    {
+        Page->Order[i]   = AddOrderField(WinH, &wA, 770, yPos, i, ElementId);
+        if((i+1) < ORDER_NUM) { 
+            Page->Order[i+1] = AddOrderField(WinH, &wA, 930, yPos, i+1, ElementId); 
+            Page->numWindows += 3;
+        }
+        Page->numWindows += 3;
+        yPos += 20;
+    }
+    
+    Page->VisibleOrder = PARTY_NUM;
+    
+    Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 870, 112, 100, 20, (*ElementId)++); wA += 1;
+    
+    Page->Roll  = AddButton(WinH, wA, "Roll",  486, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Set   = AddButton(WinH, wA, "Set",   710, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Next  = AddButton(WinH, wA, "Next",  900, 82, 45, 20, (*ElementId)++); wA += 1;
+    Page->Reset = AddButton(WinH, wA, "Reset", 600, 102, 45, 20, (*ElementId)++); wA += 1;
+    Page->Save  = AddButton(WinH, wA, "Save",  670, 42, 45, 20, (*ElementId)++); wA += 1;
+    
+    Page->RoundCounter = AddValueBox(WinH, wA, 0, LABEL_NULL, 1, 1180, 60, 30, 20, (*ElementId)++); wA += 1;
+    
+    Page->numWindows += 7;
+    
+    //NOTE: Dice Throwers
+    u32 xPos = 20;
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        Page->Throwers[i] = AddThrower(WinH, &wA, xPos, 642, ElementId);
+        Page->numWindows += 6;
+        xPos += 156;
+    }
+    
+    Page->GeneralThrower = AddGeneralThrower(WinH, &wA, 20, 752, ElementId);
+    Page->numWindows += 3;
+    
+    
+    //NOTE: Counters
+    yPos = 142;
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Page->Counters[i] = AddCounter(WinH, &wA, CounterNames[i], 20, yPos, ElementId);
+        yPos += 44;
+        Page->numWindows += 6;
+    }
+    
+    Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 644, 62, 100, 20, (*ElementId)++); wA += 1;
+    Page->numWindows += 1;
+    
+    //NOTE:EncounterSelection
+    {
+        Page->EncounterSel = AddUnsortedComboBox(WinH, wA, "Encounters", LABEL_UP, 
+                                                 520, 60, 100, 20, (*ElementId)++, 1);
+        wA += 2;
+        
+        Page->numWindows += 2;
+    }
+    
+    return;
+#endif
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
