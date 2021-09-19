@@ -747,6 +747,12 @@ void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
 
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
+    if(LeftClick && MouseInRect(xPos, yPos, w, h)) {
+        cxt->currentFocus = (u64 *)box;
+        cxt->focusWasSetThisFrame = TRUE;
+        box->isCaretOn = TRUE; 
+    }
+    
     if(GetPrintableKey() > 127) {
         int breakHere = 0;
     }
@@ -942,39 +948,11 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             SetClipboard(box->text.data, box->text.len); 
         }
         
+        //NOTETODO: Duplicated Values
         s32 vertOff = ((h - strPixelHeight) / 2) + 5;
-        
         u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
         u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
         unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
-        
-        ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
-        
-        if(box->isSelecting)
-        {
-            //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
-            s32 viewSelBegin = box->selectBeginIdx;
-            if(viewSelBegin <= box->viewBeginIdx) { viewSelBegin = box->viewBeginIdx; }
-            
-            s32 viewSelEnd = box->selectEndIdx;
-            if(box->viewEndIdx != 0 && viewSelEnd >= box->viewEndIdx) { viewSelEnd = box->viewEndIdx; }
-            
-            u32 selLen = viewSelEnd -  viewSelBegin;
-            unistring selString = {box->text.data + viewSelBegin, selLen, selLen};
-            s32 selStringWidth  = ls_uiGlyphStringLen(cxt, selString);
-            
-            u32 diffLen = 0;
-            if(box->selectBeginIdx > box->viewBeginIdx) { diffLen = box->selectBeginIdx - box->viewBeginIdx; }
-            
-            unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
-            s32 diffStringWidth = ls_uiGlyphStringLen(cxt, diffString);
-            
-            ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
-            ls_uiGlyphString(cxt, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, cxt->invTextColor);
-            
-            if(box->caretIndex == box->selectBeginIdx)
-            { caretColor = cxt->invTextColor; }
-        }
         
         //NOTE: Draw the Caret
         box->dtCaret += cxt->dt;
@@ -994,6 +972,41 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         }
         
     }
+    
+    //NOTETODO: Duplicated Values
+    s32 vertOff = ((h - strPixelHeight) / 2) + 5;
+    u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
+    u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
+    unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
+    
+    ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
+    
+    if(box->isSelecting)
+    {
+        //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
+        s32 viewSelBegin = box->selectBeginIdx;
+        if(viewSelBegin <= box->viewBeginIdx) { viewSelBegin = box->viewBeginIdx; }
+        
+        s32 viewSelEnd = box->selectEndIdx;
+        if(box->viewEndIdx != 0 && viewSelEnd >= box->viewEndIdx) { viewSelEnd = box->viewEndIdx; }
+        
+        u32 selLen = viewSelEnd -  viewSelBegin;
+        unistring selString = {box->text.data + viewSelBegin, selLen, selLen};
+        s32 selStringWidth  = ls_uiGlyphStringLen(cxt, selString);
+        
+        u32 diffLen = 0;
+        if(box->selectBeginIdx > box->viewBeginIdx) { diffLen = box->selectBeginIdx - box->viewBeginIdx; }
+        
+        unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
+        s32 diffStringWidth = ls_uiGlyphStringLen(cxt, diffString);
+        
+        ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
+        ls_uiGlyphString(cxt, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, cxt->invTextColor);
+        
+        if(box->caretIndex == box->selectBeginIdx)
+        { caretColor = cxt->invTextColor; }
+    }
+    
     
     ls_uiPopScissor(cxt);
 }
