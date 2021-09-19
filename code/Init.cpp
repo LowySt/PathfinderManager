@@ -434,14 +434,24 @@ void SetInitTab(UIContext *cxt)
     for(u32 i = 0; i < PARTY_NUM; i++) { Page->PlayerInit[i].text = ls_unistrAlloc(16); }
 }
 
+void DrawInitField(UIContext *cxt, InitField *F, s32 x, s32 y)
+{
+    s32 w = 120;
+    
+    InitPage *Page = State.Init;
+    ls_uiTextBox(cxt, &F->name, x          , y, w, 20);
+    ls_uiTextBox(cxt, &F->bonus, x + w     , y, 32, 20);
+    ls_uiTextBox(cxt, &F->final, x + w + 32, y, 32, 20);
+}
 
 void DrawInitTab(UIContext *cxt)
 {
     InitPage *Page = State.Init;
     
-    ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
-    ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
+    s32 visibleMobs   = Page->Mobs.selectedIndex;
+    s32 visibleAllies = Page->Allies.selectedIndex;
     
+    // Party
     s32 yPos = 658;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
@@ -450,16 +460,27 @@ void DrawInitTab(UIContext *cxt)
         yPos -= 20;
     }
     
-#if 0
-    
-    // Party Fields
-    s32 yPos = 142;
-    for(u32 i = 0; i < PARTY_NUM; i++)
+    // Allies
+    yPos -= 70;
+    for(u32 i = 0; i < visibleAllies; i++)
     {
-        Page->PlayerFields[i] = AddInitField(WinH, &wA, PartyName[i], 640, yPos, ElementId, i, TRUE);
-        yPos += 20;
-        Page->numWindows += 2;
+        DrawInitField(cxt, Page->AllyFields + i, 546, yPos);
+        yPos -= 20;
     }
+    
+    // Enemies
+    yPos = 658;
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        DrawInitField(cxt, Page->MobFields + i, 296, yPos);
+        yPos -= 20;
+    }
+    
+    //TODO: Clicking on a ListBox Entry clicks also what's behind it.
+    ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
+    ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
+    
+#if 0
     
     // Ally Fields
     yPos += 70;

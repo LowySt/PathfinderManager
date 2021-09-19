@@ -149,21 +149,29 @@ struct DiceThrow
 };
 #endif
 
+struct InitField
+{
+    UITextBox name;
+    UITextBox bonus;
+    UITextBox final;
+};
+
 struct InitPage
 {
     UIListBox  Mobs;
     UIListBox  Allies;
     
     UITextBox  PlayerInit[PARTY_NUM];
+    InitField  AllyFields[ALLY_NUM];
+    InitField  MobFields[MOB_NUM];
     
 #if 0
-    InitField  PlayerFields[PARTY_NUM];
-    
-    InitField  MobFields[MOB_NUM];
-    u32        VisibleMobs;
     
     InitField  AllyFields[ALLY_NUM];
     u32        VisibleAllies;
+    
+    InitField  MobFields[MOB_NUM];
+    u32        VisibleMobs;
     
     OrderField Order[ORDER_NUM];
     u32        VisibleOrder;
