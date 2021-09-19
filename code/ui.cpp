@@ -1022,19 +1022,25 @@ void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h)
     }
 }
 
+//NOTETODO: ListBox manages the data of the entry itself, even when a unistring is already passed.
+//          This feels strange, and probably error-prone.
 inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, char *s)
 { 
-    //TODO: Terrible.
     unistring text = ls_unistrFromAscii(s);
     list->list.push(text); 
-    ls_unistrFree(&text);
 }
 
 inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, unistring s)
-{ list->list.push(s); }
+{
+    list->list.push(s); 
+}
 
 inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
-{ list->list.remove(index); }
+{ 
+    unistring val = list->list[index];
+    ls_unistrFree(&val);
+    list->list.remove(index);
+}
 
 void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h)
 {
