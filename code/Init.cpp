@@ -421,8 +421,38 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
 }
 #endif
 
-
-
+//TODO: Bugged
+void RollOnClick(UIContext *cxt)
+{
+    InitPage *Page = State.Init;
+    
+    s32 visibleMobs   = Page->Mobs.selectedIndex;
+    s32 visibleAllies = Page->Allies.selectedIndex;
+    
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        s32 finalVal = ls_unistrToInt(Page->MobFields[i].final.text);
+        //TODO: Reimplement this -> if(finalVal != 0) { continue; }
+        
+        s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
+        s32 bonus = ls_unistrToInt(Page->MobFields[i].bonus.text);
+        
+        ls_unistrClear(&Page->MobFields[i].bonus.text);
+        ls_unistrFromInt_t(bonus + die, &Page->MobFields[i].bonus.text);
+    }
+    
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        s32 finalVal = ls_unistrToInt(Page->AllyFields[i].final.text);
+        //TODO: Reimplement this -> if(finalVal != 0) { continue; }
+        
+        s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
+        s32 bonus = ls_unistrToInt(Page->AllyFields[i].bonus.text);
+        
+        ls_unistrClear(&Page->AllyFields[i].bonus.text);
+        ls_unistrFromInt_t(bonus + die, &Page->AllyFields[i].bonus.text);
+    }
+}
 
 void SetInitTab(UIContext *cxt)
 {
@@ -432,6 +462,28 @@ void SetInitTab(UIContext *cxt)
     for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Allies, (char *)Allies[i]); }
     
     for(u32 i = 0; i < PARTY_NUM; i++) { Page->PlayerInit[i].text = ls_unistrAlloc(16); }
+    
+    for(u32 i = 0; i < MOB_NUM; i++)   
+    { 
+        Page->MobFields[i].name.text  = ls_unistrAlloc(16);
+        Page->MobFields[i].bonus.text = ls_unistrAlloc(16);
+        Page->MobFields[i].final.text = ls_unistrAlloc(16);
+    }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++)  
+    { 
+        Page->AllyFields[i].name.text  = ls_unistrAlloc(16);
+        Page->AllyFields[i].bonus.text = ls_unistrAlloc(16);
+        Page->AllyFields[i].final.text = ls_unistrAlloc(16);
+    }
+    
+    Page->Roll.name = ls_unistrFromAscii("Roll");
+    Page->Roll.onClick = RollOnClick;
+    Page->Roll.onHold = 0x0;
+    
+    Page->Set.name = ls_unistrFromAscii("Set");
+    Page->Set.onClick = 0x0;
+    Page->Set.onHold = 0x0;
 }
 
 void DrawInitField(UIContext *cxt, InitField *F, s32 x, s32 y)
@@ -455,7 +507,7 @@ void DrawInitTab(UIContext *cxt)
     s32 yPos = 658;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 580, yPos);
+        ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 580, yPos+6);
         ls_uiTextBox(cxt, Page->PlayerInit + i, 680, yPos, 32, 20);
         yPos -= 20;
     }
@@ -480,25 +532,11 @@ void DrawInitTab(UIContext *cxt)
     ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
     ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
     
+    
+    ls_uiButton(cxt, &Page->Roll, 486, 698, 45, 20);
+    ls_uiButton(cxt, &Page->Set, 710, 698, 45, 20);
+    
 #if 0
-    
-    // Ally Fields
-    yPos += 70;
-    for(u32 i = 0; i < ALLY_NUM; i++)
-    {
-        Page->AllyFields[i] = AddInitField(WinH, &wA, AllyName[i], 546, yPos, ElementId, i, FALSE);
-        yPos += 20;
-        Page->numWindows += 8;
-    }
-    
-    // Mob Fields
-    yPos = 142;
-    for(u32 i = 0; i < MOB_NUM; i++)
-    {
-        Page->MobFields[i] = AddInitField(WinH, &wA, MobName[i], 296, yPos, ElementId, i, FALSE);
-        yPos += 20;
-        Page->numWindows += 8;
-    }
     
     //ORDER
     yPos = 142;

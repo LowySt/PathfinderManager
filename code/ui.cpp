@@ -694,24 +694,24 @@ inline
 s32 ls_uiSelectFontByFontSize(UIContext *cxt, UIFontSize fontSize)
 { cxt->currFont = &cxt->fonts[fontSize]; return cxt->currFont->pixelHeight; }
 
-void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32 h)
+void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     Color bkgColor = cxt->widgetColor;
     
     if(MouseInRect(xPos, yPos, w, h))
     { 
-        button.isHot = TRUE;
+        button->isHot = TRUE;
         bkgColor = cxt->highliteColor;
         
-        if(LeftClick)
+        if(button->onClick && LeftClick)
         {
-            button.onClick(cxt);
+            button->onClick(cxt);
         }
-        if(LeftHold) 
+        if(button->onHold && LeftHold)
         {
-            button.isHeld = TRUE;
+            button->isHeld = TRUE;
             bkgColor = cxt->pressedColor;
-            button.onHold(cxt);
+            button->onHold(cxt);
         }
     }
     
@@ -722,12 +722,12 @@ void ls_uiButton(UIContext *cxt, UIButton button, s32 xPos, s32 yPos, s32 w, s32
     
     ls_uiSelectFontByFontSize(cxt, FS_SMALL);
     
-    s32 strWidth  = ls_uiGlyphStringLen(cxt, button.name);
+    s32 strWidth  = ls_uiGlyphStringLen(cxt, button->name);
     s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
     s32 strHeight = cxt->currFont->pixelHeight;
     s32 yOff      = strHeight*0.25;
     
-    ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button.name, cxt->textColor);
+    ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button->name, cxt->textColor);
     
     ls_uiPopScissor(cxt);
 }
@@ -738,7 +738,7 @@ void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
     
     s32 strWidth = ls_uiGlyphStringLen(cxt, label);
     
-    ls_uiPushScissor(cxt, xPos, yPos-1, strWidth, strPixelHeight+2);
+    ls_uiPushScissor(cxt, xPos, yPos-4, strWidth, strPixelHeight+8);
     
     ls_uiGlyphString(cxt, xPos, yPos, label, cxt->textColor);
     
@@ -1192,7 +1192,7 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
         ls_uiFillRect(cxt, xPos+1, yPos+1, slidePos, h-2, slider->lColor);
         ls_uiFillRect(cxt, xPos+slidePos, yPos+1, w-slidePos-1, h-2, slider->rColor);
         
-        unistring val = ls_unistrIntToStr(slider->currValue);
+        unistring val = ls_unistrFromInt(slider->currValue);
         
         ls_uiPushScissor(cxt, xPos+1, yPos+1, w-2, h-2);
         

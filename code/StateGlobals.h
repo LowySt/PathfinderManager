@@ -165,13 +165,10 @@ struct InitPage
     InitField  AllyFields[ALLY_NUM];
     InitField  MobFields[MOB_NUM];
     
+    UIButton   Roll;
+    UIButton   Set;
+    
 #if 0
-    
-    InitField  AllyFields[ALLY_NUM];
-    u32        VisibleAllies;
-    
-    InitField  MobFields[MOB_NUM];
-    u32        VisibleMobs;
     
     OrderField Order[ORDER_NUM];
     u32        VisibleOrder;
@@ -180,8 +177,6 @@ struct InitPage
     TextBox    *Current;
     u32        currIdx;
     
-    Button     *Roll;
-    Button     *Set;
     Button     *Next;
     Button     *Reset;
     Button     *Save;
