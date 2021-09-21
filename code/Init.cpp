@@ -576,7 +576,6 @@ void DrawInitTab(UIContext *cxt)
     
     Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 870, 112, 100, 20, (*ElementId)++); wA += 1;
     
-    Page->Roll  = AddButton(WinH, wA, "Roll",  486, 102, 45, 20, (*ElementId)++); wA += 1;
     Page->Set   = AddButton(WinH, wA, "Set",   710, 102, 45, 20, (*ElementId)++); wA += 1;
     Page->Next  = AddButton(WinH, wA, "Next",  900, 82, 45, 20, (*ElementId)++); wA += 1;
     Page->Reset = AddButton(WinH, wA, "Reset", 600, 102, 45, 20, (*ElementId)++); wA += 1;
