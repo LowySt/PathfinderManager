@@ -431,26 +431,32 @@ void RollOnClick(UIContext *cxt)
     
     for(u32 i = 0; i < visibleMobs; i++)
     {
-        s32 finalVal = ls_unistrToInt(Page->MobFields[i].final.text);
+        InitField *f = Page->MobFields + i;
+        
+        s32 finalVal = ls_unistrToInt(f->final.text);
         //TODO: Reimplement this -> if(finalVal != 0) { continue; }
         
         s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
-        s32 bonus = ls_unistrToInt(Page->MobFields[i].bonus.text);
+        s32 bonus = ls_unistrToInt(f->bonus.text);
         
-        ls_unistrClear(&Page->MobFields[i].bonus.text);
-        ls_unistrFromInt_t(bonus + die, &Page->MobFields[i].bonus.text);
+        ls_unistrClear(&f->final.text);
+        ls_unistrFromInt_t(bonus + die, &f->final.text);
+        f->final.viewEndIdx = f->final.text.len;
     }
     
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        s32 finalVal = ls_unistrToInt(Page->AllyFields[i].final.text);
+        InitField *f = Page->AllyFields + i;
+        
+        s32 finalVal = ls_unistrToInt(f->final.text);
         //TODO: Reimplement this -> if(finalVal != 0) { continue; }
         
         s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
-        s32 bonus = ls_unistrToInt(Page->AllyFields[i].bonus.text);
+        s32 bonus = ls_unistrToInt(f->bonus.text);
         
-        ls_unistrClear(&Page->AllyFields[i].bonus.text);
-        ls_unistrFromInt_t(bonus + die, &Page->AllyFields[i].bonus.text);
+        ls_unistrClear(&f->final.text);
+        ls_unistrFromInt_t(bonus + die, &f->final.text);
+        f->final.viewEndIdx = f->final.text.len;
     }
 }
 
@@ -461,27 +467,41 @@ void SetInitTab(UIContext *cxt)
     for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Mobs, (char *)Enemies[i]); }
     for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Allies, (char *)Allies[i]); }
     
-    for(u32 i = 0; i < PARTY_NUM; i++) { Page->PlayerInit[i].text = ls_unistrAlloc(16); }
+    for(u32 i = 0; i < PARTY_NUM; i++) { Page->PlayerInit[i].text = ls_unistrFromAscii("0"); }
     
     for(u32 i = 0; i < MOB_NUM; i++)   
     { 
-        Page->MobFields[i].name.text  = ls_unistrAlloc(16);
-        Page->MobFields[i].bonus.text = ls_unistrAlloc(16);
-        Page->MobFields[i].final.text = ls_unistrAlloc(16);
+        InitField *f = Page->MobFields + i;
+        
+        f->name.text       = ls_unistrFromUTF32(MobName[i]);
+        f->name.viewEndIdx = f->name.text.len;
+        
+        f->bonus.text       = ls_unistrFromUTF32(U"0");
+        f->bonus.viewEndIdx = f->bonus.text.len;
+        
+        f->final.text = ls_unistrFromUTF32(U"0");
+        f->final.viewEndIdx = f->final.text.len;
     }
     
     for(u32 i = 0; i < ALLY_NUM; i++)  
     { 
-        Page->AllyFields[i].name.text  = ls_unistrAlloc(16);
-        Page->AllyFields[i].bonus.text = ls_unistrAlloc(16);
-        Page->AllyFields[i].final.text = ls_unistrAlloc(16);
+        InitField *f = Page->AllyFields + i;
+        
+        f->name.text       = ls_unistrFromUTF32(AllyName[i]);
+        f->name.viewEndIdx = f->name.text.len;
+        
+        f->bonus.text       = ls_unistrFromUTF32(U"0");
+        f->bonus.viewEndIdx = f->bonus.text.len;
+        
+        f->final.text = ls_unistrFromUTF32(U"0");
+        f->final.viewEndIdx = f->final.text.len;
     }
     
-    Page->Roll.name = ls_unistrFromAscii("Roll");
+    Page->Roll.name = ls_unistrFromUTF32(U"Roll");
     Page->Roll.onClick = RollOnClick;
     Page->Roll.onHold = 0x0;
     
-    Page->Set.name = ls_unistrFromAscii("Set");
+    Page->Set.name = ls_unistrFromUTF32(U"Set");
     Page->Set.onClick = 0x0;
     Page->Set.onHold = 0x0;
 }
@@ -491,7 +511,8 @@ void DrawInitField(UIContext *cxt, InitField *F, s32 x, s32 y)
     s32 w = 120;
     
     InitPage *Page = State.Init;
-    ls_uiTextBox(cxt, &F->name, x          , y, w, 20);
+    
+    ls_uiTextBox(cxt, &F->name,  x         , y, w, 20);
     ls_uiTextBox(cxt, &F->bonus, x + w     , y, 32, 20);
     ls_uiTextBox(cxt, &F->final, x + w + 32, y, 32, 20);
 }

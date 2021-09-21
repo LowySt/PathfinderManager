@@ -745,6 +745,8 @@ void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
     ls_uiPopScissor(cxt);
 }
 
+//TODO: A artificially made UITextBox string doesn't know how much to show.
+//      So, viewEndIdx has to be set manually, which could be bad news.
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(LeftClick && MouseInRect(xPos, yPos, w, h)) {

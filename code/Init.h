@@ -8,10 +8,10 @@ const u32 PARTY_NUM = 5;
 const char32_t *PartyName[PARTY_NUM] = { U"Lumbar", U"Mogora", U"Refonil", U"Armitage", U"Fanny" };
 
 const u32 MOB_NUM = 24;
-const char *MobName[MOB_NUM] = { "Enemy 1", "Enemy 2", "Enemy 3", "Enemy 4",
-    "Enemy 5", "Enemy 6", "Enemy 7", "Enemy 8", "Enemy 9", "Enemy 10", "Enemy 11", "Enemy 12",
-    "Enemy 13", "Enemy 14", "Enemy 15", "Enemy 16", "Enemy 17", "Enemy 18", "Enemy 19", 
-    "Enemy 20", "Enemy 21", "Enemy 22", "Enemy 23", "Enemy 24", };
+const char32_t *MobName[MOB_NUM] = { U"Enemy 1", U"Enemy 2", U"Enemy 3", U"Enemy 4",
+    U"Enemy 5", U"Enemy 6", U"Enemy 7", U"Enemy 8", U"Enemy 9", U"Enemy 10", U"Enemy 11", U"Enemy 12",
+    U"Enemy 13", U"Enemy 14", U"Enemy 15", U"Enemy 16", U"Enemy 17", U"Enemy 18", U"Enemy 19", 
+    U"Enemy 20", U"Enemy 21", U"Enemy 22", U"Enemy 23", U"Enemy 24" };
 
 const char *Enemies[MOB_NUM + 1] = {
     "No Enemies", "1 Enemy", "2 Enemies", "3 Enemies", "4 Enemies", "5 Enemies", "6 Enemies",
@@ -22,7 +22,9 @@ const char *Enemies[MOB_NUM + 1] = {
 
 
 const u32 ALLY_NUM = 8;
-const char *AllyName[ALLY_NUM] = { "Ally 1", "Ally 2", "Ally 3", "Ally 4", "Ally 5", "Ally 6", "Ally 7", "Ally 8" };
+const char32_t *AllyName[ALLY_NUM] = { U"Ally 1", U"Ally 2", U"Ally 3", U"Ally 4", 
+    U"Ally 5", U"Ally 6", U"Ally 7", U"Ally 8" 
+};
 
 const char *Allies[ALLY_NUM + 1] = {
     "No Allies", "1 Ally", "2 Allies", "3 Allies", "4 Allies", "5 Allies", "6 Allies", "7 Allies", "8 Allies"
