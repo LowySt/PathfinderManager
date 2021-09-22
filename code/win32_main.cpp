@@ -18,6 +18,10 @@
 #include "lsStack.h"
 #undef LS_STACK_IMPLEMENTATION
 
+#define LS_SORT_IMPLEMENTATION
+#include "lsSort.h"
+#undef LS_SORT_IMPLEMENTATION
+
 //NOTE: Used by bitmap
 #define LS_MATH_IMPLEMENTATION
 #include "lsMath.h"

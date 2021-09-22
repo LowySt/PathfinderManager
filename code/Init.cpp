@@ -1,57 +1,15 @@
-//TODO: Maybe try using my ls_quicksortCustom function instead of this?
-static s32 order_partition(tmp_order *a, s32 low, s32 high)
+s32 sortTmpOrder(void *a, void *b)
 {
-    // pivot (Element to be placed at right position)
-    s32 pivot = a[high].init;
+    tmp_order *ordA = (tmp_order *)a;
+    tmp_order *ordB = (tmp_order *)b;
     
-    // Index of smaller element
-    s32 i = (low - 1);
-    
-    for (u32 j = low; j <= high - 1; j++)
-    {
-        // If current element is smaller than or
-        // equal to pivot
-        if (a[j].init <= pivot)
-        {
-            i++;    // increment index of smaller element
-            tmp_order oldI = a[i];
-            a[i] = a[j];
-            a[j] = oldI;
-        }
-    }
-    
-    tmp_order oldV = a[i+1];
-    a[i+1] = a[high];
-    a[high] = oldV;
-    
-    return (i + 1);
+    if(ordA->init < ordB->init) { return -1; }
+    else if(ordA->init == ordB->init) { return 0; }
+    else { return 1; }
 }
-
-static void order_helper(tmp_order *a, s32 low, s32 high)
-{
-    if (low < high)
-    {
-        /* pi is partitioning index, a[pi] is now
-        at right place */
-        u32 pi = order_partition(a, low, high);
-        
-        order_helper(a, low, pi - 1);  // Before pi
-        order_helper(a, pi + 1, high); // After pi
-    }
-}
-
-void order_ascending(tmp_order *ord, u32 size)
-{
-    order_helper(ord, 0, ((s32)size)-1);
-}
-
-
-
 
 void RollOnClick(UIContext *cxt, void *data)
 {
-    AssertMsg(data, "User data in button is null\n");
-    
     InitPage *Page = State.Init;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
@@ -132,7 +90,8 @@ void SetOnClick(UIContext *cxt, void *data)
         idx += 1;
     }
     
-    order_ascending(ord, visibleOrder);
+    //order_ascending(ord, visibleOrder);
+    ls_quicksortCustom(ord, sizeof(tmp_order), visibleOrder, sortTmpOrder);
     
     for(u32 i = 0, j = visibleOrder - 1; i < visibleOrder; i++, j--)
     {
