@@ -502,7 +502,7 @@ void RegisterWindow()
 
 HWND CreateWindow(HMENU MenuBar)
 {
-    u32 style = LS_VISIBLE | LS_THIN_BORDER | LS_POPUP; //| LS_OVERLAPPEDWINDOW;
+    u32 style = LS_THIN_BORDER | LS_POPUP;// | LS_VISIBLE; //| LS_OVERLAPPEDWINDOW;
     BOOL Result;
     
     SubMenu = CreateMenu();
@@ -641,7 +641,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     Info.hbrBack = appBkgBrush;
     SetMenuInfo(MenuBar, &Info);
     
-    MainWindow = CreateWindow(MenuBar); //TODO: Stop flashing on window creation.
+    MainWindow = CreateWindow(MenuBar);
     
     UserInput.Keyboard.getClipboard = win32_GetClipboard;
     UserInput.Keyboard.setClipboard = win32_SetClipboard;
@@ -719,6 +719,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 Running = TRUE;
     u32 lastFrameTime = 0;
     
+    b32 isStartup = TRUE;
     while(Running)
     {
         RegionTimerBegin(frameTime);
@@ -736,12 +737,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         // Process Input
         MSG Msg;
-        
         while (PeekMessageA(&Msg, NULL, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&Msg);
             DispatchMessageA(&Msg);
         }
+        
+        //NOTE: Window starts hidden, and then is shown after the first frame, 
+        //      to avoid flashing because initially the frame buffer is all white.
+        if(isStartup) { ShowWindow(MainWindow, SW_SHOW); isStartup = FALSE; }
         
         //NOTE:TEST
         ls_uiBackground(uiContext);
