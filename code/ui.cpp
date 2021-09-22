@@ -1229,6 +1229,8 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
         Color valueColor = RGBA(0x22, 0x22, 0x22, 0x00 + (slider->isHeld*0xFF));
         ls_uiGlyphString(cxt, strXPos, yPos + h - strHeight, val, valueColor);
         
+        ls_unistrFree(&val);
+        
         ls_uiPopScissor(cxt);
         
         if(MouseInRect(xPos + slidePos-5, yPos, 10, h)) 
