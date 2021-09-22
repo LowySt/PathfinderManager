@@ -268,8 +268,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             HDC buttonHDC   = (HDC)w;
             
-            SetBkColor(buttonHDC, RGB(0x56, 0x56, 0x56));
-            SetTextColor(buttonHDC, RGB(255, 255, 255));
+            SetBkColor(buttonHDC, win32RGB(0x56, 0x56, 0x56));
+            SetTextColor(buttonHDC, win32RGB(255, 255, 255));
             
             return (LRESULT)controlBkgBrush;
         } break;
@@ -278,8 +278,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             HDC listboxHDC = (HDC)w;
             
-            SetBkColor(listboxHDC, RGB(0x56, 0x56, 0x56));
-            SetTextColor(listboxHDC, RGB(255, 255, 255));
+            SetBkColor(listboxHDC, win32RGB(0x56, 0x56, 0x56));
+            SetTextColor(listboxHDC, win32RGB(255, 255, 255));
             
             return (LRESULT)controlBkgBrush;
         } break;
@@ -288,8 +288,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             HDC editHDC = (HDC)w;
             
-            SetBkColor(editHDC, RGB(0x56, 0x56, 0x56));
-            SetTextColor(editHDC, RGB(255, 255, 255));
+            SetBkColor(editHDC, win32RGB(0x56, 0x56, 0x56));
+            SetTextColor(editHDC, win32RGB(255, 255, 255));
             
             return (LRESULT)controlBkgBrush;
         } break;
@@ -298,8 +298,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             HDC editHDC = (HDC)w;
             
-            SetBkColor(editHDC, RGB(0x56, 0x56, 0x56));
-            SetTextColor(editHDC, RGB(255, 255, 255));
+            SetBkColor(editHDC, win32RGB(0x56, 0x56, 0x56));
+            SetTextColor(editHDC, win32RGB(255, 255, 255));
             
             return (LRESULT)controlBkgBrush;
         };
