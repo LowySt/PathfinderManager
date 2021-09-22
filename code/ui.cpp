@@ -707,11 +707,11 @@ void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s3
         {
             button->onClick(cxt);
         }
-        if(button->onHold && LeftHold)
+        if(LeftHold)
         {
             button->isHeld = TRUE;
             bkgColor = cxt->pressedColor;
-            button->onHold(cxt);
+            if(button->onHold) { button->onHold(cxt); }
         }
     }
     
