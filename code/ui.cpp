@@ -752,8 +752,15 @@ void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
 void ls_uiTextBoxClear(UIContext *cxt, UITextBox *box)
 {
     ls_unistrClear(&box->text);
-    box->viewBeginIdx = 0;
-    box->viewEndIdx   = 0;
+    
+    box->caretIndex     = 0;
+    box->isSelected     = FALSE;
+    box->isReadonly     = FALSE;
+    box->selectBeginIdx = 0;
+    box->selectEndIdx   = 0;
+    box->isSelecting    = FALSE;
+    box->viewBeginIdx   = 0;
+    box->viewEndIdx     = 0;
 }
 
 //TODO: Text Alignment

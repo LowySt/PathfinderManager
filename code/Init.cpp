@@ -165,10 +165,9 @@ void NextOnClick(UIContext *cxt, void *data)
                 
                 if(C->roundsLeft == 0)
                 {
-                    C->name.isReadonly = FALSE;
-                    
                     ls_uiTextBoxClear(cxt, &C->name);
                     ls_uiTextBoxClear(cxt, &C->rounds);
+                    
                     C->roundCounter = 0;
                     C->isActive     = FALSE;
                     
@@ -203,6 +202,16 @@ void StartCounterOnClick(UIContext *cxt, void *data)
     C->roundCounter    = 0;
     C->roundsLeft      = val;
     C->startIdxInOrder = State.Init->currIdx;
+    
+    return;
+}
+
+void PlusOneCounterOnClick(UIContext *cxt, void *data)
+{
+    Counter *C = (Counter *)data;
+    
+    C->roundsLeft += 1;
+    ls_unistrFromInt_t(&C->rounds.text, C->roundsLeft);
     
     return;
 }
@@ -283,11 +292,13 @@ void SetInitTab(UIContext *cxt)
         f->start.onHold  = 0x0;
         
         f->plusOne.name    = ls_unistrFromUTF32(U"+1");
-        f->plusOne.onClick = 0x0;
+        f->plusOne.onClick = PlusOneCounterOnClick;
+        f->plusOne.data    = (void *)f;
         f->plusOne.onHold  = 0x0;
         
         f->stop.name    = ls_unistrFromUTF32(U"Stop");
         f->stop.onClick = 0x0;
+        f->stop.data    = (void *)f;
         f->stop.onHold  = 0x0;
     }
     
