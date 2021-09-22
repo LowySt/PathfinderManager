@@ -1159,6 +1159,23 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     if(toBeChanged != 9999) { list->selectedIndex = toBeChanged; list->isOpen = FALSE; }
 }
 
+UISlider ls_uiSliderInit(char32_t *name, s32 maxVal, s32 minVal, f64 currPos, SliderStyle s, Color l, Color r)
+{
+    UISlider Result = {};
+    
+    if(name) { Result.text = ls_unistrFromUTF32((const char32_t *)name); }
+    else     { Result.text = ls_unistrAlloc(16); }
+    
+    Result.maxValue = maxVal;
+    Result.minValue = minVal;
+    Result.currPos  = currPos;
+    Result.style    = s;
+    Result.lColor   = l;
+    Result.rColor   = r;
+    
+    return Result;
+}
+
 //TODO: The things are rendered in a logical order, but that makes the function's flow very annoying
 //      going in and out of if blocks to check hot/held and style.
 void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32 h)

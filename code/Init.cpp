@@ -497,6 +497,21 @@ void SetInitTab(UIContext *cxt)
         f->final.viewEndIdx = f->final.text.len;
     }
     
+    for(u32 i = 0; i < ORDER_NUM; i++)
+    {
+        Order *f = Page->OrderFields + i;
+        
+        Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), cxt->widgetColor);
+        Color rColor      = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor);
+        f->field          = ls_uiSliderInit(NULL, 100, -50, 1.0, SL_BOX, lColor, rColor);
+        f->pos.text       = ls_unistrFromInt(i);
+        f->pos.viewEndIdx = f->pos.text.len;
+        
+        f->remove.name    = ls_unistrFromUTF32(U"X");
+        f->remove.onClick = 0x0;
+        f->remove.onHold  = 0x0;
+    }
+    
     Page->Roll.name = ls_unistrFromUTF32(U"Roll");
     Page->Roll.onClick = RollOnClick;
     Page->Roll.onHold = 0x0;
@@ -504,6 +519,10 @@ void SetInitTab(UIContext *cxt)
     Page->Set.name = ls_unistrFromUTF32(U"Set");
     Page->Set.onClick = 0x0;
     Page->Set.onHold = 0x0;
+    
+    Page->Reset.name = ls_unistrFromUTF32(U"Reset");
+    Page->Reset.onClick = 0x0;
+    Page->Reset.onHold = 0x0;
 }
 
 void DrawInitField(UIContext *cxt, InitField *F, s32 x, s32 y)
@@ -517,12 +536,22 @@ void DrawInitField(UIContext *cxt, InitField *F, s32 x, s32 y)
     ls_uiTextBox(cxt, &F->final, x + w + 32, y, 32, 20);
 }
 
+void DrawOrderField(UIContext *cxt, Order *f, s32 xPos, s32 yPos)
+{
+    ls_uiSlider(cxt, &f->field, xPos + 50, yPos, 120, 20);
+    ls_uiTextBox(cxt, &f->pos, xPos + 25, yPos, 30, 20);
+    ls_uiButton(cxt, &f->remove, xPos, yPos, 20, 20);
+}
+
 void DrawInitTab(UIContext *cxt)
 {
     InitPage *Page = State.Init;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
+    
+    //TODO: Change to allow removal of party
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM;
     
     // Party
     s32 yPos = 658;
@@ -549,13 +578,26 @@ void DrawInitTab(UIContext *cxt)
         yPos -= 20;
     }
     
+    // Order
+    yPos = 658;
+    for(u32 i = 0; i < visibleOrder; i += 2)
+    {
+        DrawOrderField(cxt, Page->OrderFields + i, 770, yPos);
+        
+        if((i+1) < visibleOrder)
+        { DrawOrderField(cxt, Page->OrderFields + (i+1), 956, yPos); }
+        
+        yPos -= 20;
+    }
+    
     //TODO: Clicking on a ListBox Entry clicks also what's behind it.
     ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
     ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
     
     
-    ls_uiButton(cxt, &Page->Roll, 486, 698, 45, 20);
-    ls_uiButton(cxt, &Page->Set, 710, 698, 45, 20);
+    ls_uiButton(cxt, &Page->Roll, 486, 698, 48, 20);
+    ls_uiButton(cxt, &Page->Set, 710, 698, 48, 20);
+    ls_uiButton(cxt, &Page->Reset, 600, 698, 48, 20);
     
 #if 0
     
@@ -576,9 +618,7 @@ void DrawInitTab(UIContext *cxt)
     
     Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 870, 112, 100, 20, (*ElementId)++); wA += 1;
     
-    Page->Set   = AddButton(WinH, wA, "Set",   710, 102, 45, 20, (*ElementId)++); wA += 1;
     Page->Next  = AddButton(WinH, wA, "Next",  900, 82, 45, 20, (*ElementId)++); wA += 1;
-    Page->Reset = AddButton(WinH, wA, "Reset", 600, 102, 45, 20, (*ElementId)++); wA += 1;
     Page->Save  = AddButton(WinH, wA, "Save",  670, 42, 45, 20, (*ElementId)++); wA += 1;
     
     Page->RoundCounter = AddValueBox(WinH, wA, 0, LABEL_NULL, 1, 1180, 60, 30, 20, (*ElementId)++); wA += 1;

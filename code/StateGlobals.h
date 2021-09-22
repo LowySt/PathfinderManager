@@ -156,6 +156,33 @@ struct InitField
     UITextBox final;
 };
 
+struct Counter
+{
+    UITextBox name;
+    UITextBox rounds;
+    
+    UIButton  start;
+    UIButton  plusOne;
+    UIButton  stop;
+    
+    u32 startIdxInOrder;
+    u32 roundCounter;
+    b32 isActive;
+};
+
+struct Order
+{
+    UISlider  field;
+    UITextBox pos;
+    
+    UIButton  remove;
+    
+    u32 fieldId;
+    b32 isMob;
+    b32 isParty;
+};
+
+
 struct InitPage
 {
     UIListBox  Mobs;
@@ -167,6 +194,13 @@ struct InitPage
     
     UIButton   Roll;
     UIButton   Set;
+    UIButton   Reset;
+    
+    Order      OrderFields[ORDER_NUM];
+    //u32        VisibleOrder;
+    u32        turnsInRound;
+    
+    //Counter    Counters[COUNTER_NUM];
     
 #if 0
     
@@ -178,13 +212,11 @@ struct InitPage
     u32        currIdx;
     
     Button     *Next;
-    Button     *Reset;
     Button     *Save;
     
     ComboBox   *EncounterSel;
     TextBox    *EncounterName;
     
-    Counter    Counters[COUNTER_NUM];
     TextBox    *RoundCounter;
     
     DiceThrow  Throwers[THROWER_NUM];
