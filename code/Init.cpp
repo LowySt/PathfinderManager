@@ -526,25 +526,20 @@ void SetOnClick(UIContext *cxt)
         }
     }
     
-    //TODO: Allow UI to be set as readonly
-#if 0
     for(u32 i = 0; i < PARTY_NUM; i++)
-    {
-        Edit_SetReadOnly(Init->PlayerFields[i].Bonus->box, TRUE);
-    }
+    { Page->PlayerInit[i].isReadonly = TRUE; }
     
-    for(u32 i = 0; i < MOB_NUM; i++)  { 
-        Edit_SetReadOnly(Init->MobFields[i].Name->box, TRUE);
-        Edit_SetReadOnly(Init->MobFields[i].Bonus->box, TRUE);
-        Edit_SetReadOnly(Init->MobFields[i].Final->box, TRUE);
+    for(u32 i = 0; i < MOB_NUM; i++)  {
+        Page->MobFields[i].name.isReadonly  = TRUE;
+        Page->MobFields[i].bonus.isReadonly = TRUE;
+        Page->MobFields[i].final.isReadonly = TRUE;
     }
     
     for(u32 i = 0; i < ALLY_NUM; i++) { 
-        Edit_SetReadOnly(Init->AllyFields[i].Name->box, TRUE);
-        Edit_SetReadOnly(Init->AllyFields[i].Bonus->box, TRUE);
-        Edit_SetReadOnly(Init->AllyFields[i].Final->box, TRUE);
+        Page->AllyFields[i].name.isReadonly  = TRUE;
+        Page->AllyFields[i].bonus.isReadonly = TRUE;
+        Page->AllyFields[i].final.isReadonly = TRUE;
     }
-#endif
     
     Page->turnsInRound = visibleOrder - 1;
     
@@ -683,8 +678,11 @@ void SetInitTab(UIContext *cxt)
     }
     
     Page->Current.text            = ls_unistrAlloc(16);
+    Page->Current.isReadonly      = TRUE;
+    
     Page->RoundCounter.text       = ls_unistrFromUTF32(U"0");
     Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
+    Page->RoundCounter.isReadonly = TRUE;
     
     Page->Roll.name     = ls_unistrFromUTF32(U"Roll");
     Page->Roll.onClick  = RollOnClick;

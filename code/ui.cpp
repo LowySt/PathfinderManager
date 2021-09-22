@@ -63,6 +63,7 @@ struct UITextBox
 {
     unistring text;
     
+    b32 isReadonly;
     b32 isSelected;
     
     u32 dtCaret;
@@ -751,7 +752,7 @@ void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
 //      So, viewEndIdx has to be set manually, which could be bad news.
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    if(LeftClick && MouseInRect(xPos, yPos, w, h)) {
+    if(LeftClick && MouseInRect(xPos, yPos, w, h) && (box->isReadonly == FALSE)) {
         cxt->currentFocus = (u64 *)box;
         cxt->focusWasSetThisFrame = TRUE;
         box->isCaretOn = TRUE; 
