@@ -642,6 +642,7 @@ s32 ls_uiGetKernAdvance(UIContext *cxt, s32 codepoint1, s32 codepoint2)
     return kernAdvance;
 }
 
+//TODO: Use font max descent to determine yOffsets globally
 void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, unistring text, Color textColor)
 {
     s32 currXPos = xPos;
@@ -725,7 +726,7 @@ void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s3
     s32 strWidth  = ls_uiGlyphStringLen(cxt, button->name);
     s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
     s32 strHeight = cxt->currFont->pixelHeight;
-    s32 yOff      = strHeight*0.25;
+    s32 yOff      = strHeight*0.25; //TODO: @FontDescent
     
     ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button->name, cxt->textColor);
     
@@ -745,6 +746,7 @@ void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
     ls_uiPopScissor(cxt);
 }
 
+//TODO: Text Alignment
 //TODO: A artificially made UITextBox string doesn't know how much to show.
 //      So, viewEndIdx has to be set manually, which could be bad news.
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
@@ -976,7 +978,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     }
     
     //NOTETODO: Duplicated Values
-    s32 vertOff = ((h - strPixelHeight) / 2) + 5;
+    s32 vertOff = ((h - strPixelHeight) / 2) + 5; //TODO: @FontDescent
     u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
     u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
     unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
@@ -1078,7 +1080,7 @@ inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
 void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     s32 strHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-    s32 vertOff = ((h - strHeight) / 2) + 4;
+    s32 vertOff = ((h - strHeight) / 2) + 4; //TODO: @FontDescent
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
     
@@ -1263,12 +1265,12 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     s32 strWidth  = ls_uiGlyphStringLen(cxt, slider->text);
     s32 xOff      = (w - strWidth) / 2;
     s32 strHeight = cxt->currFont->pixelHeight;
-    s32 yOff      = strHeight*0.25;
+    s32 yOff      = (h - strHeight) + 3; //TODO: @FontDescent
     
     Color textColor = cxt->textColor;
     textColor = SetAlpha(textColor, opacity);
     
-    ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff+(h/3), slider->text, textColor);
+    ls_uiGlyphString(cxt, xPos+xOff, yPos + yOff, slider->text, textColor);
     
     ls_uiPopScissor(cxt);
     
