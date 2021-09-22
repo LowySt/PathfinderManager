@@ -565,6 +565,7 @@ void SetInitTab(UIContext *cxt)
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
     }
     
+    s32 currID = PARTY_NUM;
     for(u32 i = 0; i < MOB_NUM; i++)   
     { 
         InitField *f = Page->MobFields + i;
@@ -577,6 +578,9 @@ void SetInitTab(UIContext *cxt)
         
         f->final.text = ls_unistrFromUTF32(U"0");
         f->final.viewEndIdx = f->final.text.len;
+        
+        f->ID = currID;
+        currID += 1;
     }
     
     for(u32 i = 0; i < ALLY_NUM; i++)  
@@ -591,6 +595,9 @@ void SetInitTab(UIContext *cxt)
         
         f->final.text = ls_unistrFromUTF32(U"0");
         f->final.viewEndIdx = f->final.text.len;
+        
+        f->ID = currID;
+        currID += 1;
     }
     
     for(u32 i = 0; i < ORDER_NUM; i++)
