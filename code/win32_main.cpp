@@ -747,7 +747,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //      to avoid flashing because initially the frame buffer is all white.
         if(isStartup) { ShowWindow(MainWindow, SW_SHOW); isStartup = FALSE; }
         
-        //NOTE:TEST
+        
+        //NOTE: Render The Frame
         ls_uiBackground(uiContext);
         
 #if 0
