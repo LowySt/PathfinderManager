@@ -90,7 +90,6 @@ void SetOnClick(UIContext *cxt, void *data)
         idx += 1;
     }
     
-    //order_ascending(ord, visibleOrder);
     ls_quicksortCustom(ord, sizeof(tmp_order), visibleOrder, sortTmpOrder);
     
     for(u32 i = 0, j = visibleOrder - 1; i < visibleOrder; i++, j--)
@@ -99,8 +98,6 @@ void SetOnClick(UIContext *cxt, void *data)
         
         ls_unistrSet(&f->field.text, *ord[j].name);
         f->ID = ord[j].ID;
-        
-        //TODO: set the current position string???
         
         //TODO: Make this just a reference to Order[i].field.text ??
         if(i == 0) 

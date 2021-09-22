@@ -79,10 +79,6 @@ HDC WindowDC;
 HDC BackBufferDC;
 u8  *BackBuffer;
 
-//NOTE:TEST
-static b32 showText = FALSE;
-//NOTE:TEST
-
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
     LRESULT Result = 0;
@@ -601,22 +597,6 @@ void windows_Render()
     InvalidateRect(MainWindow, NULL, TRUE);
 }
 
-//TODO:RemoveThisShit
-void testProc(UIContext *cxt)
-{
-    showText = !showText;
-    return;
-}
-
-void testHold(UIContext *cxt)
-{
-    ls_uiSelectFontByPixelHeight(cxt, 64);
-    
-    unistring text = ls_unistrFromAscii("I exist only when the button is held!");
-    ls_uiGlyphString(cxt, 200, 300, text, RGB(0x3f, 0xa1, 0x37));
-    ls_unistrFree(&text);
-}
-
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
@@ -755,25 +735,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Frame
         ls_uiBackground(uiContext);
         
-#if 0
-        ls_uiButton(uiContext, button, 100, 700, 80, 20);
-        
-        if(showText)  //NOTETODO: This is just a test, controlled by a global var.
-        {
-            ls_uiSelectFontByFontSize(uiContext, FS_EXTRALARGE);
-            ls_uiGlyphString(uiContext, 200, 700, buttonTestString, RGB(0xbf, 0x41, 0x37));
-        }
-        
-        if(LeftClick && MouseInRect(100, 600, 1000, 36)) { box.isSelected = TRUE; box.isCaretOn = TRUE; }
-        ls_uiTextBox(uiContext, &box, 100, 600, 200, 36);
-        
-        ls_uiListBox(uiContext, &listBox, 100, 400, 200, 36);
-        
-        ls_uiSlider(uiContext, &slider, 400, 420, 160, 28);
-        
-#endif
         DrawInitTab(uiContext);
-        
         
 #if 1//_DEBUG
         char buff[32] = {};
