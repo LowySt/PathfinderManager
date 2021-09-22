@@ -443,7 +443,7 @@ void RollOnClick(UIContext *cxt)
         s32 bonus = ls_unistrToInt(f->bonus.text);
         
         ls_unistrClear(&f->final.text);
-        ls_unistrFromInt_t(bonus + die, &f->final.text);
+        ls_unistrFromInt_t(&f->final.text, bonus + die);
         f->final.viewEndIdx = f->final.text.len;
     }
     
@@ -458,21 +458,20 @@ void RollOnClick(UIContext *cxt)
         s32 bonus = ls_unistrToInt(f->bonus.text);
         
         ls_unistrClear(&f->final.text);
-        ls_unistrFromInt_t(bonus + die, &f->final.text);
+        ls_unistrFromInt_t(&f->final.text, bonus + die);
         f->final.viewEndIdx = f->final.text.len;
     }
 }
 
 void SetOnClick(UIContext *cxt)
 {
-    //TODO: Make this an assert and just don't draw the button when in battle.
-    if(State.inBattle) return;
+    AssertMsg(!State.inBattle, "Clicking this should be impossible while in Battle\n");
     
     InitPage *Page = State.Init;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM;  //TODO: @VisibleOrder
     
     tmp_order ord[ORDER_NUM] = {};
     u32 idx = 0;
@@ -552,6 +551,74 @@ void SetOnClick(UIContext *cxt)
     State.inBattle = TRUE;
 }
 
+void NextOnClick(UIContext *cxt)
+{
+    InitPage *Page = State.Init;
+    
+    s32 visibleMobs   = Page->Mobs.selectedIndex;
+    s32 visibleAllies = Page->Allies.selectedIndex;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM; //TODO: @VisibleOrder
+    
+    Page->currIdx = (Page->currIdx + 1) % visibleOrder;
+    
+    //NOTE: Increase the round
+    if(Page->currIdx == 0)
+    {
+        Page->roundCount += 1;
+        ls_unistrFromInt_t(&Page->RoundCounter.text, Page->roundCount);
+        Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
+    }
+    
+    //NOTE: Set the Current
+    ls_unistrSet(&Page->Current.text, Page->OrderFields[Page->currIdx].field.text);
+    Page->Current.viewEndIdx = Page->Current.text.len;
+    
+    //NOTE: Advance the Counters
+#if 0
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *C = &Init->Counters[i];
+        
+        if(C->isActive == TRUE)
+        {
+            if(C->roundCounter >= Init->turnsInRound)
+            { 
+                C->roundCounter = 0;
+                
+                char v[8] = {};
+                u32 len = Edit_GetText(C->Rounds->box, v, 8);
+                s32 val = ls_atoi(v, len);
+                
+                if((val - 1) == 0)
+                {
+                    Edit_SetReadOnly(C->Field->box, FALSE);
+                    Edit_SetText(C->Field->box, "");
+                    Edit_SetText(C->Rounds->box, "");
+                    
+                    C->roundCounter = 0;
+                    C->isActive     = FALSE;
+                    
+                    HideElem(C->PlusOne->box);
+                    HideElem(C->Stop->box);
+                    ShowElem(C->Start->box);
+                    
+                    continue;
+                }
+                
+                char newV[8] = {};
+                ls_itoa_t(val - 1, newV, 8);
+                
+                Edit_SetText(C->Rounds->box, newV);
+                continue;
+            }
+            
+            C->roundCounter += 1;
+            continue;
+        }
+    }
+#endif
+}
+
 void SetInitTab(UIContext *cxt)
 {
     InitPage *Page = State.Init;
@@ -615,19 +682,25 @@ void SetInitTab(UIContext *cxt)
         f->remove.onHold  = 0x0;
     }
     
-    Page->Current.text = ls_unistrAlloc(16);
+    Page->Current.text            = ls_unistrAlloc(16);
+    Page->RoundCounter.text       = ls_unistrFromUTF32(U"0");
+    Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     
-    Page->Roll.name = ls_unistrFromUTF32(U"Roll");
-    Page->Roll.onClick = RollOnClick;
-    Page->Roll.onHold = 0x0;
+    Page->Roll.name     = ls_unistrFromUTF32(U"Roll");
+    Page->Roll.onClick  = RollOnClick;
+    Page->Roll.onHold   = 0x0;
     
-    Page->Set.name = ls_unistrFromUTF32(U"Set");
-    Page->Set.onClick = SetOnClick;
-    Page->Set.onHold = 0x0;
+    Page->Set.name      = ls_unistrFromUTF32(U"Set");
+    Page->Set.onClick   = SetOnClick;
+    Page->Set.onHold    = 0x0;
     
-    Page->Reset.name = ls_unistrFromUTF32(U"Reset");
+    Page->Reset.name    = ls_unistrFromUTF32(U"Reset");
     Page->Reset.onClick = 0x0;
-    Page->Reset.onHold = 0x0;
+    Page->Reset.onHold  = 0x0;
+    
+    Page->Next.name     = ls_unistrFromUTF32(U"Next");
+    Page->Next.onClick  = NextOnClick;
+    Page->Next.onHold   = 0x0;
 }
 
 void DrawInitField(UIContext *cxt, InitField *F, s32 x, s32 y)
@@ -656,7 +729,7 @@ void DrawInitTab(UIContext *cxt)
     s32 visibleAllies = Page->Allies.selectedIndex;
     
     //TODO: Change to allow removal of party
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM;  //TODO: @VisibleOrder
     
     // Party
     s32 yPos = 658;
@@ -695,37 +768,28 @@ void DrawInitTab(UIContext *cxt)
         yPos -= 20;
     }
     
-    ls_uiTextBox(cxt, &Page->Current, 870, 688, 100, 20);
-    
-    //TODO: Clicking on a ListBox Entry clicks also what's behind it.
-    ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
-    ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
-    
-    
-    ls_uiButton(cxt, &Page->Roll, 486, 698, 48, 20);
-    ls_uiButton(cxt, &Page->Set, 710, 698, 48, 20);
     ls_uiButton(cxt, &Page->Reset, 600, 698, 48, 20);
+    
+    if(!State.inBattle)
+    {
+        //TODO: Clicking on a ListBox Entry clicks also what's behind it.
+        ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
+        ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
+        
+        
+        ls_uiButton(cxt, &Page->Roll, 486, 698, 48, 20);
+        ls_uiButton(cxt, &Page->Set, 710, 698, 48, 20);
+    }
+    else
+    {
+        ls_uiTextBox(cxt, &Page->Current, 870, 688, 100, 20);
+        ls_uiTextBox(cxt, &Page->RoundCounter, 1180, 740, 30, 20);
+        
+        ls_uiButton(cxt, &Page->Next, 900, 718, 48, 20);
+    }
     
 #if 0
     
-    //ORDER
-    yPos = 142;
-    for(u32 i = 0; i < ORDER_NUM; i += 2)
-    {
-        Page->Order[i]   = AddOrderField(WinH, &wA, 770, yPos, i, ElementId);
-        if((i+1) < ORDER_NUM) { 
-            Page->Order[i+1] = AddOrderField(WinH, &wA, 930, yPos, i+1, ElementId); 
-            Page->numWindows += 3;
-        }
-        Page->numWindows += 3;
-        yPos += 20;
-    }
-    
-    Page->VisibleOrder = PARTY_NUM;
-    
-    Page->Current = AddStaticUnlabeledTextBox(WinH, wA, 870, 112, 100, 20, (*ElementId)++); wA += 1;
-    
-    Page->Next  = AddButton(WinH, wA, "Next",  900, 82, 45, 20, (*ElementId)++); wA += 1;
     Page->Save  = AddButton(WinH, wA, "Save",  670, 42, 45, 20, (*ElementId)++); wA += 1;
     
     Page->RoundCounter = AddValueBox(WinH, wA, 0, LABEL_NULL, 1, 1180, 60, 30, 20, (*ElementId)++); wA += 1;

@@ -195,11 +195,13 @@ struct InitPage
     UIButton   Roll;
     UIButton   Set;
     UIButton   Reset;
-    
+    UIButton   Next;
     
     Order      OrderFields[ORDER_NUM];
-    //u32        VisibleOrder;
     u32        turnsInRound;
+    
+    UITextBox  RoundCounter;
+    u32        roundCount;
     
     UITextBox  Current;
     u32        currIdx;
@@ -220,8 +222,6 @@ struct InitPage
     
     ComboBox   *EncounterSel;
     TextBox    *EncounterName;
-    
-    TextBox    *RoundCounter;
     
     DiceThrow  Throwers[THROWER_NUM];
     DiceThrow  GeneralThrower;
