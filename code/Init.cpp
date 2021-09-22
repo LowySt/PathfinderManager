@@ -164,6 +164,8 @@ void order_ascending(tmp_order *ord, u32 size)
 
 void RollOnClick(UIContext *cxt, void *data)
 {
+    AssertMsg(data, "User data in button is null\n");
+    
     InitPage *Page = State.Init;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
