@@ -131,52 +131,6 @@ inline void ShowInitElem(InitPage *p) {
     ShowOrder(p->Order, ORDER_NUM);
 }
 
-static s32 order_partition(tmp_order *a, s32 low, s32 high)
-{
-    // pivot (Element to be placed at right position)
-    s32 pivot = a[high].init;
-    
-    // Index of smaller element
-    s32 i = (low - 1);
-    
-    for (u32 j = low; j <= high - 1; j++)
-    {
-        // If current element is smaller than or
-        // equal to pivot
-        if (a[j].init <= pivot)
-        {
-            i++;    // increment index of smaller element
-            tmp_order oldI = a[i];
-            a[i] = a[j];
-            a[j] = oldI;
-        }
-    }
-    
-    tmp_order oldV = a[i+1];
-    a[i+1] = a[high];
-    a[high] = oldV;
-    
-    return (i + 1);
-}
-
-static void order_helper(tmp_order *a, s32 low, s32 high)
-{
-    if (low < high)
-    {
-        /* pi is partitioning index, a[pi] is now
-        at right place */
-        u32 pi = order_partition(a, low, high);
-        
-        order_helper(a, low, pi - 1);  // Before pi
-        order_helper(a, pi + 1, high); // After pi
-    }
-}
-
-void order_ascending(tmp_order *ord, u32 size)
-{
-    order_helper(ord, 0, ((s32)size)-1);
-}
-
 inline InitField *getInitById(InitField *f, u32 fieldSize, u64 id)
 {
     for(u32 i = 0; i < fieldSize; i++) { if(f[i].id == id) { return &f[i]; } }
@@ -421,7 +375,56 @@ void DrawInitTab(HWND WinH, u64 *ElementId)
 }
 #endif
 
-//TODO: Bugged
+//TODO: Maybe try using my ls_quicksortCustom function instead of this?
+static s32 order_partition(tmp_order *a, s32 low, s32 high)
+{
+    // pivot (Element to be placed at right position)
+    s32 pivot = a[high].init;
+    
+    // Index of smaller element
+    s32 i = (low - 1);
+    
+    for (u32 j = low; j <= high - 1; j++)
+    {
+        // If current element is smaller than or
+        // equal to pivot
+        if (a[j].init <= pivot)
+        {
+            i++;    // increment index of smaller element
+            tmp_order oldI = a[i];
+            a[i] = a[j];
+            a[j] = oldI;
+        }
+    }
+    
+    tmp_order oldV = a[i+1];
+    a[i+1] = a[high];
+    a[high] = oldV;
+    
+    return (i + 1);
+}
+
+static void order_helper(tmp_order *a, s32 low, s32 high)
+{
+    if (low < high)
+    {
+        /* pi is partitioning index, a[pi] is now
+        at right place */
+        u32 pi = order_partition(a, low, high);
+        
+        order_helper(a, low, pi - 1);  // Before pi
+        order_helper(a, pi + 1, high); // After pi
+    }
+}
+
+void order_ascending(tmp_order *ord, u32 size)
+{
+    order_helper(ord, 0, ((s32)size)-1);
+}
+
+
+
+
 void RollOnClick(UIContext *cxt)
 {
     InitPage *Page = State.Init;
@@ -460,6 +463,95 @@ void RollOnClick(UIContext *cxt)
     }
 }
 
+void SetOnClick(UIContext *cxt)
+{
+    //TODO: Make this an assert and just don't draw the button when in battle.
+    if(State.inBattle) return;
+    
+    InitPage *Page = State.Init;
+    
+    s32 visibleMobs   = Page->Mobs.selectedIndex;
+    s32 visibleAllies = Page->Allies.selectedIndex;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM;
+    
+    tmp_order ord[ORDER_NUM] = {};
+    u32 idx = 0;
+    
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        InitField *f = Page->MobFields + i;
+        
+        ord[idx].init = ls_unistrToInt(f->final.text);
+        ord[idx].name = &f->name.text;
+        ord[idx].ID   = f->ID;
+        
+        idx += 1;
+    }
+    
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        InitField *f = Page->AllyFields + i;
+        
+        ord[idx].init = ls_unistrToInt(f->final.text);
+        ord[idx].name = &f->name.text;
+        ord[idx].ID   = f->ID;
+        
+        idx += 1;
+    }
+    
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    {
+        ord[idx].init = ls_unistrToInt(Page->PlayerInit[i].text);
+        ord[idx].name = (unistring *)(PartyNameUTF32 + i);
+        ord[idx].ID   = i;
+        
+        idx += 1;
+    }
+    
+    order_ascending(ord, visibleOrder);
+    
+    for(u32 i = 0, j = visibleOrder - 1; i < visibleOrder; i++, j--)
+    {
+        Order *f = Page->OrderFields + i;
+        
+        ls_unistrSet(&f->field.text, *ord[j].name);
+        f->ID = ord[j].ID;
+        
+        //TODO: set the current position string???
+        
+        //TODO: Make this just a reference to Order[i].field.text ??
+        if(i == 0) 
+        { 
+            ls_unistrSet(&Page->Current.text, *ord[j].name); 
+            Page->Current.viewEndIdx = Page->Current.text.len;
+        }
+    }
+    
+    //TODO: Allow UI to be set as readonly
+#if 0
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    {
+        Edit_SetReadOnly(Init->PlayerFields[i].Bonus->box, TRUE);
+    }
+    
+    for(u32 i = 0; i < MOB_NUM; i++)  { 
+        Edit_SetReadOnly(Init->MobFields[i].Name->box, TRUE);
+        Edit_SetReadOnly(Init->MobFields[i].Bonus->box, TRUE);
+        Edit_SetReadOnly(Init->MobFields[i].Final->box, TRUE);
+    }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++) { 
+        Edit_SetReadOnly(Init->AllyFields[i].Name->box, TRUE);
+        Edit_SetReadOnly(Init->AllyFields[i].Bonus->box, TRUE);
+        Edit_SetReadOnly(Init->AllyFields[i].Final->box, TRUE);
+    }
+#endif
+    
+    Page->turnsInRound = visibleOrder - 1;
+    
+    State.inBattle = TRUE;
+}
+
 void SetInitTab(UIContext *cxt)
 {
     InitPage *Page = State.Init;
@@ -467,7 +559,11 @@ void SetInitTab(UIContext *cxt)
     for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Mobs, (char *)Enemies[i]); }
     for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Allies, (char *)Allies[i]); }
     
-    for(u32 i = 0; i < PARTY_NUM; i++) { Page->PlayerInit[i].text = ls_unistrFromAscii("0"); }
+    for(u32 i = 0; i < PARTY_NUM; i++) 
+    { 
+        Page->PlayerInit[i].text = ls_unistrFromUTF32(U"0");
+        Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
+    }
     
     for(u32 i = 0; i < MOB_NUM; i++)   
     { 
@@ -512,12 +608,14 @@ void SetInitTab(UIContext *cxt)
         f->remove.onHold  = 0x0;
     }
     
+    Page->Current.text = ls_unistrAlloc(16);
+    
     Page->Roll.name = ls_unistrFromUTF32(U"Roll");
     Page->Roll.onClick = RollOnClick;
     Page->Roll.onHold = 0x0;
     
     Page->Set.name = ls_unistrFromUTF32(U"Set");
-    Page->Set.onClick = 0x0;
+    Page->Set.onClick = SetOnClick;
     Page->Set.onHold = 0x0;
     
     Page->Reset.name = ls_unistrFromUTF32(U"Reset");
@@ -563,7 +661,7 @@ void DrawInitTab(UIContext *cxt)
     }
     
     // Allies
-    yPos -= 70;
+    yPos = 478;
     for(u32 i = 0; i < visibleAllies; i++)
     {
         DrawInitField(cxt, Page->AllyFields + i, 546, yPos);
@@ -589,6 +687,8 @@ void DrawInitTab(UIContext *cxt)
         
         yPos -= 20;
     }
+    
+    ls_uiTextBox(cxt, &Page->Current, 870, 688, 100, 20);
     
     //TODO: Clicking on a ListBox Entry clicks also what's behind it.
     ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);

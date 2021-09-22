@@ -4,8 +4,13 @@
 #ifndef _INIT_H
 #define _INIT_H
 
-const u32 PARTY_NUM = 5;
-const char32_t *PartyName[PARTY_NUM] = { U"Lumbar", U"Mogora", U"Refonil", U"Armitage", U"Fanny" };
+const u32 PARTY_NUM = 3;
+const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Ana", U"Vent" };
+const unistring PartyNameUTF32[PARTY_NUM] = { 
+    {(u32 *)PartyName[0], 5, 5}, 
+    {(u32 *)PartyName[1], 3, 3}, 
+    {(u32 *)PartyName[2], 4, 4} 
+};
 
 const u32 MOB_NUM = 24;
 const char32_t *MobName[MOB_NUM] = { U"Enemy 1", U"Enemy 2", U"Enemy 3", U"Enemy 4",
@@ -41,10 +46,9 @@ const u32 THROWER_NUM = 8;
 
 struct tmp_order {
     s32 init;
-    HWND nameBox;
-    u32 fieldId;
-    b32 isParty;
-    b32 isMob;
+    unistring *name;
+    //TODO: Add life
+    s32 ID;
 };
 
 struct InitField;

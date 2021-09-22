@@ -154,6 +154,8 @@ struct InitField
     UITextBox name;
     UITextBox bonus;
     UITextBox final;
+    
+    s32 ID;
 };
 
 struct Counter
@@ -177,9 +179,7 @@ struct Order
     
     UIButton  remove;
     
-    u32 fieldId;
-    b32 isMob;
-    b32 isParty;
+    s32 ID;
 };
 
 
@@ -196,9 +196,13 @@ struct InitPage
     UIButton   Set;
     UIButton   Reset;
     
+    
     Order      OrderFields[ORDER_NUM];
     //u32        VisibleOrder;
     u32        turnsInRound;
+    
+    UITextBox  Current;
+    u32        currIdx;
     
     //Counter    Counters[COUNTER_NUM];
     
