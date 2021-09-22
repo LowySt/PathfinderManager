@@ -1028,13 +1028,13 @@ void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h)
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
     
-    s32 arrowWidth = 12;
+    s32 arrowWidth = 8;
     s32 hBearing = (w - arrowWidth)/2;
     
     s32 xBase = xPos+hBearing;
     s32 xEnd  = xBase + arrowWidth;
     
-    s32 arrowHeight = 6;
+    s32 arrowHeight = 4;
     s32 vBearing = (h - arrowHeight)/2;
     s32 yStart = yPos + h - vBearing;
     
