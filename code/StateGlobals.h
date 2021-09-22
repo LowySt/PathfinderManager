@@ -87,19 +87,6 @@ struct EncList
 };
 
 #if 0
-struct Counter
-{
-    TextBox *Field;
-    TextBox *Rounds;
-    Button  *Start;
-    
-    Button  *PlusOne;
-    Button  *Stop;
-    
-    u32 startIdxInOrder;
-    u32 roundCounter;
-    b32 isActive;
-};
 
 struct AddInit
 {
@@ -108,34 +95,6 @@ struct AddInit
     
     Button  *Add;
     Button  *Ok;
-};
-
-struct OrderField
-{
-    TextBox *Field;
-    TextBox *Pos;
-    
-    Button  *Remove;
-    
-    u32 fieldId;
-    b32 isMob;
-    b32 isParty;
-};
-
-struct InitField
-{
-    TextBox *Name;
-    TextBox *Bonus;
-    TextBox *Final;
-    
-    TextBox *AC;
-    TextBox *Touch;
-    TextBox *NoDex;
-    
-    AddInit New;
-    
-    u64     id;
-    b32     isSelected;
 };
 
 struct DiceThrow
@@ -209,15 +168,6 @@ struct InitPage
     //Counter    Counters[COUNTER_NUM];
     
 #if 0
-    
-    OrderField Order[ORDER_NUM];
-    u32        VisibleOrder;
-    u32        turnsInRound;
-    
-    TextBox    *Current;
-    u32        currIdx;
-    
-    Button     *Next;
     Button     *Save;
     
     ComboBox   *EncounterSel;
