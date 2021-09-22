@@ -121,6 +121,7 @@ struct Counter
 {
     UITextBox name;
     UITextBox rounds;
+    s32 roundsLeft;
     
     UIButton  start;
     UIButton  plusOne;

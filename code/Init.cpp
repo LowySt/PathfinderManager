@@ -162,7 +162,7 @@ void order_ascending(tmp_order *ord, u32 size)
 
 
 
-void RollOnClick(UIContext *cxt)
+void RollOnClick(UIContext *cxt, void *data)
 {
     InitPage *Page = State.Init;
     
@@ -200,7 +200,7 @@ void RollOnClick(UIContext *cxt)
     }
 }
 
-void SetOnClick(UIContext *cxt)
+void SetOnClick(UIContext *cxt, void *data)
 {
     AssertMsg(!State.inBattle, "Clicking this should be impossible while in Battle\n");
     
@@ -283,7 +283,7 @@ void SetOnClick(UIContext *cxt)
     State.inBattle = TRUE;
 }
 
-void NextOnClick(UIContext *cxt)
+void NextOnClick(UIContext *cxt, void *data)
 {
     InitPage *Page = State.Init;
     
@@ -306,41 +306,34 @@ void NextOnClick(UIContext *cxt)
     Page->Current.viewEndIdx = Page->Current.text.len;
     
     //NOTE: Advance the Counters
-#if 0
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
-        Counter *C = &Init->Counters[i];
+        Counter *C = Page->Counters + i;
         
         if(C->isActive == TRUE)
         {
-            if(C->roundCounter >= Init->turnsInRound)
+            if(C->roundCounter >= Page->turnsInRound)
             { 
                 C->roundCounter = 0;
+                C->roundsLeft -= 1;
                 
-                char v[8] = {};
-                u32 len = Edit_GetText(C->Rounds->box, v, 8);
-                s32 val = ls_atoi(v, len);
+                AssertMsg(C->roundsLeft >= 0, "Rounds Left became negative");
                 
-                if((val - 1) == 0)
+                if(C->roundsLeft == 0)
                 {
-                    Edit_SetReadOnly(C->Field->box, FALSE);
-                    Edit_SetText(C->Field->box, "");
-                    Edit_SetText(C->Rounds->box, "");
+                    C->name.isReadonly = FALSE;
                     
+                    ls_uiTextBoxClear(cxt, &C->name);
+                    ls_uiTextBoxClear(cxt, &C->rounds);
                     C->roundCounter = 0;
                     C->isActive     = FALSE;
-                    
-                    HideElem(C->PlusOne->box);
-                    HideElem(C->Stop->box);
-                    ShowElem(C->Start->box);
                     
                     continue;
                 }
                 
-                char newV[8] = {};
-                ls_itoa_t(val - 1, newV, 8);
+                ls_unistrFromInt_t(&C->rounds.text, C->roundsLeft);
+                C->rounds.viewEndIdx = C->rounds.text.len;
                 
-                Edit_SetText(C->Rounds->box, newV);
                 continue;
             }
             
@@ -348,7 +341,26 @@ void NextOnClick(UIContext *cxt)
             continue;
         }
     }
-#endif
+}
+
+void StartCounterOnClick(UIContext *cxt, void *data)
+{
+    Counter *C = (Counter *)data;
+    
+    if(State.inBattle == FALSE) { return; }
+    
+    s32 val = ls_unistrToInt(C->rounds.text);
+    if(val <= 0) { return; }
+    
+    C->name.isReadonly   = TRUE;
+    C->rounds.isReadonly = TRUE;
+    
+    C->isActive        = TRUE;
+    C->roundCounter    = 0;
+    C->roundsLeft      = val;
+    C->startIdxInOrder = State.Init->currIdx;
+    
+    return;
 }
 
 void SetInitTab(UIContext *cxt)
@@ -422,7 +434,8 @@ void SetInitTab(UIContext *cxt)
         f->rounds.text   = ls_unistrAlloc(16);
         
         f->start.name    = ls_unistrFromUTF32(U"Start");
-        f->start.onClick = 0x0;
+        f->start.onClick = StartCounterOnClick;
+        f->start.data    = (void *)f;
         f->start.onHold  = 0x0;
         
         f->plusOne.name    = ls_unistrFromUTF32(U"+1");

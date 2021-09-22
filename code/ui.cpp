@@ -48,7 +48,7 @@ struct UIScissor
 };
 
 struct UIContext;
-typedef void(*ButtonProc)(UIContext *cxt);
+typedef void(*ButtonProc)(UIContext *cxt, void *data);
 struct UIButton
 {
     unistring name;
@@ -57,6 +57,8 @@ struct UIButton
     
     ButtonProc onClick;
     ButtonProc onHold;
+    
+    void *data;
 };
 
 struct UITextBox
@@ -707,13 +709,13 @@ void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s3
         
         if(button->onClick && LeftClick)
         {
-            button->onClick(cxt);
+            button->onClick(cxt, button->data);
         }
         if(LeftHold)
         {
             button->isHeld = TRUE;
             bkgColor = cxt->pressedColor;
-            if(button->onHold) { button->onHold(cxt); }
+            if(button->onHold) { button->onHold(cxt, button->data); }
         }
     }
     
@@ -745,6 +747,13 @@ void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
     ls_uiGlyphString(cxt, xPos, yPos, label, cxt->textColor);
     
     ls_uiPopScissor(cxt);
+}
+
+void ls_uiTextBoxClear(UIContext *cxt, UITextBox *box)
+{
+    ls_unistrClear(&box->text);
+    box->viewBeginIdx = 0;
+    box->viewEndIdx   = 0;
 }
 
 //TODO: Text Alignment
