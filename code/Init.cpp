@@ -845,15 +845,6 @@ void DrawInitTab(UIContext *cxt)
     Page->numWindows += 3;
     
     
-    //NOTE: Counters
-    yPos = 142;
-    for(u32 i = 0; i < COUNTER_NUM; i++)
-    {
-        Page->Counters[i] = AddCounter(WinH, &wA, CounterNames[i], 20, yPos, ElementId);
-        yPos += 44;
-        Page->numWindows += 6;
-    }
-    
     Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 644, 62, 100, 20, (*ElementId)++); wA += 1;
     Page->numWindows += 1;
     
