@@ -165,7 +165,7 @@ struct InitPage
     UITextBox  Current;
     u32        currIdx;
     
-    //Counter    Counters[COUNTER_NUM];
+    Counter    Counters[COUNTER_NUM];
     
 #if 0
     Button     *Save;

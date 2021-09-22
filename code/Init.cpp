@@ -677,6 +677,26 @@ void SetInitTab(UIContext *cxt)
         f->remove.onHold  = 0x0;
     }
     
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *f = Page->Counters + i;
+        
+        f->name.text     = ls_unistrAlloc(16);
+        f->rounds.text   = ls_unistrAlloc(16);
+        
+        f->start.name    = ls_unistrFromUTF32(U"Start");
+        f->start.onClick = 0x0;
+        f->start.onHold  = 0x0;
+        
+        f->plusOne.name    = ls_unistrFromUTF32(U"+1");
+        f->plusOne.onClick = 0x0;
+        f->plusOne.onHold  = 0x0;
+        
+        f->stop.name    = ls_unistrFromUTF32(U"Stop");
+        f->stop.onClick = 0x0;
+        f->stop.onHold  = 0x0;
+    }
+    
     Page->Current.text            = ls_unistrAlloc(16);
     Page->Current.isReadonly      = TRUE;
     
@@ -766,7 +786,29 @@ void DrawInitTab(UIContext *cxt)
         yPos -= 20;
     }
     
+    // Counters
+    yPos = 658;
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *f = Page->Counters + i;
+        
+        ls_uiLabel(cxt, ls_unistrConstant(CounterNames[i]), 20, yPos+24);
+        
+        ls_uiTextBox(cxt, &f->name, 20, yPos, 100, 20);
+        ls_uiTextBox(cxt, &f->rounds, 125, yPos, 30, 20);
+        
+        if(!f->isActive) { ls_uiButton(cxt, &f->start, 160, yPos, 48, 20); }
+        else
+        {
+            ls_uiButton(cxt, &f->plusOne, 160, yPos, 48, 20);
+            ls_uiButton(cxt, &f->stop, 85, yPos+22, 48, 20);
+        }
+        
+        yPos -= 44;
+    }
+    
     ls_uiButton(cxt, &Page->Reset, 600, 698, 48, 20);
+    
     
     if(!State.inBattle)
     {
@@ -789,10 +831,6 @@ void DrawInitTab(UIContext *cxt)
 #if 0
     
     Page->Save  = AddButton(WinH, wA, "Save",  670, 42, 45, 20, (*ElementId)++); wA += 1;
-    
-    Page->RoundCounter = AddValueBox(WinH, wA, 0, LABEL_NULL, 1, 1180, 60, 30, 20, (*ElementId)++); wA += 1;
-    
-    Page->numWindows += 7;
     
     //NOTE: Dice Throwers
     u32 xPos = 20;

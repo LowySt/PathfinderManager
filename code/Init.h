@@ -39,8 +39,8 @@ const u32 ORDER_NUM = PARTY_NUM + MOB_NUM + ALLY_NUM;
 
 
 const u32 COUNTER_NUM = 8;
-const char *CounterNames[COUNTER_NUM] = { "Counter 1", "Counter 2", "Counter 3", "Counter 4", 
-    "Counter 5", "Counter 6", "Counter 7", "Counter 8" };
+const char32_t *CounterNames[COUNTER_NUM] = { U"Counter 1", U"Counter 2", U"Counter 3", U"Counter 4", 
+    U"Counter 5", U"Counter 6", U"Counter 7", U"Counter 8" };
 
 const u32 THROWER_NUM = 8;
 
