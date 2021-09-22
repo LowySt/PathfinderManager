@@ -174,7 +174,7 @@ void RollOnClick(UIContext *cxt, void *data)
         InitField *f = Page->MobFields + i;
         
         s32 finalVal = ls_unistrToInt(f->final.text);
-        //TODO: Reimplement this -> if(finalVal != 0) { continue; }
+        if(finalVal != 0) { continue; }
         
         s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
         s32 bonus = ls_unistrToInt(f->bonus.text);
@@ -189,7 +189,7 @@ void RollOnClick(UIContext *cxt, void *data)
         InitField *f = Page->AllyFields + i;
         
         s32 finalVal = ls_unistrToInt(f->final.text);
-        //TODO: Reimplement this -> if(finalVal != 0) { continue; }
+        if(finalVal != 0) { continue; }
         
         s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
         s32 bonus = ls_unistrToInt(f->bonus.text);
@@ -610,39 +610,3 @@ void DrawInitTab(UIContext *cxt)
     return;
 #endif
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
