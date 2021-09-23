@@ -178,6 +178,7 @@ void ResetOnClick(UIContext *cxt, void *data)
     
     for(u32 i = 0; i < PARTY_NUM; i++) 
     { 
+        ls_uiTextBoxClear(cxt, Page->PlayerInit + i);
         ls_unistrSet(&Page->PlayerInit[i].text, zeroUTF32);
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
     }
@@ -191,9 +192,11 @@ void ResetOnClick(UIContext *cxt, void *data)
         ls_unistrSet(&f->name.text, ls_unistrConstant(MobName[i]));
         f->name.viewEndIdx = f->name.text.len;
         
+        ls_uiTextBoxClear(cxt, &f->bonus);
         ls_unistrSet(&f->bonus.text ,zeroUTF32);
         f->bonus.viewEndIdx = f->bonus.text.len;
         
+        ls_uiTextBoxClear(cxt, &f->final);
         ls_unistrSet(&f->final.text, zeroUTF32);
         f->final.viewEndIdx = f->final.text.len;
         
@@ -209,9 +212,11 @@ void ResetOnClick(UIContext *cxt, void *data)
         ls_unistrSet(&f->name.text, ls_unistrConstant(AllyName[i]));
         f->name.viewEndIdx = f->name.text.len;
         
+        ls_uiTextBoxClear(cxt, &f->bonus);
         ls_unistrSet(&f->bonus.text ,zeroUTF32);
         f->bonus.viewEndIdx = f->bonus.text.len;
         
+        ls_uiTextBoxClear(cxt, &f->final);
         ls_unistrSet(&f->final.text, zeroUTF32);
         f->final.viewEndIdx = f->final.text.len;
         
@@ -235,7 +240,7 @@ void ResetOnClick(UIContext *cxt, void *data)
         ls_uiTextBoxClear(cxt, &f->rounds);
         f->roundsLeft      = 0;
         f->startIdxInOrder = 0;
-        f->roundCounter    = 0;
+        f->turnCounter    = 0;
         f->isActive        = FALSE;
     }
     
@@ -260,6 +265,8 @@ void ResetOnClick(UIContext *cxt, void *data)
     
     ls_unistrSet(&Page->RoundCounter.text, zeroUTF32);
     Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
+    
+    Page->orderAdjust = 0;
 }
 
 void NextOnClick(UIContext *cxt, void *data)
@@ -291,9 +298,9 @@ void NextOnClick(UIContext *cxt, void *data)
         
         if(C->isActive == TRUE)
         {
-            if(C->roundCounter >= Page->turnsInRound)
+            if(C->turnCounter >= Page->turnsInRound)
             { 
-                C->roundCounter = 0;
+                C->turnCounter = 0;
                 C->roundsLeft -= 1;
                 
                 AssertMsg(C->roundsLeft >= 0, "Rounds Left became negative");
@@ -303,7 +310,7 @@ void NextOnClick(UIContext *cxt, void *data)
                     ls_uiTextBoxClear(cxt, &C->name);
                     ls_uiTextBoxClear(cxt, &C->rounds);
                     
-                    C->roundCounter = 0;
+                    C->turnCounter = 0;
                     C->isActive     = FALSE;
                     
                     continue;
@@ -315,10 +322,178 @@ void NextOnClick(UIContext *cxt, void *data)
                 continue;
             }
             
-            C->roundCounter += 1;
+            C->turnCounter += 1;
             continue;
         }
     }
+}
+
+void CopyOrder(Order *From, Order *To)
+{
+    // Copy Slider
+    To->field.isHot  = From->field.isHot;
+    To->field.isHeld = From->field.isHeld;
+    
+    ls_unistrSet(&To->field.text, From->field.text);
+    
+    To->field.currValue = From->field.currValue;
+    To->field.maxValue  = From->field.maxValue;
+    To->field.minValue  = From->field.minValue;
+    
+    To->field.currPos   = From->field.currPos;
+    
+    To->field.style     = From->field.style;
+    To->field.lColor    = From->field.lColor;
+    To->field.rColor    = From->field.rColor;
+    
+    //NOTE: Don't need to copy the textbox, since the position of an order field is fixed.
+    //NOTE: Don't need to copy the button
+    
+    To->ID = From->ID;
+}
+
+void RemoveOrderOnClick(UIContext *cxt, void *data)
+{
+    if(State.inBattle == FALSE) { return; }
+    
+    u32 index = (u32)((u64)data);
+    
+    InitPage *Page = State.Init;
+    Order *f = Page->OrderFields + index;
+    
+    s32 removeID = f->ID;
+    
+    s32 visibleMobs   = Page->Mobs.selectedIndex;
+    s32 visibleAllies = Page->Allies.selectedIndex;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    
+    if(removeID < PARTY_NUM)
+    {
+        //TODO: Remove the thing
+        Page->orderAdjust += 1;
+        
+        for(u32 i = index; i < (visibleOrder-1); i++)
+        {
+            Order *A = Page->OrderFields + i;
+            Order *B = Page->OrderFields + (i+1);
+            
+            CopyOrder(B, A);
+        }
+    }
+    else
+    {
+        for(u32 i = 0; i < ALLY_NUM; i++) 
+        {
+            InitField *ally = Page->AllyFields + i;
+            if(removeID == ally->ID) 
+            {
+                //TODO: Remove the thing
+            }
+        }
+        
+        for(u32 i = 0; i < MOB_NUM; i++)
+        {
+            InitField *mob = Page->MobFields + i;
+            if(removeID == mob->ID)
+            {
+                //TODO: Remove the thing
+            }
+        }
+    }
+    
+    Page->turnsInRound -= 1;
+    if(Page->currIdx >= index) { Page->currIdx -= 1; }
+    
+#if 0
+    if(Init->Order[i].isMob == TRUE)
+    {
+        u32 mobId = Init->Order[i].fieldId;
+        
+        InitField *toRemove = getInitById(Init->MobFields, Init->VisibleMobs, mobId);
+        if(toRemove == 0x0) { /*TODO: Logging */ Assert(FALSE); }
+        
+        char name[32] = {};
+        Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].Name->box, name, 32);
+        Edit_SetText(toRemove->Name->box, name);
+        
+        char box[8] = {};
+        Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].Bonus->box, box, 8);
+        Edit_SetText(toRemove->Bonus->box, box);
+        
+        char final[8] = {};
+        Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].Final->box, final, 8);
+        Edit_SetText(toRemove->Final->box, final);
+        
+        char AC[8] = {};
+        Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].AC->box, AC, 8);
+        Edit_SetText(toRemove->AC->box, AC);
+        
+        toRemove->id = Init->MobFields[Init->VisibleMobs - 1].id;
+        
+        HideInitField(&Init->MobFields[Init->VisibleMobs - 1], 1);
+        HideInitFieldAdd(Init->MobFields, Init->VisibleMobs, MOB_NUM);
+        ShowInitFieldAdd(Init->MobFields, Init->VisibleMobs-1, MOB_NUM);
+        
+        Init->VisibleMobs -= 1;
+    }
+    else if(Init->Order[i].isParty == TRUE)
+    {
+        //NOTE: Probably just do nothing?
+    }
+    else
+    {
+        u32 allyId = Init->Order[i].fieldId;
+        
+        InitField *toRemove = getInitById(Init->AllyFields, Init->VisibleAllies, allyId);
+        if(toRemove == 0x0) { /*TODO: Logging */ Assert(FALSE); }
+        
+        char name[32] = {};
+        Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].Name->box, name, 32);
+        Edit_SetText(toRemove->Name->box, name);
+        
+        char box[8] = {};
+        Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].Bonus->box, box, 32);
+        Edit_SetText(toRemove->Bonus->box, box);
+        
+        char final[8] = {};
+        Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].Final->box, final, 32);
+        Edit_SetText(toRemove->Final->box, final);
+        
+        char AC[8] = {};
+        Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].AC->box, AC, 8);
+        Edit_SetText(toRemove->AC->box, AC);
+        
+        toRemove->id = Init->AllyFields[Init->VisibleAllies - 1].id;
+        
+        HideInitField(&Init->AllyFields[Init->VisibleAllies - 1], 1);
+        HideInitFieldAdd(Init->AllyFields, Init->VisibleAllies, ALLY_NUM);
+        ShowInitFieldAdd(Init->AllyFields, Init->VisibleAllies-1, ALLY_NUM);
+        
+        Init->VisibleAllies -= 1;
+    }
+    
+    //NOTE: Move everything that is below the removed up 1.
+    if(i != (Init->VisibleOrder - 1)) 
+    {
+        for(u32 j = i + 1; j < Init->VisibleOrder; j++)
+        {
+            char v[32] = {};
+            u32 len = Edit_GetText(Init->Order[j].Field->box, v, 32);
+            Edit_SetText(Init->Order[j-1].Field->box, v);
+            
+            Init->Order[j-1].fieldId = Init->Order[j].fieldId;
+            Init->Order[j-1].isMob   = Init->Order[j].isMob;
+            Init->Order[j-1].isParty = Init->Order[j].isParty;
+        }
+    }
+    
+    Edit_SetText(Init->Order[Init->VisibleOrder - 1].Field->box, "");
+    HideOrder(Init->Order + (Init->VisibleOrder - 1), 1);
+    
+    Init->turnsInRound -= 1;
+    Init->VisibleOrder -= 1;
+    if(Init->currIdx >= i) { Init->currIdx -= 1; }
+#endif
 }
 
 void StartCounterOnClick(UIContext *cxt, void *data)
@@ -334,7 +509,7 @@ void StartCounterOnClick(UIContext *cxt, void *data)
     C->rounds.isReadonly = TRUE;
     
     C->isActive        = TRUE;
-    C->roundCounter    = 0;
+    C->turnCounter     = 0;
     C->roundsLeft      = val;
     C->startIdxInOrder = State.Init->currIdx;
     
@@ -362,7 +537,7 @@ void StopCounterOnClick(UIContext *cxt, void *data)
     C->rounds.isReadonly = FALSE;
     
     C->isActive        = FALSE;
-    C->roundCounter    = 0;
+    C->turnCounter     = 0;
     C->roundsLeft      = 0;
     C->startIdxInOrder = 0;
 }
@@ -433,7 +608,8 @@ void SetInitTab(UIContext *cxt)
         f->pos.maxLen     = 2;
         
         f->remove.name    = ls_unistrFromUTF32(U"X");
-        f->remove.onClick = 0x0;
+        f->remove.onClick = RemoveOrderOnClick;
+        f->remove.data    = (void *)((u64)i);
         f->remove.onHold  = 0x0;
     }
     

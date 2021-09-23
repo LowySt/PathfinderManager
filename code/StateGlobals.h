@@ -113,7 +113,7 @@ struct Counter
     UIButton  stop;
     
     u32 startIdxInOrder;
-    u32 roundCounter;
+    u32 turnCounter;
     b32 isActive;
 };
 
