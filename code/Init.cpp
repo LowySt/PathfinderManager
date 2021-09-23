@@ -298,6 +298,7 @@ void NextOnClick(UIContext *cxt, void *data)
         
         if(C->isActive == TRUE)
         {
+            //TODO: This is fucked? turnsInRound and turnCounter work badly with RemoveOnClick
             if(C->turnCounter >= Page->turnsInRound)
             { 
                 C->turnCounter = 0;
@@ -369,7 +370,6 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
     
     if(removeID < PARTY_NUM)
     {
-        //TODO: Remove the thing
         Page->orderAdjust += 1;
         
         for(u32 i = index; i < (visibleOrder-1); i++)
@@ -379,6 +379,11 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
             
             CopyOrder(B, A);
         }
+        
+        Page->turnsInRound -= 1;
+        if(Page->currIdx >= index) { Page->currIdx -= 1; }
+        
+        return;
     }
     else
     {
@@ -388,6 +393,11 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
             if(removeID == ally->ID) 
             {
                 //TODO: Remove the thing
+                
+                Page->turnsInRound -= 1;
+                if(Page->currIdx >= index) { Page->currIdx -= 1; }
+                
+                return;
             }
         }
         
@@ -397,12 +407,16 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
             if(removeID == mob->ID)
             {
                 //TODO: Remove the thing
+                
+                Page->turnsInRound -= 1;
+                if(Page->currIdx >= index) { Page->currIdx -= 1; }
+                
+                return;
             }
         }
     }
     
-    Page->turnsInRound -= 1;
-    if(Page->currIdx >= index) { Page->currIdx -= 1; }
+    
     
 #if 0
     if(Init->Order[i].isMob == TRUE)
