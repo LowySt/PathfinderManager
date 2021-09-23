@@ -5,12 +5,6 @@
 
 const u32 global_saveVersion = 4;
 
-const u32 WINARR_INIT_NUM  = 1024;
-const u32 WINARR_PC_NUM    = 64;
-const u32 WINARR_FEATS_NUM = 64;
-
-const u32 ELEM_MAP_NUM = WINARR_INIT_NUM + WINARR_PC_NUM + WINARR_FEATS_NUM;
-
 #if 0
 struct AbilityScores
 {
@@ -160,6 +154,7 @@ struct InitPage
     
     Order      OrderFields[ORDER_NUM];
     u32        turnsInRound;
+    s32        orderAdjust;
     
     UITextBox  RoundCounter;
     u32        roundCount;
@@ -177,9 +172,6 @@ struct InitPage
     
     ComboBox   *EncounterSel;
     TextBox    *EncounterName;
-    
-    HWND WindowsArray[WINARR_INIT_NUM];
-    u32 numWindows;
 #endif
 };
 
@@ -255,8 +247,5 @@ const u32 MENU_CLOSE_APP_IDX = 1;
 
 HMENU MenuBar;
 HMENU SubMenu;
-
-//TODO: Can I manage to do things using this?
-Element ElementMap[ELEM_MAP_NUM] = {};
 
 #endif //_STATE_GLOBALS_H

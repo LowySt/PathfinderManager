@@ -93,7 +93,7 @@ void SetOnClick(UIContext *cxt, void *data)
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM;  //TODO: @VisibleOrder
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
     
     tmp_order ord[ORDER_NUM] = {};
     u32 idx = 0;
@@ -268,7 +268,7 @@ void NextOnClick(UIContext *cxt, void *data)
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM; //TODO: @VisibleOrder
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
     
     Page->currIdx = (Page->currIdx + 1) % visibleOrder;
     
@@ -349,6 +349,22 @@ void PlusOneCounterOnClick(UIContext *cxt, void *data)
     ls_unistrFromInt_t(&C->rounds.text, C->roundsLeft);
     
     return;
+}
+
+void StopCounterOnClick(UIContext *cxt, void *data)
+{
+    Counter *C = (Counter *)data;
+    
+    ls_uiTextBoxClear(cxt, &C->name);
+    ls_uiTextBoxClear(cxt, &C->rounds);
+    
+    C->name.isReadonly   = FALSE;
+    C->rounds.isReadonly = FALSE;
+    
+    C->isActive        = FALSE;
+    C->roundCounter    = 0;
+    C->roundsLeft      = 0;
+    C->startIdxInOrder = 0;
 }
 
 void SetInitTab(UIContext *cxt)
@@ -440,7 +456,7 @@ void SetInitTab(UIContext *cxt)
         f->plusOne.onHold  = 0x0;
         
         f->stop.name    = ls_unistrFromUTF32(U"Stop");
-        f->stop.onClick = 0x0;
+        f->stop.onClick = StopCounterOnClick;
         f->stop.data    = (void *)f;
         f->stop.onHold  = 0x0;
     }
@@ -530,9 +546,7 @@ void DrawInitTab(UIContext *cxt)
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    
-    //TODO: Change to allow removal of party
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM;  //TODO: @VisibleOrder
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
     
     // Party
     s32 yPos = 658;
