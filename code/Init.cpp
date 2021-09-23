@@ -200,6 +200,23 @@ void ResetOnClick(UIContext *cxt, void *data)
         f->isActive        = FALSE;
     }
     
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *f = Page->Throwers + i;
+        
+        ls_uiTextBoxClear(cxt, &f->name);
+        ls_uiTextBoxClear(cxt, &f->toHit);
+        ls_uiTextBoxClear(cxt, &f->hitRes);
+        ls_uiTextBoxClear(cxt, &f->damage);
+        ls_uiTextBoxClear(cxt, &f->dmgRes);
+    }
+    
+    // General Thrower
+    {
+        ls_uiTextBoxClear(cxt, &Page->GeneralThrower.toHit);
+        ls_uiTextBoxClear(cxt, &Page->GeneralThrower.hitRes);
+    }
+    
     ls_unistrClear(&Page->Current.text);
     
     ls_unistrSet(&Page->RoundCounter.text, zeroUTF32);
@@ -400,7 +417,10 @@ void SetInitTab(UIContext *cxt)
         f->dmgRes.text = ls_unistrAlloc(16);
         
         f->hitRes.maxLen = 4;
+        f->hitRes.isReadonly = TRUE;
+        
         f->dmgRes.maxLen = 4;
+        f->dmgRes.isReadonly = TRUE;
         
         f->throwDie.name    = ls_unistrFromUTF32(U"Go");
         f->throwDie.onClick = 0x0;
@@ -413,6 +433,7 @@ void SetInitTab(UIContext *cxt)
         Page->GeneralThrower.hitRes.text = ls_unistrAlloc(16);
         
         Page->GeneralThrower.hitRes.maxLen = 4;
+        Page->GeneralThrower.hitRes.isReadonly = TRUE;
         
         Page->GeneralThrower.throwDie.name    = ls_unistrFromUTF32(U"Go");
         Page->GeneralThrower.throwDie.onClick = 0x0;
@@ -557,6 +578,8 @@ void DrawInitTab(UIContext *cxt)
         
         ls_uiButton(cxt, &Page->GeneralThrower.throwDie, xPos + 210, yPos, 48, 20);
     }
+    
+    
     
     ls_uiButton(cxt, &Page->Reset, 600, 698, 48, 20);
     
