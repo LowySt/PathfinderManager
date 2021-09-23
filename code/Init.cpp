@@ -1,3 +1,22 @@
+void ThrowDiceOnClick(UIContext *cxt, void *data)
+{
+    UIButton *f = (UIButton *)data;
+    
+    if(f == &State.Init->GeneralThrower.throwDie)
+    {
+        char toThrow[128] = {};
+        s32 len = ls_unistrToAscii_t(&State.Init->GeneralThrower.toHit.text, toThrow, 128);
+        s32 result = (s32)diceRoll(toThrow, len);
+        
+        ls_unistrFromInt_t(&State.Init->GeneralThrower.hitRes.text, result);
+        State.Init->GeneralThrower.hitRes.viewEndIdx = State.Init->GeneralThrower.hitRes.text.len;
+    }
+    else
+    {
+        
+    }
+}
+
 s32 sortTmpOrder(void *a, void *b)
 {
     tmp_order *ordA = (tmp_order *)a;
@@ -436,7 +455,8 @@ void SetInitTab(UIContext *cxt)
         Page->GeneralThrower.hitRes.isReadonly = TRUE;
         
         Page->GeneralThrower.throwDie.name    = ls_unistrFromUTF32(U"Go");
-        Page->GeneralThrower.throwDie.onClick = 0x0;
+        Page->GeneralThrower.throwDie.onClick = ThrowDiceOnClick;
+        Page->GeneralThrower.throwDie.data    = &Page->GeneralThrower.throwDie;
         Page->GeneralThrower.throwDie.onHold  = 0x0;
     }
     
