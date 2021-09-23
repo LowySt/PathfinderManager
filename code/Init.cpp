@@ -127,6 +127,85 @@ void SetOnClick(UIContext *cxt, void *data)
     State.inBattle = TRUE;
 }
 
+void ResetOnClick(UIContext *cxt, void *data)
+{
+    InitPage *Page = State.Init;
+    
+    Page->Mobs.selectedIndex   = 0;
+    Page->Allies.selectedIndex = 0;
+    State.inBattle = FALSE;
+    
+    unistring zeroUTF32 = { (u32 *)U"0", 1, 1 };
+    
+    for(u32 i = 0; i < PARTY_NUM; i++) 
+    { 
+        ls_unistrSet(&Page->PlayerInit[i].text, zeroUTF32);
+        Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
+    }
+    
+    s32 currID = PARTY_NUM;
+    for(u32 i = 0; i < MOB_NUM; i++)   
+    { 
+        InitField *f = Page->MobFields + i;
+        
+        ls_uiTextBoxClear(cxt, &f->name);
+        ls_unistrSet(&f->name.text, ls_unistrConstant(MobName[i]));
+        f->name.viewEndIdx = f->name.text.len;
+        
+        ls_unistrSet(&f->bonus.text ,zeroUTF32);
+        f->bonus.viewEndIdx = f->bonus.text.len;
+        
+        ls_unistrSet(&f->final.text, zeroUTF32);
+        f->final.viewEndIdx = f->final.text.len;
+        
+        f->ID = currID;
+        currID += 1;
+    }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++)  
+    { 
+        InitField *f = Page->AllyFields + i;
+        
+        ls_uiTextBoxClear(cxt, &f->name);
+        ls_unistrSet(&f->name.text, ls_unistrConstant(AllyName[i]));
+        f->name.viewEndIdx = f->name.text.len;
+        
+        ls_unistrSet(&f->bonus.text ,zeroUTF32);
+        f->bonus.viewEndIdx = f->bonus.text.len;
+        
+        ls_unistrSet(&f->final.text, zeroUTF32);
+        f->final.viewEndIdx = f->final.text.len;
+        
+        f->ID = currID;
+        currID += 1;
+    }
+    
+    for(u32 i = 0; i < ORDER_NUM; i++)
+    {
+        Order *f = Page->OrderFields + i;
+        
+        ls_unistrClear(&f->field.text);
+        f->field.currPos = 1.0;
+    }
+    
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *f = Page->Counters + i;
+        
+        ls_uiTextBoxClear(cxt, &f->name);
+        ls_uiTextBoxClear(cxt, &f->rounds);
+        f->roundsLeft      = 0;
+        f->startIdxInOrder = 0;
+        f->roundCounter    = 0;
+        f->isActive        = FALSE;
+    }
+    
+    ls_unistrClear(&Page->Current.text);
+    
+    ls_unistrSet(&Page->RoundCounter.text, zeroUTF32);
+    Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
+}
+
 void NextOnClick(UIContext *cxt, void *data)
 {
     InitPage *Page = State.Init;
@@ -225,8 +304,9 @@ void SetInitTab(UIContext *cxt)
     
     for(u32 i = 0; i < PARTY_NUM; i++) 
     { 
-        Page->PlayerInit[i].text = ls_unistrFromUTF32(U"0");
+        Page->PlayerInit[i].text       = ls_unistrFromUTF32(U"0");
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
+        Page->PlayerInit[i].maxLen     = 2;
     }
     
     s32 currID = PARTY_NUM;
@@ -234,14 +314,16 @@ void SetInitTab(UIContext *cxt)
     { 
         InitField *f = Page->MobFields + i;
         
-        f->name.text       = ls_unistrFromUTF32(MobName[i]);
-        f->name.viewEndIdx = f->name.text.len;
+        f->name.text        = ls_unistrFromUTF32(MobName[i]);
+        f->name.viewEndIdx  = f->name.text.len;
         
         f->bonus.text       = ls_unistrFromUTF32(U"0");
         f->bonus.viewEndIdx = f->bonus.text.len;
+        f->bonus.maxLen     = 2;
         
-        f->final.text = ls_unistrFromUTF32(U"0");
+        f->final.text       = ls_unistrFromUTF32(U"0");
         f->final.viewEndIdx = f->final.text.len;
+        f->final.maxLen     = 2;
         
         f->ID = currID;
         currID += 1;
@@ -251,14 +333,16 @@ void SetInitTab(UIContext *cxt)
     { 
         InitField *f = Page->AllyFields + i;
         
-        f->name.text       = ls_unistrFromUTF32(AllyName[i]);
-        f->name.viewEndIdx = f->name.text.len;
+        f->name.text        = ls_unistrFromUTF32(AllyName[i]);
+        f->name.viewEndIdx  = f->name.text.len;
         
         f->bonus.text       = ls_unistrFromUTF32(U"0");
         f->bonus.viewEndIdx = f->bonus.text.len;
+        f->bonus.maxLen     = 2;
         
-        f->final.text = ls_unistrFromUTF32(U"0");
+        f->final.text       = ls_unistrFromUTF32(U"0");
         f->final.viewEndIdx = f->final.text.len;
+        f->final.maxLen     = 2;
         
         f->ID = currID;
         currID += 1;
@@ -271,8 +355,10 @@ void SetInitTab(UIContext *cxt)
         Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), cxt->widgetColor);
         Color rColor      = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor);
         f->field          = ls_uiSliderInit(NULL, 100, -50, 1.0, SL_BOX, lColor, rColor);
+        
         f->pos.text       = ls_unistrFromInt(i);
         f->pos.viewEndIdx = f->pos.text.len;
+        f->pos.maxLen     = 2;
         
         f->remove.name    = ls_unistrFromUTF32(U"X");
         f->remove.onClick = 0x0;
@@ -285,6 +371,7 @@ void SetInitTab(UIContext *cxt)
         
         f->name.text     = ls_unistrAlloc(16);
         f->rounds.text   = ls_unistrAlloc(16);
+        f->rounds.maxLen = 2;
         
         f->start.name    = ls_unistrFromUTF32(U"Start");
         f->start.onClick = StartCounterOnClick;
@@ -318,7 +405,7 @@ void SetInitTab(UIContext *cxt)
     Page->Set.onHold    = 0x0;
     
     Page->Reset.name    = ls_unistrFromUTF32(U"Reset");
-    Page->Reset.onClick = 0x0;
+    Page->Reset.onClick = ResetOnClick;
     Page->Reset.onHold  = 0x0;
     
     Page->Next.name     = ls_unistrFromUTF32(U"Next");
@@ -340,7 +427,7 @@ void DrawInitField(UIContext *cxt, InitField *F, s32 x, s32 y)
 void DrawOrderField(UIContext *cxt, Order *f, s32 xPos, s32 yPos)
 {
     ls_uiSlider(cxt, &f->field, xPos + 50, yPos, 120, 20);
-    ls_uiTextBox(cxt, &f->pos, xPos + 25, yPos, 30, 20);
+    ls_uiTextBox(cxt, &f->pos, xPos + 25, yPos, 32, 20);
     ls_uiButton(cxt, &f->remove, xPos, yPos, 20, 20);
 }
 
@@ -400,12 +487,12 @@ void DrawInitTab(UIContext *cxt)
         ls_uiLabel(cxt, ls_unistrConstant(CounterNames[i]), 20, yPos+24);
         
         ls_uiTextBox(cxt, &f->name, 20, yPos, 100, 20);
-        ls_uiTextBox(cxt, &f->rounds, 125, yPos, 30, 20);
+        ls_uiTextBox(cxt, &f->rounds, 125, yPos, 36, 20);
         
-        if(!f->isActive) { ls_uiButton(cxt, &f->start, 160, yPos, 48, 20); }
+        if(!f->isActive) { ls_uiButton(cxt, &f->start, 166, yPos, 48, 20); }
         else
         {
-            ls_uiButton(cxt, &f->plusOne, 160, yPos, 48, 20);
+            ls_uiButton(cxt, &f->plusOne, 166, yPos, 48, 20);
             ls_uiButton(cxt, &f->stop, 85, yPos+22, 48, 20);
         }
         

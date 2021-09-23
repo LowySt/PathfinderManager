@@ -64,6 +64,7 @@ struct UIButton
 struct UITextBox
 {
     unistring text;
+    u32 maxLen;
     
     b32 isReadonly;
     b32 isSelected;
@@ -776,14 +777,9 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         box->isCaretOn = TRUE; 
     }
     
-    if(GetPrintableKey() > 127) {
-        int breakHere = 0;
-    }
-    
     s32 strPixelHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
-    
     
     Color caretColor = cxt->textColor;
     
@@ -795,8 +791,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     //if(box->isSelected)
     if(cxt->currentFocus == (u64 *)box)
     {
-        //NOTE: Draw characters.
-        if(HasPrintableKey()) 
+        //NOTE: Draw characters. (box->maxLen == 0 means there's no max len)
+        if(HasPrintableKey() && (box->text.len < box->maxLen || box->maxLen == 0)) 
         {
             if(box->caretIndex == box->text.len) { ls_unistrAppendChar(&box->text, GetPrintableKey()); }
             else { ls_unistrInsertChar(&box->text, GetPrintableKey(), box->caretIndex); }
@@ -804,7 +800,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             box->caretIndex += 1;
             box->viewEndIdx += 1;
             
-            //TODO: This should check view string not actual text
             if(ls_uiGlyphStringLen(cxt, box->text) > viewAddWidth)
             { box->viewBeginIdx += 1; }
             
@@ -960,8 +955,19 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             u32 buff[128] = {};
             u32 copiedLen = GetClipboard(buff, 128);
             
-            if(box->caretIndex == box->text.len) { ls_unistrAppendBuffer(&box->text, buff, copiedLen); }
-            else { ls_unistrInsertBuffer(&box->text, buff, copiedLen, box->caretIndex); }
+            u32 realCopyLen = copiedLen;
+            
+            //NOTE: maxLen == 0 means there's no max len.
+            if(box->maxLen != 0) 
+            {
+                if(box->text.len + copiedLen > box->maxLen) {
+                    if(box->text.len < box->maxLen) { realCopyLen = box->maxLen - box->text.len; }
+                    else { realCopyLen = 0; }
+                }
+            }
+            
+            if(box->caretIndex == box->text.len) { ls_unistrAppendBuffer(&box->text, buff, realCopyLen); }
+            else { ls_unistrInsertBuffer(&box->text, buff, realCopyLen, box->caretIndex); }
             
             box->caretIndex += copiedLen;
         }
