@@ -667,38 +667,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
-#if 0
-    //TODO:Remove with ID system
-    UITextBox box = {};
-    box.text = ls_unistrAlloc(16);
-    
-    UIButton button = {};
-    button.name = ls_unistrFromAscii("Button");
-    button.onClick = testProc;
-    button.onHold = testHold;
-    
-    UIListBox listBox = {};
-    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 1");
-    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 2");
-    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 3");
-    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 4");
-    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 5");
-    ls_uiListBoxAddEntry(uiContext, &listBox, "Test 6");
-    
-    ls_uiListBoxRemoveEntry(uiContext, &listBox, 3);
-    
-    UISlider slider  = {};
-    slider.text = ls_unistrFromAscii("Il Nome di un Nemico");
-    slider.maxValue  = 100;
-    slider.minValue  = -50;
-    slider.currPos   = 0.5;
-    slider.style     = SL_BOX;
-    slider.lColor    = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), uiContext->widgetColor);
-    slider.rColor    = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), uiContext->widgetColor);
-    
-    unistring buttonTestString = ls_unistrFromAscii("Hello gouda! 'Bitch'");
-#endif
-    
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     
     SetInitTab(uiContext);
