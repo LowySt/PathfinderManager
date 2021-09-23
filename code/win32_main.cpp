@@ -747,6 +747,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(LeftClick && !uiContext->focusWasSetThisFrame)
         { uiContext->currentFocus = 0; }
         
+        if(LeftUp || RightUp || MiddleUp)
+        { uiContext->mouseCapture = 0; }
+        
         //TODO: UI Elements don't take ownership of input (Especially Mouse).
         //      This allows multiple elements to use mouse input at the same time, which is bad.
         ls_uiRender(uiContext);

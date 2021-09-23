@@ -138,6 +138,8 @@ struct UIContext
     u64 *currentFocus;
     b32 focusWasSetThisFrame;
     
+    u64 *mouseCapture;
+    
     void (*callbackRender)();
     u32 dt;
 };
@@ -1250,10 +1252,10 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
         
         ls_uiPopScissor(cxt);
         
-        if(MouseInRect(xPos + slidePos-5, yPos, 10, h)) 
+        if(MouseInRect(xPos + slidePos-5, yPos, 10, h) && !(cxt->mouseCapture != 0 && cxt->mouseCapture != (u64 *)slider))
         {
             slider->isHot = TRUE; 
-            if(LeftHold) { slider->isHeld = TRUE; }
+            if(LeftHold) { slider->isHeld = TRUE; cxt->mouseCapture = (u64 *)slider; }
             
             
             s32 actualX = (xPos + slidePos) - 1;
