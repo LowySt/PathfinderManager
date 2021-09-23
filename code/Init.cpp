@@ -13,7 +13,27 @@ void ThrowDiceOnClick(UIContext *cxt, void *data)
     }
     else
     {
+        u32 idx = 9999;
+        for(u32 i = 0; i < THROWER_NUM; i++) {
+            if(f == &State.Init->Throwers[i].throwDie) { idx = i; }
+        }
+        AssertMsg(idx != 9999, "Couldn't find thrower\n");
         
+        DiceThrow *f = State.Init->Throwers + idx;
+        
+        char toThrow[128] = {};
+        s32 len = ls_unistrToAscii_t(&f->toHit.text, toThrow, 128);
+        s32 result = (s32)diceRoll(toThrow, len);
+        
+        ls_unistrFromInt_t(&f->hitRes.text, result);
+        f->hitRes.viewEndIdx = f->hitRes.text.len;
+        
+        char dmgThrow[128] = {};
+        len = ls_unistrToAscii_t(&f->damage.text, dmgThrow, 128);
+        result = (s32)diceRoll(dmgThrow, len);
+        
+        ls_unistrFromInt_t(&f->dmgRes.text, result);
+        f->dmgRes.viewEndIdx = f->dmgRes.text.len;
     }
 }
 
@@ -442,7 +462,8 @@ void SetInitTab(UIContext *cxt)
         f->dmgRes.isReadonly = TRUE;
         
         f->throwDie.name    = ls_unistrFromUTF32(U"Go");
-        f->throwDie.onClick = 0x0;
+        f->throwDie.onClick = ThrowDiceOnClick;
+        f->throwDie.data    = &f->throwDie;
         f->throwDie.onHold  = 0x0;
     }
     
