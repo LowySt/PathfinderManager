@@ -148,6 +148,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             switch(w)
             { 
+                case VK_F2:      KeySet(keyMap::F2);        break;
+                
                 case VK_BACK:    KeySet(keyMap::Backspace); break;
                 case VK_DELETE:  KeySet(keyMap::Delete);    break;
                 case VK_HOME:    KeySet(keyMap::Home);      break;
@@ -168,6 +170,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         {
             switch(w)
             { 
+                case VK_F2:      KeyUnset(keyMap::F2);        break;
+                
                 case VK_BACK:    KeyUnset(keyMap::Backspace); break;
                 case VK_DELETE:  KeyUnset(keyMap::Delete);    break;
                 case VK_HOME:    KeyUnset(keyMap::Home);      break;
@@ -731,7 +735,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //      to avoid flashing because initially the frame buffer is all white.
         if(isStartup) { ShowWindow(MainWindow, SW_SHOW); isStartup = FALSE; }
         
-        
         //NOTE: Render The Frame
         ls_uiBackground(uiContext);
         
@@ -750,10 +753,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(LeftUp || RightUp || MiddleUp)
         { uiContext->mouseCapture = 0; }
         
-        //TODO: UI Elements don't take ownership of input (Especially Mouse).
-        //      This allows multiple elements to use mouse input at the same time, which is bad.
-        ls_uiRender(uiContext);
-        //NOTE:TEST
+        ls_uiRender(uiContext); 
         
         State.hasMouseClicked = FALSE;
         

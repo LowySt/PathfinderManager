@@ -359,7 +359,7 @@ void DrawInitTab(UIContext *cxt)
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
         ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 580, yPos+6);
-        ls_uiTextBox(cxt, Page->PlayerInit + i, 680, yPos, 32, 20);
+        ls_uiTextBox(cxt, Page->PlayerInit + i, 662, yPos, 32, 20);
         yPos -= 20;
     }
     
