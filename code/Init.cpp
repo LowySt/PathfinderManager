@@ -389,6 +389,37 @@ void SetInitTab(UIContext *cxt)
         f->stop.onHold  = 0x0;
     }
     
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *f = Page->Throwers + i;
+        
+        f->name.text   = ls_unistrAlloc(32);
+        f->toHit.text  = ls_unistrAlloc(32);
+        f->hitRes.text = ls_unistrAlloc(16);
+        f->damage.text = ls_unistrAlloc(32);
+        f->dmgRes.text = ls_unistrAlloc(16);
+        
+        f->hitRes.maxLen = 4;
+        f->dmgRes.maxLen = 4;
+        
+        f->throwDie.name    = ls_unistrFromUTF32(U"Go");
+        f->throwDie.onClick = 0x0;
+        f->throwDie.onHold  = 0x0;
+    }
+    
+    {
+        // General Thrower
+        Page->GeneralThrower.toHit.text  = ls_unistrAlloc(32);
+        Page->GeneralThrower.hitRes.text = ls_unistrAlloc(16);
+        
+        Page->GeneralThrower.hitRes.maxLen = 4;
+        
+        Page->GeneralThrower.throwDie.name    = ls_unistrFromUTF32(U"Go");
+        Page->GeneralThrower.throwDie.onClick = 0x0;
+        Page->GeneralThrower.throwDie.onHold  = 0x0;
+    }
+    
+    
     Page->Current.text            = ls_unistrAlloc(16);
     Page->Current.isReadonly      = TRUE;
     
@@ -499,6 +530,34 @@ void DrawInitTab(UIContext *cxt)
         yPos -= 44;
     }
     
+    // Dice Throwers
+    u32 xPos = 20;
+    yPos = 110;
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *f = Page->Throwers + i;
+        
+        ls_uiTextBox(cxt, &f->name,   xPos,       yPos,      120, 20);
+        ls_uiTextBox(cxt, &f->toHit,  xPos,       yPos + 24, 138, 20);
+        ls_uiTextBox(cxt, &f->hitRes, xPos + 138, yPos + 24, 36,  20);
+        ls_uiTextBox(cxt, &f->damage, xPos,       yPos + 48, 138, 20);
+        ls_uiTextBox(cxt, &f->dmgRes, xPos + 138, yPos + 48, 36,  20);
+        
+        ls_uiButton(cxt, &f->throwDie, xPos + 126, yPos, 48, 20);
+        
+        xPos += 212;
+    }
+    
+    xPos = 20;
+    yPos = 62;
+    // General Thrower
+    {
+        ls_uiTextBox(cxt, &Page->GeneralThrower.toHit,  xPos,       yPos, 168, 20);
+        ls_uiTextBox(cxt, &Page->GeneralThrower.hitRes, xPos + 168, yPos, 36,  20);
+        
+        ls_uiButton(cxt, &Page->GeneralThrower.throwDie, xPos + 210, yPos, 48, 20);
+    }
+    
     ls_uiButton(cxt, &Page->Reset, 600, 698, 48, 20);
     
     
@@ -523,15 +582,6 @@ void DrawInitTab(UIContext *cxt)
 #if 0
     
     Page->Save  = AddButton(WinH, wA, "Save",  670, 42, 45, 20, (*ElementId)++); wA += 1;
-    
-    //NOTE: Dice Throwers
-    u32 xPos = 20;
-    for(u32 i = 0; i < THROWER_NUM; i++)
-    {
-        Page->Throwers[i] = AddThrower(WinH, &wA, xPos, 642, ElementId);
-        Page->numWindows += 6;
-        xPos += 156;
-    }
     
     Page->GeneralThrower = AddGeneralThrower(WinH, &wA, 20, 752, ElementId);
     Page->numWindows += 3;

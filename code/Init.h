@@ -42,7 +42,7 @@ const u32 COUNTER_NUM = 8;
 const char32_t *CounterNames[COUNTER_NUM] = { U"Counter 1", U"Counter 2", U"Counter 3", U"Counter 4", 
     U"Counter 5", U"Counter 6", U"Counter 7", U"Counter 8" };
 
-const u32 THROWER_NUM = 8;
+const u32 THROWER_NUM = 6;
 
 struct tmp_order {
     s32 init;

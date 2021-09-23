@@ -97,15 +97,6 @@ struct AddInit
     Button  *Ok;
 };
 
-struct DiceThrow
-{
-    TextBox *Name;
-    TextBox *ToHit;
-    TextBox *HitRes;
-    TextBox *Damage;
-    TextBox *DmgRes;
-    Button  *Throw;
-};
 #endif
 
 struct InitField
@@ -142,6 +133,16 @@ struct Order
     s32 ID;
 };
 
+struct DiceThrow
+{
+    UITextBox name;
+    UITextBox toHit;
+    UITextBox hitRes;
+    UITextBox damage;
+    UITextBox dmgRes;
+    
+    UIButton  throwDie;
+};
 
 struct InitPage
 {
@@ -168,14 +169,14 @@ struct InitPage
     
     Counter    Counters[COUNTER_NUM];
     
+    DiceThrow  Throwers[THROWER_NUM];
+    DiceThrow  GeneralThrower;
+    
 #if 0
     Button     *Save;
     
     ComboBox   *EncounterSel;
     TextBox    *EncounterName;
-    
-    DiceThrow  Throwers[THROWER_NUM];
-    DiceThrow  GeneralThrower;
     
     HWND WindowsArray[WINARR_INIT_NUM];
     u32 numWindows;
