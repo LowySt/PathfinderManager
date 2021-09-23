@@ -647,10 +647,6 @@ void DrawInitTab(UIContext *cxt)
     
     Page->Save  = AddButton(WinH, wA, "Save",  670, 42, 45, 20, (*ElementId)++); wA += 1;
     
-    Page->GeneralThrower = AddGeneralThrower(WinH, &wA, 20, 752, ElementId);
-    Page->numWindows += 3;
-    
-    
     Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 644, 62, 100, 20, (*ElementId)++); wA += 1;
     Page->numWindows += 1;
     
