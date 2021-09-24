@@ -354,6 +354,15 @@ void CopyOrder(Order *From, Order *To)
     To->ID = From->ID;
 }
 
+void CopyInitField(InitField *From, InitField *To)
+{
+    ls_unistrSet(&To->name.text, From->name.text);
+    ls_unistrSet(&To->bonus.text, From->bonus.text);
+    ls_unistrSet(&To->final.text, From->final.text);
+    
+    To->ID = From->ID;
+}
+
 void RemoveOrderOnClick(UIContext *cxt, void *data)
 {
     if(State.inBattle == FALSE) { return; }
@@ -381,26 +390,7 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
             CopyOrder(B, A);
         }
         
-        Page->turnsInRound -= 1;
-        
-        //NOTE: We won't move the 'Current' field if you remove the 'Current' from the order.
-        //      Because of that, Counters will be one count extra on the first lap after the remove.
-        //      So we decrease them by one.
-        if(Page->currIdx == index)
-        {
-            for(u32 i = 0; i < COUNTER_NUM; i++)
-            {
-                if(Page->Counters[i].isActive) 
-                { Page->Counters[i].turnCounter -= 1; }
-            }
-        }
-        
-        //NOTE: Because we push everything up in the order (they go towards index 0)
-        //      If the current index is larger then the removed idx, the current will have been
-        //      pushed up, hence we need to readjust it.
-        if(Page->currIdx >= index) { Page->currIdx -= 1; }
-        
-        return;
+        goto exit;
     }
     else
     {
@@ -409,12 +399,27 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
             InitField *ally = Page->AllyFields + i;
             if(removeID == ally->ID) 
             {
-                //TODO: Remove the thing
+                //NOTE: We remove the ally from the allies list by moving the last one in its place
+                InitField *B = Page->AllyFields + (visibleAllies - 1);
+                CopyInitField(B, ally);
                 
-                Page->turnsInRound -= 1;
-                if(Page->currIdx >= index) { Page->currIdx -= 1; }
+                //TODO: Is clearing for new additions a waste of CPU time? The user won't see them anyway
+                ls_uiTextBoxClear(cxt, &B->name);
+                ls_uiTextBoxClear(cxt, &B->bonus);
+                ls_uiTextBoxClear(cxt, &B->final);
+                B->ID = 0;
                 
-                return;
+                Page->Allies.selectedIndex -= 1;
+                
+                for(u32 i = index; i < (visibleOrder-1); i++)
+                {
+                    Order *A = Page->OrderFields + i;
+                    Order *B = Page->OrderFields + (i+1);
+                    
+                    CopyOrder(B, A);
+                }
+                
+                goto exit;
             }
         }
         
@@ -434,97 +439,28 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
     }
     
     
+    exit:
     
-#if 0
-    if(Init->Order[i].isMob == TRUE)
-    {
-        u32 mobId = Init->Order[i].fieldId;
-        
-        InitField *toRemove = getInitById(Init->MobFields, Init->VisibleMobs, mobId);
-        if(toRemove == 0x0) { /*TODO: Logging */ Assert(FALSE); }
-        
-        char name[32] = {};
-        Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].Name->box, name, 32);
-        Edit_SetText(toRemove->Name->box, name);
-        
-        char box[8] = {};
-        Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].Bonus->box, box, 8);
-        Edit_SetText(toRemove->Bonus->box, box);
-        
-        char final[8] = {};
-        Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].Final->box, final, 8);
-        Edit_SetText(toRemove->Final->box, final);
-        
-        char AC[8] = {};
-        Edit_GetText(Init->MobFields[Init->VisibleMobs - 1].AC->box, AC, 8);
-        Edit_SetText(toRemove->AC->box, AC);
-        
-        toRemove->id = Init->MobFields[Init->VisibleMobs - 1].id;
-        
-        HideInitField(&Init->MobFields[Init->VisibleMobs - 1], 1);
-        HideInitFieldAdd(Init->MobFields, Init->VisibleMobs, MOB_NUM);
-        ShowInitFieldAdd(Init->MobFields, Init->VisibleMobs-1, MOB_NUM);
-        
-        Init->VisibleMobs -= 1;
-    }
-    else if(Init->Order[i].isParty == TRUE)
-    {
-        //NOTE: Probably just do nothing?
-    }
-    else
-    {
-        u32 allyId = Init->Order[i].fieldId;
-        
-        InitField *toRemove = getInitById(Init->AllyFields, Init->VisibleAllies, allyId);
-        if(toRemove == 0x0) { /*TODO: Logging */ Assert(FALSE); }
-        
-        char name[32] = {};
-        Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].Name->box, name, 32);
-        Edit_SetText(toRemove->Name->box, name);
-        
-        char box[8] = {};
-        Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].Bonus->box, box, 32);
-        Edit_SetText(toRemove->Bonus->box, box);
-        
-        char final[8] = {};
-        Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].Final->box, final, 32);
-        Edit_SetText(toRemove->Final->box, final);
-        
-        char AC[8] = {};
-        Edit_GetText(Init->AllyFields[Init->VisibleAllies - 1].AC->box, AC, 8);
-        Edit_SetText(toRemove->AC->box, AC);
-        
-        toRemove->id = Init->AllyFields[Init->VisibleAllies - 1].id;
-        
-        HideInitField(&Init->AllyFields[Init->VisibleAllies - 1], 1);
-        HideInitFieldAdd(Init->AllyFields, Init->VisibleAllies, ALLY_NUM);
-        ShowInitFieldAdd(Init->AllyFields, Init->VisibleAllies-1, ALLY_NUM);
-        
-        Init->VisibleAllies -= 1;
-    }
+    Page->turnsInRound -= 1;
     
-    //NOTE: Move everything that is below the removed up 1.
-    if(i != (Init->VisibleOrder - 1)) 
+    //NOTE: We won't move the 'Current' field if you remove the 'Current' from the order.
+    //      Because of that, Counters will be one count extra on the first lap after the remove.
+    //      So we decrease them by one.
+    if(Page->currIdx == index)
     {
-        for(u32 j = i + 1; j < Init->VisibleOrder; j++)
+        for(u32 i = 0; i < COUNTER_NUM; i++)
         {
-            char v[32] = {};
-            u32 len = Edit_GetText(Init->Order[j].Field->box, v, 32);
-            Edit_SetText(Init->Order[j-1].Field->box, v);
-            
-            Init->Order[j-1].fieldId = Init->Order[j].fieldId;
-            Init->Order[j-1].isMob   = Init->Order[j].isMob;
-            Init->Order[j-1].isParty = Init->Order[j].isParty;
+            if(Page->Counters[i].isActive) 
+            { Page->Counters[i].turnCounter -= 1; }
         }
     }
     
-    Edit_SetText(Init->Order[Init->VisibleOrder - 1].Field->box, "");
-    HideOrder(Init->Order + (Init->VisibleOrder - 1), 1);
+    //NOTE: Because we push everything up in the order (they go towards index 0)
+    //      If the current index is larger then the removed idx, the current will have been
+    //      pushed up, hence we need to readjust it.
+    if(Page->currIdx >= index) { Page->currIdx -= 1; }
     
-    Init->turnsInRound -= 1;
-    Init->VisibleOrder -= 1;
-    if(Init->currIdx >= i) { Init->currIdx -= 1; }
-#endif
+    return;
 }
 
 void StartCounterOnClick(UIContext *cxt, void *data)
