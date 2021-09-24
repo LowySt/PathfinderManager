@@ -428,12 +428,27 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
             InitField *mob = Page->MobFields + i;
             if(removeID == mob->ID)
             {
-                //TODO: Remove the thing
+                //NOTE: We remove the Mob from the mobs list by moving the last one in its place
+                InitField *B = Page->MobFields + (visibleMobs - 1);
+                CopyInitField(B, mob);
                 
-                Page->turnsInRound -= 1;
-                if(Page->currIdx >= index) { Page->currIdx -= 1; }
+                //TODO: Is clearing for new additions a waste of CPU time? The user won't see them anyway
+                ls_uiTextBoxClear(cxt, &B->name);
+                ls_uiTextBoxClear(cxt, &B->bonus);
+                ls_uiTextBoxClear(cxt, &B->final);
+                B->ID = 0;
                 
-                return;
+                Page->Mobs.selectedIndex -= 1;
+                
+                for(u32 i = index; i < (visibleOrder-1); i++)
+                {
+                    Order *A = Page->OrderFields + i;
+                    Order *B = Page->OrderFields + (i+1);
+                    
+                    CopyOrder(B, A);
+                }
+                
+                goto exit;
             }
         }
     }
