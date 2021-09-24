@@ -268,6 +268,8 @@ void ResetOnClick(UIContext *cxt, void *data)
     Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     
     Page->orderAdjust = 0;
+    
+    addID = 1000;
 }
 
 void NextOnClick(UIContext *cxt, void *data)
@@ -524,6 +526,66 @@ void StopCounterOnClick(UIContext *cxt, void *data)
     C->startIdxInOrder = 0;
 }
 
+void AddNewInitOnClick(UIContext *cxt, void *data)
+{
+    InitField *f = (InitField *)data;
+    f->isAdding = TRUE;
+}
+
+//TODO: Right now we are not allowing to give an Initiative Value and put the new 
+//      Field in the right place in Order.
+//      If we allow it, the counter checker WILL HAVE to probably fix C->startIdxInOrder to work.
+void AddConfirmOnClick(UIContext *cxt, void *data)
+{
+    InitField *f = (InitField *)data;
+    
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    
+    //NOTETODO: This is a really dumb way to determine if it's an ally or a mob...
+    if(State.Init->AllyFields <= f && f <= (State.Init->AllyFields + visibleAllies))
+    { State.Init->Allies.selectedIndex += 1; }
+    else
+    { State.Init->Mobs.selectedIndex += 1; }
+    
+    State.Init->turnsInRound += 1;
+    
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *C = State.Init->Counters + i;
+        if(C->isActive)
+        { 
+            AssertMsg(State.Init->turnsInRound >= C->startIdxInOrder, "startIdxInOrder is not realiable anymore\n");
+            
+            //NOTE: This counter missed counting the new addition this round,
+            //      So we manually count up by one.
+            if(State.Init->currIdx < C->startIdxInOrder)
+            { C->turnCounter += 1; }
+        }
+    }
+    
+    Order *o = State.Init->OrderFields + visibleOrder;
+    
+    ls_unistrSet(&o->field.text, f->addName.text);
+    ls_unistrSet(&f->name.text, f->addName.text);
+    f->name.viewEndIdx = f->name.text.len;
+    
+    f->name.isReadonly  = TRUE;
+    f->bonus.isReadonly = TRUE;
+    f->final.isReadonly = TRUE;
+    
+    //NOTE: Because IDs in the InitFields get overwritten when removing from order 
+    //      we can't reliably re-use them, unless we create a system to dispense Unique IDs.
+    //      So for simplicy we are just starting from 1000 and every single Added Init will just the next one.
+    //      AddID is reset during ResetOnClick
+    f->ID = addID;
+    o->ID = addID;
+    addID += 1;
+    
+    f->isAdding = FALSE;
+}
+
 void SetInitTab(UIContext *cxt)
 {
     InitPage *Page = State.Init;
@@ -556,6 +618,20 @@ void SetInitTab(UIContext *cxt)
         
         f->ID = currID;
         currID += 1;
+        
+        f->addName.text     = ls_unistrAlloc(16);
+        f->addInit.text     = ls_unistrAlloc(16);
+        f->addInit.maxLen   = 2;
+        
+        f->addNew.name      = ls_unistrFromUTF32(U"+");
+        f->addNew.onClick   = AddNewInitOnClick;
+        f->addNew.data      = f;
+        f->addNew.onHold    = 0x0;
+        
+        f->addConfirm.name    = ls_unistrFromUTF32(U"Ok");
+        f->addConfirm.onClick = AddConfirmOnClick;
+        f->addConfirm.data    = f;
+        f->addConfirm.onHold  = 0x0;
     }
     
     for(u32 i = 0; i < ALLY_NUM; i++)  
@@ -575,6 +651,20 @@ void SetInitTab(UIContext *cxt)
         
         f->ID = currID;
         currID += 1;
+        
+        f->addName.text     = ls_unistrAlloc(16);
+        f->addInit.text     = ls_unistrAlloc(16);
+        f->addInit.maxLen   = 2;
+        
+        f->addNew.name      = ls_unistrFromUTF32(U"+");
+        f->addNew.onClick   = AddNewInitOnClick;
+        f->addNew.data      = f;
+        f->addNew.onHold    = 0x0;
+        
+        f->addConfirm.name    = ls_unistrFromUTF32(U"Ok");
+        f->addConfirm.onClick = AddConfirmOnClick;
+        f->addConfirm.data    = f;
+        f->addConfirm.onHold  = 0x0;
     }
     
     for(u32 i = 0; i < ORDER_NUM; i++)
@@ -813,6 +903,42 @@ void DrawInitTab(UIContext *cxt)
         ls_uiTextBox(cxt, &Page->RoundCounter, 1180, 740, 30, 20);
         
         ls_uiButton(cxt, &Page->Next, 900, 718, 48, 20);
+        
+        if(visibleAllies < ALLY_NUM)
+        {
+            InitField *f = Page->AllyFields + visibleAllies;
+            
+            u32 addY = 474 - (20*visibleAllies);
+            if(!f->isAdding)
+            {
+                ls_uiButton(cxt, &f->addNew, 606, addY, 36, 20);
+            }
+            else
+            {
+                ls_uiTextBox(cxt, &f->addName, 546, addY+4, 120, 20);
+                ls_uiTextBox(cxt, &f->addInit, 666, addY+4, 32, 20);
+                
+                ls_uiButton(cxt, &f->addConfirm, 698, addY+4, 32, 20);
+            }
+        }
+        
+        if(visibleMobs < MOB_NUM)
+        {
+            InitField *f = Page->MobFields + visibleMobs;
+            
+            u32 addY = 654 - (20*visibleMobs);
+            if(!f->isAdding)
+            {
+                ls_uiButton(cxt, &f->addNew, 356, addY, 36, 20);
+            }
+            else
+            {
+                ls_uiTextBox(cxt, &f->addName, 296, addY+4, 120, 20);
+                ls_uiTextBox(cxt, &f->addInit, 416, addY+4, 32, 20);
+                
+                ls_uiButton(cxt, &f->addConfirm, 448, addY+4, 32, 20);
+            }
+        }
     }
     
 #if 0

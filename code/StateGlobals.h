@@ -80,24 +80,18 @@ struct EncList
     Encounter Enc[64];
 };
 
-#if 0
-
-struct AddInit
-{
-    TextBox *Name;
-    TextBox *Bonus;
-    
-    Button  *Add;
-    Button  *Ok;
-};
-
-#endif
-
 struct InitField
 {
     UITextBox name;
     UITextBox bonus;
     UITextBox final;
+    
+    UITextBox addName;
+    UITextBox addInit;
+    
+    UIButton  addNew;
+    UIButton  addConfirm;
+    b32 isAdding;
     
     s32 ID;
 };

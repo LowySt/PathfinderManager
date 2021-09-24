@@ -51,4 +51,6 @@ struct tmp_order {
     s32 ID;
 };
 
+static s32 addID = 1000;
+
 #endif //_INIT_H
