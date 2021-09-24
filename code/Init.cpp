@@ -230,6 +230,7 @@ void ResetOnClick(UIContext *cxt, void *data)
         
         ls_unistrClear(&f->field.text);
         f->field.currPos = 1.0;
+        f->ID = -1;
     }
     
     for(u32 i = 0; i < COUNTER_NUM; i++)
@@ -240,7 +241,7 @@ void ResetOnClick(UIContext *cxt, void *data)
         ls_uiTextBoxClear(cxt, &f->rounds);
         f->roundsLeft      = 0;
         f->startIdxInOrder = 0;
-        f->turnCounter    = 0;
+        f->turnCounter     = 0;
         f->isActive        = FALSE;
     }
     
