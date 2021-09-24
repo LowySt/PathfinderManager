@@ -144,6 +144,7 @@ struct InitPage
     UIListBox  Allies;
     
     UITextBox  PlayerInit[PARTY_NUM];
+    
     InitField  AllyFields[ALLY_NUM];
     InitField  MobFields[MOB_NUM];
     

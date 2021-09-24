@@ -51,9 +51,4 @@ struct tmp_order {
     s32 ID;
 };
 
-struct InitField;
-InitField *getInitById(InitField *f, u32 fieldSize, u64 id);
-InitField *getInitByHWND(HWND handle);
-void DrawInitTab(HWND WinH, u64 *ElementId);
-
 #endif //_INIT_H
