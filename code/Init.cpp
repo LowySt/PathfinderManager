@@ -161,7 +161,7 @@ void SetOnClick(UIContext *cxt, void *data)
         Page->AllyFields[i].final.isReadonly = TRUE;
     }
     
-    Page->turnsInRound = visibleOrder - 1;
+    Page->turnsInRound = visibleOrder;
     
     State.inBattle = TRUE;
 }
@@ -299,7 +299,8 @@ void NextOnClick(UIContext *cxt, void *data)
         
         if(C->isActive == TRUE)
         {
-            //TODO: This is fucked? turnsInRound and turnCounter work badly with RemoveOnClick
+            C->turnCounter += 1;
+            
             if(C->turnCounter >= Page->turnsInRound)
             { 
                 C->turnCounter = 0;
@@ -324,7 +325,6 @@ void NextOnClick(UIContext *cxt, void *data)
                 continue;
             }
             
-            C->turnCounter += 1;
             continue;
         }
     }
@@ -382,6 +382,22 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
         }
         
         Page->turnsInRound -= 1;
+        
+        //NOTE: We won't move the 'Current' field if you remove the 'Current' from the order.
+        //      Because of that, Counters will be one count extra on the first lap after the remove.
+        //      So we decrease them by one.
+        if(Page->currIdx == index)
+        {
+            for(u32 i = 0; i < COUNTER_NUM; i++)
+            {
+                if(Page->Counters[i].isActive) 
+                { Page->Counters[i].turnCounter -= 1; }
+            }
+        }
+        
+        //NOTE: Because we push everything up in the order (they go towards index 0)
+        //      If the current index is larger then the removed idx, the current will have been
+        //      pushed up, hence we need to readjust it.
         if(Page->currIdx >= index) { Page->currIdx -= 1; }
         
         return;
