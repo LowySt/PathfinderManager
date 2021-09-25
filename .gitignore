@@ -11,6 +11,7 @@
 *.ttf
 code/asset_main.cpp
 testState
+SaveFile*
 Releases/
 out/
 lib/
