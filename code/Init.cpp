@@ -1,3 +1,45 @@
+void SaveEncounterOnClick(UIContext *cxt, void *data)
+{
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    
+    u32 numEncounters = State.encounters.numEncounters;
+    Encounter *curr = State.encounters.Enc + numEncounters;
+    
+    ls_unistrSet(&curr->name, State.Init->EncounterName.text);
+    
+    curr->numMobs = visibleMobs;
+    curr->numAllies = visibleAllies;
+    
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        ls_unistrSet(&curr->mobName[i], State.Init->MobFields[i].name.text);
+        ls_unistrSet(&curr->mobBonus[i], State.Init->MobFields[i].bonus.text);
+        ls_unistrSet(&curr->mobFinal[i], State.Init->MobFields[i].final.text);
+        //ls_unistrSet(&curr->mobAC[i], State.Init->MobFields[i].AC.text);
+    }
+    
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        ls_unistrSet(&curr->allyName[i], State.Init->AllyFields[i].name.text);
+        ls_unistrSet(&curr->allyBonus[i], State.Init->AllyFields[i].bonus.text);
+        ls_unistrSet(&curr->allyFinal[i], State.Init->AllyFields[i].final.text);
+        //ls_unistrSet(&curr->allyAC[i], State.Init->AllyFields[i].AC.text);
+    }
+    
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        ls_unistrSet(&curr->throwerName[i], State.Init->Throwers[i].name.text);
+        ls_unistrSet(&curr->throwerHit[i], State.Init->Throwers[i].toHit.text);
+        ls_unistrSet(&curr->throwerDamage[i], State.Init->Throwers[i].damage.text);
+    }
+    
+    State.encounters.numEncounters += 1;
+    
+    ls_uiListBoxAddEntry(cxt, &State.Init->EncounterSel, State.Init->EncounterName.text);
+}
+
 void ThrowDiceOnClick(UIContext *cxt, void *data)
 {
     UIButton *f = (UIButton *)data;
@@ -745,12 +787,13 @@ void SetInitTab(UIContext *cxt)
         Page->GeneralThrower.throwDie.onHold  = 0x0;
     }
     
+    ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, ls_unistrConstant(NoEncounterStr));
     for(u32 i = 0; i < State.encounters.numEncounters; i++)
     { ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, State.encounters.Enc[i].name); }
     
     Page->EncounterName.text = ls_unistrAlloc(16);
     Page->Save.name    = ls_unistrFromUTF32(U"Save");
-    Page->Save.onClick = 0x0;
+    Page->Save.onClick = SaveEncounterOnClick;
     Page->Save.data    = 0x0;
     Page->Save.onHold  = 0x0;
     
@@ -905,7 +948,7 @@ void DrawInitTab(UIContext *cxt)
         ls_uiButton(cxt, &Page->Roll, 486, 698, 48, 20);
         ls_uiButton(cxt, &Page->Set, 710, 698, 48, 20);
         
-        ls_uiListBox(cxt, &Page->EncounterSel, 500, 738, 100, 20);
+        ls_uiListBox(cxt, &Page->EncounterSel, 480, 738, 120, 20);
         ls_uiTextBox(cxt, &Page->EncounterName, 624, 738, 100, 20);
         
         ls_uiButton(cxt, &Page->Save, 601, 760, 44, 20);

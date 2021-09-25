@@ -44,6 +44,8 @@ const char32_t *CounterNames[COUNTER_NUM] = { U"Counter 1", U"Counter 2", U"Coun
 
 const u32 THROWER_NUM = 6;
 
+const char32_t *NoEncounterStr = U"No Selection";
+
 struct tmp_order {
     s32 init;
     unistring *name;

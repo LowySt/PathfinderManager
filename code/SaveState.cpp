@@ -1,6 +1,8 @@
-#if 0
 void SaveState()
 {
+    
+#if 0
+    
     buffer state = ls_bufferInit(MBytes(1));
     buffer *buf = &state;
     
@@ -38,6 +40,8 @@ void SaveState()
             ls_bufferAddData(buf, curr->throwerDamage[j], 64);
         }
     }
+    
+    
     
     //NOTE: Serialize Player Initiative
     for(u32 i = 0; i < PARTY_NUM; i++)
@@ -142,12 +146,14 @@ void SaveState()
         ls_bufferAddData(buf, text, len);
     }
     
-    ls_writeFile((char *)"testState", (char *)buf->data, buf->size, FALSE);
+    char outName[64] = {};
+    ls_sprintf(outName, "SaveFile_v%d", global_saveVersion);
+    ls_writeFile(outName, (char *)buf->data, buf->size, FALSE);
+    
+#endif
     
     return;
 }
-
-#endif
 
 b32 LoadState()
 {

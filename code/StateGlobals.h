@@ -3,7 +3,7 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 4;
+const u32 global_saveVersion = 0;
 
 #if 0
 struct AbilityScores
@@ -60,16 +60,18 @@ struct Encounter
     unistring name;
     
     u32 numMobs;
-    unistring mobNames[MOB_NUM];
+    unistring mobName[MOB_NUM];
     unistring mobBonus[MOB_NUM];
-    unistring mobAC[MOB_NUM];
+    unistring mobFinal[MOB_NUM];
+    //unistring mobAC[MOB_NUM];
     
     u32 numAllies;
-    unistring allyNames[ALLY_NUM];
+    unistring allyName[ALLY_NUM];
     unistring allyBonus[ALLY_NUM];
-    unistring allyAC[ALLY_NUM];
+    unistring allyFinal[ALLY_NUM];
+    //unistring allyAC[ALLY_NUM];
     
-    unistring throwerNames[THROWER_NUM];
+    unistring throwerName[THROWER_NUM];
     unistring throwerHit[THROWER_NUM];
     unistring throwerDamage[THROWER_NUM];
 };
