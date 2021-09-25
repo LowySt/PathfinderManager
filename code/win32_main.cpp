@@ -339,16 +339,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
         } break;
         
-        case WM_CTLCOLORSTATIC:
-        {
-            HDC editHDC = (HDC)w;
-            
-            SetBkColor(editHDC, RGB(0x56, 0x56, 0x56));
-            SetTextColor(editHDC, RGB(255, 255, 255));
-            
-            return (LRESULT)controlBkgBrush;
-        };
-        
         default:
         {
             return DefWindowProcA(h, msg, w, l);
