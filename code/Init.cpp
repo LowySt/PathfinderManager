@@ -317,6 +317,7 @@ void ResetOnClick(UIContext *cxt, void *data)
     
     ls_unistrSet(&Page->RoundCounter.text, zeroUTF32);
     Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
+    Page->roundCount = 0;
     
     Page->orderAdjust = 0;
     
