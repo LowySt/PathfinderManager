@@ -5,56 +5,6 @@
 
 const u32 global_saveVersion = 0;
 
-#if 0
-struct AbilityScores
-{
-    TextBox *Box[6];
-    TextBox *Bonus[6];
-    Button *Plus1[6];
-    Button *Plus10[6];
-};
-
-struct PCPage
-{
-    HWND TabControl; //DEBUG
-    
-    TextBox *Name;
-    TextBox *Player;
-    ComboBox *Race;
-    
-    ComboBox *Class;
-    b32 wasClassChosen;
-    
-    AbilityScores *Scores;
-    
-    ListBox *RacialTraits;
-    
-    TextBox *currLevel;
-    TextBox *currXP;
-    TextBox *nextLevelXP;
-    ComboBox *XPCurve;
-    XPCurveIdx xpIdx;
-    
-    TextBox *SavingThrows[3];
-    TextBox *BaseAttackBonus;
-    
-    HWND WindowsArray[WINARR_PC_NUM];
-    u32 numWindows;
-};
-
-struct FeatsPage
-{
-    ListBox *Feats;
-    TextBox *FeatsDesc;
-    ListBox *ChosenFeats;
-    u32 ChosenFeatsIndices[64];
-    u8 usedFeats;
-    
-    HWND WindowsArray[WINARR_FEATS_NUM];
-    u32 numWindows;
-};
-#endif
-
 struct Encounter
 {
     unistring name;
