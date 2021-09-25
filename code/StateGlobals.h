@@ -71,6 +71,7 @@ struct Encounter
     unistring allyFinal[ALLY_NUM];
     //unistring allyAC[ALLY_NUM];
     
+    u32 numThrowers;
     unistring throwerName[THROWER_NUM];
     unistring throwerHit[THROWER_NUM];
     unistring throwerDamage[THROWER_NUM];

@@ -645,13 +645,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     State.isInitialized = TRUE;
     
-    LoadState();
-    
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     SetInitTab(uiContext);
+    
+    //NOTE: The state HAS to be loaded after the InitTab 
+    //      has ben Initialized to allow data to be properly set.
+    b32 result = LoadState(uiContext);
+    ls_printf("Result was: %d\n", result);
     
     RegionTimer frameTime = {};
     b32 Running = TRUE;
@@ -708,6 +711,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         State.hasMouseClicked = FALSE;
         
         GetSystemTime(&endT);
+        
+        //TODO:NOTE: DEBUG TEMPORARY
+        if(KeyPress(keyMap::F2))
+        { 
+            SaveState(); 
+        }
         
         State.timePassed += (endT.wSecond - beginT.wSecond);
         if(State.timePassed >= 30)

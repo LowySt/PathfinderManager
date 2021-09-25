@@ -1,8 +1,5 @@
 void SaveState()
 {
-    
-#if 0
-    
     buffer state = ls_bufferInit(MBytes(1));
     buffer *buf = &state;
     
@@ -16,32 +13,37 @@ void SaveState()
     {
         Encounter *curr = &State.encounters.Enc[i];
         
-        ls_bufferAddData(buf, curr->name, 32);
+        ls_bufferAddUnistring(buf, curr->name);
         ls_bufferAddDWord(buf, curr->numMobs);
+        
         for(u32 j = 0; j < curr->numMobs; j++)
         {
-            ls_bufferAddData(buf, curr->mobNames[j], 32);
-            ls_bufferAddData(buf, curr->mobBonus[j], 8);
-            ls_bufferAddData(buf, curr->mobAC[j], 8);
+            ls_bufferAddUnistring(buf, curr->mobName[j]);
+            ls_bufferAddUnistring(buf, curr->mobBonus[j]);
+            ls_bufferAddUnistring(buf, curr->mobFinal[j]);
+            //ls_bufferAddUnistring(buf, curr->mobAC[j]);
         }
         
         ls_bufferAddDWord(buf, curr->numAllies);
         for(u32 j = 0; j < curr->numAllies; j++)
         {
-            ls_bufferAddData(buf, curr->allyNames[j], 32);
-            ls_bufferAddData(buf, curr->allyBonus[j], 8);
-            ls_bufferAddData(buf, curr->allyAC[j], 8);
+            ls_bufferAddUnistring(buf, curr->allyName[j]);
+            ls_bufferAddUnistring(buf, curr->allyBonus[j]);
+            ls_bufferAddUnistring(buf, curr->allyFinal[j]);
+            //ls_bufferAddUnistring(buf, curr->allyAC[j]);
         }
         
-        for(u32 j = 0; j < THROWER_NUM; j++)
+        ls_bufferAddDWord(buf, curr->numThrowers);
+        for(u32 j = 0; j < curr->numThrowers; j++)
         {
-            ls_bufferAddData(buf, curr->throwerNames[j], 64);
-            ls_bufferAddData(buf, curr->throwerHit[j], 64);
-            ls_bufferAddData(buf, curr->throwerDamage[j], 64);
+            ls_bufferAddUnistring(buf, curr->throwerName[j]);
+            ls_bufferAddUnistring(buf, curr->throwerHit[j]);
+            ls_bufferAddUnistring(buf, curr->throwerDamage[j]);
         }
+        
     }
     
-    
+#if 0
     
     //NOTE: Serialize Player Initiative
     for(u32 i = 0; i < PARTY_NUM; i++)
@@ -146,84 +148,82 @@ void SaveState()
         ls_bufferAddData(buf, text, len);
     }
     
+    
+#endif
+    
     char outName[64] = {};
     ls_sprintf(outName, "SaveFile_v%d", global_saveVersion);
     ls_writeFile(outName, (char *)buf->data, buf->size, FALSE);
     
-#endif
-    
     return;
 }
 
-b32 LoadState()
+b32 LoadState(UIContext *cxt)
 {
+    //TODO: Check for previous file versions and convert them to newer version!
     char fullPathBuff[128] = {};
-    u32 len = ls_getFullPathName((char *)"testState", fullPathBuff, 128);
+    char outName[64] = {};
+    ls_sprintf(outName, "SaveFile_v%d", global_saveVersion);
+    
+    u32 len = ls_getFullPathName(outName, fullPathBuff, 128);
     
     if(ls_fileExists(fullPathBuff) == FALSE) { return FALSE; }
     
-#if __GNUG__
-    string filePath = {
-        (char *)"testState",
-        (sizeof("testState")/sizeof("testState"[0]))-1,
-        (sizeof("testState")/sizeof("testState"[0]))-1
-    };
-#else
-    string filePath = ls_strConst("testState");
-#endif
     
-    return FALSE;
-    
-#if 0
-    
-    buffer state = ls_bufferInitFromFile(filePath);
+    string path = ls_strConstant(fullPathBuff);
+    buffer state = ls_bufferInitFromFile(path);
     buffer *buf = &state;
+    
     
     u32 fileVersion = ls_bufferReadDWord(buf);
     if(fileVersion != global_saveVersion) { return FALSE; }
     
-    State.inBattle = ls_bufferReadDWord(buf);
+    State.inBattle                 = ls_bufferReadDWord(buf);
     State.encounters.numEncounters = ls_bufferReadDWord(buf);
     
-    InitPage *page = State.Init;
+    InitPage *Page = State.Init;
     
     for(u32 i = 0; i < State.encounters.numEncounters; i++)
     {
-        Encounter *curr = &State.encounters.Enc[i];
+        Encounter *curr = State.encounters.Enc + i;
         
-        ls_bufferReadData(buf, curr->name);
+        //TODO: Remove this when everything is checked to be working properly.
+        AssertMsg(curr->name.data == NULL, "We don't want to leak memory\n");
+        curr->name = ls_bufferReadUnistring(buf);
         
         curr->numMobs = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numMobs; j++)
         {
-            ls_bufferReadData(buf, curr->mobNames[j]);
-            ls_bufferReadData(buf, curr->mobBonus[j]);
-            ls_bufferReadData(buf, curr->mobAC[j]);
+            curr->mobName[j]  = ls_bufferReadUnistring(buf);
+            curr->mobBonus[j] = ls_bufferReadUnistring(buf);
+            curr->mobFinal[j] = ls_bufferReadUnistring(buf);
+            //curr->mobAC[j]  = ls_bufferReadUnistring(buf);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numAllies; j++)
         {
-            ls_bufferReadData(buf, curr->allyNames[j]);
-            ls_bufferReadData(buf, curr->allyBonus[j]);
-            ls_bufferReadData(buf, curr->allyAC[j]);
+            curr->allyName[j]  = ls_bufferReadUnistring(buf);
+            curr->allyBonus[j] = ls_bufferReadUnistring(buf);
+            curr->allyFinal[j] = ls_bufferReadUnistring(buf);
+            //curr->allyAC[j]    = ls_bufferReadUnistring(buf);
         }
         
-        for(u32 j = 0; j < THROWER_NUM; j++)
+        curr->numThrowers = ls_bufferReadDWord(buf);
+        for(u32 j = 0; j < curr->numThrowers; j++)
         {
-            ls_bufferReadData(buf, curr->throwerNames[j]);
-            ls_bufferReadData(buf, curr->throwerHit[j]);
-            ls_bufferReadData(buf, curr->throwerDamage[j]);
+            curr->throwerName[j]   = ls_bufferReadUnistring(buf);
+            curr->throwerHit[j]    = ls_bufferReadUnistring(buf);
+            curr->throwerDamage[j] = ls_bufferReadUnistring(buf);
         }
         
-        const u32 baseHeight = 20;
-        u32 height = 0;
-        if(State.encounters.numEncounters == 1) { height = baseHeight*3; }
-        else { height = baseHeight*(State.encounters.numEncounters + 1); }
-        SetWindowPos(State.Init->EncounterSel->box, NULL, NULL, NULL, 100, height, SWP_NOMOVE | SWP_NOZORDER);
-        
-        ComboBox_InsertString(State.Init->EncounterSel->box, -1, curr->name);
+        ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, curr->name);
     }
+    
+    
+    return TRUE;
+    
+#if 0
     
     if(!State.inBattle) 
     { 

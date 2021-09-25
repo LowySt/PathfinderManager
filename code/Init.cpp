@@ -28,12 +28,21 @@ void SaveEncounterOnClick(UIContext *cxt, void *data)
         //ls_unistrSet(&curr->allyAC[i], State.Init->AllyFields[i].AC.text);
     }
     
+    u32 throwerCount = 0;
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
+        if(State.Init->Throwers[i].name.text.len == 0)   { continue; }
+        if(State.Init->Throwers[i].toHit.text.len == 0)  { continue; }
+        if(State.Init->Throwers[i].damage.text.len == 0) { continue; }
+        
         ls_unistrSet(&curr->throwerName[i], State.Init->Throwers[i].name.text);
         ls_unistrSet(&curr->throwerHit[i], State.Init->Throwers[i].toHit.text);
         ls_unistrSet(&curr->throwerDamage[i], State.Init->Throwers[i].damage.text);
+        
+        throwerCount += 1;
     }
+    curr->numThrowers = throwerCount;
+    
     
     State.encounters.numEncounters += 1;
     
