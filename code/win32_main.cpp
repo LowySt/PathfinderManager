@@ -645,20 +645,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     State.isInitialized = TRUE;
     
-    /*
-    //TODO: Reinstate this b32 success = LoadState();
-    if(success == FALSE)
-    {
-        //NOTE:TODO: How to fail?
-        // Nothing should have been changed yet, so the program shouldn't be in a bad state...
-    }
-    */
+    LoadState();
     
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
-    
     SetInitTab(uiContext);
     
     RegionTimer frameTime = {};

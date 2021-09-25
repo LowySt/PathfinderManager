@@ -147,6 +147,8 @@ void SaveState()
     return;
 }
 
+#endif
+
 b32 LoadState()
 {
     char fullPathBuff[128] = {};
@@ -163,6 +165,10 @@ b32 LoadState()
 #else
     string filePath = ls_strConst("testState");
 #endif
+    
+    return FALSE;
+    
+#if 0
     
     buffer state = ls_bufferInitFromFile(filePath);
     buffer *buf = &state;
@@ -370,5 +376,6 @@ b32 LoadState()
     ShowElem(page->Next->box);   ShowElem(page->RoundCounter->box);
     
     return TRUE;
-}
+    
 #endif
+}

@@ -57,21 +57,21 @@ struct FeatsPage
 
 struct Encounter
 {
-    char name[32];
+    unistring name;
     
     u32 numMobs;
-    char mobNames[MOB_NUM][32];
-    char mobBonus[MOB_NUM][8];
-    char mobAC[MOB_NUM][8];
+    unistring mobNames[MOB_NUM];
+    unistring mobBonus[MOB_NUM];
+    unistring mobAC[MOB_NUM];
     
     u32 numAllies;
-    char allyNames[ALLY_NUM][32];
-    char allyBonus[ALLY_NUM][8];
-    char allyAC[ALLY_NUM][8];
+    unistring allyNames[ALLY_NUM];
+    unistring allyBonus[ALLY_NUM];
+    unistring allyAC[ALLY_NUM];
     
-    char throwerNames[THROWER_NUM][32];
-    char throwerHit[THROWER_NUM][64];
-    char throwerDamage[THROWER_NUM][64];
+    unistring throwerNames[THROWER_NUM];
+    unistring throwerHit[THROWER_NUM];
+    unistring throwerDamage[THROWER_NUM];
 };
 
 struct EncList
@@ -162,12 +162,10 @@ struct InitPage
     DiceThrow  Throwers[THROWER_NUM];
     DiceThrow  GeneralThrower;
     
-#if 0
-    Button     *Save;
     
-    ComboBox   *EncounterSel;
-    TextBox    *EncounterName;
-#endif
+    UIListBox  EncounterSel;
+    UITextBox  EncounterName;
+    UIButton   Save;
 };
 
 struct ProgramState

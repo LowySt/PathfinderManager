@@ -745,6 +745,15 @@ void SetInitTab(UIContext *cxt)
         Page->GeneralThrower.throwDie.onHold  = 0x0;
     }
     
+    for(u32 i = 0; i < State.encounters.numEncounters; i++)
+    { ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, State.encounters.Enc[i].name); }
+    
+    Page->EncounterName.text = ls_unistrAlloc(16);
+    Page->Save.name    = ls_unistrFromUTF32(U"Save");
+    Page->Save.onClick = 0x0;
+    Page->Save.data    = 0x0;
+    Page->Save.onHold  = 0x0;
+    
     
     Page->Current.text            = ls_unistrAlloc(16);
     Page->Current.isReadonly      = TRUE;
@@ -893,9 +902,13 @@ void DrawInitTab(UIContext *cxt)
         ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
         ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
         
-        
         ls_uiButton(cxt, &Page->Roll, 486, 698, 48, 20);
         ls_uiButton(cxt, &Page->Set, 710, 698, 48, 20);
+        
+        ls_uiListBox(cxt, &Page->EncounterSel, 500, 738, 100, 20);
+        ls_uiTextBox(cxt, &Page->EncounterName, 624, 738, 100, 20);
+        
+        ls_uiButton(cxt, &Page->Save, 601, 760, 44, 20);
     }
     else
     {
@@ -940,23 +953,4 @@ void DrawInitTab(UIContext *cxt)
             }
         }
     }
-    
-#if 0
-    
-    Page->Save  = AddButton(WinH, wA, "Save",  670, 42, 45, 20, (*ElementId)++); wA += 1;
-    
-    Page->EncounterName = AddTextBox(WinH, wA, 0, LABEL_NULL, 644, 62, 100, 20, (*ElementId)++); wA += 1;
-    Page->numWindows += 1;
-    
-    //NOTE:EncounterSelection
-    {
-        Page->EncounterSel = AddUnsortedComboBox(WinH, wA, "Encounters", LABEL_UP, 
-                                                 520, 60, 100, 20, (*ElementId)++, 1);
-        wA += 2;
-        
-        Page->numWindows += 2;
-    }
-    
-    return;
-#endif
 }
