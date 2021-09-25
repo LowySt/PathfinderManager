@@ -624,7 +624,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     UserInput.Keyboard.getClipboard = win32_GetClipboard;
     UserInput.Keyboard.setClipboard = win32_SetClipboard;
     
-    //TODO: Maybe make this less manual?
     UIContext *uiContext       = (UIContext *)ls_alloc(sizeof(UIContext));
     uiContext->drawBuffer      = BackBuffer;
     uiContext->width           = State.windowWidth;
@@ -654,7 +653,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
     b32 result = LoadState(uiContext);
-    ls_printf("Result was: %d\n", result);
     
     RegionTimer frameTime = {};
     b32 Running = TRUE;
@@ -693,7 +691,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         DrawInitTab(uiContext);
         
-#if 1//_DEBUG
+#if _DEBUG
         char buff[32] = {};
         ls_itoa_t(lastFrameTime, buff, 32);
         ls_uiGlyphString(uiContext, 1240, 780, ls_unistrFromAscii(buff), RGBg(0xEE));
