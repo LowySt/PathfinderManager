@@ -7,8 +7,9 @@ void SaveState()
     ls_bufferAddDWord(buf, State.inBattle);
     ls_bufferAddDWord(buf, State.encounters.numEncounters);
     
-    InitPage *page = State.Init;
+    InitPage *Page = State.Init;
     
+    //NOTE Serialize Saved Encounters
     for(u32 i = 0; i < State.encounters.numEncounters; i++)
     {
         Encounter *curr = &State.encounters.Enc[i];
@@ -43,113 +44,101 @@ void SaveState()
         
     }
     
-#if 0
+    
+    s32 visibleMobs   = Page->Mobs.selectedIndex;
+    s32 visibleAllies = Page->Allies.selectedIndex;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
     
     //NOTE: Serialize Player Initiative
     for(u32 i = 0; i < PARTY_NUM; i++)
-    {
-        char text[32] = {};
-        s32 len = Edit_GetText(page->PlayerFields[i].Bonus->box, text, 32);
-        ls_bufferAddData(buf, text, len);
-    }
+    { ls_bufferAddUnistring(buf, Page->PlayerInit[i].text); }
+    
     
     //NOTE: Serialize Mob Initiative
-    ls_bufferAddDWord(buf, page->VisibleMobs);
-    for(u32 i = 0; i < page->VisibleMobs; i++)
+    ls_bufferAddDWord(buf, visibleMobs);
+    for(u32 i = 0; i < visibleMobs; i++)
     {
-        char text[32] = {};
+        InitField *f = Page->MobFields + i;
+        ls_bufferAddUnistring(buf, f->name.text);
+        ls_bufferAddUnistring(buf, f->bonus.text);
+        ls_bufferAddUnistring(buf, f->final.text);
+        //ls_bufferAddUnistring(buf, f->ac.text);
         
-        s32 len = Edit_GetText(page->MobFields[i].Name->box, text, 32);
-        ls_bufferAddData(buf, text, len);
-        
-        len = Edit_GetText(page->MobFields[i].Bonus->box, text, 32);
-        ls_bufferAddData(buf, text, len);
-        
-        len = Edit_GetText(page->MobFields[i].Final->box, text, 32);
-        ls_bufferAddData(buf, text, len);
+        ls_bufferAddDWord(buf, f->ID);
     }
     
     
     //NOTE: Serialize Ally Initiative
-    ls_bufferAddDWord(buf, page->VisibleAllies);
-    for(u32 i = 0; i < page->VisibleAllies; i++)
+    ls_bufferAddDWord(buf, visibleAllies);
+    for(u32 i = 0; i < visibleAllies; i++)
     {
-        char text[32] = {};
+        InitField *f = Page->AllyFields + i;
+        ls_bufferAddUnistring(buf, f->name.text);
+        ls_bufferAddUnistring(buf, f->bonus.text);
+        ls_bufferAddUnistring(buf, f->final.text);
+        //ls_bufferAddUnistring(buf, f->ac.text);
         
-        s32 len = Edit_GetText(page->AllyFields[i].Name->box, text, 32);
-        ls_bufferAddData(buf, text, len);
-        
-        len = Edit_GetText(page->AllyFields[i].Bonus->box, text, 32);
-        ls_bufferAddData(buf, text, len);
-        
-        len = Edit_GetText(page->AllyFields[i].Final->box, text, 32);
-        ls_bufferAddData(buf, text, len);
+        ls_bufferAddDWord(buf, f->ID);
     }
     
     
     //NOTE: Serialize Order
-    ls_bufferAddDWord(buf, page->VisibleOrder);
-    for(u32 i = 0; i < page->VisibleOrder; i++)
+    ls_bufferAddDWord(buf, Page->orderAdjust);
+    for(u32 i = 0; i < visibleOrder; i++)
     {
-        char text[32] = {};
+        Order *f = Page->OrderFields + i;
         
-        s32 len = Edit_GetText(page->Order[i].Field->box, text, 32);
-        ls_bufferAddData(buf, text, len);
+        ls_bufferAddUnistring(buf, f->field.text);
         
-        len = Edit_GetText(page->Order[i].Pos->box, text, 32);
-        ls_bufferAddData(buf, text, len);
+        ls_bufferAddDWord(buf, f->field.maxValue);
+        ls_bufferAddDWord(buf, f->field.minValue);
+        ls_bufferAddDWord(buf, f->field.currPos);
         
-        ls_bufferAddDWord(buf, page->Order[i].fieldId);
-        ls_bufferAddDWord(buf, page->Order[i].isMob);
-        ls_bufferAddDWord(buf, page->Order[i].isParty);
+        ls_bufferAddDWord(buf, f->ID);
     }
     
-    ls_bufferAddDWord(buf, page->turnsInRound);
+    ls_bufferAddDWord(buf, Page->turnsInRound);
+    
     
     //NOTE: Current In Battle
     {
-        ls_bufferAddDWord(buf, page->currIdx);
-        
-        char text[32] = {};
-        s32 len = Edit_GetText(page->Current->box, text, 32);
-        ls_bufferAddData(buf, text, len);
+        ls_bufferAddDWord(buf, Page->currIdx);
+        ls_bufferAddUnistring(buf, Page->Current.text);
     }
     
-#if 0
-    //NOTE: Current Encounter
-    {
-        char text[32] = {};
-        s32 len = Edit_GetText(page->EncounterName->box, text, 32);
-        ls_bufferAddData(buf, text, len);
-    }
-#endif
     
     //NOTE: Round Counter
     {
-        char text[32] = {};
-        s32 len = Edit_GetText(page->RoundCounter->box, text, 32);
-        ls_bufferAddData(buf, text, len);
+        ls_bufferAddDWord(buf, Page->roundCount);
+        ls_bufferAddUnistring(buf, Page->RoundCounter.text);
     }
+    
     
     //NOTE: Counters
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
-        Counter *c = &page->Counters[i];
+        Counter *C = Page->Counters + i;
         
-        ls_bufferAddDWord(buf, c->isActive);
-        ls_bufferAddDWord(buf, c->roundCounter);
+        ls_bufferAddUnistring(buf, C->name.text);
+        ls_bufferAddUnistring(buf, C->rounds.text);
         
-        char text[32] = {};
-        
-        s32 len = Edit_GetText(page->Counters[i].Field->box, text, 32);
-        ls_bufferAddData(buf, text, len);
-        
-        len = Edit_GetText(page->Counters[i].Rounds->box, text, 32);
-        ls_bufferAddData(buf, text, len);
+        ls_bufferAddDWord(buf, C->roundsLeft);
+        ls_bufferAddDWord(buf, C->isActive);
+        ls_bufferAddDWord(buf, C->turnCounter);
+        ls_bufferAddDWord(buf, C->startIdxInOrder);
     }
     
     
-#endif
+    //NOTE: Throwers
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *f = Page->Throwers + i;
+        ls_bufferAddUnistring(buf, f->name.text);
+        ls_bufferAddUnistring(buf, f->toHit.text);
+        ls_bufferAddUnistring(buf, f->hitRes.text);
+        ls_bufferAddUnistring(buf, f->damage.text);
+        ls_bufferAddUnistring(buf, f->dmgRes.text);
+    }
     
     char outName[64] = {};
     ls_sprintf(outName, "SaveFile_v%d", global_saveVersion);
@@ -220,168 +209,127 @@ b32 LoadState(UIContext *cxt)
         ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, curr->name);
     }
     
-    
-    return TRUE;
-    
-#if 0
-    
-    if(!State.inBattle) 
-    { 
-        ComboBox_SetCurSel(page->Mobs->box, 0);
-        ComboBox_SetCurSel(page->Allies->box, 0);
-        return FALSE; 
-    }
+    //TODO: Should I skeep Unserialization of a bunch of these things if we're not in battle?
     
     //NOTE: UnSerialize Player Initiative
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        char text[32] = {};
-        ls_bufferReadData(buf, text);
-        Edit_SetText(page->PlayerFields[i].Bonus->box, text);
+        ls_bufferReadIntoUnistring(buf, &Page->PlayerInit[i].text);
+        Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
     }
     
     
     //NOTE: UnSerialize Mob Initiative
-    page->VisibleMobs = ls_bufferReadDWord(buf);
-    for(u32 i = 0; i < page->VisibleMobs; i++)
+    s32 visibleMobs          = ls_bufferReadDWord(buf);
+    Page->Mobs.selectedIndex = visibleMobs;
+    for(u32 i = 0; i < visibleMobs; i++)
     {
-        char text1[32] = {};
-        char text2[32] = {};
-        char text3[32] = {};
+        InitField *f = Page->MobFields + i;
         
-        ls_bufferReadData(buf, text1);
-        Edit_SetText(page->MobFields[i].Name->box, text1);
+        ls_bufferReadIntoUnistring(buf, &f->name.text);
+        f->name.viewEndIdx = f->name.text.len;
         
-        ls_bufferReadData(buf, text2);
-        Edit_SetText(page->MobFields[i].Bonus->box, text2);
+        ls_bufferReadIntoUnistring(buf, &f->bonus.text);
+        f->bonus.viewEndIdx = f->bonus.text.len;
         
-        ls_bufferReadData(buf, text3);
-        Edit_SetText(page->MobFields[i].Final->box, text3);
+        ls_bufferReadIntoUnistring(buf, &f->final.text);
+        f->final.viewEndIdx = f->final.text.len;
+        
+        //ls_bufferReadIntoUnistring(buf, &f->ac.text);
+        //f->ac.viewEndIdx = f->ac.text.len;
+        
+        f->ID = ls_bufferReadDWord(buf);
     }
     
     
     //NOTE: UnSerialize Ally Initiative
-    page->VisibleAllies = ls_bufferReadDWord(buf);
-    for(u32 i = 0; i < page->VisibleAllies; i++)
+    s32 visibleAllies          = ls_bufferReadDWord(buf);
+    Page->Allies.selectedIndex = visibleAllies;
+    for(u32 i = 0; i < visibleAllies; i++)
     {
-        char text1[32] = {};
-        char text2[32] = {};
-        char text3[32] = {};
+        InitField *f = Page->AllyFields + i;
         
-        ls_bufferReadData(buf, text1);
-        Edit_SetText(page->AllyFields[i].Name->box, text1);
+        ls_bufferReadIntoUnistring(buf, &f->name.text);
+        f->name.viewEndIdx = f->name.text.len;
         
-        ls_bufferReadData(buf, text2);
-        Edit_SetText(page->AllyFields[i].Bonus->box, text2);
+        ls_bufferReadIntoUnistring(buf, &f->bonus.text);
+        f->bonus.viewEndIdx = f->bonus.text.len;
         
-        ls_bufferReadData(buf, text3);
-        Edit_SetText(page->AllyFields[i].Final->box, text3);
+        ls_bufferReadIntoUnistring(buf, &f->final.text);
+        f->final.viewEndIdx = f->final.text.len;
+        
+        //ls_bufferReadIntoUnistring(buf, &f->ac.text);
+        //f->ac.viewEndIdx = f->ac.text.len;
+        
+        f->ID = ls_bufferReadDWord(buf);
     }
+    
     
     //NOTE: UnSerialize Order
-    page->VisibleOrder = ls_bufferReadDWord(buf);
-    for(u32 i = 0; i < page->VisibleOrder; i++)
+    Page->orderAdjust = ls_bufferReadDWord(buf);
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    for(u32 i = 0; i < visibleOrder; i++)
     {
-        char text1[32] = {};
-        char text2[32] = {};
+        Order *f = Page->OrderFields + i;
         
-        ls_bufferReadData(buf, text1);
-        Edit_SetText(page->Order[i].Field->box, text1);
+        ls_bufferReadIntoUnistring(buf, &f->field.text);
         
-        ls_bufferReadData(buf, text2);
-        Edit_SetText(page->Order[i].Pos->box, text2);
+        f->field.maxValue = ls_bufferReadDWord(buf);
+        f->field.minValue = ls_bufferReadDWord(buf);
+        f->field.currPos  = ls_bufferReadDWord(buf);
         
-        page->Order[i].fieldId = ls_bufferReadDWord(buf);
-        page->Order[i].isMob   = ls_bufferReadDWord(buf);
-        page->Order[i].isParty = ls_bufferReadDWord(buf);
+        f->ID             = ls_bufferReadDWord(buf);
     }
     
-    page->turnsInRound = ls_bufferReadDWord(buf);
+    Page->turnsInRound = ls_bufferReadDWord(buf);
     
     
     //NOTE: Current In Battle
     {
-        page->currIdx = ls_bufferReadDWord(buf);
+        Page->currIdx = ls_bufferReadDWord(buf);
         
-        char text[32] = {};
-        ls_bufferReadData(buf, text);
-        Edit_SetText(page->Current->box, text);
+        ls_bufferReadIntoUnistring(buf, &Page->Current.text);
+        Page->Current.viewEndIdx = Page->Current.text.len;
     }
     
-#if 0
-    //NOTE: Current Encounter
-    {
-        char text[32] = {};
-        ls_bufferReadData(buf, text);
-        Edit_SetText(page->EncounterName->box, text);
-    }
-#endif
     
     //NOTE: Round Counter
     {
-        char text[32] = {};
-        ls_bufferReadData(buf, text);
-        Edit_SetText(page->RoundCounter->box, text);
+        Page->roundCount = ls_bufferReadDWord(buf);
+        ls_bufferReadIntoUnistring(buf, &Page->RoundCounter.text);
+        Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     }
+    
     
     //NOTE: Counters
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
-        Counter *c = &page->Counters[i];
+        Counter *C = Page->Counters + i;
         
-        c->isActive     = ls_bufferReadDWord(buf);
-        c->roundCounter = ls_bufferReadDWord(buf);
+        ls_bufferReadIntoUnistring(buf, &C->name.text);
+        C->name.viewEndIdx = C->name.text.len;
         
-        char text1[32] = {};
-        char text2[32] = {};
+        ls_bufferReadIntoUnistring(buf, &C->rounds.text);
+        C->rounds.viewEndIdx = C->rounds.text.len;
         
-        ls_bufferReadData(buf, text1);
-        Edit_SetText(page->Counters[i].Field->box, text1);
-        
-        ls_bufferReadData(buf, text2);
-        Edit_SetText(page->Counters[i].Rounds->box, text2);
+        C->roundsLeft      = ls_bufferReadDWord(buf);
+        C->isActive        = ls_bufferReadDWord(buf);
+        C->turnCounter     = ls_bufferReadDWord(buf);
+        C->startIdxInOrder = ls_bufferReadDWord(buf);
     }
     
     
-    for(u32 i = 0; i < PARTY_NUM; i++) {
-        Edit_SetReadOnly(page->PlayerFields[i].Bonus->box, TRUE);
+    //NOTE: Throwers
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *f = Page->Throwers + i;
+        
+        ls_bufferReadIntoUnistring(buf, &f->name.text);
+        ls_bufferReadIntoUnistring(buf, &f->toHit.text);
+        ls_bufferReadIntoUnistring(buf, &f->hitRes.text);
+        ls_bufferReadIntoUnistring(buf, &f->damage.text);
+        ls_bufferReadIntoUnistring(buf, &f->dmgRes.text);
     }
-    
-    for(u32 i = 0; i < MOB_NUM; i++)  { 
-        Edit_SetReadOnly(page->MobFields[i].Name->box, TRUE);
-        Edit_SetReadOnly(page->MobFields[i].Bonus->box, TRUE);
-        Edit_SetReadOnly(page->MobFields[i].Final->box, TRUE);
-    }
-    
-    for(u32 i = 0; i < ALLY_NUM; i++) { 
-        Edit_SetReadOnly(page->AllyFields[i].Name->box, TRUE);
-        Edit_SetReadOnly(page->AllyFields[i].Bonus->box, TRUE);
-        Edit_SetReadOnly(page->AllyFields[i].Final->box, TRUE);
-    }
-    
-    ComboBox_SetCurSel(page->Mobs->box, page->VisibleMobs);
-    HideInitField(page->MobFields, MOB_NUM);
-    ShowInitField(page->MobFields, page->VisibleMobs, MOB_NUM);
-    ShowInitFieldAdd(page->MobFields, page->VisibleMobs, MOB_NUM);
-    
-    ComboBox_SetCurSel(page->Allies->box, page->VisibleAllies);
-    HideInitField(page->AllyFields, ALLY_NUM);
-    ShowInitField(page->AllyFields, page->VisibleAllies, ALLY_NUM);
-    ShowInitFieldAdd(page->AllyFields, page->VisibleAllies, ALLY_NUM);
-    
-    ShowActiveCounters(page->Counters, COUNTER_NUM);
-    
-    ShowOrder(page->Order, page->VisibleOrder);
-    
-    HideElem(page->EncounterSel->box); HideElem(page->EncounterSel->label);
-    HideElem(page->EncounterName->box); HideElem(page->Save->box);
-    
-    HideElem(page->Set->box);    HideElem(page->Roll->box);
-    HideElem(page->Mobs->box);   HideElem(page->Mobs->label);
-    HideElem(page->Allies->box); HideElem(page->Allies->label);
-    ShowElem(page->Next->box);   ShowElem(page->RoundCounter->box);
     
     return TRUE;
-    
-#endif
 }
