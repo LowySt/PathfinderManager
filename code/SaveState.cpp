@@ -144,6 +144,8 @@ void SaveState()
     ls_sprintf(outName, "SaveFile_v%d", global_saveVersion);
     ls_writeFile(outName, (char *)buf->data, buf->size, FALSE);
     
+    ls_bufferDestroy(buf);
+    
     return;
 }
 
@@ -165,7 +167,7 @@ b32 LoadState(UIContext *cxt)
     
     
     u32 fileVersion = ls_bufferReadDWord(buf);
-    if(fileVersion != global_saveVersion) { return FALSE; }
+    if(fileVersion != global_saveVersion) { ls_bufferDestroy(buf); return FALSE; }
     
     State.inBattle                 = ls_bufferReadDWord(buf);
     State.encounters.numEncounters = ls_bufferReadDWord(buf);
@@ -330,6 +332,8 @@ b32 LoadState(UIContext *cxt)
         ls_bufferReadIntoUnistring(buf, &f->damage.text);
         ls_bufferReadIntoUnistring(buf, &f->dmgRes.text);
     }
+    
+    ls_bufferDestroy(buf);
     
     return TRUE;
 }
