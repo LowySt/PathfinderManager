@@ -200,16 +200,6 @@ struct ProgramState
     u64 dt = 0;
 };
 
-struct Element
-{
-    void *ptr;
-    
-    b32 isButton;
-    b32 isTextBox;
-    b32 isComboBox;
-    b32 isListBox;
-};
-
 
 HINSTANCE MainInstance;
 HWND MainWindow;
