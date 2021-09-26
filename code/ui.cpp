@@ -1128,7 +1128,6 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     
     ls_uiPopScissor(cxt);
     
-    
     s32 maxHeight = (list->list.count)*h;
     //TODO: Should I try adding another Scissor? Has to be added inside the branches.
     if(list->isOpening)
@@ -1160,7 +1159,6 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
             if(MouseInRect(xPos+1, currY+1, w-2, h-1)) 
             { 
                 bkgColor = cxt->highliteColor;
-                
                 if(LeftHold)
                 {
                     bkgColor = cxt->pressedColor;
