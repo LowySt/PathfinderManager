@@ -80,8 +80,13 @@ HDC     closeButtonDC;
 void    *closeButtBackbuff;
 
 HDC WindowDC;
+
+#if 0
 HDC BackBufferDC;
 u8  *BackBuffer;
+#endif
+
+HGLRC renderCtx;
 
 LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
@@ -93,6 +98,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
     {
         case WM_ERASEBKGND: return TRUE; break;
         
+#if 0
         case WM_PAINT:
         {
             PAINTSTRUCT ps = {};
@@ -129,6 +135,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             
             EndPaint(h, &ps);
         } break;
+#endif
         
         case WM_CHAR:
         {
@@ -580,10 +587,31 @@ HWND CreateWindow(HMENU MenuBar)
     BackBufferInfo.bmiHeader.biCompression = BI_RGB;
     
     WindowDC = GetDC(WindowHandle);
+#ifdef LS_OPENGL_H
+    
+    PIXELFORMATDESCRIPTOR PixelFormat = {};
+    PixelFormat.nSize        = sizeof(PIXELFORMATDESCRIPTOR);
+	PixelFormat.nVersion     = 1;
+	PixelFormat.dwFlags      = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+	PixelFormat.iPixelType   = PFD_TYPE_RGBA;
+	PixelFormat.cColorBits   = 32;   //Colordepth of the framebuffer
+	PixelFormat.cDepthBits   = 24;   //Number of bits for the depthbuffer
+	PixelFormat.cStencilBits = 8;    //Number of bits for the stencilbuffer
+    
+    s32 PixelFormatValue = ChoosePixelFormat(WindowDC, &PixelFormat);
+    SetPixelFormat(WindowDC, PixelFormatValue, &PixelFormat);
+    
+    renderCtx = wglCreateContext(WindowDC);
+    wglMakeCurrent(WindowDC, renderCtx);
+    
+    ls_glLoadFunc(WindowDC);
+#else
     BackBufferDC = CreateCompatibleDC(WindowDC);
     HBITMAP DibSection = CreateDIBSection(BackBufferDC, &BackBufferInfo,
                                           DIB_RGB_COLORS, (void **)&BackBuffer, NULL, NULL);
     SelectObject(BackBufferDC, DibSection);
+#endif
+    
     
     State.currWindowPos = { (s16)spaceX, (s16)spaceY }; //NOTE:TODO: Hardcoded!!
     
@@ -592,7 +620,11 @@ HWND CreateWindow(HMENU MenuBar)
 
 void windows_Render()
 {
+#ifdef LS_OPENGL_H
+    SwapBuffers(WindowDC);
+#else
     InvalidateRect(MainWindow, NULL, TRUE);
+#endif
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -629,7 +661,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     UserInput.Keyboard.setClipboard = win32_SetClipboard;
     
     UIContext *uiContext       = (UIContext *)ls_alloc(sizeof(UIContext));
-    uiContext->drawBuffer      = BackBuffer;
+    //uiContext->drawBuffer      = BackBuffer;
     uiContext->width           = State.windowWidth;
     uiContext->height          = State.windowHeight;
     uiContext->callbackRender  = &windows_Render;
@@ -693,14 +725,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Frame
         ls_uiBackground(uiContext);
         
-        DrawInitTab(uiContext);
         
+        //DrawInitTab(uiContext);
+        
+#if 0
 #if _DEBUG
         char buff[32] = {};
         ls_itoa_t(lastFrameTime, buff, 32);
         ls_uiGlyphString(uiContext, 1240, 780, ls_unistrFromAscii(buff), RGBg(0xEE));
 #endif
-        
+#endif
         //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
         if(LeftClick && !uiContext->focusWasSetThisFrame)
         { uiContext->currentFocus = 0; }

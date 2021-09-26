@@ -577,6 +577,15 @@ if((xP) >= r->x && (xP) < r->x+r->w && (yP) >= r->y && (yP) < r->y+r->h) \
 
 void ls_uiBackground(UIContext *cxt)
 {
+#ifdef LS_OPENGL_H
+    
+    f64 r = (f64)((cxt->backgroundColor & 0x00FF0000) >> 16) / 255.0;
+    f64 g = (f64)((cxt->backgroundColor & 0x0000FF00) >> 8) / 255.0;
+    f64 b = (f64)((cxt->backgroundColor & 0x000000FF)) / 255.0;
+    
+    glClearColor(r, g, b, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+#else
     AssertMsg((cxt->height % 4) == 0, "Window Height not divisible by 4 (SIMD)\n");
     AssertMsg((cxt->width % 4) == 0, "Window Width not divisible by 4 (SIMD)\n");
     
@@ -590,6 +599,7 @@ void ls_uiBackground(UIContext *cxt)
         __m128i *At = (__m128i *)(cxt->drawBuffer + idx);
         _mm_storeu_si128(At, color);
     }
+#endif
 }
 
 void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
