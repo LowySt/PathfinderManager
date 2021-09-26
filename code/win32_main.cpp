@@ -31,6 +31,10 @@
 #include "lsBitmap.h"
 #undef LS_BITMAP_IMPLEMENTATION
 
+#define LS_OPENGL_IMPLEMENTATION
+#include "OpenGL\lsOpenGL.h"
+#undef LS_OPENGL_IMPLEMENTATION
+
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_ifloor(x)     ls_floor(x)
 #define STBTT_iceil(x)      ls_ceil(x)
