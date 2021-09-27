@@ -31,10 +31,6 @@
 #include "lsBitmap.h"
 #undef LS_BITMAP_IMPLEMENTATION
 
-#define LS_OPENGL_IMPLEMENTATION
-#include "OpenGL\lsOpenGL.h"
-#undef LS_OPENGL_IMPLEMENTATION
-
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_ifloor(x)     ls_floor(x)
 #define STBTT_iceil(x)      ls_ceil(x)
@@ -526,7 +522,7 @@ HWND CreateWindow(HMENU MenuBar)
     BitmapInfo.bmiHeader.biCompression = BI_RGB;
     
     closeButton = CreateDIBSection(NULL, &BitmapInfo, DIB_RGB_COLORS, 
-                                   &closeButtBackbuff, NULL, NULL);
+                                   &closeButtBackbuff, NULL, 0);
     closeButtonDC = CreateCompatibleDC(NULL);
     SelectObject(closeButtonDC, closeButton);
     ls_memcpy(pixelButtonData, closeButtBackbuff, 16*16*3);
@@ -582,7 +578,7 @@ HWND CreateWindow(HMENU MenuBar)
     WindowDC = GetDC(WindowHandle);
     BackBufferDC = CreateCompatibleDC(WindowDC);
     HBITMAP DibSection = CreateDIBSection(BackBufferDC, &BackBufferInfo,
-                                          DIB_RGB_COLORS, (void **)&BackBuffer, NULL, NULL);
+                                          DIB_RGB_COLORS, (void **)&BackBuffer, NULL, 0);
     SelectObject(BackBufferDC, DibSection);
     
     State.currWindowPos = { (s16)spaceX, (s16)spaceY }; //NOTE:TODO: Hardcoded!!
@@ -644,7 +640,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
     
-    loadAssetFile(uiContext, ls_strConstant("assetFile"));
+    loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
     
     State.isInitialized = TRUE;
     
@@ -695,7 +691,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         DrawInitTab(uiContext);
         
-#if _DEBUG
+#if 1//_DEBUG
         char buff[32] = {};
         ls_itoa_t(lastFrameTime, buff, 32);
         ls_uiGlyphString(uiContext, 1240, 780, ls_unistrFromAscii(buff), RGBg(0xEE));
