@@ -291,10 +291,17 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
             u32 idx = ((y*cxt->width) + x)*sizeof(s32);
             __m128i *At = (__m128i *)(cxt->drawBuffer + idx);
             
-            Color c1 = ls_uiAlphaBlend(c, At->m128i_u32[0]);
-            Color c2 = ls_uiAlphaBlend(c, At->m128i_u32[1]);
-            Color c3 = ls_uiAlphaBlend(c, At->m128i_u32[2]);
-            Color c4 = ls_uiAlphaBlend(c, At->m128i_u32[3]);
+            __m128i val = _mm_loadu_si128(At);
+            
+            u32 a1 = _mm_cvtsi128_si32(_mm_shuffle_epi32(val, 0b00000000));
+            u32 a2 = _mm_cvtsi128_si32(_mm_shuffle_epi32(val, 0b01010101));
+            u32 a3 = _mm_cvtsi128_si32(_mm_shuffle_epi32(val, 0b10101010));
+            u32 a4 = _mm_cvtsi128_si32(_mm_shuffle_epi32(val, 0b11111111));
+            
+            Color c1 = ls_uiAlphaBlend(c, a1);
+            Color c2 = ls_uiAlphaBlend(c, a2);
+            Color c3 = ls_uiAlphaBlend(c, a3);
+            Color c4 = ls_uiAlphaBlend(c, a4);
             
             __m128i color = _mm_setr_epi32(c1, c2, c3, c4);
             
