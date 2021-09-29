@@ -20,7 +20,7 @@ struct keyMap
     
     u8 LArrow : 1, RArrow : 1, UArrow : 1, DArrow : 1;          // 62 +  4 = 66
     
-    u8 Backspace : 1, Delete : 1, Home : 1, End : 1; // 68
+    u8 Backspace : 1, Delete : 1, Home : 1, End : 1;            // 68
     
 };
 

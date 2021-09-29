@@ -1,3 +1,94 @@
+void CustomPlayerText(UIContext *cxt, keyMap currState, keyMap prevState, void *data)
+{
+    InitPage *Page = State.Init;
+    
+    UITextBox *f = (UITextBox *)data;
+    
+    if(cxt->lastFocus != (u64 *)f) { ls_uiTextBoxClear(cxt, f); }
+    
+    //TODO: Make this better
+    if((currState.Enter == 1 && prevState.Enter == 0))
+    {
+        UITextBox *lastPlayerBox = Page->PlayerInit + (PARTY_NUM - 1);
+        
+        if(f == lastPlayerBox) { ls_uiFocusChange(cxt, 0x0); return; }
+        
+        ls_uiFocusChange(cxt, (u64 *)(f + 1));
+        return;
+    }
+    
+    return;
+}
+
+void CustomInitFieldText(UIContext *cxt, keyMap currState, keyMap prevState, void *data)
+{
+    InitPage *Page = State.Init;
+    
+    s32 visibleMobs   = Page->Mobs.selectedIndex;
+    s32 visibleAllies = Page->Allies.selectedIndex;
+    
+    InitField *f   = (InitField *)data;
+    
+    UITextBox *name  = &f->name;
+    UITextBox *bonus = &f->bonus;
+    UITextBox *final = &f->final;
+    
+    if((cxt->lastFocus != (u64 *)name) && (cxt->currentFocus == (u64 *)name))  { ls_uiTextBoxClear(cxt, &f->name); }
+    if((cxt->lastFocus != (u64 *)bonus) && (cxt->currentFocus == (u64 *)bonus)) { ls_uiTextBoxClear(cxt, &f->bonus); }
+    if((cxt->lastFocus != (u64 *)final) && (cxt->currentFocus == (u64 *)final)) { ls_uiTextBoxClear(cxt, &f->final); }
+    
+    //TODO: Make this better
+    if((currState.Enter == 1 && prevState.Enter == 0))
+    {
+        InitField *mobField  = &Page->MobFields[visibleMobs-1];
+        InitField *allyField = &Page->AllyFields[visibleAllies-1];
+        
+        if(cxt->currentFocus == (u64 *)name)
+        {
+            UITextBox *lastNameMob  = &mobField->name;
+            UITextBox *lastNameAlly = &allyField->name;
+            
+            if(name == lastNameMob)  { ls_uiFocusChange(cxt, 0x0); return; }
+            if(name == lastNameAlly) { ls_uiFocusChange(cxt, 0x0); return; }
+            
+            u64 *newFocus = (u64 *)&((f+1)->name);
+            ls_uiFocusChange(cxt, newFocus);
+            
+            return;
+        }
+        else if(cxt->currentFocus == (u64 *)bonus)
+        {
+            UITextBox *lastBonusMob  = &mobField->bonus;
+            UITextBox *lastBonusAlly = &allyField->bonus;
+            
+            if(bonus == lastBonusMob)  { ls_uiFocusChange(cxt, 0x0); return; }
+            if(bonus == lastBonusAlly) { ls_uiFocusChange(cxt, 0x0); return; }
+            
+            u64 *newFocus = (u64 *)&((f+1)->bonus);
+            ls_uiFocusChange(cxt, newFocus);
+            
+            return;
+        }
+        else if(cxt->currentFocus == (u64 *)final)
+        {
+            UITextBox *lastFinalMob  = &mobField->final;
+            UITextBox *lastFinalAlly = &allyField->final;
+            
+            if(final == lastFinalMob)  { ls_uiFocusChange(cxt, 0x0); return; }
+            if(final == lastFinalAlly) { ls_uiFocusChange(cxt, 0x0); return; }
+            
+            u64 *newFocus = (u64 *)&((f+1)->final);
+            ls_uiFocusChange(cxt, newFocus);
+            
+            return;
+        }
+        
+        return;
+    }
+    
+    return;
+}
+
 void SaveEncounterOnClick(UIContext *cxt, void *data)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
@@ -647,9 +738,12 @@ void SetInitTab(UIContext *cxt)
     
     for(u32 i = 0; i < PARTY_NUM; i++) 
     { 
-        Page->PlayerInit[i].text       = ls_unistrFromUTF32(U"0");
-        Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
-        Page->PlayerInit[i].maxLen     = 2;
+        UITextBox *f = Page->PlayerInit + i;
+        f->text       = ls_unistrFromUTF32(U"0");
+        f->viewEndIdx = f->text.len;
+        f->maxLen     = 2;
+        f->preInput   = CustomPlayerText;
+        f->data       = f;
     }
     
     s32 currID = PARTY_NUM;
@@ -659,14 +753,20 @@ void SetInitTab(UIContext *cxt)
         
         f->name.text        = ls_unistrFromUTF32(MobName[i]);
         f->name.viewEndIdx  = f->name.text.len;
+        f->name.preInput    = CustomInitFieldText;
+        f->name.data        = f;
         
         f->bonus.text       = ls_unistrFromUTF32(U"0");
         f->bonus.viewEndIdx = f->bonus.text.len;
         f->bonus.maxLen     = 2;
+        f->bonus.preInput   = CustomInitFieldText;
+        f->bonus.data       = f;
         
         f->final.text       = ls_unistrFromUTF32(U"0");
         f->final.viewEndIdx = f->final.text.len;
         f->final.maxLen     = 2;
+        f->final.preInput   = CustomInitFieldText;
+        f->final.data       = f;
         
         f->ID = currID;
         currID += 1;
@@ -692,14 +792,20 @@ void SetInitTab(UIContext *cxt)
         
         f->name.text        = ls_unistrFromUTF32(AllyName[i]);
         f->name.viewEndIdx  = f->name.text.len;
+        f->name.preInput    = CustomInitFieldText;
+        f->name.data        = f;
         
         f->bonus.text       = ls_unistrFromUTF32(U"0");
         f->bonus.viewEndIdx = f->bonus.text.len;
         f->bonus.maxLen     = 2;
+        f->bonus.preInput   = CustomInitFieldText;
+        f->bonus.data       = f;
         
         f->final.text       = ls_unistrFromUTF32(U"0");
         f->final.viewEndIdx = f->final.text.len;
         f->final.maxLen     = 2;
+        f->final.preInput   = CustomInitFieldText;
+        f->final.data       = f;
         
         f->ID = currID;
         currID += 1;

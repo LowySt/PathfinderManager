@@ -150,6 +150,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             { 
                 case VK_F2:      KeySet(keyMap::F2);        break;
                 
+                case VK_RETURN:  KeySet(keyMap::Enter);     break;
                 case VK_BACK:    KeySet(keyMap::Backspace); break;
                 case VK_DELETE:  KeySet(keyMap::Delete);    break;
                 case VK_HOME:    KeySet(keyMap::Home);      break;
@@ -172,6 +173,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             { 
                 case VK_F2:      KeyUnset(keyMap::F2);        break;
                 
+                case VK_RETURN:  KeyUnset(keyMap::Enter);     break;
                 case VK_BACK:    KeyUnset(keyMap::Backspace); break;
                 case VK_DELETE:  KeyUnset(keyMap::Delete);    break;
                 case VK_HOME:    KeyUnset(keyMap::Home);      break;
@@ -673,6 +675,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         UserInput.Mouse.wasMiddlePressed = UserInput.Mouse.isMiddlePressed;
         
         uiContext->focusWasSetThisFrame = FALSE;
+        uiContext->lastFocus            = uiContext->currentFocus;
+        if(uiContext->nextFrameFocusChange == TRUE)
+        {
+            uiContext->currentFocus = uiContext->nextFrameFocus;
+            uiContext->nextFrameFocusChange = FALSE;
+        }
         
         // Process Input
         MSG Msg;

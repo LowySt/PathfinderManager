@@ -48,6 +48,7 @@ struct UIScissor
 };
 
 struct UIContext;
+
 typedef void(*ButtonProc)(UIContext *cxt, void *data);
 struct UIButton
 {
@@ -58,16 +59,17 @@ struct UIButton
     ButtonProc onClick;
     ButtonProc onHold;
     
-    void *data;
+    void *data; //TODO: Separate onClick / onHold user data
 };
 
+
+typedef void(*TextBoxProc)(UIContext *cxt, keyMap c, keyMap p, void *data);
 struct UITextBox
 {
     unistring text;
     u32 maxLen;
     
     b32 isReadonly;
-    b32 isSelected;
     
     u32 dtCaret;
     b32 isCaretOn;
@@ -79,6 +81,11 @@ struct UITextBox
     s32 selectBeginIdx;
     s32 selectEndIdx;
     b32 isSelecting;
+    
+    TextBoxProc preInput;
+    TextBoxProc postInput;
+    
+    void *data; //TODO: Separate preInput / postInput user data
 };
 
 struct UIListBox
@@ -137,13 +144,23 @@ struct UIContext
     UIScissor scissor;
     
     u64 *currentFocus;
+    u64 *lastFocus;
     b32 focusWasSetThisFrame;
+    
+    b32 nextFrameFocusChange;
+    u64 *nextFrameFocus;
     
     u64 *mouseCapture;
     
     void (*callbackRender)();
     u32 dt;
 };
+
+void ls_uiFocusChange(UIContext *cxt, u64 *focus)
+{
+    cxt->nextFrameFocusChange = TRUE;
+    cxt->nextFrameFocus = focus;
+}
 
 void ls_uiPushScissor(UIContext *cxt, s32 x, s32 y, s32 w, s32 h)
 {
@@ -764,7 +781,6 @@ void ls_uiTextBoxClear(UIContext *cxt, UITextBox *box)
     ls_unistrClear(&box->text);
     
     box->caretIndex     = 0;
-    box->isSelected     = FALSE;
     box->isReadonly     = FALSE;
     box->selectBeginIdx = 0;
     box->selectEndIdx   = 0;
@@ -795,9 +811,11 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     s32 viewAddWidth    = scissorWidth - horzOff;
     ls_uiPushScissor(cxt, xPos+4, yPos, scissorWidth, h);
     
-    //if(box->isSelected)
     if(cxt->currentFocus == (u64 *)box)
     {
+        if(box->preInput)
+        { box->preInput(cxt, UserInput.Keyboard.currentState, UserInput.Keyboard.prevState, box->data); }
+        
         //NOTE: Draw characters. (box->maxLen == 0 means there's no max len)
         if(HasPrintableKey() && (box->text.len < box->maxLen || box->maxLen == 0)) 
         {
@@ -1007,6 +1025,9 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             ls_uiGlyph(cxt, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
         }
         
+        
+        if(box->postInput) 
+        { box->postInput(cxt, UserInput.Keyboard.currentState, UserInput.Keyboard.prevState, box->data); }
     }
     
     //NOTETODO: Duplicated Values
