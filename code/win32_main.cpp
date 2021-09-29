@@ -597,14 +597,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     windows_initRegionTimer(RT_MILLISECOND);
     
-#ifdef __GNUG__
-    u64 rand_init_state = 2349879125314230;
-    u64 rand_init_seq = 9827346259348;
-#else
+#if 0 //RDRAND was introduced in IvyBridge (2012). It may be too new to put in.
     u64 rand_init_state = 0;
     u64 rand_init_seq = 0;
     _rdseed64_step(&rand_init_state);
     _rdseed64_step(&rand_init_seq);
+#else
+    u64 rand_init_state = windows_GetUnix64Time();
+    u64 rand_init_seq = windows_GetWindowsTimeInMicrosec();
 #endif
     
     pcg32_seed(&pcg32_global, rand_init_state, rand_init_seq);
