@@ -1256,7 +1256,7 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
         Color textBkgC = slider->lColor;
         if(strXPos < xPos+1) { strXPos = xPos + slidePos + slideWidth + 2; textBkgC = slider->rColor; }
         
-        Color valueColor = RGBA(0x22, 0x22, 0x22, 0x00 + (slider->isHeld*0xFF));
+        Color valueColor = RGBA(0x22, 0x22, 0x22, (0x00 + (slider->isHeld*0xFF)));
         ls_uiGlyphString(cxt, strXPos, yPos + h - strHeight, val, valueColor);
         
         ls_unistrFree(&val);
