@@ -150,17 +150,19 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             { 
                 case VK_F2:      KeySet(keyMap::F2);        break;
                 
+                case VK_DOWN:    KeySet(keyMap::DArrow);    break;
+                case VK_UP:      KeySet(keyMap::UArrow);    break;
+                case VK_LEFT:    KeySet(keyMap::LArrow);    break;
+                case VK_RIGHT:   KeySet(keyMap::RArrow);    break;
+                
                 case VK_RETURN:  KeySet(keyMap::Enter);     break;
                 case VK_BACK:    KeySet(keyMap::Backspace); break;
                 case VK_DELETE:  KeySet(keyMap::Delete);    break;
                 case VK_HOME:    KeySet(keyMap::Home);      break;
                 case VK_END:     KeySet(keyMap::End);       break;
-                case VK_LEFT:    KeySet(keyMap::LArrow);    break;
-                case VK_RIGHT:   KeySet(keyMap::RArrow);    break;
-                case VK_UP:      KeySet(keyMap::UArrow);    break;
-                case VK_DOWN:    KeySet(keyMap::DArrow);    break;
                 case VK_CONTROL: KeySet(keyMap::Control);   break;
                 case VK_SHIFT:   KeySet(keyMap::Shift);     break; //TODO: Differentiate L/R Shift
+                
                 case 'C':        KeySet(keyMap::C);         break; 
                 case 'G':        KeySet(keyMap::G);         break;
                 case 'V':        KeySet(keyMap::V);         break; 
@@ -173,17 +175,19 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             { 
                 case VK_F2:      KeyUnset(keyMap::F2);        break;
                 
+                case VK_DOWN:    KeyUnset(keyMap::DArrow);    break;
+                case VK_UP:      KeyUnset(keyMap::UArrow);    break;
+                case VK_LEFT:    KeyUnset(keyMap::LArrow);    break;
+                case VK_RIGHT:   KeyUnset(keyMap::RArrow);    break;
+                
                 case VK_RETURN:  KeyUnset(keyMap::Enter);     break;
                 case VK_BACK:    KeyUnset(keyMap::Backspace); break;
                 case VK_DELETE:  KeyUnset(keyMap::Delete);    break;
                 case VK_HOME:    KeyUnset(keyMap::Home);      break;
                 case VK_END:     KeyUnset(keyMap::End);       break;
-                case VK_LEFT:    KeyUnset(keyMap::LArrow);    break;
-                case VK_RIGHT:   KeyUnset(keyMap::RArrow);    break;
-                case VK_UP:      KeyUnset(keyMap::UArrow);    break;
-                case VK_DOWN:    KeyUnset(keyMap::DArrow);    break;
                 case VK_CONTROL: KeyUnset(keyMap::Control);   break;
                 case VK_SHIFT:   KeyUnset(keyMap::Shift);     break; //TODO: Differentiate L/R Shift
+                
                 case 'C':        KeyUnset(keyMap::C);         break;
                 case 'G':        KeyUnset(keyMap::G);         break;
                 case 'V':        KeyUnset(keyMap::V);         break;
@@ -679,6 +683,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(uiContext->nextFrameFocusChange == TRUE)
         {
             uiContext->currentFocus = uiContext->nextFrameFocus;
+            uiContext->lastFocus    = uiContext->currentFocus;
             uiContext->nextFrameFocusChange = FALSE;
         }
         

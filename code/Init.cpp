@@ -27,61 +27,85 @@ void CustomInitFieldText(UIContext *cxt, keyMap currState, keyMap prevState, voi
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
     
+    InitField *mobField  = &Page->MobFields[visibleMobs-1];
+    InitField *allyField = &Page->AllyFields[visibleAllies-1];
+    
     InitField *f   = (InitField *)data;
     
     UITextBox *name  = &f->name;
     UITextBox *bonus = &f->bonus;
     UITextBox *final = &f->final;
     
-    if((cxt->lastFocus != (u64 *)name) && (cxt->currentFocus == (u64 *)name))  { ls_uiTextBoxClear(cxt, &f->name); }
+    if((cxt->lastFocus != (u64 *)name)  && (cxt->currentFocus == (u64 *)name))  { ls_uiTextBoxClear(cxt, &f->name);  }
     if((cxt->lastFocus != (u64 *)bonus) && (cxt->currentFocus == (u64 *)bonus)) { ls_uiTextBoxClear(cxt, &f->bonus); }
     if((cxt->lastFocus != (u64 *)final) && (cxt->currentFocus == (u64 *)final)) { ls_uiTextBoxClear(cxt, &f->final); }
     
     //TODO: Make this better
     if((currState.Enter == 1 && prevState.Enter == 0))
     {
-        InitField *mobField  = &Page->MobFields[visibleMobs-1];
-        InitField *allyField = &Page->AllyFields[visibleAllies-1];
+        if(name == &mobField->name)  { ls_uiFocusChange(cxt, 0x0); return; }
+        if(name == &allyField->name) { ls_uiFocusChange(cxt, 0x0); return; }
         
         if(cxt->currentFocus == (u64 *)name)
         {
-            UITextBox *lastNameMob  = &mobField->name;
-            UITextBox *lastNameAlly = &allyField->name;
+            UITextBox *boxRef = &((f+1)->name);
+            ls_uiTextBoxClear(cxt, boxRef);
             
-            if(name == lastNameMob)  { ls_uiFocusChange(cxt, 0x0); return; }
-            if(name == lastNameAlly) { ls_uiFocusChange(cxt, 0x0); return; }
-            
-            u64 *newFocus = (u64 *)&((f+1)->name);
+            u64 *newFocus = (u64 *)boxRef;
             ls_uiFocusChange(cxt, newFocus);
             
             return;
         }
         else if(cxt->currentFocus == (u64 *)bonus)
         {
-            UITextBox *lastBonusMob  = &mobField->bonus;
-            UITextBox *lastBonusAlly = &allyField->bonus;
+            UITextBox *boxRef = &((f+1)->bonus);
+            ls_uiTextBoxClear(cxt, boxRef);
             
-            if(bonus == lastBonusMob)  { ls_uiFocusChange(cxt, 0x0); return; }
-            if(bonus == lastBonusAlly) { ls_uiFocusChange(cxt, 0x0); return; }
-            
-            u64 *newFocus = (u64 *)&((f+1)->bonus);
+            u64 *newFocus = (u64 *)boxRef;
             ls_uiFocusChange(cxt, newFocus);
             
             return;
         }
         else if(cxt->currentFocus == (u64 *)final)
         {
-            UITextBox *lastFinalMob  = &mobField->final;
-            UITextBox *lastFinalAlly = &allyField->final;
+            UITextBox *boxRef = &((f+1)->final);
+            ls_uiTextBoxClear(cxt, boxRef);
             
-            if(final == lastFinalMob)  { ls_uiFocusChange(cxt, 0x0); return; }
-            if(final == lastFinalAlly) { ls_uiFocusChange(cxt, 0x0); return; }
-            
-            u64 *newFocus = (u64 *)&((f+1)->final);
+            u64 *newFocus = (u64 *)boxRef;
             ls_uiFocusChange(cxt, newFocus);
             
             return;
         }
+        
+        return;
+    }
+    
+    if((currState.DArrow == 1 && prevState.DArrow == 0))
+    {
+        if(name == &mobField->name)  { ls_uiFocusChange(cxt, 0x0); return; }
+        if(name == &allyField->name) { ls_uiFocusChange(cxt, 0x0); return; }
+        
+        u32 numStrings = 0;
+        unistring *words = ls_unistrSeparateByNumber(name->text, &numStrings);
+        
+        if(numStrings != 2) { ls_uiFocusChange(cxt, 0x0); return; }
+        
+        s64 newNumber = ls_unistrToInt(words[1]) + 1;
+        ls_unistrFromInt_t(&words[1], newNumber);
+        
+        InitField *next = f + 1;
+        
+        ls_uiTextBoxClear(cxt, &next->name);
+        ls_uiTextBoxClear(cxt, &next->bonus);
+        
+        ls_unistrSet(&next->name.text, words[0]);
+        ls_unistrAppend(&next->name.text, words[1]);
+        next->name.viewEndIdx = next->name.text.len;
+        
+        ls_unistrSet(&next->bonus.text, f->bonus.text);
+        next->bonus.viewEndIdx = next->bonus.text.len;
+        
+        ls_uiFocusChange(cxt, (u64 *)&next->name);
         
         return;
     }
