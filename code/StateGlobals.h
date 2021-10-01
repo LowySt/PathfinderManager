@@ -39,6 +39,10 @@ struct InitField
     UITextBox bonus;
     UITextBox final;
     
+    UITextBox ac;
+    UITextBox maxLife;
+    b32 isShowing;
+    
     UITextBox addName;
     UITextBox addInit;
     

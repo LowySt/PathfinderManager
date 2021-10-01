@@ -1,4 +1,4 @@
-void CustomPlayerText(UIContext *cxt, keyMap currState, keyMap prevState, void *data)
+void CustomPlayerText(UIContext *cxt, void *data)
 {
     InitPage *Page = State.Init;
     
@@ -6,8 +6,7 @@ void CustomPlayerText(UIContext *cxt, keyMap currState, keyMap prevState, void *
     
     if(cxt->lastFocus != (u64 *)f) { ls_uiTextBoxClear(cxt, f); }
     
-    //TODO: Make this better
-    if((currState.Enter == 1 && prevState.Enter == 0))
+    if(KeyPress(keyMap::Enter))
     {
         UITextBox *lastPlayerBox = Page->PlayerInit + (PARTY_NUM - 1);
         
@@ -20,7 +19,7 @@ void CustomPlayerText(UIContext *cxt, keyMap currState, keyMap prevState, void *
     return;
 }
 
-void CustomInitFieldText(UIContext *cxt, keyMap currState, keyMap prevState, void *data)
+void CustomInitFieldText(UIContext *cxt, void *data)
 {
     InitPage *Page = State.Init;
     
@@ -40,8 +39,7 @@ void CustomInitFieldText(UIContext *cxt, keyMap currState, keyMap prevState, voi
     if((cxt->lastFocus != (u64 *)bonus) && (cxt->currentFocus == (u64 *)bonus)) { ls_uiTextBoxClear(cxt, &f->bonus); }
     if((cxt->lastFocus != (u64 *)final) && (cxt->currentFocus == (u64 *)final)) { ls_uiTextBoxClear(cxt, &f->final); }
     
-    //TODO: Make this better
-    if((currState.Enter == 1 && prevState.Enter == 0))
+    if(KeyPress(keyMap::Enter))
     {
         if(name == &mobField->name)  { ls_uiFocusChange(cxt, 0x0); return; }
         if(name == &allyField->name) { ls_uiFocusChange(cxt, 0x0); return; }
@@ -80,13 +78,16 @@ void CustomInitFieldText(UIContext *cxt, keyMap currState, keyMap prevState, voi
         return;
     }
     
-    if((currState.DArrow == 1 && prevState.DArrow == 0))
+    if(KeyPress(keyMap::DArrow))
     {
         if(name == &mobField->name)  { ls_uiFocusChange(cxt, 0x0); return; }
         if(name == &allyField->name) { ls_uiFocusChange(cxt, 0x0); return; }
         
         u32 numStrings = 0;
         unistring *words = ls_unistrSeparateByNumber(name->text, &numStrings);
+        
+        AssertMsg(words, "The returned words array was null.\n");
+        if(!words) { ls_uiFocusChange(cxt, 0x0); return; }
         
         if(numStrings != 2) { ls_uiFocusChange(cxt, 0x0); return; }
         
@@ -109,6 +110,8 @@ void CustomInitFieldText(UIContext *cxt, keyMap currState, keyMap prevState, voi
         
         return;
     }
+    
+    if((RightClick) && cxt->currentFocus == (u64 *)name) { f->isShowing = TRUE; }
     
     return;
 }
@@ -753,6 +756,56 @@ void AddConfirmOnClick(UIContext *cxt, void *data)
     f->isAdding = FALSE;
 }
 
+void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *name)
+{
+    f->name.text        = ls_unistrFromUTF32(name);
+    f->name.viewEndIdx  = f->name.text.len;
+    f->name.preInput    = CustomInitFieldText;
+    f->name.data        = f;
+    
+    f->bonus.text       = ls_unistrFromUTF32(U"0");
+    f->bonus.viewEndIdx = f->bonus.text.len;
+    f->bonus.maxLen     = 2;
+    f->bonus.preInput   = CustomInitFieldText;
+    f->bonus.data       = f;
+    
+    f->final.text       = ls_unistrFromUTF32(U"0");
+    f->final.viewEndIdx = f->final.text.len;
+    f->final.maxLen     = 2;
+    f->final.preInput   = CustomInitFieldText;
+    f->final.data       = f;
+    
+    f->ac.text       = ls_unistrFromUTF32(U"0");
+    f->ac.viewEndIdx = f->ac.text.len;
+    f->ac.maxLen     = 2;
+    f->ac.preInput   = 0x0;
+    f->ac.data       = 0x0;
+    
+    f->maxLife.text       = ls_unistrFromUTF32(U"0");
+    f->maxLife.viewEndIdx = f->maxLife.text.len;
+    f->maxLife.maxLen     = 4;
+    f->maxLife.preInput   = 0x0;
+    f->maxLife.data       = 0x0;
+    
+    f->addName.text     = ls_unistrAlloc(16);
+    f->addInit.text     = ls_unistrAlloc(16);
+    f->addInit.maxLen   = 2;
+    
+    f->addNew.name      = ls_unistrFromUTF32(U"+");
+    f->addNew.onClick   = AddNewInitOnClick;
+    f->addNew.data      = f;
+    f->addNew.onHold    = 0x0;
+    
+    f->addConfirm.name    = ls_unistrFromUTF32(U"Ok");
+    f->addConfirm.onClick = AddConfirmOnClick;
+    f->addConfirm.data    = f;
+    f->addConfirm.onHold  = 0x0;
+    
+    
+    f->ID = *currID;
+    *currID += 1;
+}
+
 void SetInitTab(UIContext *cxt)
 {
     InitPage *Page = State.Init;
@@ -775,78 +828,14 @@ void SetInitTab(UIContext *cxt)
     { 
         InitField *f = Page->MobFields + i;
         
-        f->name.text        = ls_unistrFromUTF32(MobName[i]);
-        f->name.viewEndIdx  = f->name.text.len;
-        f->name.preInput    = CustomInitFieldText;
-        f->name.data        = f;
-        
-        f->bonus.text       = ls_unistrFromUTF32(U"0");
-        f->bonus.viewEndIdx = f->bonus.text.len;
-        f->bonus.maxLen     = 2;
-        f->bonus.preInput   = CustomInitFieldText;
-        f->bonus.data       = f;
-        
-        f->final.text       = ls_unistrFromUTF32(U"0");
-        f->final.viewEndIdx = f->final.text.len;
-        f->final.maxLen     = 2;
-        f->final.preInput   = CustomInitFieldText;
-        f->final.data       = f;
-        
-        f->ID = currID;
-        currID += 1;
-        
-        f->addName.text     = ls_unistrAlloc(16);
-        f->addInit.text     = ls_unistrAlloc(16);
-        f->addInit.maxLen   = 2;
-        
-        f->addNew.name      = ls_unistrFromUTF32(U"+");
-        f->addNew.onClick   = AddNewInitOnClick;
-        f->addNew.data      = f;
-        f->addNew.onHold    = 0x0;
-        
-        f->addConfirm.name    = ls_unistrFromUTF32(U"Ok");
-        f->addConfirm.onClick = AddConfirmOnClick;
-        f->addConfirm.data    = f;
-        f->addConfirm.onHold  = 0x0;
+        InitFieldInit(cxt, f, &currID, MobName[i]);
     }
     
     for(u32 i = 0; i < ALLY_NUM; i++)  
     { 
         InitField *f = Page->AllyFields + i;
         
-        f->name.text        = ls_unistrFromUTF32(AllyName[i]);
-        f->name.viewEndIdx  = f->name.text.len;
-        f->name.preInput    = CustomInitFieldText;
-        f->name.data        = f;
-        
-        f->bonus.text       = ls_unistrFromUTF32(U"0");
-        f->bonus.viewEndIdx = f->bonus.text.len;
-        f->bonus.maxLen     = 2;
-        f->bonus.preInput   = CustomInitFieldText;
-        f->bonus.data       = f;
-        
-        f->final.text       = ls_unistrFromUTF32(U"0");
-        f->final.viewEndIdx = f->final.text.len;
-        f->final.maxLen     = 2;
-        f->final.preInput   = CustomInitFieldText;
-        f->final.data       = f;
-        
-        f->ID = currID;
-        currID += 1;
-        
-        f->addName.text     = ls_unistrAlloc(16);
-        f->addInit.text     = ls_unistrAlloc(16);
-        f->addInit.maxLen   = 2;
-        
-        f->addNew.name      = ls_unistrFromUTF32(U"+");
-        f->addNew.onClick   = AddNewInitOnClick;
-        f->addNew.data      = f;
-        f->addNew.onHold    = 0x0;
-        
-        f->addConfirm.name    = ls_unistrFromUTF32(U"Ok");
-        f->addConfirm.onClick = AddConfirmOnClick;
-        f->addConfirm.data    = f;
-        f->addConfirm.onHold  = 0x0;
+        InitFieldInit(cxt, f, &currID, AllyName[i]);
     }
     
     for(u32 i = 0; i < ORDER_NUM; i++)
@@ -1009,6 +998,15 @@ void DrawInitTab(UIContext *cxt)
     yPos = 658;
     for(u32 i = 0; i < visibleMobs; i++)
     {
+        InitField *f = Page->MobFields + i;
+        
+        Assert(FALSE);
+        if(f->isShowing == TRUE)
+        {
+            ls_uiTextBox(cxt, &f->ac, 320, yPos+24, 30, 20);
+            ls_uiTextBox(cxt, &f->maxLife, 360, yPos+24, 48, 20);
+        }
+        
         DrawInitField(cxt, Page->MobFields + i, 296, yPos);
         yPos -= 20;
     }

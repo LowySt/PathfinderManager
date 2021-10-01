@@ -63,7 +63,7 @@ struct UIButton
 };
 
 
-typedef void(*TextBoxProc)(UIContext *cxt, keyMap c, keyMap p, void *data);
+typedef void(*TextBoxProc)(UIContext *cxt, void *data);
 struct UITextBox
 {
     unistring text;
@@ -814,7 +814,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     if(cxt->currentFocus == (u64 *)box)
     {
         if(box->preInput)
-        { box->preInput(cxt, UserInput.Keyboard.currentState, UserInput.Keyboard.prevState, box->data); }
+        { box->preInput(cxt, box->data); }
         
         //NOTE: Draw characters. (box->maxLen == 0 means there's no max len)
         if(HasPrintableKey() && (box->text.len < box->maxLen || box->maxLen == 0)) 
@@ -1027,7 +1027,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         
         
         if(box->postInput) 
-        { box->postInput(cxt, UserInput.Keyboard.currentState, UserInput.Keyboard.prevState, box->data); }
+        { box->postInput(cxt, box->data); }
     }
     
     //NOTETODO: Duplicated Values
