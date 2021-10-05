@@ -40,8 +40,10 @@ struct InitField
     UITextBox final;
     
     UITextBox ac;
+    UITextBox touch;
+    UITextBox flat;
+    
     UITextBox maxLife;
-    b32 isShowing;
     
     UITextBox addName;
     UITextBox addInit;
@@ -98,6 +100,8 @@ struct InitPage
     
     InitField  AllyFields[ALLY_NUM];
     InitField  MobFields[MOB_NUM];
+    
+    UILPane    InfoPane;
     
     UIButton   Roll;
     UIButton   Set;

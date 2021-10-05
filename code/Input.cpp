@@ -84,6 +84,20 @@ struct MouseInput
 #define MiddleClear  ((!UserInput.Mouse.isMiddlePressed && !UserInput.Mouse.wasMiddlePressed))
 #define RightClear   ((!UserInput.Mouse.isRightPressed && !UserInput.Mouse.wasRightPressed))
 
+
+#define LeftClickIn(x,y,w,h)    (LeftClick   && MouseInRect(x, y, w, h))
+#define MiddleClickIn(x,y,w,h)  (MiddleClick && MouseInRect(x, y, w, h))
+#define RightClickIn(x,y,w,h)   (RightClick  && MouseInRect(x, y, w, h))
+
+#define LeftHoldIn(x,y,w,h)     (LeftHold   && MouseInRect(x, y, w, h))
+#define MiddleHoldIn(x,y,w,h)   (MiddleHold && MouseInRect(x, y, w, h))
+#define RightHoldIn(x,y,w,h)    (RightHold  && MouseInRect(x, y, w, h))
+
+#define LeftUpIn(x,y,w,h)       (LeftUp   && MouseInRect(x, y, w, h))
+#define MiddleUpIn(x,y,w,h)     (MiddleUp && MouseInRect(x, y, w, h))
+#define RightUpIn(x,y,w,h)      (RightUp  && MouseInRect(x, y, w, h))
+
+
 struct Input
 {
     MouseInput Mouse;

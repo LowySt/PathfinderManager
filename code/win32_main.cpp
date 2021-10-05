@@ -235,6 +235,9 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             BOOL success = ReleaseCapture();
         } break;
         
+        case WM_RBUTTONDOWN: { Mouse->isRightPressed = TRUE; } break;
+        case WM_RBUTTONUP:   { Mouse->isRightPressed = FALSE; } break;
+        
         case WM_MOUSEMOVE:
         {
             POINTS currMouseClient = *((POINTS *)&l);

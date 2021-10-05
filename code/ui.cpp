@@ -47,6 +47,14 @@ struct UIScissor
     UIRect *currRect;
 };
 
+
+struct UILPane
+{
+    u32 dtOpen;
+    b32 isOpening;
+    b32 isOpen;
+};
+
 struct UIContext;
 
 typedef void(*ButtonProc)(UIContext *cxt, void *data);
@@ -162,6 +170,8 @@ void ls_uiFocusChange(UIContext *cxt, u64 *focus)
     cxt->nextFrameFocus = focus;
 }
 
+
+//TODO:NOTE: Scissors are busted. A smaller scissor doesn't check if it is inside it's own parent!
 void ls_uiPushScissor(UIContext *cxt, s32 x, s32 y, s32 w, s32 h)
 {
     UIScissor *scissor = &cxt->scissor;
@@ -776,6 +786,12 @@ void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
     ls_uiPopScissor(cxt);
 }
 
+void ls_uiLabel(UIContext *cxt, const char32_t *label, s32 xPos, s32 yPos)
+{
+    unistring lab = ls_unistrConstant(label);
+    ls_uiLabel(cxt, lab, xPos, yPos);
+}
+
 void ls_uiTextBoxClear(UIContext *cxt, UITextBox *box)
 {
     ls_unistrClear(&box->text);
@@ -806,8 +822,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     
     Color caretColor = cxt->textColor;
     
-    const s32 horzOff   = 8;
-    s32 scissorWidth    = w-8;
+    const s32 horzOff   = 4;
+    s32 scissorWidth    = w - horzOff;
     s32 viewAddWidth    = scissorWidth - horzOff;
     ls_uiPushScissor(cxt, xPos+4, yPos, scissorWidth, h);
     
@@ -1068,7 +1084,9 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     ls_uiPopScissor(cxt);
 }
 
-void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h)
+
+enum UIArrowSide { UIA_LEFT, UIA_RIGHT, UIA_UP, UIA_DOWN };
+void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h, UIArrowSide s)
 {
     UIScissor::UIRect *scRect = cxt->scissor.currRect;
     u32 *At = (u32 *)cxt->drawBuffer;
@@ -1080,33 +1098,181 @@ void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h)
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
     
-    s32 arrowWidth = 8;
-    s32 hBearing = (w - arrowWidth)/2;
-    
-    s32 xBase = xPos+hBearing;
-    s32 xEnd  = xBase + arrowWidth;
-    
-    s32 arrowHeight = 4;
-    s32 vBearing = (h - arrowHeight)/2;
-    s32 yStart = yPos + h - vBearing;
-    
-    for(s32 y = yStart-1; y >= (yStart-1)-arrowHeight; y--)
+    if(s == UIA_DOWN)
     {
-        for(s32 x = xBase; x < xEnd; x++)
+        s32 arrowWidth = 8;
+        s32 hBearing = (w - arrowWidth)/2;
+        s32 xBase = xPos+hBearing;
+        s32 xEnd  = xBase + arrowWidth;
+        
+        s32 arrowHeight = 4;
+        s32 vBearing = (h - arrowHeight)/2;
+        s32 yStart = (yPos + h - vBearing) - 1;
+        s32 yEnd = yStart - arrowHeight;
+        
+        for(s32 y = yStart; y >= yEnd; y--)
         {
-            if(x < 0 || x >= cxt->width)  continue;
-            if(y < 0 || y >= cxt->height) continue;
+            for(s32 x = xBase; x < xEnd; x++)
+            {
+                if(x < 0 || x >= cxt->width)  continue;
+                if(y < 0 || y >= cxt->height) continue;
+                
+                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+                
+                At[y*cxt->width + x] = RGBg(0x00);
+            }
             
-            if(x < scRect->x || x >= scRect->x+scRect->w) continue;
-            if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+            xBase += 1;
+            xEnd  -= 1;
+        }
+    }
+    else if(s == UIA_RIGHT)
+    {
+        s32 arrowWidth  = 4;
+        s32 hBearing    = (w - arrowWidth)/2;
+        s32 xBase       = xPos + hBearing;
+        s32 xEnd        = xBase+1;
+        
+        s32 arrowHeight = 8;
+        s32 vBearing    = (h - arrowHeight)/2;
+        s32 yStart1     = (yPos + h - vBearing) - 1;
+        s32 yEnd1       = yStart1 - (arrowHeight/2);
+        s32 yStart2     = yEnd1;
+        s32 yEnd2       = yStart2 - arrowHeight;
+        
+        for(s32 y = yStart1; y >= yEnd1; y--)
+        {
+            for(s32 x = xBase; x < xEnd; x++)
+            {
+                if(x < 0 || x >= cxt->width)  continue;
+                if(y < 0 || y >= cxt->height) continue;
+                
+                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+                
+                At[y*cxt->width + x] = RGBg(0x00);
+            }
             
-            At[y*cxt->width + x] = RGBg(0x00);
+            xEnd  += 1;
+        }
+        
+        xEnd -= 1;
+        for(s32 y = yStart2; y >= yEnd2; y--)
+        {
+            for(s32 x = xBase; x < xEnd; x++)
+            {
+                if(x < 0 || x >= cxt->width)  continue;
+                if(y < 0 || y >= cxt->height) continue;
+                
+                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+                
+                At[y*cxt->width + x] = RGBg(0x00);
+            }
+            
+            xEnd  -= 1;
+        }
+    }
+    else if(s == UIA_LEFT)
+    {
+        s32 arrowWidth  = 4;
+        s32 hBearing    = (w - arrowWidth)/2;
+        s32 xBase       = xPos + w - hBearing - 1;
+        s32 xEnd        = xBase+1;
+        
+        s32 arrowHeight = 8;
+        s32 vBearing    = (h - arrowHeight)/2;
+        s32 yStart1     = (yPos + h - vBearing) - 1;
+        s32 yEnd1       = yStart1 - (arrowHeight/2);
+        s32 yStart2     = yEnd1;
+        s32 yEnd2       = yStart2 - arrowHeight;
+        
+        for(s32 y = yStart1; y >= yEnd1; y--)
+        {
+            for(s32 x = xBase; x < xEnd; x++)
+            {
+                if(x < 0 || x >= cxt->width)  continue;
+                if(y < 0 || y >= cxt->height) continue;
+                
+                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+                
+                At[y*cxt->width + x] = RGBg(0x00);
+            }
+            
+            xBase -= 1;
         }
         
         xBase += 1;
-        xEnd  -= 1;
+        for(s32 y = yStart2; y >= yEnd2; y--)
+        {
+            for(s32 x = xBase; x < xEnd; x++)
+            {
+                if(x < 0 || x >= cxt->width)  continue;
+                if(y < 0 || y >= cxt->height) continue;
+                
+                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+                
+                At[y*cxt->width + x] = RGBg(0x00);
+            }
+            
+            xBase += 1;
+        }
     }
 }
+
+
+void ls_uiLPane(UIContext *cxt, UILPane *pane, s32 xPos, s32 yPos, s32 w, s32 h)
+{
+    if(pane->isOpen)
+    {
+        s32 xArrowPos  = xPos + w - 1;
+        s32 arrowWidth = 16;
+        
+        s32 arrowHeight = 14;
+        s32 yArrowPos   = yPos + h - arrowHeight;
+        
+        ls_uiDrawArrow(cxt, xArrowPos, yArrowPos, arrowWidth, arrowHeight, UIA_LEFT);
+        
+        if(LeftClickIn(xArrowPos, yArrowPos, arrowWidth, arrowHeight))
+        { pane->isOpen = FALSE; }
+        
+        ls_uiBorderedRect(cxt, xPos-1, yPos, w, h, cxt->widgetColor);
+    }
+    else
+    {
+        s32 width = 0;
+        if(pane->isOpening)
+        {
+            pane->dtOpen += cxt->dt;
+            
+            s32 maxDT = 120;
+            f64 dtFract = (f64)pane->dtOpen / maxDT;
+            width = w*dtFract;
+            
+            if(pane->dtOpen >= maxDT) { 
+                pane->isOpen = TRUE; pane->isOpening = FALSE; pane->dtOpen = 0;
+                ls_uiBorderedRect(cxt, xPos-1, yPos, w, h, cxt->widgetColor);
+            }
+            
+            if(!pane->isOpen) { ls_uiBorderedRect(cxt, xPos-1, yPos, width, h, cxt->widgetColor); }
+        }
+        
+        s32 xArrowPos  = xPos + width;
+        s32 arrowWidth = 16;
+        
+        s32 arrowHeight = 14;
+        s32 yArrowPos   = yPos + h - arrowHeight;
+        
+        ls_uiDrawArrow(cxt, xArrowPos, yArrowPos, arrowWidth, arrowHeight, UIA_RIGHT);
+        
+        if(LeftClickIn(xArrowPos, yArrowPos, arrowWidth, arrowHeight))
+        { pane->isOpening = TRUE; }
+    }
+}
+
 
 //NOTETODO: ListBox manages the data of the entry itself, even when a unistring is already passed.
 //          This feels strange, and probably error-prone.
@@ -1140,9 +1306,9 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     const s32 arrowBoxWidth = 24;
     ls_uiPushScissor(cxt, xPos, yPos, w+arrowBoxWidth, h);
     
-    ls_uiDrawArrow(cxt, xPos + w, yPos, arrowBoxWidth, h);
+    ls_uiDrawArrow(cxt, xPos + w, yPos, arrowBoxWidth, h, UIA_DOWN);
     
-    if(LeftClick && MouseInRect(xPos+w, yPos, arrowBoxWidth, h))
+    if(LeftClickIn(xPos+w, yPos, arrowBoxWidth, h))
     {
         if(list->isOpen) { list->isOpen = FALSE; }
         else { list->isOpening = TRUE; }

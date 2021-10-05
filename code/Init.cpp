@@ -111,8 +111,6 @@ void CustomInitFieldText(UIContext *cxt, void *data)
         return;
     }
     
-    if((RightClick) && cxt->currentFocus == (u64 *)name) { f->isShowing = TRUE; }
-    
     return;
 }
 
@@ -781,6 +779,18 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     f->ac.preInput   = 0x0;
     f->ac.data       = 0x0;
     
+    f->touch.text       = ls_unistrFromUTF32(U"0");
+    f->touch.viewEndIdx = f->touch.text.len;
+    f->touch.maxLen     = 2;
+    f->touch.preInput   = 0x0;
+    f->touch.data       = 0x0;
+    
+    f->flat.text       = ls_unistrFromUTF32(U"0");
+    f->flat.viewEndIdx = f->flat.text.len;
+    f->flat.maxLen     = 2;
+    f->flat.preInput   = 0x0;
+    f->flat.data       = 0x0;
+    
     f->maxLife.text       = ls_unistrFromUTF32(U"0");
     f->maxLife.viewEndIdx = f->maxLife.text.len;
     f->maxLife.maxLen     = 4;
@@ -981,8 +991,8 @@ void DrawInitTab(UIContext *cxt)
     s32 yPos = 658;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 580, yPos+6);
-        ls_uiTextBox(cxt, Page->PlayerInit + i, 662, yPos, 32, 20);
+        ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 650, yPos+6);
+        ls_uiTextBox(cxt, Page->PlayerInit + i, 732, yPos, 32, 20);
         yPos -= 20;
     }
     
@@ -990,7 +1000,7 @@ void DrawInitTab(UIContext *cxt)
     yPos = 478;
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        DrawInitField(cxt, Page->AllyFields + i, 546, yPos);
+        DrawInitField(cxt, Page->AllyFields + i, 616, yPos);
         yPos -= 20;
     }
     
@@ -1000,14 +1010,7 @@ void DrawInitTab(UIContext *cxt)
     {
         InitField *f = Page->MobFields + i;
         
-        Assert(FALSE);
-        if(f->isShowing == TRUE)
-        {
-            ls_uiTextBox(cxt, &f->ac, 320, yPos+24, 30, 20);
-            ls_uiTextBox(cxt, &f->maxLife, 360, yPos+24, 48, 20);
-        }
-        
-        DrawInitField(cxt, Page->MobFields + i, 296, yPos);
+        DrawInitField(cxt, Page->MobFields + i, 366, yPos);
         yPos -= 20;
     }
     
@@ -1015,33 +1018,70 @@ void DrawInitTab(UIContext *cxt)
     yPos = 658;
     for(u32 i = 0; i < visibleOrder; i += 2)
     {
-        DrawOrderField(cxt, Page->OrderFields + i, 770, yPos);
+        DrawOrderField(cxt, Page->OrderFields + i, 870, yPos);
         
         if((i+1) < visibleOrder)
-        { DrawOrderField(cxt, Page->OrderFields + (i+1), 956, yPos); }
+        { DrawOrderField(cxt, Page->OrderFields + (i+1), 1056, yPos); }
         
         yPos -= 20;
     }
     
     // Counters
-    yPos = 658;
-    for(u32 i = 0; i < COUNTER_NUM; i++)
+    if(!Page->InfoPane.isOpen)
     {
-        Counter *f = Page->Counters + i;
-        
-        ls_uiLabel(cxt, ls_unistrConstant(CounterNames[i]), 20, yPos+24);
-        
-        ls_uiTextBox(cxt, &f->name, 20, yPos, 100, 20);
-        ls_uiTextBox(cxt, &f->rounds, 125, yPos, 36, 20);
-        
-        if(!f->isActive) { ls_uiButton(cxt, &f->start, 166, yPos, 48, 20); }
-        else
+        yPos = 658;
+        for(u32 i = 0; i < COUNTER_NUM; i++)
         {
-            ls_uiButton(cxt, &f->plusOne, 166, yPos, 48, 20);
-            ls_uiButton(cxt, &f->stop, 85, yPos+22, 48, 20);
+            Counter *f = Page->Counters + i;
+            
+            ls_uiLabel(cxt, ls_unistrConstant(CounterNames[i]), 20, yPos+24);
+            
+            ls_uiTextBox(cxt, &f->name, 20, yPos, 100, 20);
+            ls_uiTextBox(cxt, &f->rounds, 125, yPos, 36, 20);
+            
+            if(!f->isActive) { ls_uiButton(cxt, &f->start, 166, yPos, 48, 20); }
+            else
+            {
+                ls_uiButton(cxt, &f->plusOne, 166, yPos, 48, 20);
+                ls_uiButton(cxt, &f->stop, 85, yPos+22, 48, 20);
+            }
+            
+            yPos -= 44;
         }
-        
-        yPos -= 44;
+    }
+    
+    // Mob Info Left Pane
+    ls_uiLPane(cxt, &Page->InfoPane, 0, 200, 360, 580);
+    
+    //Mob Info
+    if(Page->InfoPane.isOpen)
+    {
+        u32 infoX = 2;
+        u32 infoY = 762;
+        for(u32 i = 0; i < visibleMobs; i++)
+        {
+            InitField *f = Page->MobFields + i;
+            
+            ls_uiLabel(cxt, f->name.text, infoX, infoY);
+            
+            Color tmp = cxt->widgetColor;
+            
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(20, 80, 180, 160), tmp);
+            ls_uiTextBox(cxt, &f->ac, infoX + 88, infoY-6, 26, 20);
+            
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(20, 100, 100, 160), tmp);
+            ls_uiTextBox(cxt, &f->touch, infoX + 116, infoY-6, 26, 20);
+            
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(20, 160, 120, 160), tmp);
+            ls_uiTextBox(cxt, &f->flat, infoX + 144, infoY-6, 26, 20);
+            
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(220, 10, 20, 160), tmp);
+            ls_uiTextBox(cxt, &f->maxLife, infoX + 182, infoY-6, 42, 20);
+            
+            cxt->widgetColor = tmp;
+            
+            infoY -= 24;
+        }
     }
     
     // Dice Throwers
@@ -1074,17 +1114,17 @@ void DrawInitTab(UIContext *cxt)
     
     
     
-    ls_uiButton(cxt, &Page->Reset, 600, 698, 48, 20);
+    ls_uiButton(cxt, &Page->Reset, 670, 698, 48, 20);
     
     
     if(!State.inBattle)
     {
         //TODO: Clicking on a ListBox Entry clicks also what's behind it.
-        ls_uiListBox(cxt, &Page->Mobs, 336, 698, 100, 20);
-        ls_uiListBox(cxt, &Page->Allies, 570, 518, 100, 20);
+        ls_uiListBox(cxt, &Page->Mobs, 406, 698, 100, 20);
+        ls_uiListBox(cxt, &Page->Allies, 640, 518, 100, 20);
         
-        ls_uiButton(cxt, &Page->Roll, 486, 698, 48, 20);
-        ls_uiButton(cxt, &Page->Set, 710, 698, 48, 20);
+        ls_uiButton(cxt, &Page->Roll, 556, 698, 48, 20);
+        ls_uiButton(cxt, &Page->Set, 780, 698, 48, 20);
         
         ls_uiListBox(cxt, &Page->EncounterSel, 480, 738, 120, 20);
         ls_uiTextBox(cxt, &Page->EncounterName, 624, 738, 100, 20);
@@ -1093,10 +1133,10 @@ void DrawInitTab(UIContext *cxt)
     }
     else
     {
-        ls_uiTextBox(cxt, &Page->Current, 870, 688, 100, 20);
-        ls_uiTextBox(cxt, &Page->RoundCounter, 1180, 740, 30, 20);
+        ls_uiTextBox(cxt, &Page->Current, 1010, 688, 100, 20);
+        ls_uiTextBox(cxt, &Page->RoundCounter, 1230, 740, 30, 20);
         
-        ls_uiButton(cxt, &Page->Next, 900, 718, 48, 20);
+        ls_uiButton(cxt, &Page->Next, 1036, 718, 48, 20);
         
         if(visibleAllies < ALLY_NUM)
         {
