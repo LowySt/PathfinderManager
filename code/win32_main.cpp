@@ -474,6 +474,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->invWidgetColor  = RGBg(0xBA);
     uiContext->invTextColor    = RGBg(0x33);
     
+    loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
+    
     UIButton closeButton = {};
     closeButton.style    = UIBUTTON_BMP;
     closeButton.bmpData  = pixelButtonData;
@@ -481,12 +483,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     closeButton.bmpH     = pixelButtonHeight;
     closeButton.onClick  = ProgramExitOnButton;
     
-    UIMenu WindowMenu = {};
+    unistring setMenuName = ls_unistrFromUTF32(U"Settings");
+    
+    UIMenu WindowMenu      = {};
     WindowMenu.closeWindow = closeButton;
+    WindowMenu.text        = (unistring *)ls_alloc(sizeof(unistring) * 8); //TODO: arbitrary constant
+    WindowMenu.numText     = 1;
+    WindowMenu.text[0]     = setMenuName;
     
     ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
-    
-    loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
     
     State.isInitialized = TRUE;
     

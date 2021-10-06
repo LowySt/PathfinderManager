@@ -135,18 +135,16 @@ struct UISlider
 
 
 //TODO: Very Shitty implementation of Menus
-struct UISubMenu
-{
-    unistring label;
-};
-
 struct UIMenu
 {
-    UIButton  closeWindow;
-    UIButton  minimize;
+    UIButton   closeWindow;
+    UIButton   minimize;
     
-    UISubMenu *subMenus;
-    u32       numSubmenus;
+    UIMenu    *Items;
+    u32        numItems;
+    
+    unistring *text;
+    u32        numText;
 };
 
 struct UIContext
@@ -1555,6 +1553,14 @@ void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
     ls_uiPushScissor(cxt, x, y, w, h);
     
     ls_uiBorderedRect(cxt, x, y, w, h, cxt->backgroundColor, RGBg(110));
+    
+    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+    s32 xOff = 0;
+    for(u32 i = 0; i < menu->numText; i++)
+    {
+        ls_uiGlyphString(cxt, x + xOff + 4, y+6, menu->text[i], cxt->textColor);
+        xOff += ls_uiGlyphStringLen(cxt, menu->text[i]);
+    }
     
     ls_uiButton(cxt, &menu->closeWindow, x+w-20, y+2, 16, 16);
     
