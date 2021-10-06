@@ -83,7 +83,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
 {
     LRESULT Result = 0;
     
-    MouseInput    *Mouse    = &UserInput.Mouse;
+    MouseInput *Mouse = &UserInput.Mouse;
     
     switch (msg)
     {
@@ -120,8 +120,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 DWORD Err = GetLastError();
                 int breakHere = 0;
             }
-            
-            
             
             EndPaint(h, &ps);
         } break;
@@ -194,34 +192,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             }
         } break;
         
-        case WM_NCLBUTTONDOWN:
-        {
-            State.isDragging = TRUE;
-            State.prevMousePos = *((POINTS *)&l);
-            
-            POINTS cursorPos = State.prevMousePos;
-            
-            RECT screenRect = {};
-            GetMenuItemRect(h, MenuBar, 1, &screenRect);
-            
-            screenRect.right  = screenRect.right + 1234;
-            screenRect.left   = screenRect.left + 1218;
-            screenRect.top    = screenRect.top + 1;
-            screenRect.bottom = screenRect.bottom + 1;
-            
-            //NOTE:TODO:NOTE:TODO:
-            // HACK HACK HACK HACK HACK HACK
-            if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
-               (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
-            { 
-                PostMessageA(h, WM_DESTROY, 0, 0);
-            }
-            
-            SetCapture(h);
-            //TODO:NOTE: Page says to return 0, but DO i HAVE to?
-            
-        } break;
-        
         case WM_LBUTTONDOWN:
         {
             Mouse->isLeftPressed = TRUE;
@@ -243,24 +213,6 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             POINTS currMouseClient = *((POINTS *)&l);
             Mouse->currPos = { currMouseClient.x, State.windowHeight - currMouseClient.y };
             
-            //TODO: Convert this to the input file, rather than the bad stateglobals thing.
-            if(State.isDragging) {
-                
-                POINT currMouse = {currMouseClient.x, currMouseClient.y};
-                BOOL success = ClientToScreen(h, &currMouse);
-                
-                SHORT newX = State.prevMousePos.x - currMouse.x;
-                SHORT newY = State.prevMousePos.y - currMouse.y;
-                
-                SHORT newWinX = State.currWindowPos.x - newX;
-                SHORT newWinY = State.currWindowPos.y - newY;
-                
-                State.currWindowPos = { newWinX, newWinY };
-                State.prevMousePos  = POINTS { (SHORT)currMouse.x, (SHORT)currMouse.y};
-                //State.isDragging = FALSE;
-                
-                SetWindowPos(h, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-            }
             //TODO:NOTE: Page says to return 0, but DO i HAVE to?
         } break;
         
@@ -270,88 +222,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             ExitProcess(0);
         } break;
         
-        case WM_MEASUREITEM:
-        {
-            MEASUREITEMSTRUCT *item = (MEASUREITEMSTRUCT *)l;
-            
-            if(item->CtlType == ODT_MENU) {
-                
-                if(item->itemID == MENU_FILE_ITEM_ID)
-                {
-                    u32 len = ls_len((char *)item->itemData);
-                    SIZE size = {};
-                    BOOL success = GetTextExtentPoint32A(GetDC(h), (LPCSTR)item->itemData, len, &size);
-                    
-                    //NOTE: Used to center Text inside the rect.
-                    u32 marginX = 0;
-                    u32 marginY = 0;
-                    
-                    item->itemWidth  = size.cx + (2*marginX);
-                    item->itemHeight = size.cy + (2*marginY);
-                }
-                else if(item->itemID == MENU_CLOSE_APP_ID)
-                {
-                    item->itemWidth = 16;
-                    item->itemHeight = 16;
-                }
-            }
-            
-        } break;
-        
-        case WM_DRAWITEM:
-        {
-            //NOTE: Only owner drawn right now are static (labels)
-            DRAWITEMSTRUCT *item = (DRAWITEMSTRUCT *)l;
-            
-            if(item->CtlType == ODT_MENU)
-            {
-                if(item->itemID == MENU_FILE_ITEM_ID)
-                {
-                    POINT cursorPos = {};
-                    GetCursorPos(&cursorPos);
-                    
-                    RECT screenRect = {};
-                    GetMenuItemRect(h, MenuBar, 0, &screenRect);
-                    
-                    HBRUSH brush      = appBkgBrush;
-                    COLORREF brushRGB = appBkgRGB;
-                    if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
-                       (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
-                    { brush = menuBkgBrush; brushRGB = menuBkgRGB; }
-                    
-                    FillRect(item->hDC, &item->rcItem, brush);
-                    
-                    SetBkColor(item->hDC, brushRGB);
-                    SetTextColor(item->hDC, whiteRGB);
-                    
-                    u32 marginX = 8, marginY = 2;
-                    TextOutA(item->hDC, item->rcItem.left + marginX, item->rcItem.top + marginY, 
-                             (LPCSTR)item->itemData, 4);
-                }
-                else if(item->itemID == MENU_CLOSE_APP_ID)
-                {
-                    //NOTE:TODO:NOTE:TODO:
-                    // HACK HACK HACK HACK HACK HACK
-                    RECT hackRect  = item->rcItem;
-                    hackRect.right = hackRect.right + 1234;
-                    hackRect.left  = hackRect.left + 1218;
-                    hackRect.top   = hackRect.top + 1;
-                    hackRect.bottom = hackRect.bottom + 1;
-                    
-                    if(!BitBlt(item->hDC, hackRect.left, hackRect.top, 16, 16, closeButtonDC, 0, 0, SRCCOPY))
-                    {
-                        DWORD Error = GetLastError();
-                        ls_printf("When Blitting got error: %d", Error);
-                    }
-                }
-            }
-            
-        } break;
-        
-        default:
-        {
-            return DefWindowProcA(h, msg, w, l);
-        }
+        default: { return DefWindowProcA(h, msg, w, l); }
     }
     
     return Result;
@@ -503,56 +374,16 @@ void RegisterWindow()
     }
 }
 
-HWND CreateWindow(HMENU MenuBar)
+HWND CreateWindow()
 {
     u32 style = LS_THIN_BORDER | LS_POPUP;// | LS_VISIBLE; //| LS_OVERLAPPEDWINDOW;
     BOOL Result;
-    
-    SubMenu = CreateMenu();
-    Result = AppendMenuA(SubMenu, MF_STRING, 0, "Save");
-    Result = AppendMenuA(SubMenu, MF_STRING, 1, "Load");
-    
-    MENUITEMINFOA FileMenuInfo = {};
-    FileMenuInfo.cbSize     = sizeof(MENUITEMINFOA);
-    FileMenuInfo.fMask      = MIIM_SUBMENU | MIIM_DATA | MIIM_FTYPE | MIIM_ID;
-    FileMenuInfo.fType      = MFT_OWNERDRAW;
-    FileMenuInfo.wID        = MENU_FILE_ITEM_ID;
-    FileMenuInfo.dwItemData = (ULONG_PTR)"File";
-    FileMenuInfo.hSubMenu   = SubMenu;
-    FileMenuInfo.cch        = 5;
-    Result = InsertMenuItemA(MenuBar, MENU_FILE_IDX, TRUE, &FileMenuInfo);
-    
-    BITMAPINFO BitmapInfo = {};
-    BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    BitmapInfo.bmiHeader.biWidth = 16;
-    BitmapInfo.bmiHeader.biHeight = -16; //Should it be negative?
-    BitmapInfo.bmiHeader.biPlanes = 1;
-    BitmapInfo.bmiHeader.biBitCount = 24;
-    BitmapInfo.bmiHeader.biCompression = BI_RGB;
-    
-    closeButton = CreateDIBSection(NULL, &BitmapInfo, DIB_RGB_COLORS, 
-                                   &closeButtBackbuff, NULL, 0);
-    closeButtonDC = CreateCompatibleDC(NULL);
-    SelectObject(closeButtonDC, closeButton);
-    ls_memcpy(pixelButtonData, closeButtBackbuff, 16*16*3);
-    
-    MENUITEMINFOA CloseBitmap = {};
-    CloseBitmap.cbSize     = sizeof(MENUITEMINFOA);
-    CloseBitmap.fMask      = MIIM_ID | MIIM_FTYPE;
-    CloseBitmap.fType      = MFT_OWNERDRAW;
-    CloseBitmap.wID        = MENU_CLOSE_APP_ID;
-    Result = InsertMenuItemA(MenuBar, MENU_CLOSE_APP_IDX, TRUE, &CloseBitmap);
-    
-    MENUINFO menuInfo = {};
-    menuInfo.cbSize  = sizeof(MENUINFO);
-    menuInfo.fMask   = MIM_APPLYTOSUBMENUS | MIM_BACKGROUND;
-    menuInfo.hbrBack = appBkgBrush;  //RGB(0x38, 0x38, 0x38);
     
     int screenHeight = GetSystemMetrics(SM_CYSCREEN);
     int screenWidth  = GetSystemMetrics(SM_CXSCREEN);
     
     int windowWidth = 1280;
-    int windowHeight = 840;
+    int windowHeight = 860;
     const int taskbarHeight = 20;
     
     int spaceX = (screenWidth - windowWidth) / 2;
@@ -576,6 +407,8 @@ HWND CreateWindow(HMENU MenuBar)
     }
     
     
+    
+    
     BITMAPINFO BackBufferInfo = {};
     BackBufferInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
     BackBufferInfo.bmiHeader.biWidth = State.windowWidth;
@@ -584,8 +417,8 @@ HWND CreateWindow(HMENU MenuBar)
     BackBufferInfo.bmiHeader.biBitCount = 32;
     BackBufferInfo.bmiHeader.biCompression = BI_RGB;
     
-    WindowDC = GetDC(WindowHandle);
-    BackBufferDC = CreateCompatibleDC(WindowDC);
+    WindowDC           = GetDC(WindowHandle);
+    BackBufferDC       = CreateCompatibleDC(WindowDC);
     HBITMAP DibSection = CreateDIBSection(BackBufferDC, &BackBufferInfo,
                                           DIB_RGB_COLORS, (void **)&BackBuffer, NULL, 0);
     SelectObject(BackBufferDC, DibSection);
@@ -599,6 +432,8 @@ void windows_Render()
 {
     InvalidateRect(MainWindow, NULL, TRUE);
 }
+
+void ProgramExitOnButton(UIContext *cxt, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
@@ -620,15 +455,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     RegisterWindow();
     
-    MenuBar = CreateMenu();
-    MENUINFO Info = {};
-    Info.cbSize = sizeof(MENUINFO);
-    Info.fMask = MIM_APPLYTOSUBMENUS | MIM_STYLE | MIM_BACKGROUND;
-    Info.dwStyle = MNS_NOTIFYBYPOS;
-    Info.hbrBack = appBkgBrush;
-    SetMenuInfo(MenuBar, &Info);
-    
-    MainWindow = CreateWindow(MenuBar);
+    MainWindow = CreateWindow();
     
     UserInput.Keyboard.getClipboard = win32_GetClipboard;
     UserInput.Keyboard.setClipboard = win32_SetClipboard;
@@ -646,6 +473,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->textColor       = RGBg(0xCC);
     uiContext->invWidgetColor  = RGBg(0xBA);
     uiContext->invTextColor    = RGBg(0x33);
+    
+    UIButton closeButton = {};
+    closeButton.style    = UIBUTTON_BMP;
+    closeButton.bmpData  = pixelButtonData;
+    closeButton.bmpW     = pixelButtonWidth;
+    closeButton.bmpH     = pixelButtonHeight;
+    closeButton.onClick  = ProgramExitOnButton;
+    
+    UIMenu WindowMenu = {};
+    WindowMenu.closeWindow = closeButton;
     
     ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
     
@@ -705,17 +542,52 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Frame
         ls_uiBackground(uiContext);
         
+        ls_uiMenu(uiContext, &WindowMenu, -1, State.windowHeight-20, State.windowWidth, 22);
+        
         DrawInitTab(uiContext);
         
 #if 1//_DEBUG
         char buff[32] = {};
         ls_itoa_t(lastFrameTime, buff, 32);
-        ls_uiGlyphString(uiContext, 1240, 780, ls_unistrFromAscii(buff), RGBg(0xEE));
+        ls_uiGlyphString(uiContext, 1240, 760, ls_unistrFromAscii(buff), RGBg(0xEE));
 #endif
         
         //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
         if(LeftClick && !uiContext->focusWasSetThisFrame)
         { uiContext->currentFocus = 0; }
+        
+        
+        //NOTE: Dragging code, only happens when menu is selected.
+        if(LeftClick && uiContext->currentFocus == (u64 *)&WindowMenu)
+        { 
+            State.isDragging = TRUE;
+            POINT currMouse = {};
+            GetCursorPos(&currMouse);
+            State.prevMousePos = currMouse;
+        }
+        if(State.isDragging && LeftHold)
+        { 
+            MouseInput *Mouse = &UserInput.Mouse;
+            
+            POINT currMouse = {};
+            GetCursorPos(&currMouse);
+            
+            POINT prevMouse = State.prevMousePos;
+            
+            SHORT newX = prevMouse.x - currMouse.x;
+            SHORT newY = prevMouse.y - currMouse.y;
+            
+            SHORT newWinX = State.currWindowPos.x - newX;
+            SHORT newWinY = State.currWindowPos.y - newY;
+            
+            State.currWindowPos = { newWinX, newWinY };
+            State.prevMousePos  = currMouse; 
+            SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+            
+            if(LeftUp) { State.isDragging = FALSE; }
+        }
+        
+        
         
         if(LeftUp || RightUp || MiddleUp)
         { uiContext->mouseCapture = 0; }

@@ -801,11 +801,13 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     f->addInit.text     = ls_unistrAlloc(16);
     f->addInit.maxLen   = 2;
     
+    f->addNew.style     = UIBUTTON_TEXT;
     f->addNew.name      = ls_unistrFromUTF32(U"+");
     f->addNew.onClick   = AddNewInitOnClick;
     f->addNew.data      = f;
     f->addNew.onHold    = 0x0;
     
+    f->addConfirm.style   = UIBUTTON_TEXT;
     f->addConfirm.name    = ls_unistrFromUTF32(U"Ok");
     f->addConfirm.onClick = AddConfirmOnClick;
     f->addConfirm.data    = f;
@@ -860,6 +862,7 @@ void SetInitTab(UIContext *cxt)
         f->pos.viewEndIdx = f->pos.text.len;
         f->pos.maxLen     = 2;
         
+        f->remove.style   = UIBUTTON_TEXT;
         f->remove.name    = ls_unistrFromUTF32(U"X");
         f->remove.onClick = RemoveOrderOnClick;
         f->remove.data    = (void *)((u64)i);
@@ -874,16 +877,19 @@ void SetInitTab(UIContext *cxt)
         f->rounds.text   = ls_unistrAlloc(16);
         f->rounds.maxLen = 2;
         
+        f->start.style   = UIBUTTON_TEXT;
         f->start.name    = ls_unistrFromUTF32(U"Start");
         f->start.onClick = StartCounterOnClick;
         f->start.data    = (void *)f;
         f->start.onHold  = 0x0;
         
+        f->plusOne.style   = UIBUTTON_TEXT;
         f->plusOne.name    = ls_unistrFromUTF32(U"+1");
         f->plusOne.onClick = PlusOneCounterOnClick;
         f->plusOne.data    = (void *)f;
         f->plusOne.onHold  = 0x0;
         
+        f->stop.style   = UIBUTTON_TEXT;
         f->stop.name    = ls_unistrFromUTF32(U"Stop");
         f->stop.onClick = StopCounterOnClick;
         f->stop.data    = (void *)f;
@@ -906,6 +912,7 @@ void SetInitTab(UIContext *cxt)
         f->dmgRes.maxLen = 4;
         f->dmgRes.isReadonly = TRUE;
         
+        f->throwDie.style   = UIBUTTON_TEXT;
         f->throwDie.name    = ls_unistrFromUTF32(U"Go");
         f->throwDie.onClick = ThrowDiceOnClick;
         f->throwDie.data    = &f->throwDie;
@@ -920,6 +927,7 @@ void SetInitTab(UIContext *cxt)
         Page->GeneralThrower.hitRes.maxLen = 4;
         Page->GeneralThrower.hitRes.isReadonly = TRUE;
         
+        Page->GeneralThrower.throwDie.style   = UIBUTTON_TEXT;
         Page->GeneralThrower.throwDie.name    = ls_unistrFromUTF32(U"Go");
         Page->GeneralThrower.throwDie.onClick = ThrowDiceOnClick;
         Page->GeneralThrower.throwDie.data    = &Page->GeneralThrower.throwDie;
@@ -931,6 +939,8 @@ void SetInitTab(UIContext *cxt)
     { ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, State.encounters.Enc[i].name); }
     
     Page->EncounterName.text = ls_unistrAlloc(16);
+    
+    Page->Save.style   = UIBUTTON_TEXT;
     Page->Save.name    = ls_unistrFromUTF32(U"Save");
     Page->Save.onClick = SaveEncounterOnClick;
     Page->Save.data    = 0x0;
@@ -944,18 +954,22 @@ void SetInitTab(UIContext *cxt)
     Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     Page->RoundCounter.isReadonly = TRUE;
     
+    Page->Roll.style    = UIBUTTON_TEXT;
     Page->Roll.name     = ls_unistrFromUTF32(U"Roll");
     Page->Roll.onClick  = RollOnClick;
     Page->Roll.onHold   = 0x0;
     
+    Page->Set.style     = UIBUTTON_TEXT;
     Page->Set.name      = ls_unistrFromUTF32(U"Set");
     Page->Set.onClick   = SetOnClick;
     Page->Set.onHold    = 0x0;
     
+    Page->Reset.style   = UIBUTTON_TEXT;
     Page->Reset.name    = ls_unistrFromUTF32(U"Reset");
     Page->Reset.onClick = ResetOnClick;
     Page->Reset.onHold  = 0x0;
     
+    Page->Next.style    = UIBUTTON_TEXT;
     Page->Next.name     = ls_unistrFromUTF32(U"Next");
     Page->Next.onClick  = NextOnClick;
     Page->Next.onHold   = 0x0;
@@ -988,7 +1002,7 @@ void DrawInitTab(UIContext *cxt)
     s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
     
     // Party
-    s32 yPos = 658;
+    s32 yPos = 638;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
         ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 650, yPos+6);
@@ -997,7 +1011,7 @@ void DrawInitTab(UIContext *cxt)
     }
     
     // Allies
-    yPos = 478;
+    yPos = 458;
     for(u32 i = 0; i < visibleAllies; i++)
     {
         DrawInitField(cxt, Page->AllyFields + i, 616, yPos);
@@ -1005,7 +1019,7 @@ void DrawInitTab(UIContext *cxt)
     }
     
     // Enemies
-    yPos = 658;
+    yPos = 638;
     for(u32 i = 0; i < visibleMobs; i++)
     {
         InitField *f = Page->MobFields + i;
@@ -1015,7 +1029,7 @@ void DrawInitTab(UIContext *cxt)
     }
     
     // Order
-    yPos = 658;
+    yPos = 638;
     for(u32 i = 0; i < visibleOrder; i += 2)
     {
         DrawOrderField(cxt, Page->OrderFields + i, 870, yPos);
@@ -1029,7 +1043,7 @@ void DrawInitTab(UIContext *cxt)
     // Counters
     if(!Page->InfoPane.isOpen)
     {
-        yPos = 658;
+        yPos = 638;
         for(u32 i = 0; i < COUNTER_NUM; i++)
         {
             Counter *f = Page->Counters + i;
@@ -1051,13 +1065,13 @@ void DrawInitTab(UIContext *cxt)
     }
     
     // Mob Info Left Pane
-    ls_uiLPane(cxt, &Page->InfoPane, 0, 200, 360, 580);
+    ls_uiLPane(cxt, &Page->InfoPane, 0, 180, 360, 580);
     
     //Mob Info
     if(Page->InfoPane.isOpen)
     {
         u32 infoX = 2;
-        u32 infoY = 762;
+        u32 infoY = 742;
         for(u32 i = 0; i < visibleMobs; i++)
         {
             InitField *f = Page->MobFields + i;
@@ -1086,7 +1100,7 @@ void DrawInitTab(UIContext *cxt)
     
     // Dice Throwers
     u32 xPos = 20;
-    yPos = 110;
+    yPos = 90;
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
         DiceThrow *f = Page->Throwers + i;
@@ -1103,7 +1117,7 @@ void DrawInitTab(UIContext *cxt)
     }
     
     xPos = 20;
-    yPos = 62;
+    yPos = 42;
     // General Thrower
     {
         ls_uiTextBox(cxt, &Page->GeneralThrower.toHit,  xPos,       yPos, 168, 20);
@@ -1114,35 +1128,35 @@ void DrawInitTab(UIContext *cxt)
     
     
     
-    ls_uiButton(cxt, &Page->Reset, 670, 698, 48, 20);
+    ls_uiButton(cxt, &Page->Reset, 670, 678, 48, 20);
     
     
     if(!State.inBattle)
     {
         //TODO: Clicking on a ListBox Entry clicks also what's behind it.
-        ls_uiListBox(cxt, &Page->Mobs, 406, 698, 100, 20);
-        ls_uiListBox(cxt, &Page->Allies, 640, 518, 100, 20);
+        ls_uiListBox(cxt, &Page->Mobs,   406, 678, 100, 20);
+        ls_uiListBox(cxt, &Page->Allies, 640, 598, 100, 20);
         
-        ls_uiButton(cxt, &Page->Roll, 556, 698, 48, 20);
-        ls_uiButton(cxt, &Page->Set, 780, 698, 48, 20);
+        ls_uiButton(cxt, &Page->Roll, 556, 678, 48, 20);
+        ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
         
-        ls_uiListBox(cxt, &Page->EncounterSel, 480, 738, 120, 20);
-        ls_uiTextBox(cxt, &Page->EncounterName, 624, 738, 100, 20);
+        ls_uiListBox(cxt, &Page->EncounterSel,  480, 718, 120, 20);
+        ls_uiTextBox(cxt, &Page->EncounterName, 624, 718, 100, 20);
         
-        ls_uiButton(cxt, &Page->Save, 601, 760, 44, 20);
+        ls_uiButton(cxt, &Page->Save, 601, 740, 44, 20);
     }
     else
     {
-        ls_uiTextBox(cxt, &Page->Current, 1010, 688, 100, 20);
-        ls_uiTextBox(cxt, &Page->RoundCounter, 1230, 740, 30, 20);
+        ls_uiTextBox(cxt, &Page->Current,      1010, 668, 100, 20);
+        ls_uiTextBox(cxt, &Page->RoundCounter, 1230, 720, 30, 20);
         
-        ls_uiButton(cxt, &Page->Next, 1036, 718, 48, 20);
+        ls_uiButton(cxt, &Page->Next, 1036, 698, 48, 20);
         
         if(visibleAllies < ALLY_NUM)
         {
             InitField *f = Page->AllyFields + visibleAllies;
             
-            u32 addY = 474 - (20*visibleAllies);
+            u32 addY = 454 - (20*visibleAllies);
             if(!f->isAdding)
             {
                 ls_uiButton(cxt, &f->addNew, 606, addY, 36, 20);
@@ -1160,7 +1174,7 @@ void DrawInitTab(UIContext *cxt)
         {
             InitField *f = Page->MobFields + visibleMobs;
             
-            u32 addY = 654 - (20*visibleMobs);
+            u32 addY = 634 - (20*visibleMobs);
             if(!f->isAdding)
             {
                 ls_uiButton(cxt, &f->addNew, 356, addY, 36, 20);

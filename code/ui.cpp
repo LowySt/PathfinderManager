@@ -47,7 +47,6 @@ struct UIScissor
     UIRect *currRect;
 };
 
-
 struct UILPane
 {
     u32 dtOpen;
@@ -57,10 +56,17 @@ struct UILPane
 
 struct UIContext;
 
+enum UIButtonStyle { UIBUTTON_TEXT, UIBUTTON_BMP };
+
 typedef void(*ButtonProc)(UIContext *cxt, void *data);
 struct UIButton
 {
+    UIButtonStyle style;
+    
     unistring name;
+    u8 *bmpData;
+    s32 bmpW, bmpH;
+    
     b32 isHot;
     b32 isHeld;
     
@@ -125,6 +131,22 @@ struct UISlider
     SliderStyle style;
     Color lColor;
     Color rColor;
+};
+
+
+//TODO: Very Shitty implementation of Menus
+struct UISubMenu
+{
+    unistring label;
+};
+
+struct UIMenu
+{
+    UIButton  closeWindow;
+    UIButton  minimize;
+    
+    UISubMenu *subMenus;
+    u32       numSubmenus;
 };
 
 struct UIContext
@@ -628,6 +650,8 @@ void ls_uiBackground(UIContext *cxt)
 
 void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
 {
+    UIScissor::UIRect *scRect = cxt->scissor.currRect;
+    
     u32 *At = (u32 *)cxt->drawBuffer;
     
     for(s32 y = yPos, eY = 0; y < yPos+h; y++, eY++)
@@ -636,6 +660,9 @@ void ls_uiBitmap(UIContext *cxt, s32 xPos, s32 yPos, u32 *data, s32 w, s32 h)
         {
             if(x < 0 || x >= cxt->width)  continue;
             if(y < 0 || y >= cxt->height) continue;
+            
+            if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+            if(y < scRect->y || y >= scRect->y+scRect->h) continue;
             
             At[y*cxt->width + x] = data[eY*w + eX];
         }
@@ -756,21 +783,32 @@ void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s3
         }
     }
     
-    ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
-    
-    
-    ls_uiPushScissor(cxt, xPos+2, yPos+2, w-4, h-4);
-    
-    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-    
-    s32 strWidth  = ls_uiGlyphStringLen(cxt, button->name);
-    s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
-    s32 strHeight = cxt->currFont->pixelHeight;
-    s32 yOff      = strHeight*0.25; //TODO: @FontDescent
-    
-    ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button->name, cxt->textColor);
-    
-    ls_uiPopScissor(cxt);
+    if(button->style == UIBUTTON_TEXT)
+    {
+        ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
+        
+        ls_uiPushScissor(cxt, xPos+2, yPos+2, w-4, h-4);
+        
+        ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+        
+        s32 strWidth  = ls_uiGlyphStringLen(cxt, button->name);
+        s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
+        s32 strHeight = cxt->currFont->pixelHeight;
+        s32 yOff      = strHeight*0.25; //TODO: @FontDescent
+        
+        ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button->name, cxt->textColor);
+        
+        ls_uiPopScissor(cxt);
+    }
+    else if(button->style == UIBUTTON_BMP)
+    {
+        ls_uiPushScissor(cxt, xPos, yPos, w, h);
+        
+        ls_uiBitmap(cxt, xPos, yPos, (u32 *)button->bmpData, button->bmpW, button->bmpH);
+        
+        ls_uiPopScissor(cxt);
+    }
+    else { AssertMsg(FALSE, "Unhandled button style"); }
 }
 
 void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
@@ -1505,6 +1543,22 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     }
     
     slider->isHot = FALSE;
+}
+
+void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
+{
+    if(LeftClickIn(x, y, w, h)) {
+        cxt->currentFocus = (u64 *)menu;
+        cxt->focusWasSetThisFrame = TRUE;
+    }
+    
+    ls_uiPushScissor(cxt, x, y, w, h);
+    
+    ls_uiBorderedRect(cxt, x, y, w, h, cxt->backgroundColor, RGBg(110));
+    
+    ls_uiButton(cxt, &menu->closeWindow, x+w-20, y+2, 16, 16);
+    
+    ls_uiPopScissor(cxt);
 }
 
 void ls_uiRender(UIContext *c)

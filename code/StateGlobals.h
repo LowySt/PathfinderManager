@@ -149,7 +149,7 @@ struct ProgramState
     u32 windowHeight;
     
     b32    isDragging;
-    POINTS prevMousePos;
+    POINT  prevMousePos;
     POINTS currWindowPos;
     
     b32 hasMouseClicked;
