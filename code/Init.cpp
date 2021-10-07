@@ -1,3 +1,15 @@
+void selectStyleDefault(UIContext *cxt, void *data)
+{
+    //TODO: Implement this
+    return;
+}
+
+void selectStylePrana(UIContext *cxt, void *data)
+{
+    //TODO: Implement this
+    return;
+}
+
 void CustomPlayerText(UIContext *cxt, void *data)
 {
     InitPage *Page = State.Init;

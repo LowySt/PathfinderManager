@@ -483,13 +483,33 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     closeButton.bmpH     = pixelButtonHeight;
     closeButton.onClick  = ProgramExitOnButton;
     
-    unistring setMenuName = ls_unistrFromUTF32(U"Settings");
+    UIButton styleDefaultBtn = {};
+    styleDefaultBtn.style   = UIBUTTON_TEXT_NOBORDER;
+    styleDefaultBtn.name    = ls_unistrFromUTF32(U"Default");
+    styleDefaultBtn.onClick = selectStyleDefault;
     
-    UIMenu WindowMenu      = {};
-    WindowMenu.closeWindow = closeButton;
-    WindowMenu.text        = (unistring *)ls_alloc(sizeof(unistring) * 8); //TODO: arbitrary constant
-    WindowMenu.numText     = 1;
-    WindowMenu.text[0]     = setMenuName;
+    UIButton stylePranaBtn  = {};
+    stylePranaBtn.style     = UIBUTTON_TEXT_NOBORDER;
+    stylePranaBtn.name      = ls_unistrFromUTF32(U"Prana");
+    stylePranaBtn.onClick   = selectStylePrana;
+    
+    UIMenu styleSubMenu     = {};
+    ls_uiMenuAddItem(uiContext, &styleSubMenu, styleDefaultBtn);
+    ls_uiMenuAddItem(uiContext, &styleSubMenu, stylePranaBtn);
+    
+    UIButton styleMenuBtn   = {};
+    styleMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
+    styleMenuBtn.name          = ls_unistrFromUTF32(U"Style");
+    styleMenuBtn.onClick       = ls_uiMenuDefaultOnClick;
+    
+    UIMenu WindowMenu       = {};
+    WindowMenu.closeWindow  = closeButton;
+    WindowMenu.sub          = (UIMenu *)ls_alloc(sizeof(UIMenu) * 32);
+    WindowMenu.maxSub       = 32;
+    
+    ls_uiMenuAddItem(uiContext, &WindowMenu, styleMenuBtn);
+    ls_uiMenuAddSub(uiContext, &WindowMenu, styleSubMenu, 0);
+    
     
     ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
     
@@ -547,6 +567,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Frame
         ls_uiBackground(uiContext);
         
+        //NOTE: Render The Window Menu
         ls_uiMenu(uiContext, &WindowMenu, -1, State.windowHeight-20, State.windowWidth, 22);
         
         DrawInitTab(uiContext);

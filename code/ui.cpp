@@ -56,7 +56,7 @@ struct UILPane
 
 struct UIContext;
 
-enum UIButtonStyle { UIBUTTON_TEXT, UIBUTTON_BMP };
+enum UIButtonStyle { UIBUTTON_TEXT, UIBUTTON_TEXT_NOBORDER, UIBUTTON_BMP };
 
 typedef void(*ButtonProc)(UIContext *cxt, void *data);
 struct UIButton
@@ -137,14 +137,15 @@ struct UISlider
 //TODO: Very Shitty implementation of Menus
 struct UIMenu
 {
-    UIButton   closeWindow;
-    UIButton   minimize;
+    UIButton  closeWindow;
+    UIButton  minimize;
     
-    UIMenu    *Items;
-    u32        numItems;
+    b32 isOpen;
+    s32 openIdx;
+    Array<UIButton> items;
     
-    unistring *text;
-    u32        numText;
+    UIMenu *sub;            //NOTE: There is 1 sub for every item
+    u32     maxSub; 
 };
 
 struct UIContext
@@ -760,9 +761,11 @@ inline
 s32 ls_uiSelectFontByFontSize(UIContext *cxt, UIFontSize fontSize)
 { cxt->currFont = &cxt->fonts[fontSize]; return cxt->currFont->pixelHeight; }
 
+//TODO:Button autosizing width
 void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     Color bkgColor = cxt->widgetColor;
+    if(button->style == UIBUTTON_TEXT_NOBORDER) { bkgColor = cxt->backgroundColor; } //TODO:Hack
     
     if(MouseInRect(xPos, yPos, w, h))
     { 
@@ -781,15 +784,30 @@ void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s3
         }
     }
     
+    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+    
     if(button->style == UIBUTTON_TEXT)
     {
         ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
         
         ls_uiPushScissor(cxt, xPos+2, yPos+2, w-4, h-4);
         
-        ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+        s32 strWidth = ls_uiGlyphStringLen(cxt, button->name);
+        s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
+        s32 strHeight = cxt->currFont->pixelHeight;
+        s32 yOff      = strHeight*0.25; //TODO: @FontDescent
         
-        s32 strWidth  = ls_uiGlyphStringLen(cxt, button->name);
+        ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button->name, cxt->textColor);
+        
+        ls_uiPopScissor(cxt);
+    }
+    else if(button->style == UIBUTTON_TEXT_NOBORDER)
+    {
+        ls_uiRect(cxt, xPos, yPos, w, h, bkgColor);
+        
+        ls_uiPushScissor(cxt, xPos, yPos, w, h);
+        
+        s32 strWidth = ls_uiGlyphStringLen(cxt, button->name);
         s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
         s32 strHeight = cxt->currFont->pixelHeight;
         s32 yOff      = strHeight*0.25; //TODO: @FontDescent
@@ -1543,6 +1561,39 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     slider->isHot = FALSE;
 }
 
+struct __UImenuDataPass { UIMenu *menu; s32 idx; };
+
+void ls_uiMenuDefaultOnClick(UIContext *cxt, void *data)
+{
+    __UImenuDataPass *pass = (__UImenuDataPass *)data;
+    
+    UIMenu *menu  = pass->menu;
+    
+    menu->isOpen  = TRUE;
+    menu->openIdx = pass->idx;
+    
+    return;
+}
+
+void ls_uiMenuAddItem(UIContext *cxt, UIMenu *menu, UIButton b)
+{
+    if(b.onClick == ls_uiMenuDefaultOnClick)
+    {
+        //TODO: I hate having to allocate data for this. I also need a way to deallocate it!
+        //      @Leak @Memory
+        __UImenuDataPass *pass = (__UImenuDataPass *)ls_alloc(sizeof(__UImenuDataPass));
+        pass->menu = menu;
+        pass->idx = menu->items.count;
+        b.data = pass;
+    }
+    
+    menu->items.push(b);
+}
+
+//TODO This is completely unnecessary
+void ls_uiMenuAddSub(UIContext *cxt, UIMenu *menu, UIMenu sub, s32 idx)
+{ menu->sub[idx] = sub; }
+
 void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
 {
     if(LeftClickIn(x, y, w, h)) {
@@ -1554,15 +1605,37 @@ void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
     
     ls_uiBorderedRect(cxt, x, y, w, h, cxt->backgroundColor, RGBg(110));
     
-    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
+    ls_uiButton(cxt, &menu->closeWindow, x+w-20, y+2, 16, 16);
+    
     s32 xOff = 0;
-    for(u32 i = 0; i < menu->numText; i++)
+    for(u32 i = 0; i < menu->items.count; i++)
     {
-        ls_uiGlyphString(cxt, x + xOff + 4, y+6, menu->text[i], cxt->textColor);
-        xOff += ls_uiGlyphStringLen(cxt, menu->text[i]);
+        UIButton *currItem = &menu->items[i];
+        
+        //s32 strLen = ls_uiGlyphStringLen(cxt, currItem->name) + 8;
+        ls_uiButton(cxt, currItem, x+xOff, y+2, 100, 20);
+        xOff += 100;
     }
     
-    ls_uiButton(cxt, &menu->closeWindow, x+w-20, y+2, 16, 16);
+    if(menu->isOpen == TRUE)
+    {
+        UIButton *openItem = &menu->items[menu->openIdx];
+        UIMenu *openSub = menu->sub + menu->openIdx;
+        
+        AssertMsg(openItem, "The item doesn't exist\n");
+        AssertMsg(openSub, "The sub-menu doesn't exist\n");
+        
+        s32 yPos   = y-20;
+        s32 height = openSub->items.count*20;
+        
+        //TODO: Store the xPos of every menu item.
+        for(u32 i = 0; i < openSub->items.count; i++)
+        {
+            UIButton *currItem = &openSub->items[i];
+            ls_uiButton(cxt, currItem, 0, yPos, 100, 20);
+            yPos -= 20;
+        }
+    }
     
     ls_uiPopScissor(cxt);
 }
