@@ -1601,21 +1601,23 @@ void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
         cxt->focusWasSetThisFrame = TRUE;
     }
     
+    if(cxt->currentFocus != (u64 *)menu) { menu->isOpen = FALSE; }
+    
     ls_uiPushScissor(cxt, x, y, w, h);
     
     ls_uiBorderedRect(cxt, x, y, w, h, cxt->backgroundColor, RGBg(110));
     
     ls_uiButton(cxt, &menu->closeWindow, x+w-20, y+2, 16, 16);
     
-    s32 xOff = 0;
+    s32 xOff = 100;
     for(u32 i = 0; i < menu->items.count; i++)
     {
         UIButton *currItem = &menu->items[i];
-        
-        //s32 strLen = ls_uiGlyphStringLen(cxt, currItem->name) + 8;
         ls_uiButton(cxt, currItem, x+xOff, y+2, 100, 20);
         xOff += 100;
     }
+    
+    ls_uiPopScissor(cxt);
     
     if(menu->isOpen == TRUE)
     {
@@ -1628,16 +1630,16 @@ void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
         s32 yPos   = y-20;
         s32 height = openSub->items.count*20;
         
+        ls_uiBorderedRect(cxt, 99, y-height-2, 102, height+3, cxt->backgroundColor);
+        
         //TODO: Store the xPos of every menu item.
         for(u32 i = 0; i < openSub->items.count; i++)
         {
             UIButton *currItem = &openSub->items[i];
-            ls_uiButton(cxt, currItem, 0, yPos, 100, 20);
-            yPos -= 20;
+            ls_uiButton(cxt, currItem, 100, yPos, 100, 20);
+            yPos -= 21;
         }
     }
-    
-    ls_uiPopScissor(cxt);
 }
 
 void ls_uiRender(UIContext *c)

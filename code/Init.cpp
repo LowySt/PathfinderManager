@@ -1,12 +1,12 @@
 void selectStyleDefault(UIContext *cxt, void *data)
 {
-    //TODO: Implement this
+    currentStyle = INIT_STYLE_DEFAULT;
     return;
 }
 
 void selectStylePrana(UIContext *cxt, void *data)
 {
-    //TODO: Implement this
+    currentStyle = INIT_STYLE_PRANA;
     return;
 }
 
@@ -1005,7 +1005,7 @@ void DrawOrderField(UIContext *cxt, Order *f, s32 xPos, s32 yPos)
     ls_uiButton(cxt, &f->remove, xPos, yPos, 20, 20);
 }
 
-void DrawInitTab(UIContext *cxt)
+void DrawDefaultStyle(UIContext *cxt)
 {
     InitPage *Page = State.Init;
     
@@ -1200,4 +1200,22 @@ void DrawInitTab(UIContext *cxt)
             }
         }
     }
+}
+
+void DrawPranaStyle(UIContext *cxt)
+{
+    return;
+}
+
+void DrawInitTab(UIContext *cxt)
+{
+    switch(currentStyle)
+    {
+        case INIT_STYLE_DEFAULT: DrawDefaultStyle(cxt); return;
+        case INIT_STYLE_PRANA:   DrawPranaStyle(cxt); return;
+        
+        default: AssertMsg(FALSE, "Unhandled Init Style\n"); return;
+    }
+    
+    return;
 }

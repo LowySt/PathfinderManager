@@ -55,4 +55,11 @@ struct tmp_order {
 
 static s32 addID = 1000;
 
+enum InitStyle
+{
+    INIT_STYLE_DEFAULT,
+    INIT_STYLE_PRANA
+};
+
+static InitStyle currentStyle = INIT_STYLE_DEFAULT;
 #endif //_INIT_H
