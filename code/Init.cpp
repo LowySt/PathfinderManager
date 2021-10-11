@@ -1236,14 +1236,14 @@ void DrawDefaultStyle(UIContext *cxt)
             u32 addY = 454 - (20*visibleAllies);
             if(!f->isAdding)
             {
-                ls_uiButton(cxt, &f->addNew, 606, addY, 36, 20);
+                ls_uiButton(cxt, &f->addNew, 678, addY, 36, 20);
             }
             else
             {
-                ls_uiTextBox(cxt, &f->addName, 546, addY+4, 120, 20);
-                ls_uiTextBox(cxt, &f->addInit, 666, addY+4, 32, 20);
+                ls_uiTextBox(cxt, &f->addName, 616, addY+4, 120, 20);
+                ls_uiTextBox(cxt, &f->addInit, 736, addY+4, 26, 20);
                 
-                ls_uiButton(cxt, &f->addConfirm, 698, addY+4, 32, 20);
+                ls_uiButton(cxt, &f->addConfirm, 762, addY+4, 26, 20);
             }
         }
         
@@ -1254,14 +1254,14 @@ void DrawDefaultStyle(UIContext *cxt)
             u32 addY = 634 - (20*visibleMobs);
             if(!f->isAdding)
             {
-                ls_uiButton(cxt, &f->addNew, 356, addY, 36, 20);
+                ls_uiButton(cxt, &f->addNew, 428, addY, 36, 20);
             }
             else
             {
-                ls_uiTextBox(cxt, &f->addName, 296, addY+4, 120, 20);
-                ls_uiTextBox(cxt, &f->addInit, 416, addY+4, 32, 20);
+                ls_uiTextBox(cxt, &f->addName, 378, addY+4, 120, 20);
+                ls_uiTextBox(cxt, &f->addInit, 498, addY+4, 26, 20);
                 
-                ls_uiButton(cxt, &f->addConfirm, 448, addY+4, 32, 20);
+                ls_uiButton(cxt, &f->addConfirm, 524, addY+4, 26, 20);
             }
         }
     }
