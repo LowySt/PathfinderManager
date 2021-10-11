@@ -39,11 +39,18 @@ struct InitField
     UITextBox bonus;
     UITextBox final;
     
-    UITextBox ac;
-    UITextBox touch;
-    UITextBox flat;
+    UITextBox extra;
     
     UITextBox maxLife;
+    
+    UITextBox totalAC;
+    UITextBox touchAC;
+    UITextBox flatAC;
+    UITextBox lowAC;
+    
+    UITextBox conSave;
+    UITextBox dexSave;
+    UITextBox wisSave;
     
     UITextBox addName;
     UITextBox addInit;

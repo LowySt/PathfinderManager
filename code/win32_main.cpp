@@ -584,6 +584,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         
         //NOTE: Dragging code, only happens when menu is selected.
+        //TODO: Dragging while interacting with menu items! /Separate items region from draggable region!
         if(LeftClick && uiContext->currentFocus == (u64 *)&WindowMenu)
         { 
             State.isDragging = TRUE;

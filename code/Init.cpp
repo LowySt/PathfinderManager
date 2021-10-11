@@ -768,40 +768,25 @@ void AddConfirmOnClick(UIContext *cxt, void *data)
 
 void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *name)
 {
-    f->name.text        = ls_unistrFromUTF32(name);
-    f->name.viewEndIdx  = f->name.text.len;
-    f->name.preInput    = CustomInitFieldText;
-    f->name.data        = f;
+    f->name.text          = ls_unistrFromUTF32(name);
+    f->name.viewEndIdx    = f->name.text.len;
+    f->name.preInput      = CustomInitFieldText;
+    f->name.data          = f;
     
-    f->bonus.text       = ls_unistrFromUTF32(U"0");
-    f->bonus.viewEndIdx = f->bonus.text.len;
-    f->bonus.maxLen     = 2;
-    f->bonus.preInput   = CustomInitFieldText;
-    f->bonus.data       = f;
+    f->bonus.text         = ls_unistrFromUTF32(U"0");
+    f->bonus.viewEndIdx   = f->bonus.text.len;
+    f->bonus.maxLen       = 2;
+    f->bonus.preInput     = CustomInitFieldText;
+    f->bonus.data         = f;
     
-    f->final.text       = ls_unistrFromUTF32(U"0");
-    f->final.viewEndIdx = f->final.text.len;
-    f->final.maxLen     = 2;
-    f->final.preInput   = CustomInitFieldText;
-    f->final.data       = f;
+    f->final.text         = ls_unistrFromUTF32(U"0");
+    f->final.viewEndIdx   = f->final.text.len;
+    f->final.maxLen       = 2;
+    f->final.preInput     = CustomInitFieldText;
+    f->final.data         = f;
     
-    f->ac.text       = ls_unistrFromUTF32(U"0");
-    f->ac.viewEndIdx = f->ac.text.len;
-    f->ac.maxLen     = 2;
-    f->ac.preInput   = 0x0;
-    f->ac.data       = 0x0;
-    
-    f->touch.text       = ls_unistrFromUTF32(U"0");
-    f->touch.viewEndIdx = f->touch.text.len;
-    f->touch.maxLen     = 2;
-    f->touch.preInput   = 0x0;
-    f->touch.data       = 0x0;
-    
-    f->flat.text       = ls_unistrFromUTF32(U"0");
-    f->flat.viewEndIdx = f->flat.text.len;
-    f->flat.maxLen     = 2;
-    f->flat.preInput   = 0x0;
-    f->flat.data       = 0x0;
+    f->extra.text         = ls_unistrAlloc(16);
+    f->extra.viewEndIdx   = f->extra.text.len;
     
     f->maxLife.text       = ls_unistrFromUTF32(U"0");
     f->maxLife.viewEndIdx = f->maxLife.text.len;
@@ -809,15 +794,57 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     f->maxLife.preInput   = 0x0;
     f->maxLife.data       = 0x0;
     
-    f->addName.text     = ls_unistrAlloc(16);
-    f->addInit.text     = ls_unistrAlloc(16);
-    f->addInit.maxLen   = 2;
+    f->totalAC.text       = ls_unistrFromUTF32(U"0");
+    f->totalAC.viewEndIdx = f->totalAC.text.len;
+    f->totalAC.maxLen     = 2;
+    f->totalAC.preInput   = 0x0;
+    f->totalAC.data       = 0x0;
     
-    f->addNew.style     = UIBUTTON_TEXT;
-    f->addNew.name      = ls_unistrFromUTF32(U"+");
-    f->addNew.onClick   = AddNewInitOnClick;
-    f->addNew.data      = f;
-    f->addNew.onHold    = 0x0;
+    f->touchAC.text       = ls_unistrFromUTF32(U"0");
+    f->touchAC.viewEndIdx = f->touchAC.text.len;
+    f->touchAC.maxLen     = 2;
+    f->touchAC.preInput   = 0x0;
+    f->touchAC.data       = 0x0;
+    
+    f->flatAC.text        = ls_unistrFromUTF32(U"0");
+    f->flatAC.viewEndIdx  = f->flatAC.text.len;
+    f->flatAC.maxLen      = 2;
+    f->flatAC.preInput    = 0x0;
+    f->flatAC.data        = 0x0;
+    
+    f->lowAC.text         = ls_unistrFromUTF32(U"0");
+    f->lowAC.viewEndIdx   = f->lowAC.text.len;
+    f->lowAC.maxLen       = 2;
+    f->lowAC.preInput     = 0x0;
+    f->lowAC.data         = 0x0;
+    
+    f->conSave.text       = ls_unistrFromUTF32(U"0");
+    f->conSave.viewEndIdx = f->conSave.text.len;
+    f->conSave.maxLen     = 2;
+    f->conSave.preInput   = 0x0;
+    f->conSave.data       = 0x0;
+    
+    f->dexSave.text       = ls_unistrFromUTF32(U"0");
+    f->dexSave.viewEndIdx = f->dexSave.text.len;
+    f->dexSave.maxLen     = 2;
+    f->dexSave.preInput   = 0x0;
+    f->dexSave.data       = 0x0;
+    
+    f->wisSave.text       = ls_unistrFromUTF32(U"0");
+    f->wisSave.viewEndIdx = f->wisSave.text.len;
+    f->wisSave.maxLen     = 2;
+    f->wisSave.preInput   = 0x0;
+    f->wisSave.data       = 0x0;
+    
+    f->addName.text       = ls_unistrAlloc(16);
+    f->addInit.text       = ls_unistrAlloc(16);
+    f->addInit.maxLen     = 2;
+    
+    f->addNew.style       = UIBUTTON_TEXT;
+    f->addNew.name        = ls_unistrFromUTF32(U"+");
+    f->addNew.onClick     = AddNewInitOnClick;
+    f->addNew.data        = f;
+    f->addNew.onHold      = 0x0;
     
     f->addConfirm.style   = UIBUTTON_TEXT;
     f->addConfirm.name    = ls_unistrFromUTF32(U"Ok");
@@ -987,15 +1014,50 @@ void SetInitTab(UIContext *cxt)
     Page->Next.onHold   = 0x0;
 }
 
-void DrawInitField(UIContext *cxt, InitField *F, s32 x, s32 y)
+void DrawInitExtra(UIContext *cxt, InitField *F, s32 baseX, s32 y)
+{
+    Color base = cxt->widgetColor;
+    s32 x = baseX - 372; //276;
+    
+    ls_uiTextBox(cxt, &F->extra, x, y, 82, 20);   x += 96;
+    
+    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
+    ls_uiTextBox(cxt, &F->maxLife, x, y, 42, 20); x += 56;
+    
+    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
+    ls_uiTextBox(cxt, &F->totalAC, x, y, 26, 20); x += 30;
+    
+    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
+    ls_uiTextBox(cxt, &F->touchAC, x, y, 26, 20); x += 30;
+    
+    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
+    ls_uiTextBox(cxt, &F->flatAC,  x, y, 26, 20); x += 30;
+    
+    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
+    ls_uiTextBox(cxt, &F->lowAC,   x, y, 26, 20); x += 40;
+    
+    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 150), base);
+    ls_uiTextBox(cxt, &F->conSave, x, y, 26, 20); x += 30;
+    
+    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x2C, 0x80, 0x34, 150), base);
+    ls_uiTextBox(cxt, &F->dexSave, x, y, 26, 20); x += 30;
+    
+    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x2C, 0x3D, 0x80, 150), base);
+    ls_uiTextBox(cxt, &F->wisSave, x, y, 26, 20); x += 30;
+    
+    cxt->widgetColor = base;
+}
+
+void DrawInitField(UIContext *cxt, InitField *F, s32 baseX, s32 y)
 {
     s32 w = 120;
     
     InitPage *Page = State.Init;
     
-    ls_uiTextBox(cxt, &F->name,  x         , y, w, 20);
-    ls_uiTextBox(cxt, &F->bonus, x + w     , y, 32, 20);
-    ls_uiTextBox(cxt, &F->final, x + w + 32, y, 32, 20);
+    s32 x = baseX;
+    ls_uiTextBox(cxt, &F->name,    x         , y, w, 20);
+    ls_uiTextBox(cxt, &F->bonus,   x + w     , y, 26, 20);
+    ls_uiTextBox(cxt, &F->final,   x + w + 26, y, 26, 20);
 }
 
 void DrawOrderField(UIContext *cxt, Order *f, s32 xPos, s32 yPos)
@@ -1036,7 +1098,7 @@ void DrawDefaultStyle(UIContext *cxt)
     {
         InitField *f = Page->MobFields + i;
         
-        DrawInitField(cxt, Page->MobFields + i, 366, yPos);
+        DrawInitField(cxt, Page->MobFields + i, 378, yPos);
         yPos -= 20;
     }
     
@@ -1056,7 +1118,7 @@ void DrawDefaultStyle(UIContext *cxt)
     if(!Page->InfoPane.isOpen)
     {
         yPos = 638;
-        for(u32 i = 0; i < COUNTER_NUM; i++)
+        for(u32 i = 0; i < DEF_COUNTER_NUM; i++)
         {
             Counter *f = Page->Counters + i;
             
@@ -1069,7 +1131,7 @@ void DrawDefaultStyle(UIContext *cxt)
             else
             {
                 ls_uiButton(cxt, &f->plusOne, 166, yPos, 48, 20);
-                ls_uiButton(cxt, &f->stop, 85, yPos+22, 48, 20);
+                ls_uiButton(cxt, &f->stop, 113, yPos+22, 48, 20);
             }
             
             yPos -= 44;
@@ -1090,28 +1152,31 @@ void DrawDefaultStyle(UIContext *cxt)
             
             ls_uiLabel(cxt, f->name.text, infoX, infoY);
             
-            Color tmp = cxt->widgetColor;
+            Color base = cxt->widgetColor;
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(20, 80, 180, 160), tmp);
-            ls_uiTextBox(cxt, &f->ac, infoX + 88, infoY-6, 26, 20);
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
+            ls_uiTextBox(cxt, &f->totalAC, infoX + 88, infoY-6, 26, 20);
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(20, 100, 100, 160), tmp);
-            ls_uiTextBox(cxt, &f->touch, infoX + 116, infoY-6, 26, 20);
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
+            ls_uiTextBox(cxt, &f->touchAC, infoX + 116, infoY-6, 26, 20);
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(20, 160, 120, 160), tmp);
-            ls_uiTextBox(cxt, &f->flat, infoX + 144, infoY-6, 26, 20);
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
+            ls_uiTextBox(cxt, &f->flatAC, infoX + 144, infoY-6, 26, 20);
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(220, 10, 20, 160), tmp);
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
+            ls_uiTextBox(cxt, &f->lowAC, infoX + 144, infoY-6, 26, 20);
+            
+            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
             ls_uiTextBox(cxt, &f->maxLife, infoX + 182, infoY-6, 42, 20);
             
-            cxt->widgetColor = tmp;
+            cxt->widgetColor = base;
             
             infoY -= 24;
         }
     }
     
     // Dice Throwers
-    u32 xPos = 20;
+    s32 xPos = 20;
     yPos = 90;
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
@@ -1147,7 +1212,7 @@ void DrawDefaultStyle(UIContext *cxt)
     {
         //TODO: Clicking on a ListBox Entry clicks also what's behind it.
         ls_uiListBox(cxt, &Page->Mobs,   406, 678, 100, 20);
-        ls_uiListBox(cxt, &Page->Allies, 640, 598, 100, 20);
+        ls_uiListBox(cxt, &Page->Allies, 641, 498, 100, 20);
         
         ls_uiButton(cxt, &Page->Roll, 556, 678, 48, 20);
         ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
@@ -1204,6 +1269,164 @@ void DrawDefaultStyle(UIContext *cxt)
 
 void DrawPranaStyle(UIContext *cxt)
 {
+    InitPage *Page = State.Init;
+    
+    s32 visibleMobs   = Page->Mobs.selectedIndex;
+    s32 visibleAllies = Page->Allies.selectedIndex;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    
+    // Party
+    s32 yPos = 638;
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    {
+        ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 650, yPos+6);
+        ls_uiTextBox(cxt, Page->PlayerInit + i, 732, yPos, 32, 20);
+        yPos -= 20;
+    }
+    
+    // Allies
+    yPos = 458;
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        DrawInitField(cxt, Page->AllyFields + i, 616, yPos);
+        yPos -= 20;
+    }
+    
+    // Enemies
+    yPos = 638;
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        InitField *f = Page->MobFields + i;
+        
+        DrawInitField(cxt, f, 378, yPos);
+        DrawInitExtra(cxt, f, 378, yPos);
+        yPos -= 20;
+    }
+    
+    // Order
+    yPos = 638;
+    for(u32 i = 0; i < visibleOrder; i += 2)
+    {
+        DrawOrderField(cxt, Page->OrderFields + i, 870, yPos);
+        
+        if((i+1) < visibleOrder)
+        { DrawOrderField(cxt, Page->OrderFields + (i+1), 1056, yPos); }
+        
+        yPos -= 20;
+    }
+    
+    // Counters
+    yPos = 124;
+    s32 xPos = 20;
+    s32 xDiff = 0;
+    for(u32 i = 0; i < PRANA_COUNTER_NUM; i++)
+    {
+        Counter *f = Page->Counters + i;
+        
+        if((i % 3) == 0) { yPos = 124; }
+        if((i % 3) == 1) { yPos = 76; }
+        if((i % 3) == 2) { yPos = 28; xDiff = 216; }
+        
+        ls_uiLabel(cxt, ls_unistrConstant(CounterNames[i]), xPos, yPos+24);
+        
+        ls_uiTextBox(cxt, &f->name, xPos, yPos, 100, 20);
+        ls_uiTextBox(cxt, &f->rounds, xPos + 105, yPos, 36, 20);
+        
+        if(!f->isActive) { ls_uiButton(cxt, &f->start, xPos + 146, yPos, 48, 20); }
+        else
+        {
+            ls_uiButton(cxt, &f->plusOne, xPos + 146, yPos, 48, 20);
+            ls_uiButton(cxt, &f->stop, xPos + 93, yPos+22, 48, 20);
+        }
+        
+        xPos += xDiff;
+        xDiff = 0;
+    }
+    
+    // Dice Throwers
+    xPos = 512;
+    yPos = 100;
+    for(u32 i = 0; i < PRANA_THROWER_NUM; i++)
+    {
+        DiceThrow *f = Page->Throwers + i;
+        
+        if((i % 2) == 0) { yPos = 100; }
+        if((i % 2) == 1) { yPos = 20; xDiff = 186; }
+        
+        
+        ls_uiTextBox(cxt, &f->name,    xPos,      yPos + 40, 98, 20);
+        ls_uiButton(cxt, &f->throwDie, xPos + 98, yPos + 40, 36, 20);
+        
+        ls_uiTextBox(cxt, &f->damage, xPos,       yPos + 20, 134, 20);
+        ls_uiTextBox(cxt, &f->dmgRes, xPos + 134, yPos + 20, 36,  20);
+        
+        ls_uiTextBox(cxt, &f->toHit,  xPos,       yPos, 134, 20);
+        ls_uiTextBox(cxt, &f->hitRes, xPos + 134, yPos, 36,  20);
+        
+        xPos += xDiff;
+        xDiff = 0;
+    }
+    
+    ls_uiButton(cxt, &Page->Reset, 670, 678, 48, 20);
+    
+    if(!State.inBattle)
+    {
+        //TODO: Clicking on a ListBox Entry clicks also what's behind it.
+        ls_uiListBox(cxt, &Page->Mobs,   406, 678, 100, 20);
+        ls_uiListBox(cxt, &Page->Allies, 641, 498, 100, 20);
+        
+        ls_uiButton(cxt, &Page->Roll, 556, 678, 48, 20);
+        ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
+        
+        ls_uiListBox(cxt, &Page->EncounterSel,  480, 718, 120, 20);
+        ls_uiTextBox(cxt, &Page->EncounterName, 624, 718, 100, 20);
+        
+        ls_uiButton(cxt, &Page->Save, 601, 740, 44, 20);
+    }
+    else
+    {
+        ls_uiTextBox(cxt, &Page->Current,      1010, 668, 100, 20);
+        ls_uiTextBox(cxt, &Page->RoundCounter, 1230, 720, 30, 20);
+        
+        ls_uiButton(cxt, &Page->Next, 1036, 698, 48, 20);
+        
+        if(visibleAllies < ALLY_NUM)
+        {
+            InitField *f = Page->AllyFields + visibleAllies;
+            
+            u32 addY = 454 - (20*visibleAllies);
+            if(!f->isAdding)
+            {
+                ls_uiButton(cxt, &f->addNew, 606, addY, 36, 20);
+            }
+            else
+            {
+                ls_uiTextBox(cxt, &f->addName, 546, addY+4, 120, 20);
+                ls_uiTextBox(cxt, &f->addInit, 666, addY+4, 32, 20);
+                
+                ls_uiButton(cxt, &f->addConfirm, 698, addY+4, 32, 20);
+            }
+        }
+        
+        if(visibleMobs < MOB_NUM)
+        {
+            InitField *f = Page->MobFields + visibleMobs;
+            
+            u32 addY = 634 - (20*visibleMobs);
+            if(!f->isAdding)
+            {
+                ls_uiButton(cxt, &f->addNew, 356, addY, 36, 20);
+            }
+            else
+            {
+                ls_uiTextBox(cxt, &f->addName, 296, addY+4, 120, 20);
+                ls_uiTextBox(cxt, &f->addInit, 416, addY+4, 32, 20);
+                
+                ls_uiButton(cxt, &f->addConfirm, 448, addY+4, 32, 20);
+            }
+        }
+    }
+    
     return;
 }
 
