@@ -19,10 +19,8 @@ void SaveState()
         
         for(u32 j = 0; j < curr->numMobs; j++)
         {
-            ls_bufferAddUnistring(buf, curr->mobName[j]);
-            ls_bufferAddUnistring(buf, curr->mobBonus[j]);
-            ls_bufferAddUnistring(buf, curr->mobFinal[j]);
-            //ls_bufferAddUnistring(buf, curr->mobAC[j]);
+            for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
+            { ls_bufferAddUnistring(buf, curr->mob[j][k]); }
         }
         
         ls_bufferAddDWord(buf, curr->numAllies);
@@ -31,11 +29,9 @@ void SaveState()
             ls_bufferAddUnistring(buf, curr->allyName[j]);
             ls_bufferAddUnistring(buf, curr->allyBonus[j]);
             ls_bufferAddUnistring(buf, curr->allyFinal[j]);
-            //ls_bufferAddUnistring(buf, curr->allyAC[j]);
         }
         
-        ls_bufferAddDWord(buf, curr->numThrowers);
-        for(u32 j = 0; j < curr->numThrowers; j++)
+        for(u32 j = 0; j < THROWER_NUM; j++)
         {
             ls_bufferAddUnistring(buf, curr->throwerName[j]);
             ls_bufferAddUnistring(buf, curr->throwerHit[j]);
@@ -62,7 +58,19 @@ void SaveState()
         ls_bufferAddUnistring(buf, f->name.text);
         ls_bufferAddUnistring(buf, f->bonus.text);
         ls_bufferAddUnistring(buf, f->final.text);
-        //ls_bufferAddUnistring(buf, f->ac.text);
+        
+        ls_bufferAddUnistring(buf, f->extra.text);
+        
+        ls_bufferAddUnistring(buf, f-> maxLife.text);
+        
+        ls_bufferAddUnistring(buf, f-> totalAC.text);
+        ls_bufferAddUnistring(buf, f-> touchAC.text);
+        ls_bufferAddUnistring(buf, f-> flatAC.text);
+        ls_bufferAddUnistring(buf, f-> lowAC.text);
+        
+        ls_bufferAddUnistring(buf, f-> conSave.text);
+        ls_bufferAddUnistring(buf, f-> dexSave.text);
+        ls_bufferAddUnistring(buf, f-> wisSave.text);
         
         ls_bufferAddDWord(buf, f->ID);
     }
@@ -76,7 +84,6 @@ void SaveState()
         ls_bufferAddUnistring(buf, f->name.text);
         ls_bufferAddUnistring(buf, f->bonus.text);
         ls_bufferAddUnistring(buf, f->final.text);
-        //ls_bufferAddUnistring(buf, f->ac.text);
         
         ls_bufferAddDWord(buf, f->ID);
     }
@@ -178,17 +185,13 @@ b32 LoadState(UIContext *cxt)
     {
         Encounter *curr = State.encounters.Enc + i;
         
-        //TODO: Remove this when everything is checked to be working properly.
-        AssertMsg(curr->name.data == NULL, "We don't want to leak memory\n");
         curr->name = ls_bufferReadUnistring(buf);
         
         curr->numMobs = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numMobs; j++)
         {
-            curr->mobName[j]  = ls_bufferReadUnistring(buf);
-            curr->mobBonus[j] = ls_bufferReadUnistring(buf);
-            curr->mobFinal[j] = ls_bufferReadUnistring(buf);
-            //curr->mobAC[j]  = ls_bufferReadUnistring(buf);
+            for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
+            { curr->mob[j][k] = ls_bufferReadUnistring(buf); }
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
@@ -197,11 +200,9 @@ b32 LoadState(UIContext *cxt)
             curr->allyName[j]  = ls_bufferReadUnistring(buf);
             curr->allyBonus[j] = ls_bufferReadUnistring(buf);
             curr->allyFinal[j] = ls_bufferReadUnistring(buf);
-            //curr->allyAC[j]    = ls_bufferReadUnistring(buf);
         }
         
-        curr->numThrowers = ls_bufferReadDWord(buf);
-        for(u32 j = 0; j < curr->numThrowers; j++)
+        for(u32 j = 0; j < THROWER_NUM; j++)
         {
             curr->throwerName[j]   = ls_bufferReadUnistring(buf);
             curr->throwerHit[j]    = ls_bufferReadUnistring(buf);
@@ -237,8 +238,32 @@ b32 LoadState(UIContext *cxt)
         ls_bufferReadIntoUnistring(buf, &f->final.text);
         f->final.viewEndIdx = f->final.text.len;
         
-        //ls_bufferReadIntoUnistring(buf, &f->ac.text);
-        //f->ac.viewEndIdx = f->ac.text.len;
+        ls_bufferReadIntoUnistring(buf, &f->extra.text);
+        f->extra.viewEndIdx = f->extra.text.len;
+        
+        ls_bufferReadIntoUnistring(buf, &f->maxLife.text);
+        f->maxLife.viewEndIdx = f->maxLife.text.len;
+        
+        ls_bufferReadIntoUnistring(buf, &f->totalAC.text);
+        f->totalAC.viewEndIdx = f->totalAC.text.len;
+        
+        ls_bufferReadIntoUnistring(buf, &f->touchAC.text);
+        f->touchAC.viewEndIdx = f->touchAC.text.len;
+        
+        ls_bufferReadIntoUnistring(buf, &f->flatAC.text);
+        f->flatAC.viewEndIdx = f->flatAC.text.len;
+        
+        ls_bufferReadIntoUnistring(buf, &f->lowAC.text);
+        f->lowAC.viewEndIdx = f->lowAC.text.len;
+        
+        ls_bufferReadIntoUnistring(buf, &f->conSave.text);
+        f->conSave.viewEndIdx = f->conSave.text.len;
+        
+        ls_bufferReadIntoUnistring(buf, &f->dexSave.text);
+        f->dexSave.viewEndIdx = f->dexSave.text.len;
+        
+        ls_bufferReadIntoUnistring(buf, &f->wisSave.text);
+        f->wisSave.viewEndIdx = f->wisSave.text.len;
         
         f->ID = ls_bufferReadDWord(buf);
     }
@@ -259,9 +284,6 @@ b32 LoadState(UIContext *cxt)
         
         ls_bufferReadIntoUnistring(buf, &f->final.text);
         f->final.viewEndIdx = f->final.text.len;
-        
-        //ls_bufferReadIntoUnistring(buf, &f->ac.text);
-        //f->ac.viewEndIdx = f->ac.text.len;
         
         f->ID = ls_bufferReadDWord(buf);
     }

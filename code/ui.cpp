@@ -102,6 +102,8 @@ struct UITextBox
     void *data; //TODO: Separate preInput / postInput user data
 };
 
+
+typedef void(*ListBoxProc)(UIContext *cxt, void *data);
 struct UIListBox
 {
     Array<unistring> list;
@@ -110,6 +112,9 @@ struct UIListBox
     u32 dtOpen;
     b32 isOpening;
     b32 isOpen;
+    
+    ListBoxProc onSelect;
+    void *data;
 };
 
 
@@ -1429,7 +1434,10 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     
     //NOTE: We defer the selectedIndex change to the end of the frame 
     //      to avoid the for loop blinking wrongly for a frame
-    if(toBeChanged != 9999) { list->selectedIndex = toBeChanged; list->isOpen = FALSE; }
+    if(toBeChanged != 9999) { 
+        list->selectedIndex = toBeChanged; list->isOpen = FALSE;
+        if(list->onSelect) { list->onSelect(cxt, list->data); }
+    }
 }
 
 UISlider ls_uiSliderInit(char32_t *name, s32 maxVal, s32 minVal, f64 currPos, SliderStyle s, Color l, Color r)

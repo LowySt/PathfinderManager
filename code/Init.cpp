@@ -126,6 +126,71 @@ void CustomInitFieldText(UIContext *cxt, void *data)
     return;
 }
 
+void ResetOnClick(UIContext *, void *);
+void OnEncounterSelect(UIContext *cxt, void *data)
+{
+    UIListBox *b = (UIListBox *)data;
+    
+    u32 idx = b->selectedIndex;
+    
+    if(idx == 0) { ResetOnClick(cxt, 0); return; }
+    
+    Encounter *e = &State.encounters.Enc[idx-1];
+    
+    State.Init->Mobs.selectedIndex = e->numMobs;
+    State.Init->Allies.selectedIndex = e->numAllies;
+    
+    for(u32 i = 0; i < e->numMobs; i++)
+    {
+        InitField *m = State.Init->MobFields + i;
+        
+        ls_unistrSet(&m->name.text,    e->mob[i][0]); m->name.viewEndIdx     = m->name.text.len;
+        ls_unistrSet(&m->bonus.text,   e->mob[i][1]); m->bonus.viewEndIdx    = m->bonus.text.len;
+        ls_unistrSet(&m->final.text,   e->mob[i][2]); m->final.viewEndIdx    = m->final.text.len;
+        ls_unistrSet(&m->extra.text,   e->mob[i][3]); m->extra.viewEndIdx    = m->extra.text.len;
+        
+        ls_unistrSet(&m->maxLife.text, e->mob[i][4]); m->maxLife.viewEndIdx  = m->maxLife.text.len;
+        
+        ls_unistrSet(&m->totalAC.text, e->mob[i][5]); m->totalAC.viewEndIdx  = m->totalAC.text.len;
+        ls_unistrSet(&m->touchAC.text, e->mob[i][6]); m->touchAC.viewEndIdx  = m->touchAC.text.len;
+        ls_unistrSet(&m->flatAC.text,  e->mob[i][7]); m->flatAC.viewEndIdx   = m->flatAC.text.len;
+        ls_unistrSet(&m->lowAC.text,   e->mob[i][8]); m->lowAC.viewEndIdx    = m->lowAC.text.len;
+        
+        ls_unistrSet(&m->conSave.text, e->mob[i][9]);  m->conSave.viewEndIdx = m->conSave.text.len;
+        ls_unistrSet(&m->dexSave.text, e->mob[i][10]); m->dexSave.viewEndIdx = m->dexSave.text.len;
+        ls_unistrSet(&m->wisSave.text, e->mob[i][11]); m->wisSave.viewEndIdx = m->wisSave.text.len;
+    }
+    
+    for(u32 i = 0; i < e->numAllies; i++)
+    {
+        InitField *a = State.Init->AllyFields + i;
+        
+        ls_unistrSet(&a->name.text,    e->allyName[i]);  a->name.viewEndIdx  = a->name.text.len;
+        ls_unistrSet(&a->bonus.text,   e->allyBonus[i]); a->bonus.viewEndIdx = a->bonus.text.len;
+        ls_unistrSet(&a->final.text,   e->allyFinal[i]); a->final.viewEndIdx = a->final.text.len;
+    }
+    
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *t = State.Init->Throwers + i;
+        
+        ls_uiTextBoxClear(cxt, &t->name);
+        ls_uiTextBoxClear(cxt, &t->toHit);
+        ls_uiTextBoxClear(cxt, &t->hitRes);
+        ls_uiTextBoxClear(cxt, &t->damage);
+        ls_uiTextBoxClear(cxt, &t->dmgRes);
+        
+        ls_unistrSet(&t->name.text, e->throwerName[i]);     t->name.viewEndIdx   = t->name.text.len;
+        
+        ls_unistrSet(&t->toHit.text,  e->throwerHit[i]);    t->toHit.viewEndIdx  = t->toHit.text.len;
+        ls_unistrSet(&t->damage.text, e->throwerDamage[i]); t->hitRes.viewEndIdx = t->hitRes.text.len;
+    }
+    
+    return;
+}
+
+//TODO: Adding a new one while selecting an old one displays an incorrect name in the list box,
+//      But it's only visual. On program restart the names are correct... wtf???
 void SaveEncounterOnClick(UIContext *cxt, void *data)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
@@ -142,35 +207,37 @@ void SaveEncounterOnClick(UIContext *cxt, void *data)
     
     for(u32 i = 0; i < visibleMobs; i++)
     {
-        ls_unistrSet(&curr->mobName[i], State.Init->MobFields[i].name.text);
-        ls_unistrSet(&curr->mobBonus[i], State.Init->MobFields[i].bonus.text);
-        ls_unistrSet(&curr->mobFinal[i], State.Init->MobFields[i].final.text);
-        //ls_unistrSet(&curr->mobAC[i], State.Init->MobFields[i].AC.text);
+        ls_unistrSet(&curr->mob[i][0],  State.Init->MobFields[i].name.text);
+        ls_unistrSet(&curr->mob[i][1],  State.Init->MobFields[i].bonus.text);
+        ls_unistrSet(&curr->mob[i][2],  State.Init->MobFields[i].final.text);
+        ls_unistrSet(&curr->mob[i][3],  State.Init->MobFields[i].extra.text);
+        
+        ls_unistrSet(&curr->mob[i][4],  State.Init->MobFields[i].maxLife.text);
+        
+        ls_unistrSet(&curr->mob[i][5],  State.Init->MobFields[i].totalAC.text);
+        ls_unistrSet(&curr->mob[i][6],  State.Init->MobFields[i].touchAC.text);
+        ls_unistrSet(&curr->mob[i][7],  State.Init->MobFields[i].flatAC.text);
+        ls_unistrSet(&curr->mob[i][8],  State.Init->MobFields[i].lowAC.text);
+        
+        ls_unistrSet(&curr->mob[i][9],  State.Init->MobFields[i].conSave.text);
+        ls_unistrSet(&curr->mob[i][10], State.Init->MobFields[i].dexSave.text);
+        ls_unistrSet(&curr->mob[i][11], State.Init->MobFields[i].wisSave.text);
+        
     }
     
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        ls_unistrSet(&curr->allyName[i], State.Init->AllyFields[i].name.text);
+        ls_unistrSet(&curr->allyName[i],  State.Init->AllyFields[i].name.text);
         ls_unistrSet(&curr->allyBonus[i], State.Init->AllyFields[i].bonus.text);
         ls_unistrSet(&curr->allyFinal[i], State.Init->AllyFields[i].final.text);
-        //ls_unistrSet(&curr->allyAC[i], State.Init->AllyFields[i].AC.text);
     }
     
-    u32 throwerCount = 0;
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        if(State.Init->Throwers[i].name.text.len == 0)   { continue; }
-        if(State.Init->Throwers[i].toHit.text.len == 0)  { continue; }
-        if(State.Init->Throwers[i].damage.text.len == 0) { continue; }
-        
-        ls_unistrSet(&curr->throwerName[i], State.Init->Throwers[i].name.text);
-        ls_unistrSet(&curr->throwerHit[i], State.Init->Throwers[i].toHit.text);
+        ls_unistrSet(&curr->throwerName[i],   State.Init->Throwers[i].name.text);
+        ls_unistrSet(&curr->throwerHit[i],    State.Init->Throwers[i].toHit.text);
         ls_unistrSet(&curr->throwerDamage[i], State.Init->Throwers[i].damage.text);
-        
-        throwerCount += 1;
     }
-    curr->numThrowers = throwerCount;
-    
     
     State.encounters.numEncounters += 1;
     
@@ -973,11 +1040,17 @@ void SetInitTab(UIContext *cxt)
         Page->GeneralThrower.throwDie.onHold  = 0x0;
     }
     
-    ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, ls_unistrConstant(NoEncounterStr));
-    for(u32 i = 0; i < State.encounters.numEncounters; i++)
-    { ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, State.encounters.Enc[i].name); }
+    //Encounter Selector
+    {
+        Page->EncounterSel.onSelect = OnEncounterSelect;
+        Page->EncounterSel.data = &Page->EncounterSel;
+        ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, ls_unistrConstant(NoEncounterStr));
+        for(u32 i = 0; i < State.encounters.numEncounters; i++)
+        { ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, State.encounters.Enc[i].name); }
+        
+        Page->EncounterName.text = ls_unistrAlloc(16);
+    }
     
-    Page->EncounterName.text = ls_unistrAlloc(16);
     
     Page->Save.style   = UIBUTTON_TEXT;
     Page->Save.name    = ls_unistrFromUTF32(U"Save");

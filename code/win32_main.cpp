@@ -218,7 +218,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_DESTROY:
         {
-            //TODO:Reinstate SaveState();
+            SaveState();
             ExitProcess(0);
         } break;
         
@@ -363,7 +363,6 @@ void RegisterWindow()
     WindowClass.style = prop;
     WindowClass.lpfnWndProc = WindowProc;
     WindowClass.hInstance = MainInstance;
-    WindowClass.hbrBackground = appBkgBrush; //RGB(0x38, 0x38, 0x38);
     WindowClass.lpszClassName = "WndClass";
     WindowClass.hCursor = cursor;
     
@@ -400,7 +399,7 @@ HWND CreateWindow()
                                         "PCMan", style,
                                         spaceX, spaceY, //CW_USEDEFAULT, CW_USEDEFAULT,
                                         State.windowWidth, State.windowHeight,
-                                        0, MenuBar, MainInstance, 0)) == nullptr)
+                                        0, 0, MainInstance, 0)) == nullptr)
     {
         DWORD Error = GetLastError();
         ls_printf("When Retrieving a WindowHandle in Win32_SetupScreen got error: %d", Error);

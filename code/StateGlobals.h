@@ -3,25 +3,21 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 0;
+const u32 global_saveVersion = 2;
+const u32 MOB_INIT_ENC_FIELDS = 12;
 
 struct Encounter
 {
     unistring name;
     
     u32 numMobs;
-    unistring mobName[MOB_NUM];
-    unistring mobBonus[MOB_NUM];
-    unistring mobFinal[MOB_NUM];
-    //unistring mobAC[MOB_NUM];
+    unistring mob[MOB_NUM][MOB_INIT_ENC_FIELDS];
     
     u32 numAllies;
     unistring allyName[ALLY_NUM];
     unistring allyBonus[ALLY_NUM];
     unistring allyFinal[ALLY_NUM];
-    //unistring allyAC[ALLY_NUM];
     
-    u32 numThrowers;
     unistring throwerName[THROWER_NUM];
     unistring throwerHit[THROWER_NUM];
     unistring throwerDamage[THROWER_NUM];
@@ -171,28 +167,5 @@ HWND MainWindow;
 PlayerChar pc = {};
 ProgramState State = {};
 
-
-const HBRUSH appBkgBrush     = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
-const COLORREF appBkgRGB     = win32RGB(0x38, 0x38, 0x38);
-
-const HBRUSH menuBkgBrush    = CreateSolidBrush(0x00787878);
-const COLORREF menuBkgRGB    = win32RGB(0x78, 0x78, 0x78);
-
-const HBRUSH whiteBrush      = CreateSolidBrush(0x00FFFFFF); // 0x00 BB GG RR
-const COLORREF whiteRGB      = win32RGB(255, 255, 255);
-
-
-//---- MENU ----//
-
-const u32 FILE_MENU_SAVE_IDX = 0;
-const u32 FILE_MENU_LOAD_IDX = 1;
-
-const u32 MENU_FILE_ITEM_ID = 76;
-const u32 MENU_CLOSE_APP_ID = 77;
-const u32 MENU_FILE_IDX      = 0;
-const u32 MENU_CLOSE_APP_IDX = 1;
-
-HMENU MenuBar;
-HMENU SubMenu;
 
 #endif //_STATE_GLOBALS_H
