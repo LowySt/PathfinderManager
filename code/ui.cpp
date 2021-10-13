@@ -1463,6 +1463,16 @@ UISlider ls_uiSliderInit(char32_t *name, s32 maxVal, s32 minVal, f64 currPos, Sl
     return Result;
 }
 
+void ls_uiSliderChangeValueBy(UIContext *cxt, UISlider *f, s32 valueDiff)
+{
+    s32 newValue = ls_mathClamp(f->currValue + valueDiff, f->maxValue, f->minValue);
+    
+    s32 range = (f->maxValue - f->minValue);
+    f->currPos = (f32)(newValue - f->minValue) / (f32)range;
+    
+    return;
+}
+
 //TODO: The things are rendered in a logical order, but that makes the function's flow very annoying
 //      going in and out of if blocks to check hot/held and style.
 void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32 h)

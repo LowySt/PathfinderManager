@@ -1,3 +1,18 @@
+Order *GetOrderByID(s32 ID)
+{
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    
+    for(u32 i = 0; i < visibleOrder; i++)
+    {
+        Order *o = State.Init->OrderFields + i;
+        if(o->ID == ID) { return o; }
+    }
+    
+    return NULL;
+}
+
 void selectStyleDefault(UIContext *cxt, void *data)
 {
     currentStyle = INIT_STYLE_DEFAULT;
@@ -29,6 +44,43 @@ void CustomPlayerText(UIContext *cxt, void *data)
     }
     
     return;
+}
+
+void CustomMobLifeField(UIContext *cxt, void *data)
+{
+    MobLifeHandler *h = (MobLifeHandler *)data;
+    UITextBox *f = h->parent;
+    
+    if((cxt->lastFocus != (u64 *)f) && h->isEditing) {
+        //NOTE: We lost focus, let's reset the box
+        //TODO: Should we also reset what was being written?
+        
+        h->isEditing = FALSE;
+    }
+    
+    if(LeftClick && !h->isEditing && State.inBattle)
+    { 
+        ls_unistrSet(&h->previous, f->text);
+        ls_uiTextBoxClear(cxt, f);
+        
+        h->isEditing = TRUE;
+    }
+    
+    if(h->isEditing && KeyPress(keyMap::Enter))
+    {
+        Order *order = GetOrderByID(h->mob->ID);
+        AssertMsg(order, "Could not find order by ID. Fucked up ID?\n");
+        
+        s32 diff = ls_unistrToInt(f->text);
+        
+        ls_uiSliderChangeValueBy(cxt, &order->field, diff);
+        
+        ls_uiTextBoxClear(cxt, f);
+        ls_uiTextBoxSet(cxt, f, h->previous);
+        
+        h->isEditing = FALSE;
+        ls_uiFocusChange(cxt, NULL);
+    }
 }
 
 void CustomInitFieldText(UIContext *cxt, void *data)
@@ -884,11 +936,17 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     f->extra.text         = ls_unistrAlloc(16);
     f->extra.viewEndIdx   = f->extra.text.len;
     
+    
+    MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
+    handler->parent   = &f->maxLife;
+    handler->mob      = f;
+    handler->previous = ls_unistrAlloc(16);
+    
     f->maxLife.text       = ls_unistrFromUTF32(U"0");
     f->maxLife.viewEndIdx = f->maxLife.text.len;
     f->maxLife.maxLen     = 4;
-    f->maxLife.preInput   = 0x0;
-    f->maxLife.data       = 0x0;
+    f->maxLife.preInput   = CustomMobLifeField;
+    f->maxLife.data       = handler;
     
     f->totalAC.text       = ls_unistrFromUTF32(U"0");
     f->totalAC.viewEndIdx = f->totalAC.text.len;

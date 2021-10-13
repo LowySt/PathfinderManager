@@ -58,6 +58,17 @@ struct tmp_order {
     s32 ID;
 };
 
+
+struct InitField;
+struct MobLifeHandler
+{
+    InitField *mob;
+    UITextBox *parent;
+    
+    unistring previous;
+    b32 isEditing;
+};
+
 static s32 addID = 1000;
 
 enum InitStyle
