@@ -348,9 +348,10 @@ void SetOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->MobFields + i;
         
-        ord[idx].init = ls_unistrToInt(f->final.text);
-        ord[idx].name = &f->name.text;
-        ord[idx].ID   = f->ID;
+        ord[idx].init    = ls_unistrToInt(f->final.text);
+        ord[idx].name    = &f->name.text;
+        ord[idx].maxLife = ls_unistrToInt(f->maxLife.text);
+        ord[idx].ID      = f->ID;
         
         idx += 1;
     }
@@ -359,18 +360,20 @@ void SetOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->AllyFields + i;
         
-        ord[idx].init = ls_unistrToInt(f->final.text);
-        ord[idx].name = &f->name.text;
-        ord[idx].ID   = f->ID;
+        ord[idx].init    = ls_unistrToInt(f->final.text);
+        ord[idx].name    = &f->name.text;
+        ord[idx].maxLife = 0;
+        ord[idx].ID      = f->ID;
         
         idx += 1;
     }
     
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        ord[idx].init = ls_unistrToInt(Page->PlayerInit[i].text);
-        ord[idx].name = (unistring *)(PartyNameUTF32 + i);
-        ord[idx].ID   = i;
+        ord[idx].init    = ls_unistrToInt(Page->PlayerInit[i].text);
+        ord[idx].name    = (unistring *)(PartyNameUTF32 + i);
+        ord[idx].maxLife = 0;
+        ord[idx].ID      = i;
         
         idx += 1;
     }
@@ -382,6 +385,7 @@ void SetOnClick(UIContext *cxt, void *data)
         Order *f = Page->OrderFields + i;
         
         ls_unistrSet(&f->field.text, *ord[j].name);
+        f->field.maxValue = ord[j].maxLife;
         f->ID = ord[j].ID;
         
         //TODO: Make this just a reference to Order[i].field.text ??
@@ -435,16 +439,39 @@ void ResetOnClick(UIContext *cxt, void *data)
         InitField *f = Page->MobFields + i;
         
         ls_uiTextBoxClear(cxt, &f->name);
-        ls_unistrSet(&f->name.text, ls_unistrConstant(MobName[i]));
-        f->name.viewEndIdx = f->name.text.len;
+        ls_uiTextBoxSet(cxt, &f->name, ls_unistrConstant(MobName[i]));
         
         ls_uiTextBoxClear(cxt, &f->bonus);
-        ls_unistrSet(&f->bonus.text ,zeroUTF32);
-        f->bonus.viewEndIdx = f->bonus.text.len;
+        ls_uiTextBoxSet(cxt, &f->bonus, zeroUTF32);
         
         ls_uiTextBoxClear(cxt, &f->final);
-        ls_unistrSet(&f->final.text, zeroUTF32);
-        f->final.viewEndIdx = f->final.text.len;
+        ls_uiTextBoxSet(cxt, &f->final, zeroUTF32);
+        
+        ls_uiTextBoxClear(cxt, &f->extra);
+        
+        ls_uiTextBoxClear(cxt, &f->maxLife);
+        ls_uiTextBoxSet(cxt, &f->maxLife, zeroUTF32);
+        
+        ls_uiTextBoxClear(cxt, &f->totalAC);
+        ls_uiTextBoxSet(cxt, &f-> totalAC, zeroUTF32);
+        
+        ls_uiTextBoxClear(cxt, &f->touchAC);
+        ls_uiTextBoxSet(cxt, &f-> touchAC, zeroUTF32);
+        
+        ls_uiTextBoxClear(cxt, &f->flatAC);
+        ls_uiTextBoxSet(cxt, &f-> flatAC, zeroUTF32);
+        
+        ls_uiTextBoxClear(cxt, &f->lowAC);
+        ls_uiTextBoxSet(cxt, &f-> lowAC, zeroUTF32);
+        
+        ls_uiTextBoxClear(cxt, &f->conSave);
+        ls_uiTextBoxSet(cxt, &f-> conSave, zeroUTF32);
+        
+        ls_uiTextBoxClear(cxt, &f->dexSave);
+        ls_uiTextBoxSet(cxt, &f-> dexSave, zeroUTF32);
+        
+        ls_uiTextBoxClear(cxt, &f->wisSave);
+        ls_uiTextBoxSet(cxt, &f-> wisSave, zeroUTF32);
         
         f->ID = currID;
         currID += 1;
@@ -475,6 +502,8 @@ void ResetOnClick(UIContext *cxt, void *data)
         Order *f = Page->OrderFields + i;
         
         ls_unistrClear(&f->field.text);
+        f->field.maxValue = 100;
+        f->field.minValue = -30;
         f->field.currPos = 1.0;
         f->ID = -1;
     }
@@ -962,7 +991,7 @@ void SetInitTab(UIContext *cxt)
         
         Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), cxt->widgetColor);
         Color rColor      = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor);
-        f->field          = ls_uiSliderInit(NULL, 100, -50, 1.0, SL_BOX, lColor, rColor);
+        f->field          = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
         
         f->pos.text       = ls_unistrFromInt(i);
         f->pos.viewEndIdx = f->pos.text.len;
@@ -1136,7 +1165,7 @@ void DrawInitField(UIContext *cxt, InitField *F, s32 baseX, s32 y)
 void DrawOrderField(UIContext *cxt, Order *f, s32 xPos, s32 yPos)
 {
     ls_uiSlider(cxt, &f->field, xPos + 50, yPos, 120, 20);
-    ls_uiTextBox(cxt, &f->pos, xPos + 25, yPos, 32, 20);
+    ls_uiTextBox(cxt, &f->pos, xPos + 25, yPos, 25, 20);
     ls_uiButton(cxt, &f->remove, xPos, yPos, 20, 20);
 }
 

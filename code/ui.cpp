@@ -864,6 +864,12 @@ void ls_uiTextBoxClear(UIContext *cxt, UITextBox *box)
     box->viewEndIdx     = 0;
 }
 
+void ls_uiTextBoxSet(UIContext *cxt, UITextBox *box, unistring s)
+{
+    ls_unistrSet(&box->text, s);
+    box->viewEndIdx = box->text.len;
+}
+
 //TODO: Text Alignment
 //TODO: A artificially made UITextBox string doesn't know how much to show.
 //      So, viewEndIdx has to be set manually, which could be bad news.

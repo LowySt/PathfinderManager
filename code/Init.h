@@ -53,7 +53,8 @@ const char32_t *NoEncounterStr = U"No Selection";
 struct tmp_order {
     s32 init;
     unistring *name;
-    //TODO: Add life
+    s32 maxLife;
+    
     s32 ID;
 };
 

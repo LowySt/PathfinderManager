@@ -212,7 +212,9 @@ b32 LoadState(UIContext *cxt)
         ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, curr->name);
     }
     
-    //TODO: Should I skeep Unserialization of a bunch of these things if we're not in battle?
+    //NOTE: Quick Exit if not in battle after the save.
+    if(State.inBattle == FALSE) { return TRUE; }
+    
     
     //NOTE: UnSerialize Player Initiative
     for(u32 i = 0; i < PARTY_NUM; i++)
@@ -348,11 +350,11 @@ b32 LoadState(UIContext *cxt)
     {
         DiceThrow *f = Page->Throwers + i;
         
-        ls_bufferReadIntoUnistring(buf, &f->name.text);
-        ls_bufferReadIntoUnistring(buf, &f->toHit.text);
-        ls_bufferReadIntoUnistring(buf, &f->hitRes.text);
-        ls_bufferReadIntoUnistring(buf, &f->damage.text);
-        ls_bufferReadIntoUnistring(buf, &f->dmgRes.text);
+        ls_bufferReadIntoUnistring(buf, &f->name.text);   f->name.viewEndIdx   = f->name.text.len;
+        ls_bufferReadIntoUnistring(buf, &f->toHit.text);  f->toHit.viewEndIdx  = f->toHit.text.len;
+        ls_bufferReadIntoUnistring(buf, &f->hitRes.text); f->hitRes.viewEndIdx = f->hitRes.text.len;
+        ls_bufferReadIntoUnistring(buf, &f->damage.text); f->damage.viewEndIdx = f->damage.text.len;
+        ls_bufferReadIntoUnistring(buf, &f->dmgRes.text); f->dmgRes.viewEndIdx = f->dmgRes.text.len;
     }
     
     ls_bufferDestroy(buf);
