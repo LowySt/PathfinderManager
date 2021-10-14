@@ -59,6 +59,8 @@ struct tmp_order {
 };
 
 
+const u32 INIT_FIELD_EDITFIELDS_NUM = 11;
+
 struct InitField;
 struct MobLifeHandler
 {
@@ -67,6 +69,14 @@ struct MobLifeHandler
     
     unistring previous;
     b32 isEditing;
+};
+
+struct CustomFieldTextHandler
+{
+    InitField *parent;
+    UITextBox *field;
+    
+    u32 idx;
 };
 
 static s32 addID = 1000;

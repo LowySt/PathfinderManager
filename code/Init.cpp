@@ -46,10 +46,81 @@ void CustomPlayerText(UIContext *cxt, void *data)
     return;
 }
 
+void CustomInitFieldText(UIContext *cxt, void *data)
+{
+    CustomFieldTextHandler *f = (CustomFieldTextHandler *)data;
+    
+    InitPage *Page = State.Init;
+    
+    if((cxt->lastFocus != (u64 *)f->field) && (cxt->currentFocus == (u64 *)f->field)) 
+    { ls_uiTextBoxClear(cxt, f->field); }
+    
+    InitField *lastMob  = State.Init->MobFields  + (MOB_NUM-1);
+    InitField *lastAlly = State.Init->AllyFields + (ALLY_NUM-1);
+    
+    if(KeyPress(keyMap::Enter))
+    {
+        if(f->parent == lastMob)  { ls_uiFocusChange(cxt, 0x0); return; }
+        if(f->parent == lastAlly) { ls_uiFocusChange(cxt, 0x0); return; }
+        
+        UITextBox *next = &((f->parent + 1)->editFields[f->idx]);
+        ls_uiTextBoxClear(cxt, next);
+        ls_uiFocusChange(cxt, (u64 *)next);
+        
+        return;
+    }
+    
+    UITextBox *parentFields = f->parent->editFields;
+    
+    if(KeyPress(keyMap::DArrow))
+    {
+        if(f->parent == lastMob)  { ls_uiFocusChange(cxt, 0x0); return; }
+        if(f->parent == lastAlly) { ls_uiFocusChange(cxt, 0x0); return; }
+        
+        u32 numStrings = 0;
+        unistring *words = ls_unistrSeparateByNumber(parentFields[IF_IDX_NAME].text, &numStrings);
+        
+        AssertMsg(words, "The returned words array was null.\n");
+        if(!words) { ls_uiFocusChange(cxt, 0x0); return; }
+        
+        if(numStrings != 2) { ls_uiFocusChange(cxt, 0x0); return; }
+        
+        s64 newNumber = ls_unistrToInt(words[1]) + 1;
+        ls_unistrFromInt_t(&words[1], newNumber);
+        
+        InitField *next = f->parent + 1;
+        UITextBox *nextFields = next->editFields;
+        
+        ls_uiTextBoxClear(cxt, &nextFields[IF_IDX_NAME]);
+        ls_unistrSet(&nextFields[IF_IDX_NAME].text, words[0]);
+        ls_unistrAppend(&nextFields[IF_IDX_NAME].text, words[1]);
+        nextFields[IF_IDX_NAME].viewEndIdx = nextFields[IF_IDX_NAME].text.len;
+        
+        //NOTE: We start at i == 1, because the name field has already been handled,
+        //      We stop at COUNT-1 because the last field is 'final' which should not be modified by this routine.
+        for(u32 i = 1; i < IF_IDX_COUNT-1; i++)
+        {
+            ls_uiTextBoxClear(cxt, &nextFields[i]);
+            ls_uiTextBoxSet(cxt, &nextFields[i], parentFields[i].text);
+        }
+        
+        ls_uiFocusChange(cxt, (u64 *)&(nextFields[f->idx]));
+        
+        return;
+    }
+    
+    return;
+}
+
+
 void CustomMobLifeField(UIContext *cxt, void *data)
 {
     MobLifeHandler *h = (MobLifeHandler *)data;
     UITextBox *f = h->parent;
+    
+    if(!State.inBattle) {
+        //TODO: Clear and Repeat.
+    };
     
     if((cxt->lastFocus != (u64 *)f) && h->isEditing) {
         //NOTE: We lost focus, let's reset the box
@@ -83,100 +154,6 @@ void CustomMobLifeField(UIContext *cxt, void *data)
     }
 }
 
-void CustomInitFieldText(UIContext *cxt, void *data)
-{
-    InitPage *Page = State.Init;
-    
-    s32 visibleMobs   = Page->Mobs.selectedIndex;
-    s32 visibleAllies = Page->Allies.selectedIndex;
-    
-    InitField *mobField  = &Page->MobFields[visibleMobs-1];
-    InitField *allyField = &Page->AllyFields[visibleAllies-1];
-    
-    InitField *f   = (InitField *)data;
-    
-    UITextBox *name  = &f->name;
-    UITextBox *bonus = &f->bonus;
-    UITextBox *final = &f->final;
-    
-    if((cxt->lastFocus != (u64 *)name)  && (cxt->currentFocus == (u64 *)name))  { ls_uiTextBoxClear(cxt, &f->name);  }
-    if((cxt->lastFocus != (u64 *)bonus) && (cxt->currentFocus == (u64 *)bonus)) { ls_uiTextBoxClear(cxt, &f->bonus); }
-    if((cxt->lastFocus != (u64 *)final) && (cxt->currentFocus == (u64 *)final)) { ls_uiTextBoxClear(cxt, &f->final); }
-    
-    if(KeyPress(keyMap::Enter))
-    {
-        if(name == &mobField->name)  { ls_uiFocusChange(cxt, 0x0); return; }
-        if(name == &allyField->name) { ls_uiFocusChange(cxt, 0x0); return; }
-        
-        if(cxt->currentFocus == (u64 *)name)
-        {
-            UITextBox *boxRef = &((f+1)->name);
-            ls_uiTextBoxClear(cxt, boxRef);
-            
-            u64 *newFocus = (u64 *)boxRef;
-            ls_uiFocusChange(cxt, newFocus);
-            
-            return;
-        }
-        else if(cxt->currentFocus == (u64 *)bonus)
-        {
-            UITextBox *boxRef = &((f+1)->bonus);
-            ls_uiTextBoxClear(cxt, boxRef);
-            
-            u64 *newFocus = (u64 *)boxRef;
-            ls_uiFocusChange(cxt, newFocus);
-            
-            return;
-        }
-        else if(cxt->currentFocus == (u64 *)final)
-        {
-            UITextBox *boxRef = &((f+1)->final);
-            ls_uiTextBoxClear(cxt, boxRef);
-            
-            u64 *newFocus = (u64 *)boxRef;
-            ls_uiFocusChange(cxt, newFocus);
-            
-            return;
-        }
-        
-        return;
-    }
-    
-    if(KeyPress(keyMap::DArrow))
-    {
-        if(name == &mobField->name)  { ls_uiFocusChange(cxt, 0x0); return; }
-        if(name == &allyField->name) { ls_uiFocusChange(cxt, 0x0); return; }
-        
-        u32 numStrings = 0;
-        unistring *words = ls_unistrSeparateByNumber(name->text, &numStrings);
-        
-        AssertMsg(words, "The returned words array was null.\n");
-        if(!words) { ls_uiFocusChange(cxt, 0x0); return; }
-        
-        if(numStrings != 2) { ls_uiFocusChange(cxt, 0x0); return; }
-        
-        s64 newNumber = ls_unistrToInt(words[1]) + 1;
-        ls_unistrFromInt_t(&words[1], newNumber);
-        
-        InitField *next = f + 1;
-        
-        ls_uiTextBoxClear(cxt, &next->name);
-        ls_uiTextBoxClear(cxt, &next->bonus);
-        
-        ls_unistrSet(&next->name.text, words[0]);
-        ls_unistrAppend(&next->name.text, words[1]);
-        next->name.viewEndIdx = next->name.text.len;
-        
-        ls_unistrSet(&next->bonus.text, f->bonus.text);
-        next->bonus.viewEndIdx = next->bonus.text.len;
-        
-        ls_uiFocusChange(cxt, (u64 *)&next->name);
-        
-        return;
-    }
-    
-    return;
-}
 
 void ResetOnClick(UIContext *, void *);
 void OnEncounterSelect(UIContext *cxt, void *data)
@@ -196,30 +173,20 @@ void OnEncounterSelect(UIContext *cxt, void *data)
     {
         InitField *m = State.Init->MobFields + i;
         
-        ls_unistrSet(&m->name.text,    e->mob[i][0]); m->name.viewEndIdx     = m->name.text.len;
-        ls_unistrSet(&m->bonus.text,   e->mob[i][1]); m->bonus.viewEndIdx    = m->bonus.text.len;
-        ls_unistrSet(&m->final.text,   e->mob[i][2]); m->final.viewEndIdx    = m->final.text.len;
-        ls_unistrSet(&m->extra.text,   e->mob[i][3]); m->extra.viewEndIdx    = m->extra.text.len;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_uiTextBoxSet(cxt, &m->editFields[j], e->mob[i][j]); }
         
-        ls_unistrSet(&m->maxLife.text, e->mob[i][4]); m->maxLife.viewEndIdx  = m->maxLife.text.len;
+        ls_uiTextBoxSet(cxt, &m->maxLife, e->mob[i][MOB_INIT_ENC_FIELDS-1]);
         
-        ls_unistrSet(&m->totalAC.text, e->mob[i][5]); m->totalAC.viewEndIdx  = m->totalAC.text.len;
-        ls_unistrSet(&m->touchAC.text, e->mob[i][6]); m->touchAC.viewEndIdx  = m->touchAC.text.len;
-        ls_unistrSet(&m->flatAC.text,  e->mob[i][7]); m->flatAC.viewEndIdx   = m->flatAC.text.len;
-        ls_unistrSet(&m->lowAC.text,   e->mob[i][8]); m->lowAC.viewEndIdx    = m->lowAC.text.len;
-        
-        ls_unistrSet(&m->conSave.text, e->mob[i][9]);  m->conSave.viewEndIdx = m->conSave.text.len;
-        ls_unistrSet(&m->dexSave.text, e->mob[i][10]); m->dexSave.viewEndIdx = m->dexSave.text.len;
-        ls_unistrSet(&m->wisSave.text, e->mob[i][11]); m->wisSave.viewEndIdx = m->wisSave.text.len;
     }
     
     for(u32 i = 0; i < e->numAllies; i++)
     {
         InitField *a = State.Init->AllyFields + i;
         
-        ls_unistrSet(&a->name.text,    e->allyName[i]);  a->name.viewEndIdx  = a->name.text.len;
-        ls_unistrSet(&a->bonus.text,   e->allyBonus[i]); a->bonus.viewEndIdx = a->bonus.text.len;
-        ls_unistrSet(&a->final.text,   e->allyFinal[i]); a->final.viewEndIdx = a->final.text.len;
+        ls_uiTextBoxSet(cxt, &a->editFields[IF_IDX_NAME],  e->allyName[i]);
+        ls_uiTextBoxSet(cxt, &a->editFields[IF_IDX_BONUS], e->allyBonus[i]);
+        ls_uiTextBoxSet(cxt, &a->editFields[IF_IDX_FINAL], e->allyFinal[i]);
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -235,8 +202,12 @@ void OnEncounterSelect(UIContext *cxt, void *data)
         ls_unistrSet(&t->name.text, e->throwerName[i]);     t->name.viewEndIdx   = t->name.text.len;
         
         ls_unistrSet(&t->toHit.text,  e->throwerHit[i]);    t->toHit.viewEndIdx  = t->toHit.text.len;
-        ls_unistrSet(&t->damage.text, e->throwerDamage[i]); t->hitRes.viewEndIdx = t->hitRes.text.len;
+        ls_unistrSet(&t->damage.text, e->throwerDamage[i]); t->damage.viewEndIdx = t->damage.text.len;
     }
+    
+    //NOTE: This is to avoid the program never being reset. I don't think it's necessary,
+    //      but for "security" reasons we'll have it.
+    addID = 1000;
     
     return;
 }
@@ -259,29 +230,17 @@ void SaveEncounterOnClick(UIContext *cxt, void *data)
     
     for(u32 i = 0; i < visibleMobs; i++)
     {
-        ls_unistrSet(&curr->mob[i][0],  State.Init->MobFields[i].name.text);
-        ls_unistrSet(&curr->mob[i][1],  State.Init->MobFields[i].bonus.text);
-        ls_unistrSet(&curr->mob[i][2],  State.Init->MobFields[i].final.text);
-        ls_unistrSet(&curr->mob[i][3],  State.Init->MobFields[i].extra.text);
+        for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+        { ls_unistrSet(&curr->mob[i][j], State.Init->MobFields[i].editFields[j].text); }
         
-        ls_unistrSet(&curr->mob[i][4],  State.Init->MobFields[i].maxLife.text);
-        
-        ls_unistrSet(&curr->mob[i][5],  State.Init->MobFields[i].totalAC.text);
-        ls_unistrSet(&curr->mob[i][6],  State.Init->MobFields[i].touchAC.text);
-        ls_unistrSet(&curr->mob[i][7],  State.Init->MobFields[i].flatAC.text);
-        ls_unistrSet(&curr->mob[i][8],  State.Init->MobFields[i].lowAC.text);
-        
-        ls_unistrSet(&curr->mob[i][9],  State.Init->MobFields[i].conSave.text);
-        ls_unistrSet(&curr->mob[i][10], State.Init->MobFields[i].dexSave.text);
-        ls_unistrSet(&curr->mob[i][11], State.Init->MobFields[i].wisSave.text);
-        
+        ls_unistrSet(&curr->mob[i][MOB_INIT_ENC_FIELDS-1], State.Init->MobFields[i].maxLife.text);
     }
     
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        ls_unistrSet(&curr->allyName[i],  State.Init->AllyFields[i].name.text);
-        ls_unistrSet(&curr->allyBonus[i], State.Init->AllyFields[i].bonus.text);
-        ls_unistrSet(&curr->allyFinal[i], State.Init->AllyFields[i].final.text);
+        ls_unistrSet(&curr->allyName[i],  State.Init->AllyFields[i].editFields[IF_IDX_NAME].text);
+        ls_unistrSet(&curr->allyBonus[i], State.Init->AllyFields[i].editFields[IF_IDX_BONUS].text);
+        ls_unistrSet(&curr->allyFinal[i], State.Init->AllyFields[i].editFields[IF_IDX_FINAL].text);
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -356,30 +315,30 @@ void RollOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->MobFields + i;
         
-        s32 finalVal = ls_unistrToInt(f->final.text);
+        s32 finalVal = ls_unistrToInt(f->editFields[IF_IDX_FINAL].text);
         if(finalVal != 0) { continue; }
         
         s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
-        s32 bonus = ls_unistrToInt(f->bonus.text);
+        s32 bonus = ls_unistrToInt(f->editFields[IF_IDX_BONUS].text);
         
-        ls_unistrClear(&f->final.text);
-        ls_unistrFromInt_t(&f->final.text, bonus + die);
-        f->final.viewEndIdx = f->final.text.len;
+        ls_unistrClear(&f->editFields[IF_IDX_FINAL].text);
+        ls_unistrFromInt_t(&f->editFields[IF_IDX_FINAL].text, bonus + die);
+        f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
     }
     
     for(u32 i = 0; i < visibleAllies; i++)
     {
         InitField *f = Page->AllyFields + i;
         
-        s32 finalVal = ls_unistrToInt(f->final.text);
+        s32 finalVal = ls_unistrToInt(f->editFields[IF_IDX_FINAL].text);
         if(finalVal != 0) { continue; }
         
         s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
-        s32 bonus = ls_unistrToInt(f->bonus.text);
+        s32 bonus = ls_unistrToInt(f->editFields[IF_IDX_BONUS].text);
         
-        ls_unistrClear(&f->final.text);
-        ls_unistrFromInt_t(&f->final.text, bonus + die);
-        f->final.viewEndIdx = f->final.text.len;
+        ls_unistrClear(&f->editFields[IF_IDX_FINAL].text);
+        ls_unistrFromInt_t(&f->editFields[IF_IDX_FINAL].text, bonus + die);
+        f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
     }
 }
 
@@ -400,8 +359,8 @@ void SetOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->MobFields + i;
         
-        ord[idx].init    = ls_unistrToInt(f->final.text);
-        ord[idx].name    = &f->name.text;
+        ord[idx].init    = ls_unistrToInt(f->editFields[IF_IDX_FINAL].text);
+        ord[idx].name    = &f->editFields[IF_IDX_NAME].text;
         ord[idx].maxLife = ls_unistrToInt(f->maxLife.text);
         ord[idx].ID      = f->ID;
         
@@ -412,8 +371,8 @@ void SetOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->AllyFields + i;
         
-        ord[idx].init    = ls_unistrToInt(f->final.text);
-        ord[idx].name    = &f->name.text;
+        ord[idx].init    = ls_unistrToInt(f->editFields[IF_IDX_FINAL].text);
+        ord[idx].name    = &f->editFields[IF_IDX_NAME].text;
         ord[idx].maxLife = 0;
         ord[idx].ID      = f->ID;
         
@@ -451,16 +410,18 @@ void SetOnClick(UIContext *cxt, void *data)
     for(u32 i = 0; i < PARTY_NUM; i++)
     { Page->PlayerInit[i].isReadonly = TRUE; }
     
-    for(u32 i = 0; i < MOB_NUM; i++)  {
-        Page->MobFields[i].name.isReadonly  = TRUE;
-        Page->MobFields[i].bonus.isReadonly = TRUE;
-        Page->MobFields[i].final.isReadonly = TRUE;
+    for(u32 i = 0; i < MOB_NUM; i++)
+    {
+        InitField *f = Page->MobFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { f->editFields[j].isReadonly = TRUE; }
     }
     
     for(u32 i = 0; i < ALLY_NUM; i++) { 
-        Page->AllyFields[i].name.isReadonly  = TRUE;
-        Page->AllyFields[i].bonus.isReadonly = TRUE;
-        Page->AllyFields[i].final.isReadonly = TRUE;
+        Page->AllyFields[i].editFields[IF_IDX_NAME].isReadonly  = TRUE;
+        Page->AllyFields[i].editFields[IF_IDX_BONUS].isReadonly = TRUE;
+        Page->AllyFields[i].editFields[IF_IDX_FINAL].isReadonly = TRUE;
     }
     
     Page->turnsInRound = visibleOrder;
@@ -490,40 +451,19 @@ void ResetOnClick(UIContext *cxt, void *data)
     { 
         InitField *f = Page->MobFields + i;
         
-        ls_uiTextBoxClear(cxt, &f->name);
-        ls_uiTextBoxSet(cxt, &f->name, ls_unistrConstant(MobName[i]));
+        ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_NAME]);
+        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_unistrConstant(MobName[i]));
         
-        ls_uiTextBoxClear(cxt, &f->bonus);
-        ls_uiTextBoxSet(cxt, &f->bonus, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->final);
-        ls_uiTextBoxSet(cxt, &f->final, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->extra);
+        for(u32 j = 1; j < IF_IDX_COUNT; j++)
+        {
+            if(j == IF_IDX_EXTRA) { ls_uiTextBoxClear(cxt, &f->editFields[j]); continue; }
+            
+            ls_uiTextBoxClear(cxt, &f->editFields[j]);
+            ls_uiTextBoxSet(cxt, &f->editFields[j], zeroUTF32);
+        }
         
         ls_uiTextBoxClear(cxt, &f->maxLife);
         ls_uiTextBoxSet(cxt, &f->maxLife, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->totalAC);
-        ls_uiTextBoxSet(cxt, &f-> totalAC, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->touchAC);
-        ls_uiTextBoxSet(cxt, &f-> touchAC, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->flatAC);
-        ls_uiTextBoxSet(cxt, &f-> flatAC, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->lowAC);
-        ls_uiTextBoxSet(cxt, &f-> lowAC, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->conSave);
-        ls_uiTextBoxSet(cxt, &f-> conSave, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->dexSave);
-        ls_uiTextBoxSet(cxt, &f-> dexSave, zeroUTF32);
-        
-        ls_uiTextBoxClear(cxt, &f->wisSave);
-        ls_uiTextBoxSet(cxt, &f-> wisSave, zeroUTF32);
         
         f->ID = currID;
         currID += 1;
@@ -533,17 +473,14 @@ void ResetOnClick(UIContext *cxt, void *data)
     { 
         InitField *f = Page->AllyFields + i;
         
-        ls_uiTextBoxClear(cxt, &f->name);
-        ls_unistrSet(&f->name.text, ls_unistrConstant(AllyName[i]));
-        f->name.viewEndIdx = f->name.text.len;
+        ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_NAME]);
+        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_unistrConstant(AllyName[i]));
         
-        ls_uiTextBoxClear(cxt, &f->bonus);
-        ls_unistrSet(&f->bonus.text ,zeroUTF32);
-        f->bonus.viewEndIdx = f->bonus.text.len;
+        ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_BONUS]);
+        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_BONUS], zeroUTF32);
         
-        ls_uiTextBoxClear(cxt, &f->final);
-        ls_unistrSet(&f->final.text, zeroUTF32);
-        f->final.viewEndIdx = f->final.text.len;
+        ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_FINAL]);
+        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FINAL], zeroUTF32);
         
         f->ID = currID;
         currID += 1;
@@ -684,11 +621,12 @@ void CopyOrder(Order *From, Order *To)
     To->ID = From->ID;
 }
 
-void CopyInitField(InitField *From, InitField *To)
+void CopyInitField(UIContext *cxt, InitField *From, InitField *To)
 {
-    ls_unistrSet(&To->name.text, From->name.text);
-    ls_unistrSet(&To->bonus.text, From->bonus.text);
-    ls_unistrSet(&To->final.text, From->final.text);
+    for(u32 i = 0; i < IF_IDX_COUNT; i++)
+    { ls_uiTextBoxSet(cxt, &To->editFields[i], From->editFields[i].text); }
+    
+    ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
     
     To->ID = From->ID;
 }
@@ -731,12 +669,11 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
             {
                 //NOTE: We remove the ally from the allies list by moving the last one in its place
                 InitField *B = Page->AllyFields + (visibleAllies - 1);
-                CopyInitField(B, ally);
+                CopyInitField(cxt, B, ally);
                 
-                //TODO: Is clearing for new additions a waste of CPU time? The user won't see them anyway
-                ls_uiTextBoxClear(cxt, &B->name);
-                ls_uiTextBoxClear(cxt, &B->bonus);
-                ls_uiTextBoxClear(cxt, &B->final);
+                ls_uiTextBoxClear(cxt, &B->editFields[IF_IDX_NAME]);
+                ls_uiTextBoxClear(cxt, &B->editFields[IF_IDX_BONUS]);
+                ls_uiTextBoxClear(cxt, &B->editFields[IF_IDX_FINAL]);
                 B->ID = 0;
                 
                 Page->Allies.selectedIndex -= 1;
@@ -760,12 +697,13 @@ void RemoveOrderOnClick(UIContext *cxt, void *data)
             {
                 //NOTE: We remove the Mob from the mobs list by moving the last one in its place
                 InitField *B = Page->MobFields + (visibleMobs - 1);
-                CopyInitField(B, mob);
+                CopyInitField(cxt, B, mob);
                 
-                //TODO: Is clearing for new additions a waste of CPU time? The user won't see them anyway
-                ls_uiTextBoxClear(cxt, &B->name);
-                ls_uiTextBoxClear(cxt, &B->bonus);
-                ls_uiTextBoxClear(cxt, &B->final);
+                for(u32 j = 0; j < IF_IDX_COUNT; j++)
+                { ls_uiTextBoxClear(cxt, &B->editFields[j]); }
+                
+                ls_uiTextBoxClear(cxt, &B->maxLife);
+                
                 B->ID = 0;
                 
                 Page->Mobs.selectedIndex -= 1;
@@ -872,10 +810,12 @@ void AddConfirmOnClick(UIContext *cxt, void *data)
     s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
     
     //NOTETODO: This is a really dumb way to determine if it's an ally or a mob...
+    //          I should pass as user data to the hook a special struct which contains all relevant info.
+    b32 isMob = FALSE;
     if(State.Init->AllyFields <= f && f <= (State.Init->AllyFields + visibleAllies))
     { State.Init->Allies.selectedIndex += 1; }
     else
-    { State.Init->Mobs.selectedIndex += 1; }
+    { State.Init->Mobs.selectedIndex += 1; isMob = TRUE; }
     
     State.Init->turnsInRound += 1;
     
@@ -896,12 +836,20 @@ void AddConfirmOnClick(UIContext *cxt, void *data)
     Order *o = State.Init->OrderFields + visibleOrder;
     
     ls_unistrSet(&o->field.text, f->addName.text);
-    ls_unistrSet(&f->name.text, f->addName.text);
-    f->name.viewEndIdx = f->name.text.len;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], f->addName.text);
     
-    f->name.isReadonly  = TRUE;
-    f->bonus.isReadonly = TRUE;
-    f->final.isReadonly = TRUE;
+    f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
+    f->editFields[IF_IDX_BONUS].isReadonly = TRUE;
+    f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
+    
+    if(isMob)
+    {
+        //NOTE: We are skipping Name, Bonus and Final, by starting at 2 and ending 1 earlier.
+        for(u32 i = 2; i < IF_IDX_COUNT-1; i++)
+        { f->editFields[i].isReadonly = TRUE; }
+        
+        o->field.maxValue = ls_unistrToInt(f->maxLife.text);
+    }
     
     //NOTE: Because IDs in the InitFields get overwritten when removing from order 
     //      we can't reliably re-use them, unless we create a system to dispense Unique IDs.
@@ -916,79 +864,80 @@ void AddConfirmOnClick(UIContext *cxt, void *data)
 
 void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *name)
 {
-    f->name.text          = ls_unistrFromUTF32(name);
-    f->name.viewEndIdx    = f->name.text.len;
-    f->name.preInput      = CustomInitFieldText;
-    f->name.data          = f;
+    CustomFieldTextHandler *textHandler = 
+        (CustomFieldTextHandler *)ls_alloc(sizeof(CustomFieldTextHandler)*INIT_FIELD_EDITFIELDS_NUM);
+    for(u32 i = 0; i < IF_IDX_COUNT; i++)
+    {
+        textHandler->parent = f;
+        textHandler->field = f->editFields + i;
+        textHandler->idx = i;
+    }
     
-    f->bonus.text         = ls_unistrFromUTF32(U"0");
-    f->bonus.viewEndIdx   = f->bonus.text.len;
-    f->bonus.maxLen       = 2;
-    f->bonus.preInput     = CustomInitFieldText;
-    f->bonus.data         = f;
+    unistring zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
-    f->final.text         = ls_unistrFromUTF32(U"0");
-    f->final.viewEndIdx   = f->final.text.len;
-    f->final.maxLen       = 2;
-    f->final.preInput     = CustomInitFieldText;
-    f->final.data         = f;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_unistrConstant(name));
+    f->editFields[IF_IDX_NAME].preInput    = CustomInitFieldText;
+    f->editFields[IF_IDX_NAME].data        = &textHandler[0];
     
-    f->extra.text         = ls_unistrAlloc(16);
-    f->extra.viewEndIdx   = f->extra.text.len;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_BONUS], zeroUTF32);
+    f->editFields[IF_IDX_BONUS].maxLen     = 2;
+    f->editFields[IF_IDX_BONUS].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_BONUS].data       = &textHandler[1];
     
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FINAL], zeroUTF32);
+    f->editFields[IF_IDX_FINAL].maxLen     = 2;
+    f->editFields[IF_IDX_FINAL].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_FINAL].data       = &textHandler[2];
+    
+    f->editFields[IF_IDX_EXTRA].text       = ls_unistrAlloc(16);
+    f->editFields[IF_IDX_EXTRA].viewEndIdx = f->editFields[IF_IDX_EXTRA].text.len;
+    f->editFields[IF_IDX_EXTRA].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_EXTRA].data       = &textHandler[3];
     
     MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     handler->parent   = &f->maxLife;
     handler->mob      = f;
     handler->previous = ls_unistrAlloc(16);
     
-    f->maxLife.text       = ls_unistrFromUTF32(U"0");
-    f->maxLife.viewEndIdx = f->maxLife.text.len;
+    ls_uiTextBoxSet(cxt, &f->maxLife, zeroUTF32);
     f->maxLife.maxLen     = 4;
     f->maxLife.preInput   = CustomMobLifeField;
     f->maxLife.data       = handler;
     
-    f->totalAC.text       = ls_unistrFromUTF32(U"0");
-    f->totalAC.viewEndIdx = f->totalAC.text.len;
-    f->totalAC.maxLen     = 2;
-    f->totalAC.preInput   = 0x0;
-    f->totalAC.data       = 0x0;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_TOTALAC], zeroUTF32);
+    f->editFields[IF_IDX_TOTALAC].maxLen     = 2;
+    f->editFields[IF_IDX_TOTALAC].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_TOTALAC].data       = &textHandler[4];
     
-    f->touchAC.text       = ls_unistrFromUTF32(U"0");
-    f->touchAC.viewEndIdx = f->touchAC.text.len;
-    f->touchAC.maxLen     = 2;
-    f->touchAC.preInput   = 0x0;
-    f->touchAC.data       = 0x0;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_TOUCHAC], zeroUTF32);
+    f->editFields[IF_IDX_TOUCHAC].maxLen     = 2;
+    f->editFields[IF_IDX_TOUCHAC].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_TOUCHAC].data       = &textHandler[5];
     
-    f->flatAC.text        = ls_unistrFromUTF32(U"0");
-    f->flatAC.viewEndIdx  = f->flatAC.text.len;
-    f->flatAC.maxLen      = 2;
-    f->flatAC.preInput    = 0x0;
-    f->flatAC.data        = 0x0;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FLATAC], zeroUTF32);
+    f->editFields[IF_IDX_FLATAC].maxLen      = 2;
+    f->editFields[IF_IDX_FLATAC].preInput    = CustomInitFieldText;
+    f->editFields[IF_IDX_FLATAC].data        = &textHandler[6];
     
-    f->lowAC.text         = ls_unistrFromUTF32(U"0");
-    f->lowAC.viewEndIdx   = f->lowAC.text.len;
-    f->lowAC.maxLen       = 2;
-    f->lowAC.preInput     = 0x0;
-    f->lowAC.data         = 0x0;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_LOWAC], zeroUTF32);
+    f->editFields[IF_IDX_LOWAC].maxLen       = 2;
+    f->editFields[IF_IDX_LOWAC].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_LOWAC].data         = &textHandler[7];
     
-    f->conSave.text       = ls_unistrFromUTF32(U"0");
-    f->conSave.viewEndIdx = f->conSave.text.len;
-    f->conSave.maxLen     = 2;
-    f->conSave.preInput   = 0x0;
-    f->conSave.data       = 0x0;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_CONSAVE], zeroUTF32);
+    f->editFields[IF_IDX_CONSAVE].maxLen     = 2;
+    f->editFields[IF_IDX_CONSAVE].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_CONSAVE].data       = &textHandler[8];
     
-    f->dexSave.text       = ls_unistrFromUTF32(U"0");
-    f->dexSave.viewEndIdx = f->dexSave.text.len;
-    f->dexSave.maxLen     = 2;
-    f->dexSave.preInput   = 0x0;
-    f->dexSave.data       = 0x0;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_DEXSAVE], zeroUTF32);
+    f->editFields[IF_IDX_DEXSAVE].maxLen     = 2;
+    f->editFields[IF_IDX_DEXSAVE].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_DEXSAVE].data       = &textHandler[9];
     
-    f->wisSave.text       = ls_unistrFromUTF32(U"0");
-    f->wisSave.viewEndIdx = f->wisSave.text.len;
-    f->wisSave.maxLen     = 2;
-    f->wisSave.preInput   = 0x0;
-    f->wisSave.data       = 0x0;
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_WISSAVE], zeroUTF32);
+    f->editFields[IF_IDX_WISSAVE].maxLen     = 2;
+    f->editFields[IF_IDX_WISSAVE].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_WISSAVE].data       = &textHandler[10];
     
     f->addName.text       = ls_unistrAlloc(16);
     f->addInit.text       = ls_unistrAlloc(16);
@@ -1177,33 +1126,33 @@ void SetInitTab(UIContext *cxt)
 void DrawInitExtra(UIContext *cxt, InitField *F, s32 baseX, s32 y)
 {
     Color base = cxt->widgetColor;
-    s32 x = baseX - 372; //276;
+    s32 x = baseX - 372;
     
-    ls_uiTextBox(cxt, &F->extra, x, y, 82, 20);   x += 96;
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_EXTRA], x, y, 82, 20);   x += 96;
     
     cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
     ls_uiTextBox(cxt, &F->maxLife, x, y, 42, 20); x += 56;
     
     cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
-    ls_uiTextBox(cxt, &F->totalAC, x, y, 26, 20); x += 30;
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_TOTALAC], x, y, 26, 20); x += 30;
     
     cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
-    ls_uiTextBox(cxt, &F->touchAC, x, y, 26, 20); x += 30;
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_TOUCHAC], x, y, 26, 20); x += 30;
     
     cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
-    ls_uiTextBox(cxt, &F->flatAC,  x, y, 26, 20); x += 30;
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_FLATAC],  x, y, 26, 20); x += 30;
     
     cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
-    ls_uiTextBox(cxt, &F->lowAC,   x, y, 26, 20); x += 40;
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_LOWAC],   x, y, 26, 20); x += 40;
     
     cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 150), base);
-    ls_uiTextBox(cxt, &F->conSave, x, y, 26, 20); x += 30;
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_CONSAVE], x, y, 26, 20); x += 30;
     
     cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x2C, 0x80, 0x34, 150), base);
-    ls_uiTextBox(cxt, &F->dexSave, x, y, 26, 20); x += 30;
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_DEXSAVE], x, y, 26, 20); x += 30;
     
     cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x2C, 0x3D, 0x80, 150), base);
-    ls_uiTextBox(cxt, &F->wisSave, x, y, 26, 20); x += 30;
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_WISSAVE], x, y, 26, 20); x += 30;
     
     cxt->widgetColor = base;
 }
@@ -1215,9 +1164,9 @@ void DrawInitField(UIContext *cxt, InitField *F, s32 baseX, s32 y)
     InitPage *Page = State.Init;
     
     s32 x = baseX;
-    ls_uiTextBox(cxt, &F->name,    x         , y, w, 20);
-    ls_uiTextBox(cxt, &F->bonus,   x + w     , y, 26, 20);
-    ls_uiTextBox(cxt, &F->final,   x + w + 26, y, 26, 20);
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_NAME],  x         , y, w, 20);
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_BONUS], x + w     , y, 26, 20);
+    ls_uiTextBox(cxt, &F->editFields[IF_IDX_FINAL], x + w + 26, y, 26, 20);
 }
 
 void DrawOrderField(UIContext *cxt, Order *f, s32 xPos, s32 yPos)
@@ -1310,21 +1259,21 @@ void DrawDefaultStyle(UIContext *cxt)
         {
             InitField *f = Page->MobFields + i;
             
-            ls_uiLabel(cxt, f->name.text, infoX, infoY);
+            ls_uiLabel(cxt, f->editFields[IF_IDX_NAME].text, infoX, infoY);
             
             Color base = cxt->widgetColor;
             
             cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
-            ls_uiTextBox(cxt, &f->totalAC, infoX + 88, infoY-6, 26, 20);
+            ls_uiTextBox(cxt, &f->editFields[IF_IDX_TOTALAC], infoX + 88, infoY-6, 26, 20);
             
             cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
-            ls_uiTextBox(cxt, &f->touchAC, infoX + 116, infoY-6, 26, 20);
+            ls_uiTextBox(cxt, &f->editFields[IF_IDX_TOUCHAC], infoX + 116, infoY-6, 26, 20);
             
             cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
-            ls_uiTextBox(cxt, &f->flatAC, infoX + 144, infoY-6, 26, 20);
+            ls_uiTextBox(cxt, &f->editFields[IF_IDX_FLATAC], infoX + 144, infoY-6, 26, 20);
             
             cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
-            ls_uiTextBox(cxt, &f->lowAC, infoX + 144, infoY-6, 26, 20);
+            ls_uiTextBox(cxt, &f->editFields[IF_IDX_LOWAC], infoX + 144, infoY-6, 26, 20);
             
             cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
             ls_uiTextBox(cxt, &f->maxLife, infoX + 182, infoY-6, 42, 20);
@@ -1579,6 +1528,8 @@ void DrawPranaStyle(UIContext *cxt)
             }
             else
             {
+                DrawInitExtra(cxt, f, 378, addY+4);
+                
                 ls_uiTextBox(cxt, &f->addName, 378, addY+4, 120, 20);
                 ls_uiTextBox(cxt, &f->addInit, 498, addY+4, 26, 20);
                 

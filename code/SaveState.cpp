@@ -55,22 +55,11 @@ void SaveState()
     for(u32 i = 0; i < visibleMobs; i++)
     {
         InitField *f = Page->MobFields + i;
-        ls_bufferAddUnistring(buf, f->name.text);
-        ls_bufferAddUnistring(buf, f->bonus.text);
-        ls_bufferAddUnistring(buf, f->final.text);
         
-        ls_bufferAddUnistring(buf, f->extra.text);
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_bufferAddUnistring(buf, f->editFields[j].text); }
         
-        ls_bufferAddUnistring(buf, f-> maxLife.text);
-        
-        ls_bufferAddUnistring(buf, f-> totalAC.text);
-        ls_bufferAddUnistring(buf, f-> touchAC.text);
-        ls_bufferAddUnistring(buf, f-> flatAC.text);
-        ls_bufferAddUnistring(buf, f-> lowAC.text);
-        
-        ls_bufferAddUnistring(buf, f-> conSave.text);
-        ls_bufferAddUnistring(buf, f-> dexSave.text);
-        ls_bufferAddUnistring(buf, f-> wisSave.text);
+        ls_bufferAddUnistring(buf, f->maxLife.text);
         
         ls_bufferAddDWord(buf, f->ID);
     }
@@ -81,9 +70,10 @@ void SaveState()
     for(u32 i = 0; i < visibleAllies; i++)
     {
         InitField *f = Page->AllyFields + i;
-        ls_bufferAddUnistring(buf, f->name.text);
-        ls_bufferAddUnistring(buf, f->bonus.text);
-        ls_bufferAddUnistring(buf, f->final.text);
+        
+        ls_bufferAddUnistring(buf, f->editFields[IF_IDX_NAME].text);
+        ls_bufferAddUnistring(buf, f->editFields[IF_IDX_BONUS].text);
+        ls_bufferAddUnistring(buf, f->editFields[IF_IDX_FINAL].text);
         
         ls_bufferAddDWord(buf, f->ID);
     }
@@ -231,41 +221,14 @@ b32 LoadState(UIContext *cxt)
     {
         InitField *f = Page->MobFields + i;
         
-        ls_bufferReadIntoUnistring(buf, &f->name.text);
-        f->name.viewEndIdx = f->name.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->bonus.text);
-        f->bonus.viewEndIdx = f->bonus.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->final.text);
-        f->final.viewEndIdx = f->final.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->extra.text);
-        f->extra.viewEndIdx = f->extra.text.len;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        {
+            ls_bufferReadIntoUnistring(buf, &f->editFields[j].text);
+            f->editFields[j].viewEndIdx = f->editFields[j].text.len;
+        }
         
         ls_bufferReadIntoUnistring(buf, &f->maxLife.text);
         f->maxLife.viewEndIdx = f->maxLife.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->totalAC.text);
-        f->totalAC.viewEndIdx = f->totalAC.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->touchAC.text);
-        f->touchAC.viewEndIdx = f->touchAC.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->flatAC.text);
-        f->flatAC.viewEndIdx = f->flatAC.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->lowAC.text);
-        f->lowAC.viewEndIdx = f->lowAC.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->conSave.text);
-        f->conSave.viewEndIdx = f->conSave.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->dexSave.text);
-        f->dexSave.viewEndIdx = f->dexSave.text.len;
-        
-        ls_bufferReadIntoUnistring(buf, &f->wisSave.text);
-        f->wisSave.viewEndIdx = f->wisSave.text.len;
         
         f->ID = ls_bufferReadDWord(buf);
     }
@@ -278,14 +241,14 @@ b32 LoadState(UIContext *cxt)
     {
         InitField *f = Page->AllyFields + i;
         
-        ls_bufferReadIntoUnistring(buf, &f->name.text);
-        f->name.viewEndIdx = f->name.text.len;
+        ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_NAME].text);
+        f->editFields[IF_IDX_NAME].viewEndIdx = f->editFields[IF_IDX_NAME].text.len;
         
-        ls_bufferReadIntoUnistring(buf, &f->bonus.text);
-        f->bonus.viewEndIdx = f->bonus.text.len;
+        ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_BONUS].text);
+        f->editFields[IF_IDX_BONUS].viewEndIdx = f->editFields[IF_IDX_BONUS].text.len;
         
-        ls_bufferReadIntoUnistring(buf, &f->final.text);
-        f->final.viewEndIdx = f->final.text.len;
+        ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_FINAL].text);
+        f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
         
         f->ID = ls_bufferReadDWord(buf);
     }

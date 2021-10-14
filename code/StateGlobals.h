@@ -3,8 +3,29 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 2;
-const u32 MOB_INIT_ENC_FIELDS = 12;
+const u32 global_saveVersion = 3;
+
+enum InitFieldIndex
+{
+    IF_IDX_NAME = 0,
+    IF_IDX_BONUS,
+    IF_IDX_EXTRA,
+    IF_IDX_TOTALAC,
+    IF_IDX_TOUCHAC,
+    IF_IDX_FLATAC,
+    IF_IDX_LOWAC,
+    IF_IDX_CONSAVE,
+    IF_IDX_DEXSAVE,
+    IF_IDX_WISSAVE,
+    
+    //NOTE: Final HAS to be the last entry because 
+    //      CustomInitFieldText depends on its position
+    IF_IDX_FINAL,
+    
+    IF_IDX_COUNT
+};
+
+const u32 MOB_INIT_ENC_FIELDS = IF_IDX_COUNT+1;
 
 struct Encounter
 {
@@ -31,22 +52,11 @@ struct EncList
 
 struct InitField
 {
-    UITextBox name;
-    UITextBox bonus;
-    UITextBox final;
-    
-    UITextBox extra;
+    //NOTE: This makes referring to other boxes in the same InitField much easier
+    //      For things like: CustomInitFieldText Handler.
+    UITextBox editFields[IF_IDX_COUNT];
     
     UITextBox maxLife;
-    
-    UITextBox totalAC;
-    UITextBox touchAC;
-    UITextBox flatAC;
-    UITextBox lowAC;
-    
-    UITextBox conSave;
-    UITextBox dexSave;
-    UITextBox wisSave;
     
     UITextBox addName;
     UITextBox addInit;
@@ -134,11 +144,6 @@ struct InitPage
 
 struct ProgramState
 {
-#if 0
-    PCPage    *PC;
-    FeatsPage *Feats;
-#endif
-    
     InitPage  *Init;
     
     //State Management
