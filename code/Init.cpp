@@ -870,9 +870,9 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
         (CustomFieldTextHandler *)ls_alloc(sizeof(CustomFieldTextHandler)*INIT_FIELD_EDITFIELDS_NUM);
     for(u32 i = 0; i < IF_IDX_COUNT; i++)
     {
-        textHandler->parent = f;
-        textHandler->field = f->editFields + i;
-        textHandler->idx = i;
+        textHandler[i].parent = f;
+        textHandler[i].field = f->editFields + i;
+        textHandler[i].idx = i;
     }
     
     unistring zeroUTF32 = { (u32 *)U"0", 1, 1 };
@@ -886,15 +886,10 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     f->editFields[IF_IDX_BONUS].preInput   = CustomInitFieldText;
     f->editFields[IF_IDX_BONUS].data       = &textHandler[1];
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FINAL], zeroUTF32);
-    f->editFields[IF_IDX_FINAL].maxLen     = 2;
-    f->editFields[IF_IDX_FINAL].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_FINAL].data       = &textHandler[2];
-    
     f->editFields[IF_IDX_EXTRA].text       = ls_unistrAlloc(16);
     f->editFields[IF_IDX_EXTRA].viewEndIdx = f->editFields[IF_IDX_EXTRA].text.len;
     f->editFields[IF_IDX_EXTRA].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_EXTRA].data       = &textHandler[3];
+    f->editFields[IF_IDX_EXTRA].data       = &textHandler[2];
     
     MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     handler->parent   = &f->maxLife;
@@ -909,37 +904,43 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_TOTALAC], zeroUTF32);
     f->editFields[IF_IDX_TOTALAC].maxLen     = 2;
     f->editFields[IF_IDX_TOTALAC].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_TOTALAC].data       = &textHandler[4];
+    f->editFields[IF_IDX_TOTALAC].data       = &textHandler[3];
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_TOUCHAC], zeroUTF32);
     f->editFields[IF_IDX_TOUCHAC].maxLen     = 2;
     f->editFields[IF_IDX_TOUCHAC].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_TOUCHAC].data       = &textHandler[5];
+    f->editFields[IF_IDX_TOUCHAC].data       = &textHandler[4];
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FLATAC], zeroUTF32);
     f->editFields[IF_IDX_FLATAC].maxLen      = 2;
     f->editFields[IF_IDX_FLATAC].preInput    = CustomInitFieldText;
-    f->editFields[IF_IDX_FLATAC].data        = &textHandler[6];
+    f->editFields[IF_IDX_FLATAC].data        = &textHandler[5];
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_LOWAC], zeroUTF32);
     f->editFields[IF_IDX_LOWAC].maxLen       = 2;
     f->editFields[IF_IDX_LOWAC].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_LOWAC].data         = &textHandler[7];
+    f->editFields[IF_IDX_LOWAC].data         = &textHandler[6];
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_CONSAVE], zeroUTF32);
     f->editFields[IF_IDX_CONSAVE].maxLen     = 2;
     f->editFields[IF_IDX_CONSAVE].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_CONSAVE].data       = &textHandler[8];
+    f->editFields[IF_IDX_CONSAVE].data       = &textHandler[7];
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_DEXSAVE], zeroUTF32);
     f->editFields[IF_IDX_DEXSAVE].maxLen     = 2;
     f->editFields[IF_IDX_DEXSAVE].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_DEXSAVE].data       = &textHandler[9];
+    f->editFields[IF_IDX_DEXSAVE].data       = &textHandler[8];
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_WISSAVE], zeroUTF32);
     f->editFields[IF_IDX_WISSAVE].maxLen     = 2;
     f->editFields[IF_IDX_WISSAVE].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_WISSAVE].data       = &textHandler[10];
+    f->editFields[IF_IDX_WISSAVE].data       = &textHandler[9];
+    
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FINAL], zeroUTF32);
+    f->editFields[IF_IDX_FINAL].maxLen     = 2;
+    f->editFields[IF_IDX_FINAL].preInput   = CustomInitFieldText;
+    f->editFields[IF_IDX_FINAL].data       = &textHandler[10];
+    
     
     f->addName.text       = ls_unistrAlloc(16);
     f->addInit.text       = ls_unistrAlloc(16);
