@@ -898,7 +898,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         { box->preInput(cxt, box->data); }
         
         //NOTE: Draw characters. (box->maxLen == 0 means there's no max len)
-        if(HasPrintableKey() && (box->text.len < box->maxLen || box->maxLen == 0)) 
+        if(HasPrintableKey() && (box->text.len < box->maxLen || box->maxLen == 0))
         {
             if(box->caretIndex == box->text.len) { ls_unistrAppendChar(&box->text, GetPrintableKey()); }
             else { ls_unistrInsertChar(&box->text, GetPrintableKey(), box->caretIndex); }
@@ -910,7 +910,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             { box->viewBeginIdx += 1; }
             
         }
-        if(KeyPress(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) 
+        if(KeyPressOrRepeat(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) 
         {
             if(box->caretIndex == box->text.len) { ls_unistrTrimRight(&box->text, 1); }
             else { ls_unistrRmIdx(&box->text, box->caretIndex-1); }
@@ -919,7 +919,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             box->viewEndIdx -= 1;
             if(box->viewBeginIdx != 0) { box->viewBeginIdx -= 1; }
         }
-        if(KeyPress(keyMap::Delete) && box->text.len > 0 && box->caretIndex < box->text.len)
+        if(KeyPressOrRepeat(keyMap::Delete) && box->text.len > 0 && box->caretIndex < box->text.len)
         {
             if(box->caretIndex == box->text.len-1) { ls_unistrTrimRight(&box->text, 1); }
             else { ls_unistrRmIdx(&box->text, box->caretIndex); }
@@ -927,7 +927,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             if(box->text.len < box->viewEndIdx) { box->viewEndIdx -= 1; }
         }
         
-        if(KeyPress(keyMap::LArrow) && box->caretIndex > 0)
+        if(KeyPressOrRepeat(keyMap::LArrow) && box->caretIndex > 0)
         { 
             if(KeyHeld(keyMap::Shift))
             {
@@ -958,7 +958,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             if(box->caretIndex < box->viewBeginIdx) { box->viewBeginIdx -= 1; box->viewEndIdx -= 1; }
             
         }
-        if(KeyPress(keyMap::RArrow) && box->caretIndex < box->text.len)
+        if(KeyPressOrRepeat(keyMap::RArrow) && box->caretIndex < box->text.len)
         { 
             if(KeyHeld(keyMap::Shift))
             {

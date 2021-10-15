@@ -144,28 +144,32 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_KEYDOWN:
         {
+            //Repeat is the first 16 bits of the LPARAM. Bits [0-15];
+            u16 rep = (u16)l;
+            
             switch(w)
             { 
-                case VK_F2:      KeySet(keyMap::F2);        break;
+                case VK_F2:      KeySetAndRepeat(keyMap::F2, rep);        break;
                 
-                case VK_DOWN:    KeySet(keyMap::DArrow);    break;
-                case VK_UP:      KeySet(keyMap::UArrow);    break;
-                case VK_LEFT:    KeySet(keyMap::LArrow);    break;
-                case VK_RIGHT:   KeySet(keyMap::RArrow);    break;
+                case VK_DOWN:    KeySetAndRepeat(keyMap::DArrow, rep);    break;
+                case VK_UP:      KeySetAndRepeat(keyMap::UArrow, rep);    break;
+                case VK_LEFT:    KeySetAndRepeat(keyMap::LArrow, rep);    break;
+                case VK_RIGHT:   KeySetAndRepeat(keyMap::RArrow, rep);    break;
                 
-                case VK_RETURN:  KeySet(keyMap::Enter);     break;
-                case VK_BACK:    KeySet(keyMap::Backspace); break;
-                case VK_DELETE:  KeySet(keyMap::Delete);    break;
-                case VK_HOME:    KeySet(keyMap::Home);      break;
-                case VK_END:     KeySet(keyMap::End);       break;
-                case VK_CONTROL: KeySet(keyMap::Control);   break;
-                case VK_SHIFT:   KeySet(keyMap::Shift);     break; //TODO: Differentiate L/R Shift
+                case VK_RETURN:  KeySetAndRepeat(keyMap::Enter, rep);     break;
+                case VK_BACK:    KeySetAndRepeat(keyMap::Backspace, rep); break;
+                case VK_DELETE:  KeySetAndRepeat(keyMap::Delete, rep);    break;
+                case VK_HOME:    KeySetAndRepeat(keyMap::Home, rep);      break;
+                case VK_END:     KeySetAndRepeat(keyMap::End, rep);       break;
+                case VK_CONTROL: KeySetAndRepeat(keyMap::Control, rep);   break;
+                case VK_SHIFT:   KeySetAndRepeat(keyMap::Shift, rep);     break; //TODO: Differentiate L/R Shift
                 
-                case 'A':        KeySet(keyMap::A);         break;
-                case 'C':        KeySet(keyMap::C);         break;
-                case 'V':        KeySet(keyMap::V);         break;
-                case 'G':        KeySet(keyMap::G);         break;
+                case 'A':        KeySetAndRepeat(keyMap::A, rep);         break;
+                case 'C':        KeySetAndRepeat(keyMap::C, rep);         break;
+                case 'V':        KeySetAndRepeat(keyMap::V, rep);         break;
+                case 'G':        KeySetAndRepeat(keyMap::G, rep);         break;
             }
+            
         } break;
         
         case WM_KEYUP:
@@ -536,6 +540,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         RegionTimerBegin(frameTime);
         
         UserInput.Keyboard.prevState = UserInput.Keyboard.currentState;
+        UserInput.Keyboard.repeatState = {};
+        
         UserInput.Keyboard.hasPrintableKey = FALSE;
         UserInput.Keyboard.keyCodepoint    = 0;
         

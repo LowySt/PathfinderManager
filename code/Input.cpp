@@ -31,6 +31,8 @@ struct KeyboardInput
     keyMap currentState = {};
     keyMap prevState    = {};
     
+    keyMap repeatState  = {};
+    
     b32 hasPrintableKey;
     u32 keyCodepoint;
     
@@ -42,6 +44,14 @@ struct KeyboardInput
 #define KeyUnset(k)     (UserInput.Keyboard.currentState.k = 0)
 #define KeyPress(k)     (UserInput.Keyboard.currentState.k == 1 && UserInput.Keyboard.prevState.k == 0)
 #define KeyHeld(k)      (UserInput.Keyboard.currentState.k == 1 && UserInput.Keyboard.prevState.k == 1)
+
+#define KeySetAndRepeat(k, rp) (UserInput.Keyboard.currentState.k = 1); \
+if(rp) { (UserInput.Keyboard.repeatState.k = 1); }
+
+#define KeyRepeat(k)    (UserInput.Keyboard.currentState.k == 1 && UserInput.Keyboard.repeatState.k == 1)
+
+#define KeyPressOrRepeat(k) (KeyPress(k) || KeyRepeat(k))
+
 
 #define HasPrintableKey() (UserInput.Keyboard.hasPrintableKey == TRUE)
 #define GetPrintableKey() (UserInput.Keyboard.keyCodepoint)
