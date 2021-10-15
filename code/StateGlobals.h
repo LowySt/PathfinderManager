@@ -139,7 +139,8 @@ struct InitPage
     
     UIListBox  EncounterSel;
     UITextBox  EncounterName;
-    UIButton   Save;
+    UIButton   SaveEnc;
+    UIButton   RemoveEnc;
 };
 
 struct ProgramState

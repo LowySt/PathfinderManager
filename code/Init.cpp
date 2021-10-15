@@ -271,7 +271,56 @@ void SaveEncounterOnClick(UIContext *cxt, void *data)
     
     State.encounters.numEncounters += 1;
     
-    ls_uiListBoxAddEntry(cxt, &State.Init->EncounterSel, State.Init->EncounterName.text);
+    State.Init->EncounterSel.selectedIndex =
+        ls_uiListBoxAddEntry(cxt, &State.Init->EncounterSel, State.Init->EncounterName.text);
+}
+
+void RemoveEncounterOnClick(UIContext *cxt, void *data)
+{
+    u32 idx = State.Init->EncounterSel.selectedIndex;
+    u32 lastIdx = State.Init->EncounterSel.list.count-1;
+    
+    Encounter *selected = State.encounters.Enc + (idx-1);
+    Encounter *last = State.encounters.Enc + (lastIdx-1);
+    
+    //NOTE:      When idx == lastIdx we just decrease the numEncounters
+    //
+    //TODO:      Is it fine to keep the old stuff allocated? ls_unistrSet only allocates if data is null
+    //           So adding new things on it shouldn't leak memory (and it gets reset on program startup anyway)
+    //           Also everything gets overwritten, so there should be no problem of old data hanging.
+    
+    if(idx != lastIdx)
+    {
+        //NOTE: In this case I have to free memory, else I will leak
+        //TODO: Should I change how Encounters are stored to avoid this annoyance?
+        
+        for(u32 i = 0; i < MOB_NUM; i++)
+        {
+            for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+            { ls_unistrFree(&selected->mob[i][j]); }
+        }
+        
+        for(u32 i = 0; i < ALLY_NUM; i++)
+        {
+            ls_unistrFree(&selected->allyName[i]);
+            ls_unistrFree(&selected->allyBonus[i]);
+            ls_unistrFree(&selected->allyFinal[i]);
+        }
+        
+        for(u32 i = 0; i < THROWER_NUM; i++)
+        {
+            ls_unistrFree(&selected->throwerName[i]);
+            ls_unistrFree(&selected->throwerHit[i]);
+            ls_unistrFree(&selected->throwerDamage[i]);
+        }
+        
+        ls_memcpy(last, selected, sizeof(Encounter));
+        
+    }
+    
+    State.encounters.numEncounters -= 1;
+    ls_uiListBoxRemoveEntry(cxt, &State.Init->EncounterSel, idx);
+    ResetOnClick(cxt, NULL);
 }
 
 void ThrowDiceOnClick(UIContext *cxt, void *data)
@@ -1110,12 +1159,14 @@ void SetInitTab(UIContext *cxt)
     }
     
     
-    Page->Save.style   = UIBUTTON_TEXT;
-    Page->Save.name    = ls_unistrFromUTF32(U"Save");
-    Page->Save.onClick = SaveEncounterOnClick;
-    Page->Save.data    = 0x0;
-    Page->Save.onHold  = 0x0;
+    Page->SaveEnc.style     = UIBUTTON_TEXT;
+    Page->SaveEnc.name      = ls_unistrFromUTF32(U"Save");
+    Page->SaveEnc.onClick   = SaveEncounterOnClick;
+    Page->SaveEnc.data      = 0x0;
     
+    Page->RemoveEnc.style   = UIBUTTON_TEXT;
+    Page->RemoveEnc.name    = ls_unistrFromUTF32(U"X");
+    Page->RemoveEnc.onClick = RemoveEncounterOnClick;
     
     Page->Current.text            = ls_unistrAlloc(16);
     Page->Current.isReadonly      = TRUE;
@@ -1351,7 +1402,8 @@ void DrawDefaultStyle(UIContext *cxt)
         ls_uiListBox(cxt, &Page->EncounterSel,  480, 718, 120, 20);
         ls_uiTextBox(cxt, &Page->EncounterName, 624, 718, 100, 20);
         
-        ls_uiButton(cxt, &Page->Save, 601, 740, 44, 20);
+        ls_uiButton(cxt, &Page->SaveEnc, 601, 740, 44, 20);
+        ls_uiButton(cxt, &Page->RemoveEnc, 455, 718, 24, 20);
     }
     else
     {
@@ -1512,7 +1564,8 @@ void DrawPranaStyle(UIContext *cxt)
         ls_uiListBox(cxt, &Page->EncounterSel,  480, 718, 120, 20);
         ls_uiTextBox(cxt, &Page->EncounterName, 624, 718, 100, 20);
         
-        ls_uiButton(cxt, &Page->Save, 601, 740, 44, 20);
+        ls_uiButton(cxt, &Page->SaveEnc, 601, 740, 44, 20);
+        ls_uiButton(cxt, &Page->RemoveEnc, 455, 718, 24, 20);
     }
     else
     {

@@ -1343,19 +1343,22 @@ void ls_uiLPane(UIContext *cxt, UILPane *pane, s32 xPos, s32 yPos, s32 w, s32 h)
 //          This feels strange, and probably error-prone.
 
 //TODO I really think ListBox shouldn't manage memory. Fix This.
-inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, char *s)
+inline u32 ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, char *s)
 { 
     unistring text = ls_unistrFromAscii(s);
-    list->list.push(text); 
+    return list->list.push(text);
 }
 
-inline void ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, unistring s)
+inline u32 ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, unistring s)
 {
-    list->list.push(s); 
+    return list->list.push(s); 
 }
 
 inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
 { 
+    //NOTETODO: Is this good????
+    if(list->selectedIndex == index) { list->selectedIndex = 0; }
+    
     unistring val = list->list[index];
     ls_unistrFree(&val);
     list->list.remove(index);
