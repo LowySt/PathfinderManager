@@ -526,6 +526,8 @@ void ResetOnClick(UIContext *cxt, void *data)
         ls_uiTextBoxClear(cxt, &Page->GeneralThrower.hitRes);
     }
     
+    Page->EncounterSel.selectedIndex = 0;
+    
     ls_unistrClear(&Page->Current.text);
     
     ls_unistrSet(&Page->RoundCounter.text, zeroUTF32);
