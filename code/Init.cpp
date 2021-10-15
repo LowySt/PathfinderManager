@@ -63,6 +63,17 @@ void CustomInitFieldText(UIContext *cxt, void *data)
         if(f->parent == lastMob)  { ls_uiFocusChange(cxt, 0x0); return; }
         if(f->parent == lastAlly) { ls_uiFocusChange(cxt, 0x0); return; }
         
+        //NOTE: The maxLife field gets handled specially using the index 999
+        if(f->idx == 999) {
+            UITextBox *next = &((f->parent + 1)->maxLife);
+            ls_uiTextBoxClear(cxt, next);
+            ls_uiFocusChange(cxt, (u64 *)next);
+            
+            return;
+        }
+        
+        AssertMsg(f->idx < INIT_FIELD_EDITFIELDS_NUM, "Out of bounds index\n");
+        
         UITextBox *next = &((f->parent + 1)->editFields[f->idx]);
         ls_uiTextBoxClear(cxt, next);
         ls_uiFocusChange(cxt, (u64 *)next);
@@ -104,6 +115,13 @@ void CustomInitFieldText(UIContext *cxt, void *data)
             ls_uiTextBoxSet(cxt, &nextFields[i], parentFields[i].text);
         }
         
+        ls_uiTextBoxClear(cxt, &next->maxLife);
+        ls_uiTextBoxSet(cxt, &next->maxLife, f->parent->maxLife.text);
+        
+        //NOTE: The maxLife field gets handled specially using the index 999
+        if(f->idx == 999) { ls_uiFocusChange(cxt, (u64 *)&(next->maxLife)); return; }
+        
+        AssertMsg(f->idx < INIT_FIELD_EDITFIELDS_NUM, "Out of bounds index\n");
         ls_uiFocusChange(cxt, (u64 *)&(nextFields[f->idx]));
         
         return;
@@ -119,7 +137,8 @@ void CustomMobLifeField(UIContext *cxt, void *data)
     UITextBox *f = h->parent;
     
     if(!State.inBattle) {
-        //TODO: Clear and Repeat.
+        CustomFieldTextHandler dummy = {h->mob, h->parent, 999};
+        CustomInitFieldText(cxt, &dummy);
     };
     
     if((cxt->lastFocus != (u64 *)f) && h->isEditing) {
