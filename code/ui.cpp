@@ -1055,6 +1055,12 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             box->viewEndIdx = box->caretIndex;
             box->viewBeginIdx = box->viewEndIdx - vLen;
         }
+        if(KeyHeld(keyMap::Control) && KeyPress(keyMap::A))
+        {
+            box->isSelecting    = TRUE;
+            box->selectBeginIdx = 0;
+            box->selectEndIdx   = box->text.len;
+        }
         
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::V))
         {

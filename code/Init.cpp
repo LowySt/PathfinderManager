@@ -315,7 +315,6 @@ void RemoveEncounterOnClick(UIContext *cxt, void *data)
         }
         
         ls_memcpy(last, selected, sizeof(Encounter));
-        
     }
     
     State.encounters.numEncounters -= 1;

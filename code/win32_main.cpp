@@ -161,9 +161,10 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 case VK_CONTROL: KeySet(keyMap::Control);   break;
                 case VK_SHIFT:   KeySet(keyMap::Shift);     break; //TODO: Differentiate L/R Shift
                 
-                case 'C':        KeySet(keyMap::C);         break; 
+                case 'A':        KeySet(keyMap::A);         break;
+                case 'C':        KeySet(keyMap::C);         break;
+                case 'V':        KeySet(keyMap::V);         break;
                 case 'G':        KeySet(keyMap::G);         break;
-                case 'V':        KeySet(keyMap::V);         break; 
             }
         } break;
         
@@ -186,9 +187,10 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 case VK_CONTROL: KeyUnset(keyMap::Control);   break;
                 case VK_SHIFT:   KeyUnset(keyMap::Shift);     break; //TODO: Differentiate L/R Shift
                 
+                case 'A':        KeyUnset(keyMap::A);         break;
                 case 'C':        KeyUnset(keyMap::C);         break;
-                case 'G':        KeyUnset(keyMap::G);         break;
                 case 'V':        KeyUnset(keyMap::V);         break;
+                case 'G':        KeyUnset(keyMap::G);         break;
             }
         } break;
         
