@@ -153,6 +153,34 @@ struct UIMenu
     u32     maxSub; 
 };
 
+enum RenderCommandType
+{
+    UI_RC_TEXTBOX,
+    UI_RC_BUTTON,
+    UI_RC_LISTBOX,
+    UI_RC_SLIDER,
+    UI_RC_MENU,
+};
+
+struct RenderCommand
+{
+    
+    RenderCommandType type;
+    
+    s32 x, y, w, h;
+    
+    union
+    {
+        UITextBox *textBox;
+        UIButton  *button;
+        UIListBox *listBox;
+        UISlider  *slide;
+        UIMenu    *menu;
+    };
+};
+
+
+const u32 UI_Z_LAYERS = 3;
 struct UIContext
 {
     u8 *drawBuffer;
@@ -186,6 +214,8 @@ struct UIContext
     
     u64 *mouseCapture;
     
+    
+    stack RenderCommands[UI_Z_LAYERS];
     void (*callbackRender)();
     u32 dt;
 };
@@ -196,6 +226,11 @@ void ls_uiFocusChange(UIContext *cxt, u64 *focus)
     cxt->nextFrameFocus = focus;
 }
 
+
+void ls_uiPushRenderCommand(UIContext *cxt, RenderCommand command, s32 zLayer)
+{
+    ls_stackPush(&cxt->RenderCommands[zLayer], (void *)&command);
+}
 
 //TODO:NOTE: Scissors are busted. A smaller scissor doesn't check if it is inside it's own parent!
 void ls_uiPushScissor(UIContext *cxt, s32 x, s32 y, s32 w, s32 h)
@@ -871,6 +906,8 @@ void ls_uiTextBoxSet(UIContext *cxt, UITextBox *box, unistring s)
 }
 
 //TODO: Text Alignment
+//TODO: Inserting at the beggining of the view pushes the view forward, which creates a strange effect.
+//TODO: Delete/Print/Backspace don't respect selection
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(LeftClick && MouseInRect(xPos, yPos, w, h) && (box->isReadonly == FALSE)) {
@@ -881,7 +918,9 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     
     s32 strPixelHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
     
+#if 0
     ls_uiBorderedRect(cxt, xPos, yPos, w, h);
+#endif
     
     Color caretColor = cxt->textColor;
     
@@ -1087,40 +1126,35 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             SetClipboard(box->text.data, box->text.len); 
         }
         
-        //NOTETODO: Duplicated Values
-        s32 vertOff = ((h - strPixelHeight) / 2) + 5;
-        u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
-        u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
-        unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
-        
-        //NOTE: Draw the Caret
         box->dtCaret += cxt->dt;
         if(box->dtCaret >= 400) { box->dtCaret = 0; box->isCaretOn = !box->isCaretOn; }
-        
-        if(box->isCaretOn)
-        {
-            UIGlyph *caretGlyph = &cxt->currFont->glyph['|'];
-            
-            u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
-            unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
-            
-            u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
-            
-            const s32 randffset = 4; //TODO: Maybe try to remove this?
-            ls_uiGlyph(cxt, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
-        }
         
         
         if(box->postInput) 
         { box->postInput(cxt, box->data); }
     }
     
-    //NOTETODO: Duplicated Values
+#if 0
     s32 vertOff = ((h - strPixelHeight) / 2) + 5; //TODO: @FontDescent
     u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
     u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
     unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
     
+    //NOTE: Draw the Caret
+    if(box->isCaretOn && cxt->currentFocus == (u64 *)box)
+    {
+        UIGlyph *caretGlyph = &cxt->currFont->glyph['|'];
+        
+        u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
+        unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
+        
+        u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
+        
+        const s32 randffset = 4; //TODO: Maybe try to remove this?
+        ls_uiGlyph(cxt, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
+    }
+    
+    //NOTE: Finally draw the entire string.
     ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
     
     if(box->isSelecting)
@@ -1148,7 +1182,10 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         if(box->caretIndex == box->selectBeginIdx)
         { caretColor = cxt->invTextColor; }
     }
+#endif
     
+    RenderCommand command = {UI_RC_TEXTBOX, xPos, yPos, w, h, box};
+    ls_uiPushRenderCommand(cxt, command, 0);
     
     ls_uiPopScissor(cxt);
 }
@@ -1675,6 +1712,93 @@ void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
 
 void ls_uiRender(UIContext *c)
 {
+    //NOTE: Render Layers in Z-order. Layer Zero is the first to be rendered, 
+    //      so it's the one farther away from the screen
+    for(u32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
+    {
+        stack *currLayer = c->RenderCommands + zLayer;
+        
+        s32 count = currLayer->count;
+        for(u32 commandIdx = 0; commandIdx < count; commandIdx++)
+        {
+            RenderCommand *curr = (RenderCommand *)ls_stackPop(currLayer);
+            
+            switch(curr->type)
+            {
+                case UI_RC_TEXTBOX:
+                {
+                    UITextBox *box = curr->textBox;
+                    s32 xPos       = curr->x;
+                    s32 yPos       = curr->y;
+                    s32 w          = curr->w;
+                    s32 h          = curr->h;
+                    
+                    const s32 horzOff = 4;
+                    Color caretColor  = c->textColor;
+                    
+                    //TODO: Make the font selection more of a global thing??
+                    s32 strPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                    
+                    ls_uiBorderedRect(c, xPos, yPos, w, h);
+                    
+                    s32 vertOff = ((h - strPixelHeight) / 2) + 5; //TODO: @FontDescent
+                    u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
+                    u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
+                    unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
+                    
+                    //NOTE: Draw the Caret
+                    if(box->isCaretOn && c->currentFocus == (u64 *)box)
+                    {
+                        UIGlyph *caretGlyph = &c->currFont->glyph['|'];
+                        
+                        u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
+                        unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
+                        
+                        u32 stringLen = ls_uiGlyphStringLen(c, tmp);
+                        
+                        const s32 randffset = 4; //TODO: Maybe try to remove this?
+                        ls_uiGlyph(c, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
+                    }
+                    
+                    //NOTE: Finally draw the entire string.
+                    ls_uiGlyphString(c, xPos + horzOff, yPos + vertOff, viewString, c->textColor);
+                    
+                    if(box->isSelecting)
+                    {
+                        //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
+                        s32 viewSelBegin = box->selectBeginIdx;
+                        if(viewSelBegin <= box->viewBeginIdx) { viewSelBegin = box->viewBeginIdx; }
+                        
+                        s32 viewSelEnd = box->selectEndIdx;
+                        if(box->viewEndIdx != 0 && viewSelEnd >= box->viewEndIdx) { viewSelEnd = box->viewEndIdx; }
+                        
+                        u32 selLen = viewSelEnd -  viewSelBegin;
+                        unistring selString = {box->text.data + viewSelBegin, selLen, selLen};
+                        s32 selStringWidth  = ls_uiGlyphStringLen(c, selString);
+                        
+                        u32 diffLen = 0;
+                        if(box->selectBeginIdx > box->viewBeginIdx) { diffLen = box->selectBeginIdx - box->viewBeginIdx; }
+                        
+                        unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
+                        s32 diffStringWidth = ls_uiGlyphStringLen(c, diffString);
+                        
+                        ls_uiFillRect(c, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, c->invWidgetColor);
+                        ls_uiGlyphString(c, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, c->invTextColor);
+                        
+                        if(box->caretIndex == box->selectBeginIdx)
+                        { caretColor = c->invTextColor; }
+                    }
+                    
+                } break;
+                
+                
+                
+                default: { AssertMsg(FALSE, "Unhandled Render Command Type\n"); } break;
+            }
+        }
+    }
+    
+    
     c->callbackRender();
     return;
 }

@@ -478,6 +478,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->textColor       = RGBg(0xCC);
     uiContext->invWidgetColor  = RGBg(0xBA);
     uiContext->invTextColor    = RGBg(0x33);
+    uiContext->RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 64);
+    uiContext->RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 64);
+    uiContext->RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 64);
     
     loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
     
