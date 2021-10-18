@@ -1391,7 +1391,6 @@ void DrawDefaultStyle(UIContext *cxt)
     
     if(!State.inBattle)
     {
-        //TODO: Clicking on a ListBox Entry clicks also what's behind it.
         ls_uiListBox(cxt, &Page->Mobs,   406, 678, 100, 20);
         ls_uiListBox(cxt, &Page->Allies, 641, 498, 100, 20);
         
@@ -1456,6 +1455,27 @@ void DrawPranaStyle(UIContext *cxt)
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
     s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    
+    
+    //NOTE: Z Layer 1 Input
+    {
+        if(!State.inBattle)
+        {
+            ls_uiListBox(cxt, &Page->EncounterSel,  480, 718, 120, 20, 2);
+            ls_uiTextBox(cxt, &Page->EncounterName, 624, 718, 100, 20);
+            
+            ls_uiButton(cxt, &Page->SaveEnc, 601, 740, 44, 20);
+            ls_uiButton(cxt, &Page->RemoveEnc, 455, 718, 24, 20);
+            
+            ls_uiListBox(cxt, &Page->Mobs,   406, 678, 100, 20, 1);
+            ls_uiListBox(cxt, &Page->Allies, 641, 498, 100, 20, 1);
+            
+            ls_uiButton(cxt, &Page->Roll, 556, 678, 48, 20);
+            ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
+        }
+    }
+    
+    //NOTE: Z Layer 0 Input
     
     // Party
     s32 yPos = 638;
@@ -1551,22 +1571,7 @@ void DrawPranaStyle(UIContext *cxt)
     
     ls_uiButton(cxt, &Page->Reset, 670, 678, 48, 20);
     
-    if(!State.inBattle)
-    {
-        //TODO: Clicking on a ListBox Entry clicks also what's behind it.
-        ls_uiListBox(cxt, &Page->Mobs,   406, 678, 100, 20);
-        ls_uiListBox(cxt, &Page->Allies, 641, 498, 100, 20);
-        
-        ls_uiButton(cxt, &Page->Roll, 556, 678, 48, 20);
-        ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
-        
-        ls_uiListBox(cxt, &Page->EncounterSel,  480, 718, 120, 20);
-        ls_uiTextBox(cxt, &Page->EncounterName, 624, 718, 100, 20);
-        
-        ls_uiButton(cxt, &Page->SaveEnc, 601, 740, 44, 20);
-        ls_uiButton(cxt, &Page->RemoveEnc, 455, 718, 24, 20);
-    }
-    else
+    if(State.inBattle)
     {
         ls_uiTextBox(cxt, &Page->Current,      1010, 668, 100, 20);
         ls_uiTextBox(cxt, &Page->RoundCounter, 1230, 720, 30, 20);

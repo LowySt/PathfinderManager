@@ -629,7 +629,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(LeftUp || RightUp || MiddleUp)
         { uiContext->mouseCapture = 0; }
         
-        ls_uiRender(uiContext); 
+        ls_uiRender(uiContext);
         
         State.hasMouseClicked = FALSE;
         

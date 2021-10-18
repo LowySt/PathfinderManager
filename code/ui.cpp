@@ -102,11 +102,17 @@ struct UITextBox
     void *data; //TODO: Separate preInput / postInput user data
 };
 
+struct UIListBoxItem
+{
+    unistring name;
+    Color bkgColor;
+    Color textColor;
+};
 
 typedef void(*ListBoxProc)(UIContext *cxt, void *data);
 struct UIListBox
 {
-    Array<unistring> list;
+    Array<UIListBoxItem> list;
     s32 selectedIndex;
     
     u32 dtOpen;
@@ -226,6 +232,17 @@ void ls_uiFocusChange(UIContext *cxt, u64 *focus)
     cxt->nextFrameFocus = focus;
 }
 
+b32 ls_uiInFocus(UIContext *cxt, void *p)
+{
+    if(cxt->currentFocus == (u64 *)p) { return TRUE; }
+    return FALSE;
+}
+
+b32 ls_uiHasCapture(UIContext *cxt, void *p)
+{
+    if(cxt->mouseCapture == (u64 *)p) { return TRUE; }
+    return FALSE;
+}
 
 void ls_uiPushRenderCommand(UIContext *cxt, RenderCommand command, s32 zLayer)
 {
@@ -910,17 +927,13 @@ void ls_uiTextBoxSet(UIContext *cxt, UITextBox *box, unistring s)
 //TODO: Delete/Print/Backspace don't respect selection
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
-    if(LeftClick && MouseInRect(xPos, yPos, w, h) && (box->isReadonly == FALSE)) {
+    if(LeftClickIn(xPos, yPos, w, h) && (box->isReadonly == FALSE) && ls_uiHasCapture(cxt, 0)) {
         cxt->currentFocus = (u64 *)box;
         cxt->focusWasSetThisFrame = TRUE;
         box->isCaretOn = TRUE; 
     }
     
     s32 strPixelHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-    
-#if 0
-    ls_uiBorderedRect(cxt, xPos, yPos, w, h);
-#endif
     
     Color caretColor = cxt->textColor;
     
@@ -929,7 +942,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     s32 viewAddWidth    = scissorWidth - horzOff;
     ls_uiPushScissor(cxt, xPos+4, yPos, scissorWidth, h);
     
-    if(cxt->currentFocus == (u64 *)box)
+    if(ls_uiInFocus(cxt, box))
     {
         if(box->preInput)
         { box->preInput(cxt, box->data); }
@@ -1134,56 +1147,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         { box->postInput(cxt, box->data); }
     }
     
-#if 0
-    s32 vertOff = ((h - strPixelHeight) / 2) + 5; //TODO: @FontDescent
-    u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
-    u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
-    unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
-    
-    //NOTE: Draw the Caret
-    if(box->isCaretOn && cxt->currentFocus == (u64 *)box)
-    {
-        UIGlyph *caretGlyph = &cxt->currFont->glyph['|'];
-        
-        u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
-        unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
-        
-        u32 stringLen = ls_uiGlyphStringLen(cxt, tmp);
-        
-        const s32 randffset = 4; //TODO: Maybe try to remove this?
-        ls_uiGlyph(cxt, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
-    }
-    
-    //NOTE: Finally draw the entire string.
-    ls_uiGlyphString(cxt, xPos + horzOff, yPos + vertOff, viewString, cxt->textColor);
-    
-    if(box->isSelecting)
-    {
-        //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
-        s32 viewSelBegin = box->selectBeginIdx;
-        if(viewSelBegin <= box->viewBeginIdx) { viewSelBegin = box->viewBeginIdx; }
-        
-        s32 viewSelEnd = box->selectEndIdx;
-        if(box->viewEndIdx != 0 && viewSelEnd >= box->viewEndIdx) { viewSelEnd = box->viewEndIdx; }
-        
-        u32 selLen = viewSelEnd -  viewSelBegin;
-        unistring selString = {box->text.data + viewSelBegin, selLen, selLen};
-        s32 selStringWidth  = ls_uiGlyphStringLen(cxt, selString);
-        
-        u32 diffLen = 0;
-        if(box->selectBeginIdx > box->viewBeginIdx) { diffLen = box->selectBeginIdx - box->viewBeginIdx; }
-        
-        unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
-        s32 diffStringWidth = ls_uiGlyphStringLen(cxt, diffString);
-        
-        ls_uiFillRect(cxt, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, cxt->invWidgetColor);
-        ls_uiGlyphString(cxt, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, cxt->invTextColor);
-        
-        if(box->caretIndex == box->selectBeginIdx)
-        { caretColor = cxt->invTextColor; }
-    }
-#endif
-    
     RenderCommand command = {UI_RC_TEXTBOX, xPos, yPos, w, h, box};
     ls_uiPushRenderCommand(cxt, command, 0);
     
@@ -1387,12 +1350,15 @@ void ls_uiLPane(UIContext *cxt, UILPane *pane, s32 xPos, s32 yPos, s32 w, s32 h)
 inline u32 ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, char *s)
 { 
     unistring text = ls_unistrFromAscii(s);
-    return list->list.push(text);
+    UIListBoxItem item = { text, cxt->widgetColor, cxt->textColor };
+    
+    return list->list.push(item);
 }
 
 inline u32 ls_uiListBoxAddEntry(UIContext *cxt, UIListBox *list, unistring s)
 {
-    return list->list.push(s); 
+    UIListBoxItem item = { s, cxt->widgetColor, cxt->textColor };
+    return list->list.push(item); 
 }
 
 inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
@@ -1400,94 +1366,61 @@ inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
     //NOTETODO: Is this good????
     if(list->selectedIndex == index) { list->selectedIndex = 0; }
     
-    unistring val = list->list[index];
-    ls_unistrFree(&val);
+    UIListBoxItem val = list->list[index];
+    ls_unistrFree(&val.name);
     list->list.remove(index);
 }
 
-void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h)
+void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h, u32 zLayer = 0)
 {
-    s32 strHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-    s32 vertOff = ((h - strHeight) / 2) + 4; //TODO: @FontDescent
-    
-    ls_uiBorderedRect(cxt, xPos, yPos, w, h);
-    
     const s32 arrowBoxWidth = 24;
-    ls_uiPushScissor(cxt, xPos, yPos, w+arrowBoxWidth, h);
-    
-    ls_uiDrawArrow(cxt, xPos + w, yPos, arrowBoxWidth, h, UIA_DOWN);
-    
-    if(LeftClickIn(xPos+w, yPos, arrowBoxWidth, h))
+    if(LeftClickIn(xPos+w, yPos, arrowBoxWidth, h) && ls_uiHasCapture(cxt, 0))
     {
+        cxt->currentFocus = (u64 *)list;
+        cxt->focusWasSetThisFrame = TRUE;
+        
         if(list->isOpen) { list->isOpen = FALSE; }
         else { list->isOpening = TRUE; }
     }
     
-    if(list->list.count)
-    {
-        unistring selected = list->list[list->selectedIndex];
-        ls_uiGlyphString(cxt, xPos+10, yPos + vertOff, selected, cxt->textColor);
-    }
-    
-    ls_uiPopScissor(cxt);
-    
-    s32 maxHeight = (list->list.count)*h;
-    //TODO: Should I try adding another Scissor? Has to be added inside the branches.
     if(list->isOpening)
     {
         list->dtOpen += cxt->dt;
-        
-        s32 height = 0;
-        if(list->dtOpen > 17)  { height = maxHeight*0.10f; }
-        if(list->dtOpen > 34)  { height = maxHeight*0.35f; }
-        if(list->dtOpen > 52)  { height = maxHeight*0.70f; }
         if(list->dtOpen > 70) { list->isOpen = TRUE; list->isOpening = FALSE; list->dtOpen = 0; }
-        
-        if(!list->isOpen)
-        {
-            ls_uiFillRect(cxt, xPos+1, yPos-height, w-2, height, cxt->widgetColor);
-        }
     }
     
-    s32 toBeChanged = 9999;
-    if(list->isOpen)
+    if(ls_uiInFocus(cxt, list))
     {
-        Color bkgColor = cxt->widgetColor;
-        
-        for(u32 i = 0; i < list->list.count; i++)
+        if(list->isOpen)
         {
-            s32 currY = yPos - (h*(i+1));
-            unistring currStr = list->list[i];
-            
-            if(MouseInRect(xPos+1, currY+1, w-2, h-1)) 
-            { 
-                bkgColor = cxt->highliteColor;
-                if(LeftHold)
-                {
-                    bkgColor = cxt->pressedColor;
-                }
+            for(u32 i = 0; i < list->list.count; i++)
+            {
+                s32 currY = yPos - (h*(i+1));
+                UIListBoxItem *currItem = list->list.getPointer(i);
                 
-                if(LeftUp)
-                {
-                    toBeChanged = i;
+                currItem->bkgColor = cxt->widgetColor;
+                if(MouseInRect(xPos+1, currY+1, w-2, h-1)) 
+                { 
+                    currItem->bkgColor = cxt->highliteColor;
+                    if(LeftClick) { 
+                        cxt->mouseCapture = (u64 *)list; 
+                        
+                        list->selectedIndex = i; list->isOpen = FALSE;
+                        if(list->onSelect) { list->onSelect(cxt, list->data); }
+                    }
+                    
+                    //TODO: Lost the ability to hold because of mouse capture.
+                    //      Should be able to regain it if capture is handled deferred?
+                    //if(LeftHold) { currItem->bkgColor = cxt->pressedColor; }
+                    //if(LeftUp) { ls_printf("here\n");  }
                 }
             }
-            
-            ls_uiRect(cxt, xPos+1, currY, w-2, h, bkgColor);
-            ls_uiGlyphString(cxt, xPos+10, yPos + vertOff - (h*(i+1)), currStr, cxt->textColor);
-            
-            bkgColor = cxt->widgetColor;
         }
-        
-        ls_uiBorder(cxt, xPos, yPos-maxHeight, w, maxHeight+1);
     }
     
-    //NOTE: We defer the selectedIndex change to the end of the frame 
-    //      to avoid the for loop blinking wrongly for a frame
-    if(toBeChanged != 9999) { 
-        list->selectedIndex = toBeChanged; list->isOpen = FALSE;
-        if(list->onSelect) { list->onSelect(cxt, list->data); }
-    }
+    RenderCommand command = { UI_RC_LISTBOX, xPos, yPos, w, h };
+    command.listBox = list;
+    ls_uiPushRenderCommand(cxt, command, zLayer);
 }
 
 UISlider ls_uiSliderInit(char32_t *name, s32 maxVal, s32 minVal, f64 currPos, SliderStyle s, Color l, Color r)
@@ -1722,16 +1655,16 @@ void ls_uiRender(UIContext *c)
         for(u32 commandIdx = 0; commandIdx < count; commandIdx++)
         {
             RenderCommand *curr = (RenderCommand *)ls_stackPop(currLayer);
+            s32 xPos       = curr->x;
+            s32 yPos       = curr->y;
+            s32 w          = curr->w;
+            s32 h          = curr->h;
             
             switch(curr->type)
             {
                 case UI_RC_TEXTBOX:
                 {
                     UITextBox *box = curr->textBox;
-                    s32 xPos       = curr->x;
-                    s32 yPos       = curr->y;
-                    s32 w          = curr->w;
-                    s32 h          = curr->h;
                     
                     const s32 horzOff = 4;
                     Color caretColor  = c->textColor;
@@ -1791,7 +1724,55 @@ void ls_uiRender(UIContext *c)
                     
                 } break;
                 
-                
+                case UI_RC_LISTBOX:
+                {
+                    UIListBox *list = curr->listBox;
+                    
+                    s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                    s32 vertOff = ((h - strHeight) / 2) + 4; //TODO: @FontDescent
+                    
+                    ls_uiBorderedRect(c, xPos, yPos, w, h);
+                    
+                    const s32 arrowBoxWidth = 24;
+                    ls_uiDrawArrow(c, xPos + w, yPos, arrowBoxWidth, h, UIA_DOWN);
+                    
+                    if(list->list.count)
+                    {
+                        unistring selected = list->list[list->selectedIndex].name;
+                        ls_uiGlyphString(c, xPos+10, yPos + vertOff, selected, c->textColor);
+                    }
+                    
+                    
+                    s32 maxHeight = (list->list.count)*h;
+                    if(list->isOpening)
+                    {
+                        s32 height = 0;
+                        if(list->dtOpen > 17)  { height = maxHeight*0.10f; }
+                        if(list->dtOpen > 34)  { height = maxHeight*0.35f; }
+                        if(list->dtOpen > 52)  { height = maxHeight*0.70f; }
+                        
+                        if(!list->isOpen)
+                        { ls_uiFillRect(c, xPos+1, yPos-height, w-2, height, c->widgetColor); }
+                    }
+                    
+                    if(list->isOpen)
+                    {
+                        for(u32 i = 0; i < list->list.count; i++)
+                        {
+                            s32 currY = yPos - (h*(i+1));
+                            UIListBoxItem *currItem = list->list.getPointer(i);
+                            
+                            ls_uiRect(c, xPos+1, currY, w-2, h, currItem->bkgColor);
+                            ls_uiGlyphString(c, xPos+10, yPos + vertOff - (h*(i+1)),
+                                             currItem->name, currItem->textColor);
+                            
+                        }
+                        
+                        ls_uiBorder(c, xPos, yPos-maxHeight, w, maxHeight+1);
+                    }
+                    
+                    
+                } break;
                 
                 default: { AssertMsg(FALSE, "Unhandled Render Command Type\n"); } break;
             }
