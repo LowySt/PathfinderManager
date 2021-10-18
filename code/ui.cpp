@@ -183,6 +183,9 @@ struct RenderCommand
         UISlider  *slide;
         UIMenu    *menu;
     };
+    
+    Color bkgColor;
+    Color textColor;
 };
 
 
@@ -925,6 +928,7 @@ void ls_uiTextBoxSet(UIContext *cxt, UITextBox *box, unistring s)
 //TODO: Text Alignment
 //TODO: Inserting at the beggining of the view pushes the view forward, which creates a strange effect.
 //TODO: Delete/Print/Backspace don't respect selection
+//TODO: CaretPos: 0, String selected, delete everything, gets fucked.
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(LeftClickIn(xPos, yPos, w, h) && (box->isReadonly == FALSE) && ls_uiHasCapture(cxt, 0)) {
@@ -932,10 +936,6 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         cxt->focusWasSetThisFrame = TRUE;
         box->isCaretOn = TRUE; 
     }
-    
-    s32 strPixelHeight = ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-    
-    Color caretColor = cxt->textColor;
     
     const s32 horzOff   = 4;
     s32 scissorWidth    = w - horzOff;
@@ -1147,7 +1147,7 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         { box->postInput(cxt, box->data); }
     }
     
-    RenderCommand command = {UI_RC_TEXTBOX, xPos, yPos, w, h, box};
+    RenderCommand command = {UI_RC_TEXTBOX, xPos, yPos, w, h, box, cxt->widgetColor, cxt->textColor};
     ls_uiPushRenderCommand(cxt, command, 0);
     
     ls_uiPopScissor(cxt);
@@ -1570,7 +1570,7 @@ void ls_uiMenuDefaultOnClick(UIContext *cxt, void *data)
     
     UIMenu *menu  = pass->menu;
     
-    menu->isOpen  = TRUE;
+    menu->isOpen  = !menu->isOpen;
     menu->openIdx = pass->idx;
     
     return;
@@ -1655,10 +1655,13 @@ void ls_uiRender(UIContext *c)
         for(u32 commandIdx = 0; commandIdx < count; commandIdx++)
         {
             RenderCommand *curr = (RenderCommand *)ls_stackPop(currLayer);
-            s32 xPos       = curr->x;
-            s32 yPos       = curr->y;
-            s32 w          = curr->w;
-            s32 h          = curr->h;
+            s32 xPos        = curr->x;
+            s32 yPos        = curr->y;
+            s32 w           = curr->w;
+            s32 h           = curr->h;
+            
+            Color bkgColor  = curr->bkgColor;
+            Color textColor = curr->textColor;
             
             switch(curr->type)
             {
@@ -1666,35 +1669,21 @@ void ls_uiRender(UIContext *c)
                 {
                     UITextBox *box = curr->textBox;
                     
+                    Color caretColor = textColor;
                     const s32 horzOff = 4;
-                    Color caretColor  = c->textColor;
                     
                     //TODO: Make the font selection more of a global thing??
                     s32 strPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
                     
-                    ls_uiBorderedRect(c, xPos, yPos, w, h);
+                    ls_uiBorderedRect(c, xPos, yPos, w, h, bkgColor);
                     
                     s32 vertOff = ((h - strPixelHeight) / 2) + 5; //TODO: @FontDescent
                     u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
                     u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
                     unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
                     
-                    //NOTE: Draw the Caret
-                    if(box->isCaretOn && c->currentFocus == (u64 *)box)
-                    {
-                        UIGlyph *caretGlyph = &c->currFont->glyph['|'];
-                        
-                        u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
-                        unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
-                        
-                        u32 stringLen = ls_uiGlyphStringLen(c, tmp);
-                        
-                        const s32 randffset = 4; //TODO: Maybe try to remove this?
-                        ls_uiGlyph(c, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
-                    }
-                    
                     //NOTE: Finally draw the entire string.
-                    ls_uiGlyphString(c, xPos + horzOff, yPos + vertOff, viewString, c->textColor);
+                    ls_uiGlyphString(c, xPos + horzOff, yPos + vertOff, viewString, textColor);
                     
                     if(box->isSelecting)
                     {
@@ -1720,6 +1709,20 @@ void ls_uiRender(UIContext *c)
                         
                         if(box->caretIndex == box->selectBeginIdx)
                         { caretColor = c->invTextColor; }
+                    }
+                    
+                    //NOTE: Draw the Caret
+                    if(box->isCaretOn && c->currentFocus == (u64 *)box)
+                    {
+                        UIGlyph *caretGlyph = &c->currFont->glyph['|'];
+                        
+                        u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
+                        unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
+                        
+                        u32 stringLen = ls_uiGlyphStringLen(c, tmp);
+                        
+                        const s32 randffset = 4; //TODO: Maybe try to remove this?
+                        ls_uiGlyph(c, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
                     }
                     
                 } break;
