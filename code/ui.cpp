@@ -928,7 +928,6 @@ void ls_uiTextBoxSet(UIContext *cxt, UITextBox *box, unistring s)
 //TODO: Text Alignment
 //TODO: Inserting at the beggining of the view pushes the view forward, which creates a strange effect.
 //TODO: Delete/Print/Backspace don't respect selection
-//TODO: CaretPos: 0, String selected, delete everything, gets fucked.
 void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(LeftClickIn(xPos, yPos, w, h) && (box->isReadonly == FALSE) && ls_uiHasCapture(cxt, 0)) {
@@ -950,6 +949,26 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         //NOTE: Draw characters. (box->maxLen == 0 means there's no max len)
         if(HasPrintableKey() && (box->text.len < box->maxLen || box->maxLen == 0))
         {
+            if(box->isSelecting) {
+                s32 insertIdx = box->selectBeginIdx;
+                s32 selectRange = box->selectEndIdx - box->selectBeginIdx;
+                s32 endIdx = box->selectEndIdx-1;
+                
+                if(box->caretIndex > insertIdx) { box->caretIndex -= selectRange; }
+                
+                if(ls_uiGlyphStringLen(cxt, box->text) <= viewAddWidth)
+                { box->viewEndIdx -= selectRange; }
+                
+                ls_unistrRmSubstr(&box->text, insertIdx, endIdx);
+                
+                //NOTE: Because te view region gets invalidated by scrolled replacements
+                //      We need to re-adjust it!
+                s32 diff = (s32)box->text.len - (s32)box->viewEndIdx;
+                if(diff < 0) { box->viewEndIdx += diff; box->viewBeginIdx += diff; }
+                
+                box->isSelecting = FALSE;
+            }
+            
             if(box->caretIndex == box->text.len) { ls_unistrAppendChar(&box->text, GetPrintableKey()); }
             else { ls_unistrInsertChar(&box->text, GetPrintableKey(), box->caretIndex); }
             
@@ -958,10 +977,14 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             
             if(ls_uiGlyphStringLen(cxt, box->text) > viewAddWidth)
             { box->viewBeginIdx += 1; }
-            
         }
         if(KeyPressOrRepeat(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) 
         {
+            if(box->isSelecting) {
+                AssertMsg(FALSE, "Not implemented yet\n");
+            }
+            
+            
             if(box->caretIndex == box->text.len) { ls_unistrTrimRight(&box->text, 1); }
             else { ls_unistrRmIdx(&box->text, box->caretIndex-1); }
             
@@ -971,10 +994,17 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         }
         if(KeyPressOrRepeat(keyMap::Delete) && box->text.len > 0 && box->caretIndex < box->text.len)
         {
+            if(box->isSelecting) {
+                AssertMsg(FALSE, "Not implemented yet\n");
+            }
+            
             if(box->caretIndex == box->text.len-1) { ls_unistrTrimRight(&box->text, 1); }
             else { ls_unistrRmIdx(&box->text, box->caretIndex); }
             
             if(box->text.len < box->viewEndIdx) { box->viewEndIdx -= 1; }
+            
+            
+            if(box->text.len == 0 && box->isSelecting) { box->isSelecting = FALSE; }
         }
         
         if(KeyPressOrRepeat(keyMap::LArrow) && box->caretIndex > 0)
@@ -1114,6 +1144,11 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::V))
         {
+            if(box->isSelecting)
+            {
+                AssertMsg(FALSE, "Not implemented yet");
+            }
+            
             u32 buff[128] = {};
             u32 copiedLen = GetClipboard(buff, 128);
             
@@ -1136,6 +1171,11 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::C))
         { 
+            if(box->isSelecting)
+            {
+                AssertMsg(FALSE, "Not implemented yet");
+            }
+            
             SetClipboard(box->text.data, box->text.len); 
         }
         
