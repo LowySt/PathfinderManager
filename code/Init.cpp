@@ -278,6 +278,8 @@ void SaveEncounterOnClick(UIContext *cxt, void *data)
 void RemoveEncounterOnClick(UIContext *cxt, void *data)
 {
     u32 idx = State.Init->EncounterSel.selectedIndex;
+    if(idx == 0) { return; }
+    
     u32 lastIdx = State.Init->EncounterSel.list.count-1;
     
     Encounter *selected = State.encounters.Enc + (idx-1);

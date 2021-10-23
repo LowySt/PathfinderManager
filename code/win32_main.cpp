@@ -582,7 +582,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         DrawInitTab(uiContext);
         
-#if 1//_DEBUG
+#if 0//_DEBUG
         char buff[32] = {};
         ls_itoa_t(lastFrameTime, buff, 32);
         ls_uiGlyphString(uiContext, 1240, 760, ls_unistrFromAscii(buff), RGBg(0xEE));
@@ -635,17 +635,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         GetSystemTime(&endT);
         
-        //TODO:NOTE: DEBUG TEMPORARY
-        if(KeyPress(keyMap::F2))
-        { 
-            SaveState(); 
-        }
         
         State.timePassed += (endT.wSecond - beginT.wSecond);
         if(State.timePassed >= 30)
         {
             State.timePassed = 0;
-            //TODO: Reinstate this. SaveState();
+            SaveState();
         }
         
         beginT = endT;
