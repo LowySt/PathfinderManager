@@ -1481,10 +1481,13 @@ UISlider ls_uiSliderInit(char32_t *name, s32 maxVal, s32 minVal, f64 currPos, Sl
 
 void ls_uiSliderChangeValueBy(UIContext *cxt, UISlider *f, s32 valueDiff)
 {
-    s32 newValue = ls_mathClamp(f->currValue + valueDiff, f->maxValue, f->minValue);
+    s32 newValue = f->currValue + valueDiff;
+    
+    if(newValue <= f->minValue) { newValue = f->minValue; }
+    if(newValue >= f->maxValue) { newValue = f->maxValue; }
     
     s32 range = (f->maxValue - f->minValue);
-    f->currPos = (f32)(newValue - f->minValue) / (f32)range;
+    f->currPos = (f64)(newValue - f->minValue) / (f64)range;
     
     return;
 }
