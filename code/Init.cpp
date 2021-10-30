@@ -165,11 +165,15 @@ void CustomMobLifeField(UIContext *cxt, void *data)
         
         ls_uiSliderChangeValueBy(cxt, &order->field, diff);
         
-        if(ls_uiSliderGetValue(cxt, &order->field) == 0)
+        s32 currVal = ls_uiSliderGetValue(cxt, &order->field);
+        if(currVal == 0)
         { order->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), cxt->widgetColor); }
         
-        else if(ls_uiSliderGetValue(cxt, &order->field) < 0)
+        else if(currVal < 0)
         { order->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor); }
+        
+        else if(currVal > 0)
+        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), cxt->widgetColor); }
         
         ls_uiTextBoxClear(cxt, f);
         ls_uiTextBoxSet(cxt, f, h->previous);
@@ -1380,7 +1384,21 @@ void DrawInitField(UIContext *cxt, InitField *F, s32 baseX, s32 y)
 
 void DrawOrderField(UIContext *cxt, Order *f, s32 xPos, s32 yPos)
 {
-    ls_uiSlider(cxt, &f->field, xPos + 50, yPos, 120, 20);
+    b32 done = ls_uiSlider(cxt, &f->field, xPos + 50, yPos, 120, 20);
+    if(done)
+    {
+        s32 currVal = ls_uiSliderGetValue(cxt, &f->field);
+        
+        if(currVal == 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), cxt->widgetColor); }
+        
+        else if(currVal < 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor); }
+        
+        else if(currVal > 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), cxt->widgetColor); }
+    }
+    
     ls_uiTextBox(cxt, &f->pos, xPos + 25, yPos, 25, 20);
     ls_uiButton(cxt, &f->remove, xPos, yPos, 20, 20);
 }

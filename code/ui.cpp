@@ -1496,7 +1496,7 @@ s32 ls_uiSliderGetValue(UIContext *cxt, UISlider *f)
 
 //TODO: The things are rendered in a logical order, but that makes the function's flow very annoying
 //      going in and out of if blocks to check hot/held and style.
-void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32 h)
+b32 ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(LeftUp) { slider->isHeld = FALSE; }
     
@@ -1506,6 +1506,8 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     
     if(slider->style == SL_LINE) 
     {
+        AssertMsg(FALSE, "Slider style line is not implemented\n");
+#if 0
         ls_uiBorderedRect(cxt, xPos, yPos, w, h);
         
         s32 selRadius = 50;
@@ -1515,6 +1517,7 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
         ls_uiCircleFloat(cxt, xPos+400, yPos+(h/2), selRadius);
         
         ls_uiPopScissor(cxt);
+#endif
     }
     else if(slider->style == SL_BOX)
     {
@@ -1594,6 +1597,9 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     ls_uiPopScissor(cxt);
     
     
+    //TODO:TEST
+    b32 hasAnsweredToInput = FALSE;
+    
     if(slider->isHeld) { 
         s32 deltaX = (UserInput.Mouse.prevPos.x - UserInput.Mouse.currPos.x);//*cxt->dt;
         
@@ -1602,9 +1608,13 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
         slider->currPos -= fractionMove;
         
         slider->currPos = ls_mathClamp(slider->currPos, 1.0, 0.0);
+        
+        hasAnsweredToInput = TRUE;
     }
     
     slider->isHot = FALSE;
+    
+    return hasAnsweredToInput;
 }
 
 struct __UImenuDataPass { UIMenu *menu; s32 idx; };
