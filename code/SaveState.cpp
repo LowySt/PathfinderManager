@@ -89,7 +89,7 @@ void SaveState()
         
         ls_bufferAddDWord(buf, f->field.maxValue);
         ls_bufferAddDWord(buf, f->field.minValue);
-        ls_bufferAddDWord(buf, f->field.currPos);
+        ls_bufferAddFloat(buf, f->field.currPos);
         
         ls_bufferAddDWord(buf, f->ID);
     }
@@ -267,9 +267,21 @@ b32 LoadState(UIContext *cxt)
         
         f->field.maxValue = ls_bufferReadDWord(buf);
         f->field.minValue = ls_bufferReadDWord(buf);
-        f->field.currPos  = ls_bufferReadDWord(buf);
+        f->field.currPos  = ls_bufferReadFloat(buf);
         
         f->ID             = ls_bufferReadDWord(buf);
+        
+        
+        s32 currVal = ls_uiSliderGetValue(cxt, &f->field);
+        
+        if(currVal == 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), cxt->widgetColor); }
+        
+        else if(currVal < 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor); }
+        
+        else if(currVal > 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), cxt->widgetColor); }
     }
     
     Page->turnsInRound = ls_bufferReadDWord(buf);
