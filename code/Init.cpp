@@ -165,6 +165,12 @@ void CustomMobLifeField(UIContext *cxt, void *data)
         
         ls_uiSliderChangeValueBy(cxt, &order->field, diff);
         
+        if(ls_uiSliderGetValue(cxt, &order->field) == 0)
+        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), cxt->widgetColor); }
+        
+        else if(ls_uiSliderGetValue(cxt, &order->field) < 0)
+        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor); }
+        
         ls_uiTextBoxClear(cxt, f);
         ls_uiTextBoxSet(cxt, f, h->previous);
         
@@ -173,6 +179,123 @@ void CustomMobLifeField(UIContext *cxt, void *data)
     }
 }
 
+void ChangeOrder(UIContext *cxt, void *data)
+{
+    OrderHandler *h = (OrderHandler *)data;
+    UITextBox *f = h->parent;
+    
+    AssertMsg(State.inBattle, "How did we even get here?\n");
+    
+    if(LeftClick && !h->isEditing)
+    { 
+        ls_unistrSet(&h->previous, f->text);
+        ls_uiTextBoxClear(cxt, f);
+        
+        h->isEditing = TRUE;
+    }
+    
+    
+    if(h->isEditing && KeyPress(keyMap::Enter))
+    {
+        InitPage *Init = State.Init;
+        
+        s32 visibleMobs   = Init->Mobs.selectedIndex;
+        s32 visibleAllies = Init->Allies.selectedIndex;
+        s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Init->orderAdjust;
+        
+        Order *order = h->order;
+        
+        s32 newPosition = ls_unistrToInt(f->text);
+        s32 oldPosition = ls_unistrToInt(h->previous);
+        
+        if((newPosition >= visibleOrder) || (newPosition == oldPosition) || (newPosition < 0))
+        {
+            ls_uiTextBoxClear(cxt, f);
+            ls_uiTextBoxSet(cxt, f, h->previous);
+            
+            h->isEditing = FALSE;
+            ls_uiFocusChange(cxt, NULL);
+            return;
+        }
+        
+        
+        //-------------------------------
+        //TODO: Horrible temp saving...
+        //
+        Order *oldOrder = &Init->OrderFields[oldPosition];
+        
+        unistring oldName = {}; 
+        ls_unistrSet(&oldName, oldOrder->field.text);
+        
+        s32 oldID = oldOrder->ID;
+        
+        s32 slideCurr = oldOrder->field.currValue;
+        s32 slideMax = oldOrder->field.maxValue;
+        s32 slideMin = oldOrder->field.minValue;
+        f64 slidePos = oldOrder->field.currPos;
+        //
+        //TODO: Horrible temp saving...
+        //-------------------------------
+        
+        //TODO: Make branchless by getting the diff (new-old) and obtaining either -1 or +1 for the j offset.
+        //      Problem with <= / >= newPosition???
+        if(newPosition > oldPosition)
+        {
+            for(u32 j = oldPosition; j <= newPosition; j++)
+            {
+                UISlider *curr = &Init->OrderFields[j].field;
+                UISlider *next = &Init->OrderFields[j+1].field;
+                
+                ls_unistrSet(&curr->text, next->text);
+                Init->OrderFields[j].ID = Init->OrderFields[j+1].ID;
+                
+                curr->currValue = next->currValue;
+                curr->maxValue  = next->maxValue;
+                curr->minValue  = next->minValue;
+                curr->currPos   = next->currPos;
+            }
+        }
+        
+        if(newPosition < oldPosition)
+        {
+            for(u32 j = oldPosition; j > newPosition; j--)
+            {
+                UISlider *curr = &Init->OrderFields[j].field;
+                UISlider *prev = &Init->OrderFields[j-1].field;
+                
+                ls_unistrSet(&curr->text, prev->text);
+                Init->OrderFields[j].ID = Init->OrderFields[j-1].ID;
+                
+                curr->currValue = prev->currValue;
+                curr->maxValue  = prev->maxValue;
+                curr->minValue  = prev->minValue;
+                curr->currPos   = prev->currPos;
+            }
+        }
+        
+        ls_unistrSet(&Init->OrderFields[newPosition].field.text, oldName);
+        
+        Init->OrderFields[newPosition].ID = oldID;
+        Init->OrderFields[newPosition].field.currValue = slideCurr;
+        Init->OrderFields[newPosition].field.maxValue  = slideMax;
+        Init->OrderFields[newPosition].field.minValue  = slideMin;
+        Init->OrderFields[newPosition].field.currPos   = slidePos;
+        
+        //NOTE: Reset the position to actual ordinal
+        ls_uiTextBoxClear(cxt, f);
+        ls_uiTextBoxSet(cxt, f, h->previous);
+        
+        //NOTE: Update "Current" TextBox to reflect change if there was any
+        //NOTE:TODO: Do I actually like this? Do we want this?
+        if(Init->currIdx == newPosition)
+        { ls_uiTextBoxSet(cxt, &Init->Current, oldName); }
+        
+        ls_unistrFree(&oldName); //TODO: yuck... look upward at horrible temp saving.
+        
+        h->isEditing = FALSE;
+        ls_uiFocusChange(cxt, NULL);
+    }
+}
 
 void ResetOnClick(UIContext *, void *);
 void OnEncounterSelect(UIContext *cxt, void *data)
@@ -493,6 +616,9 @@ void SetOnClick(UIContext *cxt, void *data)
         Page->AllyFields[i].editFields[IF_IDX_FINAL].isReadonly = TRUE;
     }
     
+    for(u32 i = 0; i < ORDER_NUM; i++)
+    { Page->OrderFields[i].pos.isReadonly = FALSE; }
+    
     Page->turnsInRound = visibleOrder;
     
     State.inBattle = TRUE;
@@ -558,6 +684,8 @@ void ResetOnClick(UIContext *cxt, void *data)
     for(u32 i = 0; i < ORDER_NUM; i++)
     {
         Order *f = Page->OrderFields + i;
+        
+        f->pos.isReadonly = TRUE;
         
         ls_unistrClear(&f->field.text);
         f->field.maxValue = 100;
@@ -1069,12 +1197,19 @@ void SetInitTab(UIContext *cxt)
         Order *f = Page->OrderFields + i;
         
         Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), cxt->widgetColor);
-        Color rColor      = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor);
+        Color rColor      = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), cxt->widgetColor);
         f->field          = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
+        
+        OrderHandler *orderHandler = (OrderHandler *)ls_alloc(sizeof(OrderHandler));
+        orderHandler->parent = &f->pos;
+        orderHandler->order  = f;
         
         f->pos.text       = ls_unistrFromInt(i);
         f->pos.viewEndIdx = f->pos.text.len;
         f->pos.maxLen     = 2;
+        f->pos.preInput   = ChangeOrder;
+        f->pos.data       = orderHandler;
+        f->pos.isReadonly = TRUE;
         
         f->remove.style   = UIBUTTON_TEXT;
         f->remove.name    = ls_unistrFromUTF32(U"X");

@@ -71,6 +71,16 @@ struct MobLifeHandler
     b32 isEditing;
 };
 
+struct Order;
+struct OrderHandler
+{
+    Order     *order;
+    UITextBox *parent;
+    
+    unistring  previous;
+    b32        isEditing;
+};
+
 struct CustomFieldTextHandler
 {
     InitField *parent;

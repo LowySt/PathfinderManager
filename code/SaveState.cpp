@@ -263,6 +263,8 @@ b32 LoadState(UIContext *cxt)
         
         ls_bufferReadIntoUnistring(buf, &f->field.text);
         
+        f->pos.isReadonly = FALSE;
+        
         f->field.maxValue = ls_bufferReadDWord(buf);
         f->field.minValue = ls_bufferReadDWord(buf);
         f->field.currPos  = ls_bufferReadDWord(buf);

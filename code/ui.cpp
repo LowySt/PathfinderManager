@@ -1489,6 +1489,11 @@ void ls_uiSliderChangeValueBy(UIContext *cxt, UISlider *f, s32 valueDiff)
     return;
 }
 
+s32 ls_uiSliderGetValue(UIContext *cxt, UISlider *f)
+{
+    return ((f->maxValue - f->minValue) * f->currPos) + f->minValue;
+}
+
 //TODO: The things are rendered in a logical order, but that makes the function's flow very annoying
 //      going in and out of if blocks to check hot/held and style.
 void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32 h)
@@ -1496,7 +1501,8 @@ void ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s3
     if(LeftUp) { slider->isHeld = FALSE; }
     
     //NOTE: Box Slider Branchless Opacity Check
-    u8 opacity = 0xEE - (0xB0*slider->isHeld);
+    //u8 opacity = 0xEE - (0xB0*slider->isHeld);
+    u8 opacity = 0xC0 - (0xB0*slider->isHeld);
     
     if(slider->style == SL_LINE) 
     {
