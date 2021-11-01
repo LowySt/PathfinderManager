@@ -1419,7 +1419,8 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
         cxt->focusWasSetThisFrame = TRUE;
         
         if(list->isOpen) { list->isOpen = FALSE; }
-        else { list->isOpening = TRUE; }
+        //else { list->isOpening = TRUE; }
+        else { list->isOpen = TRUE; }
     }
     
     if(list->isOpening)
