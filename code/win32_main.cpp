@@ -150,6 +150,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             switch(w)
             { 
                 case VK_F2:      KeySetAndRepeat(keyMap::F2, rep);        break;
+                case VK_F12:     KeySetAndRepeat(keyMap::F12, rep);       break;
                 
                 case VK_DOWN:    KeySetAndRepeat(keyMap::DArrow, rep);    break;
                 case VK_UP:      KeySetAndRepeat(keyMap::UArrow, rep);    break;
@@ -177,6 +178,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
             switch(w)
             { 
                 case VK_F2:      KeyUnset(keyMap::F2);        break;
+                case VK_F12:     KeyUnset(keyMap::F12);       break;
                 
                 case VK_DOWN:    KeyUnset(keyMap::DArrow);    break;
                 case VK_UP:      KeyUnset(keyMap::UArrow);    break;
@@ -444,6 +446,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
     
+    //------------------------------------------------------
+    //NOTE: This shit is necessary to request millisecond-precision sleeps.
+    //      An equivalent call to timeEndPeriod should happen at the end. It technically
+    //      Doesn't in this program, because we use it every frame, so we don't re-call it.
+    //      But I'm pointing it out for possible microsoft weirdness...
+    TIMECAPS tc = {};
+    MMRESULT res = timeGetDevCaps(&tc, sizeof(TIMECAPS));
+    res = timeBeginPeriod(tc.wPeriodMin);
+    //------------------------------------------------------
+    
     windows_initRegionTimer(RT_MILLISECOND);
     
 #if 0 //RDRAND was introduced in IvyBridge (2012). It may be too new to put in.
@@ -536,6 +548,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     RegionTimer frameTime = {};
     b32 Running = TRUE;
     u32 lastFrameTime = 0;
+    b32 showDebug = FALSE;
     
     b32 isStartup = TRUE;
     while(Running)
@@ -582,11 +595,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         DrawInitTab(uiContext);
         
-#if 0//_DEBUG
-        char buff[32] = {};
-        ls_itoa_t(lastFrameTime, buff, 32);
-        ls_uiGlyphString(uiContext, 1240, 760, ls_unistrFromAscii(buff), RGBg(0xEE));
-#endif
+        if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
+        
+        if(showDebug)
+        {
+            char buff[32] = {};
+            ls_itoa_t(lastFrameTime, buff, 32);
+            ls_uiGlyphString(uiContext, 1240, 760, ls_unistrFromAscii(buff), RGBg(0xEE));
+        }
         
         //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
         if(LeftClick && !uiContext->focusWasSetThisFrame)
@@ -646,9 +662,22 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         beginT = endT;
         
         RegionTimerEnd(frameTime);
-        uiContext->dt = RegionTimerGet(frameTime);
+        u32 frameTimeMs = RegionTimerGet(frameTime);
+        
+        //NOTE: 30fps lock
+        if(frameTimeMs < 32)
+        {
+            u32 deltaTimeInMs = 32 - frameTimeMs;
+            Sleep(deltaTimeInMs);
+        }
+        
+        RegionTimerEnd(frameTime);
+        uiContext->dt = RegionTimerGet(frameTime); //frameTimeMs;
         lastFrameTime = uiContext->dt;
+        
     }
     
+    //NOTE: Technically useless, just reminding myself of this function's existance
+    res = timeEndPeriod(tc.wPeriodMin);
     return 0;
 }
