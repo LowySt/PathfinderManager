@@ -58,7 +58,7 @@ struct UIContext;
 
 enum UIButtonStyle { UIBUTTON_TEXT, UIBUTTON_TEXT_NOBORDER, UIBUTTON_BMP };
 
-typedef void(*ButtonProc)(UIContext *cxt, void *data);
+typedef b32(*ButtonProc)(UIContext *cxt, void *data);
 struct UIButton
 {
     UIButtonStyle style;
@@ -77,7 +77,7 @@ struct UIButton
 };
 
 
-typedef void(*TextBoxProc)(UIContext *cxt, void *data);
+typedef b32(*TextBoxProc)(UIContext *cxt, void *data);
 struct UITextBox
 {
     unistring text;
@@ -156,7 +156,7 @@ struct UIMenu
     Array<UIButton> items;
     
     UIMenu *sub;            //NOTE: There is 1 sub for every item
-    u32     maxSub; 
+    u32     maxSub;
 };
 
 enum RenderCommandType
@@ -827,8 +827,10 @@ s32 ls_uiSelectFontByFontSize(UIContext *cxt, UIFontSize fontSize)
 //     I don't think the menu should deal with things like this [It shouldn't hold the close button first,
 //     and it also shouldn't use 'normal' buttons for its drop down sub-menus, so... basically @MenuIsShit
 //     and I wanna redo it completely.
-void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s32 h)
+b32 ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s32 h)
 {
+    b32 inputUse = FALSE;
+    
     Color bkgColor = cxt->widgetColor;
     
     if(button->style == UIBUTTON_TEXT_NOBORDER) { bkgColor = cxt->backgroundColor; }
@@ -842,13 +844,13 @@ void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s3
         
         if(button->onClick && LeftClick)// && noCapture)
         {
-            button->onClick(cxt, button->data);
+            inputUse |= button->onClick(cxt, button->data);
         }
         if(LeftHold)//  && noCapture)
         {
             button->isHeld = TRUE;
             bkgColor = cxt->pressedColor;
-            if(button->onHold) { button->onHold(cxt, button->data); }
+            if(button->onHold) { inputUse |= button->onHold(cxt, button->data); }
         }
     }
     
@@ -857,6 +859,8 @@ void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s3
     command.bkgColor      = bkgColor;
     command.textColor     = cxt->textColor;
     ls_uiPushRenderCommand(cxt, command, 0);
+    
+    return inputUse;
 }
 
 void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
@@ -899,8 +903,10 @@ void ls_uiTextBoxSet(UIContext *cxt, UITextBox *box, unistring s)
 
 //TODO: Text Alignment
 //TODO: Delete/Backspace don't respect selection
-void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
+b32 ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 h)
 {
+    b32 inputUse = FALSE;
+    
     if(LeftClickIn(xPos, yPos, w, h) && (box->isReadonly == FALSE) && ls_uiHasCapture(cxt, 0)) {
         cxt->currentFocus = (u64 *)box;
         cxt->focusWasSetThisFrame = TRUE;
@@ -910,12 +916,12 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
     const s32 horzOff   = 4;
     s32 scissorWidth    = w - horzOff;
     s32 viewAddWidth    = scissorWidth - horzOff;
-    ls_uiPushScissor(cxt, xPos+4, yPos, scissorWidth, h);
+    //ls_uiPushScissor(cxt, xPos+4, yPos, scissorWidth, h);
     
     if(ls_uiInFocus(cxt, box))
     {
         if(box->preInput)
-        { box->preInput(cxt, box->data); }
+        { inputUse |= box->preInput(cxt, box->data); }
         
         //NOTE: Draw characters. (box->maxLen == 0 means there's no max len)
         if(HasPrintableKey() && (box->text.len < box->maxLen || box->maxLen == 0))
@@ -948,6 +954,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             
             if(ls_uiGlyphStringLen(cxt, box->text) > viewAddWidth)
             { box->viewBeginIdx += 1; }
+            
+            inputUse = TRUE;
         }
         if(KeyPressOrRepeat(keyMap::Backspace) && box->text.len > 0 && box->caretIndex > 0) 
         {
@@ -962,6 +970,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             box->caretIndex -= 1;
             box->viewEndIdx -= 1;
             if(box->viewBeginIdx != 0) { box->viewBeginIdx -= 1; }
+            
+            inputUse = TRUE;
         }
         if(KeyPressOrRepeat(keyMap::Delete) && box->text.len > 0 && box->caretIndex < box->text.len)
         {
@@ -976,6 +986,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             
             
             if(box->text.len == 0 && box->isSelecting) { box->isSelecting = FALSE; }
+            
+            inputUse = TRUE;
         }
         
         if(KeyPressOrRepeat(keyMap::LArrow) && box->caretIndex > 0)
@@ -1138,6 +1150,8 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
             else { ls_unistrInsertBuffer(&box->text, buff, realCopyLen, box->caretIndex); }
             
             box->caretIndex += copiedLen;
+            
+            inputUse = TRUE;
         }
         
         if(KeyHeld(keyMap::Control) && KeyPress(keyMap::C))
@@ -1155,13 +1169,13 @@ void ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32
         
         
         if(box->postInput) 
-        { box->postInput(cxt, box->data); }
+        { inputUse |= box->postInput(cxt, box->data); }
     }
     
     RenderCommand command = {UI_RC_TEXTBOX, xPos, yPos, w, h, box, cxt->widgetColor, cxt->textColor};
     ls_uiPushRenderCommand(cxt, command, 0);
     
-    ls_uiPopScissor(cxt);
+    return inputUse;
 }
 
 
@@ -1382,8 +1396,10 @@ inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
     list->list.remove(index);
 }
 
-void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h, u32 zLayer = 0)
+b32 ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h, u32 zLayer = 0)
 {
+    b32 inputUse = FALSE;
+    
     const s32 arrowBoxWidth = 24;
     if(LeftClickIn(xPos+w, yPos, arrowBoxWidth, h) && ls_uiHasCapture(cxt, 0))
     {
@@ -1418,6 +1434,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
                         cxt->mouseCapture = (u64 *)list; 
                         
                         list->selectedIndex = i; list->isOpen = FALSE;
+                        inputUse = TRUE;
                         if(list->onSelect) { list->onSelect(cxt, list->data); }
                     }
                     
@@ -1433,6 +1450,8 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
     RenderCommand command = { UI_RC_LISTBOX, xPos, yPos, w, h };
     command.listBox = list;
     ls_uiPushRenderCommand(cxt, command, zLayer);
+    
+    return inputUse;
 }
 
 UISlider ls_uiSliderInit(char32_t *name, s32 maxVal, s32 minVal, f64 currPos, SliderStyle s, Color l, Color r)
@@ -1515,8 +1534,10 @@ b32 ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32
 struct __UImenuDataPass { UIMenu *menu; s32 idx; };
 
 
-void ls_uiMenuDefaultOnClick(UIContext *cxt, void *data)
+b32 ls_uiMenuDefaultOnClick(UIContext *cxt, void *data)
 {
+    b32 inputUse = FALSE;
+    
     __UImenuDataPass *pass = (__UImenuDataPass *)data;
     
     UIMenu *menu  = pass->menu;
@@ -1524,7 +1545,7 @@ void ls_uiMenuDefaultOnClick(UIContext *cxt, void *data)
     menu->isOpen  = !menu->isOpen;
     menu->openIdx = pass->idx;
     
-    return;
+    return inputUse;
 }
 
 void ls_uiMenuAddItem(UIContext *cxt, UIMenu *menu, UIButton b)
@@ -1547,8 +1568,10 @@ void ls_uiMenuAddSub(UIContext *cxt, UIMenu *menu, UIMenu sub, s32 idx)
 { menu->sub[idx] = sub; }
 
 //TODO: @MenuIsShit it shouldn't use buttons like this, and shouldn't hold the close button hostage.
-void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
+b32 ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
 {
+    b32 inputUse = FALSE;
+    
     if(LeftClickIn(x, y, w, h)) {
         cxt->currentFocus = (u64 *)menu;
         cxt->focusWasSetThisFrame = TRUE;
@@ -1589,10 +1612,12 @@ void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
         for(u32 i = 0; i < openSub->items.count; i++)
         {
             UIButton *currItem = &openSub->items[i];
-            ls_uiButton(cxt, currItem, 100, yPos, 100, 20);
+            inputUse = ls_uiButton(cxt, currItem, 100, yPos, 100, 20);
             yPos -= 21;
         }
     }
+    
+    return inputUse;
 }
 
 void ls_uiRender(UIContext *c)
@@ -1739,39 +1764,27 @@ void ls_uiRender(UIContext *c)
                     {
                         ls_uiBorderedRect(c, xPos, yPos, w, h, bkgColor);
                         
-                        ls_uiPushScissor(c, xPos+2, yPos+2, w-4, h-4);
-                        
                         s32 strWidth = ls_uiGlyphStringLen(c, button->name);
                         s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
                         s32 strHeight = c->currFont->pixelHeight;
                         s32 yOff      = strHeight*0.25; //TODO: @FontDescent
                         
                         ls_uiGlyphString(c, xPos+xOff, yPos+yOff, button->name, c->textColor);
-                        
-                        ls_uiPopScissor(c);
                     }
                     else if(button->style == UIBUTTON_TEXT_NOBORDER)
                     {
                         ls_uiRect(c, xPos, yPos, w, h, bkgColor);
                         
-                        ls_uiPushScissor(c, xPos, yPos, w, h);
-                        
                         s32 strWidth = ls_uiGlyphStringLen(c, button->name);
                         s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
                         s32 strHeight = c->currFont->pixelHeight;
                         s32 yOff      = strHeight*0.25; //TODO: @FontDescent
                         
                         ls_uiGlyphString(c, xPos+xOff, yPos+yOff, button->name, c->textColor);
-                        
-                        ls_uiPopScissor(c);
                     }
                     else if(button->style == UIBUTTON_BMP)
                     {
-                        ls_uiPushScissor(c, xPos, yPos, w, h);
-                        
                         ls_uiBitmap(c, xPos, yPos, (u32 *)button->bmpData, button->bmpW, button->bmpH);
-                        
-                        ls_uiPopScissor(c);
                     }
                     else { AssertMsg(FALSE, "Unhandled button style"); }
                     
@@ -1791,16 +1804,12 @@ void ls_uiRender(UIContext *c)
                         
                         ls_uiBorder(c, xPos, yPos, w, h);
                         
-                        ls_uiPushScissor(c, xPos-4, yPos-3, w+8, h+6);
-                        
                         s32 slidePos = w*slider->currPos;
                         
                         ls_uiFillRect(c, xPos+1, yPos+1, slidePos, h-2, slider->lColor);
                         ls_uiFillRect(c, xPos+slidePos, yPos+1, w-slidePos-1, h-2, slider->rColor);
                         
                         unistring val = ls_unistrFromInt(slider->currValue);
-                        
-                        ls_uiPushScissor(c, xPos+1, yPos+1, w-2, h-2);
                         
                         s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
                         
@@ -1814,8 +1823,6 @@ void ls_uiRender(UIContext *c)
                         ls_uiGlyphString(c, strXPos, yPos + h - strHeight, val, valueColor);
                         
                         ls_unistrFree(&val);
-                        
-                        ls_uiPopScissor(c);
                         
                         if(slider->isHot)
                         {
@@ -1832,13 +1839,11 @@ void ls_uiRender(UIContext *c)
                             ls_uiFillRect(c, xPos+slidePos, yPos, slideWidth, h, c->borderColor);
                         }
                         
-                        ls_uiPopScissor(c);
                     }
                     else if(slider->style == SL_LINE)
                     { AssertMsg(FALSE, "Slider style line is not implemented\n"); }
                     
                     //NOTE: Draw the displayed text, and hide through Alpha the slider info.
-                    ls_uiPushScissor(c, xPos+1, yPos, w-2, h);
                     
                     Color rectColor = c->widgetColor;
                     rectColor = SetAlpha(rectColor, opacity);
@@ -1854,8 +1859,6 @@ void ls_uiRender(UIContext *c)
                     textColor = SetAlpha(textColor, opacity);
                     
                     ls_uiGlyphString(c, xPos+xOff, yPos + yOff, slider->text, textColor);
-                    
-                    ls_uiPopScissor(c);
                     
                     //NOTETODO: The isHot is a hack to grow the slider as long as
                     //          the mouse is on top of it. Is it fine for logic to be here in render?

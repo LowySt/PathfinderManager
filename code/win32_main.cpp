@@ -169,6 +169,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 case 'C':        KeySetAndRepeat(keyMap::C, rep);         break;
                 case 'V':        KeySetAndRepeat(keyMap::V, rep);         break;
                 case 'G':        KeySetAndRepeat(keyMap::G, rep);         break;
+                case 'Z':        KeySetAndRepeat(keyMap::Z, rep);         break;
             }
             
         } break;
@@ -197,6 +198,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 case 'C':        KeyUnset(keyMap::C);         break;
                 case 'V':        KeyUnset(keyMap::V);         break;
                 case 'G':        KeyUnset(keyMap::G);         break;
+                case 'Z':        KeyUnset(keyMap::Z);         break;
             }
         } break;
         
@@ -440,7 +442,126 @@ void windows_Render()
     InvalidateRect(MainWindow, NULL, TRUE);
 }
 
-void ProgramExitOnButton(UIContext *cxt, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); }
+b32 ProgramExitOnButton(UIContext *cxt, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
+
+void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
+{
+    //NOTE: Copy Init Page
+    InitPage *curr = FromState->Init;
+    InitPage *dest = ToState->Init;
+    
+    dest->Mobs.selectedIndex   = curr->Mobs.selectedIndex;
+    dest->Allies.selectedIndex = curr->Allies.selectedIndex;
+    
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    { ls_uiTextBoxSet(cxt, dest->PlayerInit + i, curr->PlayerInit[i].text); }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++)
+    {
+        InitField *From = curr->AllyFields + i;
+        InitField *To   = dest->AllyFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_uiTextBoxSet(cxt, To->editFields + j, From->editFields[j].text); }
+        
+        ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
+        ls_uiTextBoxSet(cxt, &To->addName, From->addName.text);
+        ls_uiTextBoxSet(cxt, &To->addInit, From->addInit.text);
+        
+        To->isAdding = From->isAdding;
+        To->ID       = From->ID;
+    }
+    
+    for(u32 i = 0; i < MOB_NUM; i++)
+    {
+        InitField *From = curr->MobFields + i;
+        InitField *To   = dest->MobFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_uiTextBoxSet(cxt, To->editFields + j, From->editFields[j].text); }
+        
+        ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
+        ls_uiTextBoxSet(cxt, &To->addName, From->addName.text);
+        ls_uiTextBoxSet(cxt, &To->addInit, From->addInit.text);
+        
+        To->isAdding = From->isAdding;
+        To->ID = From->ID;
+    }
+    
+    for(u32 i = 0; i < ORDER_NUM; i++)
+    {
+        Order *From = curr->OrderFields + i;
+        Order *To   = dest->OrderFields + i;
+        
+        ls_unistrSet(&To->field.text, From->field.text);
+        To->field.currValue = From->field.currValue;
+        To->field.maxValue  = From->field.maxValue;
+        To->field.minValue  = From->field.minValue;
+        To->field.currPos   = From->field.currPos;
+        To->field.lColor    = From->field.lColor;
+        To->field.rColor    = From->field.rColor;
+        
+        To->ID = From->ID;
+    }
+    
+    dest->turnsInRound = curr->turnsInRound;
+    dest->orderAdjust  = curr->orderAdjust;
+    
+    ls_uiTextBoxSet(cxt, &dest->RoundCounter, curr->RoundCounter.text);
+    dest->roundCount = curr->roundCount;
+    
+    ls_uiTextBoxSet(cxt, &dest->Current, curr->Current.text);
+    dest->currIdx = curr->currIdx;
+    
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *From = curr->Counters + i;
+        Counter *To   = dest->Counters + i;
+        
+        ls_uiTextBoxSet(cxt, &To->name, From->name.text);
+        ls_uiTextBoxSet(cxt, &To->rounds, From->rounds.text);
+        
+        To->roundsLeft      = From->roundsLeft;
+        To->startIdxInOrder = From->startIdxInOrder;
+        To->turnCounter     = From->turnCounter;
+        To->isActive        = From->isActive;
+    }
+    
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *From = curr->Throwers + i;
+        DiceThrow *To   = dest->Throwers + i;
+        
+        ls_uiTextBoxSet(cxt, &To->name,   From->name.text);
+        ls_uiTextBoxSet(cxt, &To->toHit,  From->toHit.text);
+        ls_uiTextBoxSet(cxt, &To->hitRes, From->hitRes.text);
+        ls_uiTextBoxSet(cxt, &To->damage, From->damage.text);
+        ls_uiTextBoxSet(cxt, &To->dmgRes, From->dmgRes.text);
+    }
+    
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.name,   curr->GeneralThrower.name.text);
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.toHit,  curr->GeneralThrower.toHit.text);
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.hitRes, curr->GeneralThrower.hitRes.text);
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.damage, curr->GeneralThrower.damage.text);
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
+    
+    dest->EncounterSel.selectedIndex = curr->EncounterSel.selectedIndex;
+    
+    
+    //NOTE: Copy General Info
+    ToState->inBattle = FromState->inBattle;
+    
+    //TODO: What to do about encounters?????
+    
+    ToState->isInitialized = FromState->isInitialized;
+    ToState->windowWidth   = FromState->windowHeight;
+    
+    ToState->prevMousePos  = FromState->prevMousePos;
+    ToState->currWindowPos = FromState->currWindowPos;
+    
+    ToState->timePassed    = FromState->timePassed;
+    ToState->dt            = FromState->dt;
+}
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
@@ -538,8 +659,18 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
+    //NOTE: Initialize State and Undo States
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
-    SetInitTab(uiContext);
+    SetInitTab(uiContext, &State);
+    
+    //TODO: Allocate them in a single block, and set the pointers.
+    for(u32 i = 0; i < MAX_UNDO_STATES; i++)
+    { 
+        UndoStates[i].Init = (InitPage *)ls_alloc(sizeof(InitPage));
+        SetInitTab(uiContext, UndoStates + i);
+    }
+    
+    
     
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
@@ -593,7 +724,23 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Window Menu
         ls_uiMenu(uiContext, &WindowMenu, -1, State.windowHeight-20, State.windowWidth, 22);
         
-        DrawInitTab(uiContext);
+        b32 userInputConsumed = DrawInitTab(uiContext);
+        
+        //NOTE: If any user input was consumed, than we advance the UndoStates.
+        if(userInputConsumed == TRUE)
+        {
+            CopyState(uiContext, &State, UndoStates + nextUndoIdx);
+            nextUndoIdx = (nextUndoIdx + 1) % MAX_UNDO_STATES;
+        }
+        
+        Assert(FALSE);
+        if(KeyPress(keyMap::Z) && KeyHeld(keyMap::Control))
+        {
+            u32 undoIdx = nextUndoIdx - 1;
+            if(nextUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
+            
+            CopyState(uiContext, UndoStates + undoIdx, &State);
+        }
         
         if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
         
@@ -641,7 +788,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
         
         
-        
         if(LeftUp || RightUp || MiddleUp)
         { uiContext->mouseCapture = 0; }
         
@@ -664,10 +810,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         RegionTimerEnd(frameTime);
         u32 frameTimeMs = RegionTimerGet(frameTime);
         
-        //NOTE: 30fps lock
-        if(frameTimeMs < 32)
+        //NOTE: 60fps lock
+        const u32 frameLock = 16;
+        if(frameTimeMs < frameLock)
         {
-            u32 deltaTimeInMs = 32 - frameTimeMs;
+            u32 deltaTimeInMs = frameLock - frameTimeMs;
             Sleep(deltaTimeInMs);
         }
         
