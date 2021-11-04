@@ -180,7 +180,7 @@ struct RenderCommand
         UITextBox *textBox;
         UIButton  *button;
         UIListBox *listBox;
-        UISlider  *slide;
+        UISlider  *slider;
         UIMenu    *menu;
     };
     
@@ -1476,104 +1476,20 @@ b32 ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32
 {
     if(LeftUp) { slider->isHeld = FALSE; }
     
-    //NOTE: Box Slider Branchless Opacity Check
-    //u8 opacity = 0xEE - (0xB0*slider->isHeld);
-    u8 opacity = 0xC0 - (0xB0*slider->isHeld);
-    
-    if(slider->style == SL_LINE) 
+    if(slider->style == SL_BOX)
     {
-        AssertMsg(FALSE, "Slider style line is not implemented\n");
-#if 0
-        ls_uiBorderedRect(cxt, xPos, yPos, w, h);
-        
-        s32 selRadius = 50;
-        
-        ls_uiPushScissor(cxt, xPos-selRadius, yPos-selRadius, w+selRadius, h+(selRadius*2));
-        
-        ls_uiCircleFloat(cxt, xPos+400, yPos+(h/2), selRadius);
-        
-        ls_uiPopScissor(cxt);
-#endif
-    }
-    else if(slider->style == SL_BOX)
-    {
-        s32 slideWidth = 3;
-        
-        ls_uiBorder(cxt, xPos, yPos, w, h);
-        
-        ls_uiPushScissor(cxt, xPos-4, yPos-3, w+8, h+6);
-        
         slider->currValue = ((slider->maxValue - slider->minValue) * slider->currPos) + slider->minValue;
         s32 slidePos = w*slider->currPos;
         
-        ls_uiFillRect(cxt, xPos+1, yPos+1, slidePos, h-2, slider->lColor);
-        ls_uiFillRect(cxt, xPos+slidePos, yPos+1, w-slidePos-1, h-2, slider->rColor);
-        
-        unistring val = ls_unistrFromInt(slider->currValue);
-        
-        ls_uiPushScissor(cxt, xPos+1, yPos+1, w-2, h-2);
-        
-        ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-        u32 textLen = ls_uiGlyphStringLen(cxt, val);
-        
-        
-        s32 strXPos = xPos + slidePos - textLen - 2;
-        s32 strHeight = cxt->currFont->pixelHeight;
-        Color textBkgC = slider->lColor;
-        if(strXPos < xPos+1) { strXPos = xPos + slidePos + slideWidth + 2; textBkgC = slider->rColor; }
-        
-        Color valueColor = RGBA(0x22, 0x22, 0x22, (0x00 + (slider->isHeld*0xFF)));
-        ls_uiGlyphString(cxt, strXPos, yPos + h - strHeight, val, valueColor);
-        
-        ls_unistrFree(&val);
-        
-        ls_uiPopScissor(cxt);
-        
         if(MouseInRect(xPos + slidePos-5, yPos, 10, h) && !(cxt->mouseCapture != 0 && cxt->mouseCapture != (u64 *)slider))
         {
-            slider->isHot = TRUE; 
+            slider->isHot = TRUE;
             if(LeftHold) { slider->isHeld = TRUE; cxt->mouseCapture = (u64 *)slider; }
-            
-            
-            s32 actualX = (xPos + slidePos) - 1;
-            s32 actualY = yPos - 2;
-            
-            s32 actualWidth  = slideWidth+2;
-            s32 actualHeight = 4 + h;
-            
-            ls_uiFillRect(cxt, actualX, actualY, actualWidth, actualHeight, cxt->borderColor);
         }
-        else
-        {
-            ls_uiFillRect(cxt, xPos+slidePos, yPos, slideWidth, h, cxt->borderColor);
-        }
-        
-        ls_uiPopScissor(cxt);
     }
+    else if(slider->style == SL_LINE)
+    { AssertMsg(FALSE, "Slider style line is not implemented\n"); }
     
-    //NOTE: Draw the displayed text, and hide through Alpha the slider info.
-    ls_uiPushScissor(cxt, xPos+1, yPos, w-2, h);
-    
-    Color rectColor = cxt->widgetColor;
-    rectColor = SetAlpha(rectColor, opacity);
-    ls_uiBorderedRect(cxt, xPos, yPos, w, h, rectColor);
-    
-    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-    
-    s32 strWidth  = ls_uiGlyphStringLen(cxt, slider->text);
-    s32 xOff      = (w - strWidth) / 2;
-    s32 strHeight = cxt->currFont->pixelHeight;
-    s32 yOff      = (h - strHeight) + 3; //TODO: @FontDescent
-    
-    Color textColor = cxt->textColor;
-    textColor = SetAlpha(textColor, opacity);
-    
-    ls_uiGlyphString(cxt, xPos+xOff, yPos + yOff, slider->text, textColor);
-    
-    ls_uiPopScissor(cxt);
-    
-    
-    //TODO:TEST
     b32 hasAnsweredToInput = FALSE;
     
     if(slider->isHeld) { 
@@ -1588,7 +1504,10 @@ b32 ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32
         hasAnsweredToInput = TRUE;
     }
     
-    slider->isHot = FALSE;
+    RenderCommand command = { UI_RC_SLIDER, xPos, yPos, w, h };
+    command.slider = slider;
+    
+    ls_uiPushRenderCommand(cxt, command, 0);
     
     return hasAnsweredToInput;
 }
@@ -1855,6 +1774,92 @@ void ls_uiRender(UIContext *c)
                         ls_uiPopScissor(c);
                     }
                     else { AssertMsg(FALSE, "Unhandled button style"); }
+                    
+                } break;
+                
+                case UI_RC_SLIDER:
+                {
+                    UISlider *slider = curr->slider;
+                    
+                    //NOTE: Box Slider Branchless Opacity Check
+                    //u8 opacity = 0xEE - (0xB0*slider->isHeld);
+                    u8 opacity = 0xC0 - (0xB0*slider->isHeld);
+                    
+                    if(slider->style == SL_BOX)
+                    {
+                        s32 slideWidth = 3;
+                        
+                        ls_uiBorder(c, xPos, yPos, w, h);
+                        
+                        ls_uiPushScissor(c, xPos-4, yPos-3, w+8, h+6);
+                        
+                        s32 slidePos = w*slider->currPos;
+                        
+                        ls_uiFillRect(c, xPos+1, yPos+1, slidePos, h-2, slider->lColor);
+                        ls_uiFillRect(c, xPos+slidePos, yPos+1, w-slidePos-1, h-2, slider->rColor);
+                        
+                        unistring val = ls_unistrFromInt(slider->currValue);
+                        
+                        ls_uiPushScissor(c, xPos+1, yPos+1, w-2, h-2);
+                        
+                        s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                        
+                        u32 textLen = ls_uiGlyphStringLen(c, val);
+                        s32 strXPos = xPos + slidePos - textLen - 2;
+                        Color textBkgC = slider->lColor;
+                        
+                        if(strXPos < xPos+1) { strXPos = xPos + slidePos + slideWidth + 2; textBkgC = slider->rColor; }
+                        
+                        Color valueColor = RGBA(0x22, 0x22, 0x22, (0x00 + (slider->isHeld*0xFF)));
+                        ls_uiGlyphString(c, strXPos, yPos + h - strHeight, val, valueColor);
+                        
+                        ls_unistrFree(&val);
+                        
+                        ls_uiPopScissor(c);
+                        
+                        if(slider->isHot)
+                        {
+                            s32 actualX = (xPos + slidePos) - 1;
+                            s32 actualY = yPos - 2;
+                            
+                            s32 actualWidth  = slideWidth+2;
+                            s32 actualHeight = 4 + h;
+                            
+                            ls_uiFillRect(c, actualX, actualY, actualWidth, actualHeight, c->borderColor);
+                        }
+                        else
+                        {
+                            ls_uiFillRect(c, xPos+slidePos, yPos, slideWidth, h, c->borderColor);
+                        }
+                        
+                        ls_uiPopScissor(c);
+                    }
+                    else if(slider->style == SL_LINE)
+                    { AssertMsg(FALSE, "Slider style line is not implemented\n"); }
+                    
+                    //NOTE: Draw the displayed text, and hide through Alpha the slider info.
+                    ls_uiPushScissor(c, xPos+1, yPos, w-2, h);
+                    
+                    Color rectColor = c->widgetColor;
+                    rectColor = SetAlpha(rectColor, opacity);
+                    ls_uiBorderedRect(c, xPos, yPos, w, h, rectColor);
+                    
+                    s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                    
+                    s32 strWidth  = ls_uiGlyphStringLen(c, slider->text);
+                    s32 xOff      = (w - strWidth) / 2;
+                    s32 yOff      = (h - strHeight) + 3; //TODO: @FontDescent
+                    
+                    Color textColor = c->textColor;
+                    textColor = SetAlpha(textColor, opacity);
+                    
+                    ls_uiGlyphString(c, xPos+xOff, yPos + yOff, slider->text, textColor);
+                    
+                    ls_uiPopScissor(c);
+                    
+                    //NOTETODO: The isHot is a hack to grow the slider as long as
+                    //          the mouse is on top of it. Is it fine for logic to be here in render?
+                    slider->isHot = FALSE;
                     
                 } break;
                 
