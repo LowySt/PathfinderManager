@@ -822,21 +822,29 @@ s32 ls_uiSelectFontByFontSize(UIContext *cxt, UIFontSize fontSize)
 { cxt->currFont = &cxt->fonts[fontSize]; return cxt->currFont->pixelHeight; }
 
 //TODO:Button autosizing width
+//TODO:Menus use buttons, but also claim Focus, which means I can't use the global focus trick to avoid input
+//     handling between overlapping elements.
+//     I don't think the menu should deal with things like this [It shouldn't hold the close button first,
+//     and it also shouldn't use 'normal' buttons for its drop down sub-menus, so... basically @MenuIsShit
+//     and I wanna redo it completely.
 void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     Color bkgColor = cxt->widgetColor;
-    if(button->style == UIBUTTON_TEXT_NOBORDER) { bkgColor = cxt->backgroundColor; } //TODO:Hack
     
-    if(MouseInRect(xPos, yPos, w, h))
+    if(button->style == UIBUTTON_TEXT_NOBORDER) { bkgColor = cxt->backgroundColor; }
+    
+    if(MouseInRect(xPos, yPos, w, h) && ls_uiHasCapture(cxt, 0))// && ls_uiInFocus(cxt, 0))
     { 
         button->isHot = TRUE;
         bkgColor = cxt->highliteColor;
         
-        if(button->onClick && LeftClick)
+        //b32 noCapture = ls_uiHasCapture(cxt, 0);
+        
+        if(button->onClick && LeftClick)// && noCapture)
         {
             button->onClick(cxt, button->data);
         }
-        if(LeftHold)
+        if(LeftHold)//  && noCapture)
         {
             button->isHeld = TRUE;
             bkgColor = cxt->pressedColor;
@@ -844,47 +852,11 @@ void ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s3
         }
     }
     
-    ls_uiSelectFontByFontSize(cxt, FS_SMALL);
-    
-    if(button->style == UIBUTTON_TEXT)
-    {
-        ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
-        
-        ls_uiPushScissor(cxt, xPos+2, yPos+2, w-4, h-4);
-        
-        s32 strWidth = ls_uiGlyphStringLen(cxt, button->name);
-        s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
-        s32 strHeight = cxt->currFont->pixelHeight;
-        s32 yOff      = strHeight*0.25; //TODO: @FontDescent
-        
-        ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button->name, cxt->textColor);
-        
-        ls_uiPopScissor(cxt);
-    }
-    else if(button->style == UIBUTTON_TEXT_NOBORDER)
-    {
-        ls_uiRect(cxt, xPos, yPos, w, h, bkgColor);
-        
-        ls_uiPushScissor(cxt, xPos, yPos, w, h);
-        
-        s32 strWidth = ls_uiGlyphStringLen(cxt, button->name);
-        s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
-        s32 strHeight = cxt->currFont->pixelHeight;
-        s32 yOff      = strHeight*0.25; //TODO: @FontDescent
-        
-        ls_uiGlyphString(cxt, xPos+xOff, yPos+yOff, button->name, cxt->textColor);
-        
-        ls_uiPopScissor(cxt);
-    }
-    else if(button->style == UIBUTTON_BMP)
-    {
-        ls_uiPushScissor(cxt, xPos, yPos, w, h);
-        
-        ls_uiBitmap(cxt, xPos, yPos, (u32 *)button->bmpData, button->bmpW, button->bmpH);
-        
-        ls_uiPopScissor(cxt);
-    }
-    else { AssertMsg(FALSE, "Unhandled button style"); }
+    RenderCommand command = { UI_RC_BUTTON, xPos, yPos, w, h };
+    command.button        = button;
+    command.bkgColor      = bkgColor;
+    command.textColor     = cxt->textColor;
+    ls_uiPushRenderCommand(cxt, command, 0);
 }
 
 void ls_uiLabel(UIContext *cxt, unistring label, s32 xPos, s32 yPos)
@@ -1419,7 +1391,7 @@ void ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s3
         cxt->focusWasSetThisFrame = TRUE;
         
         if(list->isOpen) { list->isOpen = FALSE; }
-        //else { list->isOpening = TRUE; }
+        //else { list->isOpening = TRUE; } //NOTE:TODO: This is because Claudio wanted instant list open. 
         else { list->isOpen = TRUE; }
     }
     
@@ -1623,6 +1595,7 @@ b32 ls_uiSlider(UIContext *cxt, UISlider *slider, s32 xPos, s32 yPos, s32 w, s32
 
 struct __UImenuDataPass { UIMenu *menu; s32 idx; };
 
+
 void ls_uiMenuDefaultOnClick(UIContext *cxt, void *data)
 {
     __UImenuDataPass *pass = (__UImenuDataPass *)data;
@@ -1654,6 +1627,7 @@ void ls_uiMenuAddItem(UIContext *cxt, UIMenu *menu, UIButton b)
 void ls_uiMenuAddSub(UIContext *cxt, UIMenu *menu, UIMenu sub, s32 idx)
 { menu->sub[idx] = sub; }
 
+//TODO: @MenuIsShit it shouldn't use buttons like this, and shouldn't hold the close button hostage.
 void ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
 {
     if(LeftClickIn(x, y, w, h)) {
@@ -1833,6 +1807,54 @@ void ls_uiRender(UIContext *c)
                         ls_uiBorder(c, xPos, yPos-maxHeight, w, maxHeight+1);
                     }
                     
+                    
+                } break;
+                
+                case UI_RC_BUTTON:
+                {
+                    UIButton *button = curr->button;
+                    
+                    s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                    
+                    if(button->style == UIBUTTON_TEXT)
+                    {
+                        ls_uiBorderedRect(c, xPos, yPos, w, h, bkgColor);
+                        
+                        ls_uiPushScissor(c, xPos+2, yPos+2, w-4, h-4);
+                        
+                        s32 strWidth = ls_uiGlyphStringLen(c, button->name);
+                        s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
+                        s32 strHeight = c->currFont->pixelHeight;
+                        s32 yOff      = strHeight*0.25; //TODO: @FontDescent
+                        
+                        ls_uiGlyphString(c, xPos+xOff, yPos+yOff, button->name, c->textColor);
+                        
+                        ls_uiPopScissor(c);
+                    }
+                    else if(button->style == UIBUTTON_TEXT_NOBORDER)
+                    {
+                        ls_uiRect(c, xPos, yPos, w, h, bkgColor);
+                        
+                        ls_uiPushScissor(c, xPos, yPos, w, h);
+                        
+                        s32 strWidth = ls_uiGlyphStringLen(c, button->name);
+                        s32 xOff      = (w - strWidth) / 2; //TODO: What happens when the string is too long?
+                        s32 strHeight = c->currFont->pixelHeight;
+                        s32 yOff      = strHeight*0.25; //TODO: @FontDescent
+                        
+                        ls_uiGlyphString(c, xPos+xOff, yPos+yOff, button->name, c->textColor);
+                        
+                        ls_uiPopScissor(c);
+                    }
+                    else if(button->style == UIBUTTON_BMP)
+                    {
+                        ls_uiPushScissor(c, xPos, yPos, w, h);
+                        
+                        ls_uiBitmap(c, xPos, yPos, (u32 *)button->bmpData, button->bmpW, button->bmpH);
+                        
+                        ls_uiPopScissor(c);
+                    }
+                    else { AssertMsg(FALSE, "Unhandled button style"); }
                     
                 } break;
                 
