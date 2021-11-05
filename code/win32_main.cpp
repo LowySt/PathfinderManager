@@ -550,17 +550,6 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     
     //NOTE: Copy General Info
     ToState->inBattle = FromState->inBattle;
-    
-    //TODO: What to do about encounters?????
-    
-    ToState->isInitialized = FromState->isInitialized;
-    ToState->windowWidth   = FromState->windowHeight;
-    
-    ToState->prevMousePos  = FromState->prevMousePos;
-    ToState->currWindowPos = FromState->currWindowPos;
-    
-    ToState->timePassed    = FromState->timePassed;
-    ToState->dt            = FromState->dt;
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -670,16 +659,18 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         SetInitTab(uiContext, UndoStates + i);
     }
     
-    
-    
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
     b32 result = LoadState(uiContext);
+    
+    //NOTE: We initialize the first Undo State to a valid setting
+    CopyState(uiContext, &State, UndoStates);
     
     RegionTimer frameTime = {};
     b32 Running = TRUE;
     u32 lastFrameTime = 0;
     b32 showDebug = FALSE;
+    b32 userInputConsumed = FALSE;
     
     b32 isStartup = TRUE;
     while(Running)
@@ -718,28 +709,29 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //      to avoid flashing because initially the frame buffer is all white.
         if(isStartup) { ShowWindow(MainWindow, SW_SHOW); isStartup = FALSE; }
         
+        //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
+        //      The first frame is always registered, so the first Undo State is always valid.
+        if(userInputConsumed == TRUE)
+        {
+            matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
+            CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
+        }
+        
         //NOTE: Render The Frame
         ls_uiBackground(uiContext);
         
         //NOTE: Render The Window Menu
         ls_uiMenu(uiContext, &WindowMenu, -1, State.windowHeight-20, State.windowWidth, 22);
         
-        b32 userInputConsumed = DrawInitTab(uiContext);
+        userInputConsumed = DrawInitTab(uiContext);
         
-        //NOTE: If any user input was consumed, than we advance the UndoStates.
-        if(userInputConsumed == TRUE)
-        {
-            CopyState(uiContext, &State, UndoStates + nextUndoIdx);
-            nextUndoIdx = (nextUndoIdx + 1) % MAX_UNDO_STATES;
-        }
-        
-        Assert(FALSE);
         if(KeyPress(keyMap::Z) && KeyHeld(keyMap::Control))
         {
-            u32 undoIdx = nextUndoIdx - 1;
-            if(nextUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
+            u32 undoIdx = matchingUndoIdx - 1;
+            if(matchingUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
             
             CopyState(uiContext, UndoStates + undoIdx, &State);
+            matchingUndoIdx = undoIdx;
         }
         
         if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
