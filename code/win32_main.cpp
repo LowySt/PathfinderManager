@@ -652,10 +652,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     SetInitTab(uiContext, &State);
     
-    //TODO: Allocate them in a single block, and set the pointers.
+    //NOTE: Single block allocation for all Init Pages.
+    InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);
     for(u32 i = 0; i < MAX_UNDO_STATES; i++)
     { 
-        UndoStates[i].Init = (InitPage *)ls_alloc(sizeof(InitPage));
+        UndoStates[i].Init = UndoInitPages + i;
         SetInitTab(uiContext, UndoStates + i);
     }
     

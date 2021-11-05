@@ -173,7 +173,7 @@ HWND MainWindow;
 PlayerChar pc = {};
 ProgramState State = {};
 
-const u32 MAX_UNDO_STATES = 4;
+const u32 MAX_UNDO_STATES = 16;
 ProgramState UndoStates[MAX_UNDO_STATES] = {};
 static u32 matchingUndoIdx = 0;
 
