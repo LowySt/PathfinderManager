@@ -717,6 +717,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         {
             matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
             CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
+            
+            if(distanceFromNow < (MAX_UNDO_STATES-1)) { distanceFromNow += 1; }
         }
         
         //NOTE: Render The Frame
@@ -729,11 +731,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(KeyPress(keyMap::Z) && KeyHeld(keyMap::Control))
         {
-            u32 undoIdx = matchingUndoIdx - 1;
-            if(matchingUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
-            
-            CopyState(uiContext, UndoStates + undoIdx, &State);
-            matchingUndoIdx = undoIdx;
+            //NOTE: We only undo when there's available states to undo into (avoid rotation).
+            if(distanceFromNow != 0)
+            {
+                u32 undoIdx = matchingUndoIdx - 1;
+                if(matchingUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
+                
+                CopyState(uiContext, UndoStates + undoIdx, &State);
+                matchingUndoIdx  = undoIdx;
+                distanceFromNow -= 1;
+            }
         }
         
         if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
