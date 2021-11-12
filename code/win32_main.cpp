@@ -745,8 +745,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         userInputConsumed = DrawInitTab(uiContext);
         
-        if(KeyPress(keyMap::Z) && KeyHeld(keyMap::Control))
+        if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
         {
+            undoRequest = FALSE;
+            
             //NOTE: We only undo when there's available states to undo into (avoid rotation).
             if(distanceFromOld != 0)
             {
@@ -760,8 +762,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             }
         }
         
-        if(KeyPress(keyMap::Y) && KeyHeld(keyMap::Control))
+        if((KeyPress(keyMap::Y) && KeyHeld(keyMap::Control)) || redoRequest)
         {
+            redoRequest = FALSE;
+            
             //NOTE: We only redo if we have previously perfomed an undo.
             if(distanceFromNow > 0)
             {
@@ -780,7 +784,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         {
             char buff[32] = {};
             ls_itoa_t(lastFrameTime, buff, 32);
-            ls_uiGlyphString(uiContext, 1240, 760, ls_unistrFromAscii(buff), RGBg(0xEE));
+            ls_uiGlyphString(uiContext, 1248, 760, ls_unistrFromAscii(buff), RGBg(0xEE));
         }
         
         //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus

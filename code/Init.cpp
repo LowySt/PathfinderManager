@@ -376,6 +376,18 @@ void OnEncounterSelect(UIContext *cxt, void *data)
     return;
 }
 
+b32 RequestUndoOnClick(UIContext *cxt, void *data)
+{
+    undoRequest = TRUE;
+    return FALSE;
+}
+
+b32 RequestRedoOnClick(UIContext *cxt, void *data)
+{
+    redoRequest = TRUE;
+    return FALSE;
+}
+
 //TODO: Adding a new one while selecting an old one displays an incorrect name in the list box,
 //      But it's only visual. On program restart the names are correct... wtf???
 b32 SaveEncounterOnClick(UIContext *cxt, void *data)
@@ -1372,6 +1384,16 @@ void SetInitTab(UIContext *cxt, ProgramState *PState)
     Page->Next.name     = ls_unistrFromUTF32(U"Next");
     Page->Next.onClick  = NextOnClick;
     Page->Next.onHold   = 0x0;
+    
+    Page->Undo.style    = UIBUTTON_TEXT;
+    Page->Undo.name     = ls_unistrFromUTF32(U"<-");
+    Page->Undo.onClick  = RequestUndoOnClick;
+    Page->Undo.onHold   = 0x0;
+    
+    Page->Redo.style    = UIBUTTON_TEXT;
+    Page->Redo.name     = ls_unistrFromUTF32(U"->");
+    Page->Redo.onClick  = RequestRedoOnClick;
+    Page->Redo.onHold   = 0x0;
 }
 
 b32 DrawInitExtra(UIContext *cxt, InitField *F, s32 baseX, s32 y)
@@ -1689,6 +1711,9 @@ b32 DrawPranaStyle(UIContext *cxt)
             inputUse |= ls_uiButton(cxt, &Page->Roll, 556, 678, 48, 20);
             inputUse |= ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
         }
+        
+        ls_uiButton(cxt, &Page->Undo, 1180, 754, 24, 20);
+        ls_uiButton(cxt, &Page->Redo, 1220, 754, 24, 20);
     }
     
     //NOTE: Z Layer 0 Input

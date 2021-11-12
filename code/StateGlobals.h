@@ -141,6 +141,9 @@ struct InitPage
     UITextBox  EncounterName;
     UIButton   SaveEnc;
     UIButton   RemoveEnc;
+    
+    UIButton   Undo;
+    UIButton   Redo;
 };
 
 struct ProgramState
@@ -178,5 +181,8 @@ ProgramState UndoStates[MAX_UNDO_STATES] = {};
 static u32 matchingUndoIdx = 0;
 static u32 distanceFromOld = 0;
 static u32 distanceFromNow = 0;
+
+static b32 undoRequest = FALSE;
+static b32 redoRequest = FALSE;
 
 #endif //_STATE_GLOBALS_H
