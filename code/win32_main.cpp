@@ -657,11 +657,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Single block allocation for all Init Pages.
     InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);
     
-    for(u32 i = 0; i < MAX_UNDO_STATES; i++)
-    { 
-        UndoStates[i].Init = UndoInitPages + i;
-        SetInitTab(uiContext, UndoStates + i);
-    }
+    //NOTE: I Initialize ONLY the first undo state at the beginning, and then 
+    //      initialize all other remaining states once per frame to reduce startup latency.
+    UndoStates[0].Init = UndoInitPages;
+    SetInitTab(uiContext, UndoStates);
     
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
@@ -675,6 +674,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     u32 lastFrameTime = 0;
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
+    
+    b32 isUndoSetupDone = FALSE;
+    u32 undoSetupIdx = 1;
     
     b32 isStartup = TRUE;
     while(Running)
@@ -707,6 +709,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         {
             TranslateMessage(&Msg);
             DispatchMessageA(&Msg);
+        }
+        
+        if(isUndoSetupDone == FALSE)
+        {
+            UndoStates[undoSetupIdx].Init = UndoInitPages + undoSetupIdx;
+            SetInitTab(uiContext, UndoStates + undoSetupIdx);
+            undoSetupIdx += 1;
+            if(undoSetupIdx == MAX_UNDO_STATES) { isUndoSetupDone = TRUE; }
         }
         
         //NOTE: Window starts hidden, and then is shown after the first frame, 
