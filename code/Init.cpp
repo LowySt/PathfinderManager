@@ -1712,8 +1712,9 @@ b32 DrawPranaStyle(UIContext *cxt)
             inputUse |= ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
         }
         
-        ls_uiButton(cxt, &Page->Undo, 1180, 754, 24, 20);
-        ls_uiButton(cxt, &Page->Redo, 1220, 754, 24, 20);
+        //NOTE: We hijack the globals to know when to show the buttons.
+        if(distanceFromOld != 0) { ls_uiButton(cxt, &Page->Undo, 1180, 754, 24, 20); }
+        if(distanceFromNow != 0) { ls_uiButton(cxt, &Page->Redo, 1220, 754, 24, 20); }
     }
     
     //NOTE: Z Layer 0 Input
