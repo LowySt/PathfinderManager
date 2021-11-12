@@ -169,6 +169,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 case 'C':        KeySetAndRepeat(keyMap::C, rep);         break;
                 case 'V':        KeySetAndRepeat(keyMap::V, rep);         break;
                 case 'G':        KeySetAndRepeat(keyMap::G, rep);         break;
+                case 'Y':        KeySetAndRepeat(keyMap::Y, rep);         break;
                 case 'Z':        KeySetAndRepeat(keyMap::Z, rep);         break;
             }
             
@@ -198,6 +199,7 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
                 case 'C':        KeyUnset(keyMap::C);         break;
                 case 'V':        KeyUnset(keyMap::V);         break;
                 case 'G':        KeyUnset(keyMap::G);         break;
+                case 'Y':        KeyUnset(keyMap::Y);         break;
                 case 'Z':        KeyUnset(keyMap::Z);         break;
             }
         } break;
@@ -718,7 +720,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
             CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
             
-            if(distanceFromNow < (MAX_UNDO_STATES-1)) { distanceFromNow += 1; }
+            if(distanceFromOld < (MAX_UNDO_STATES-1)) { distanceFromOld += 1; }
+            
+            //NOTE: If an operation is performed, that is the new NOW, the new Present, 
+            //      and no other REDOs can be performed
+            distanceFromNow = 0;
         }
         
         //NOTE: Render The Frame
@@ -732,13 +738,28 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(KeyPress(keyMap::Z) && KeyHeld(keyMap::Control))
         {
             //NOTE: We only undo when there's available states to undo into (avoid rotation).
-            if(distanceFromNow != 0)
+            if(distanceFromOld != 0)
             {
                 u32 undoIdx = matchingUndoIdx - 1;
                 if(matchingUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
                 
                 CopyState(uiContext, UndoStates + undoIdx, &State);
                 matchingUndoIdx  = undoIdx;
+                distanceFromOld -= 1;
+                distanceFromNow += 1;
+            }
+        }
+        
+        if(KeyPress(keyMap::Y) && KeyHeld(keyMap::Control))
+        {
+            //NOTE: We only redo if we have previously perfomed an undo.
+            if(distanceFromNow > 0)
+            {
+                u32 redoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
+                CopyState(uiContext, UndoStates + redoIdx, &State);
+                
+                matchingUndoIdx  = redoIdx;
+                distanceFromOld += 1;
                 distanceFromNow -= 1;
             }
         }
