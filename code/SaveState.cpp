@@ -715,7 +715,7 @@ b32 LoadState(UIContext *cxt)
     if(ls_fileExists(fullPathBuff) == FALSE)
     {
         //NOTE: Check for v3
-        u32 len = ls_getFullPathName("SaveFile_v3", fullPathBuff, 128);
+        u32 len = ls_getFullPathName((char *)"SaveFile_v3", fullPathBuff, 128);
         
         if(ls_fileExists(fullPathBuff))
         {
