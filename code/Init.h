@@ -37,12 +37,12 @@ const char *Allies[ALLY_NUM + 1] = {
 
 const u32 ORDER_NUM = PARTY_NUM + MOB_NUM + ALLY_NUM;
 
-
 const u32 COUNTER_NUM       = 9;
 const u32 DEF_COUNTER_NUM   = 8;
 const u32 PRANA_COUNTER_NUM = 6;
 const char32_t *CounterNames[COUNTER_NUM] = { U"Counter 1", U"Counter 2", U"Counter 3", U"Counter 4", 
     U"Counter 5", U"Counter 6", U"Counter 7", U"Counter 8", U"Counter 9" };
+
 
 const u32 THROWER_NUM       = 8;
 const u32 DEF_THROWER_NUM   = 6;

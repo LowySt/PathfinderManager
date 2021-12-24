@@ -1324,11 +1324,17 @@ void SetInitTab(UIContext *cxt, ProgramState *PState)
     
     {
         // General Thrower
-        Page->GeneralThrower.toHit.text  = ls_unistrAlloc(32);
-        Page->GeneralThrower.hitRes.text = ls_unistrAlloc(16);
+        Page->GeneralThrower.name.text     = ls_unistrAlloc(32);
+        Page->GeneralThrower.toHit.text    = ls_unistrAlloc(32);
+        Page->GeneralThrower.hitRes.text   = ls_unistrAlloc(16);
+        Page->GeneralThrower.damage.text   = ls_unistrAlloc(32);
+        Page->GeneralThrower.dmgRes.text   = ls_unistrAlloc(16);
         
         Page->GeneralThrower.hitRes.maxLen = 4;
         Page->GeneralThrower.hitRes.isReadonly = TRUE;
+        
+        Page->GeneralThrower.dmgRes.maxLen = 4;
+        Page->GeneralThrower.dmgRes.isReadonly = TRUE;
         
         Page->GeneralThrower.throwDie.style   = UIBUTTON_TEXT;
         Page->GeneralThrower.throwDie.name    = ls_unistrFromUTF32(U"Go");

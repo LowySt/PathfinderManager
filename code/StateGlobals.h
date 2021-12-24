@@ -3,7 +3,7 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 3;
+const u32 global_saveVersion = 4;
 
 enum InitFieldIndex
 {

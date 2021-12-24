@@ -657,17 +657,26 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Single block allocation for all Init Pages.
     InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);
     
-    //NOTE: I Initialize ONLY the first undo state at the beginning, and then 
-    //      initialize all other remaining states once per frame to reduce startup latency.
-    UndoStates[0].Init = UndoInitPages;
-    SetInitTab(uiContext, UndoStates);
+    
+    //TODO: I had to nerf frame-by-frame initialization because LoadState needs to load the entire
+    //      undo chain, even if it was unused. And all at once. Want to try and fix it with multithreading.
+    for(u32 i = 0; i < MAX_UNDO_STATES; i++)
+    {
+        UndoStates[i].Init = UndoInitPages + i;
+        SetInitTab(uiContext, UndoStates + i);
+    }
     
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
     b32 result = LoadState(uiContext);
     
     //NOTE: We initialize the first Undo State to a valid setting
-    CopyState(uiContext, &State, UndoStates);
+    //TODO: I've now added serialization of undo-chains, also all undo states are initialized by default,
+    //      So there's no point in trying to Copy the state???
+    //CopyState(uiContext, &State, UndoStates);
+    
+    //TODO: But if I've loaded an undo chain it means it makes sense to load the State with the "current" Undo state
+    CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
     
     RegionTimer frameTime = {};
     b32 Running = TRUE;
@@ -675,8 +684,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
     
+#if 0
     b32 isUndoSetupDone = FALSE;
     u32 undoSetupIdx = 1;
+#endif
     
     b32 isStartup = TRUE;
     while(Running)
@@ -711,6 +722,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             DispatchMessageA(&Msg);
         }
         
+#if 0
         if(isUndoSetupDone == FALSE)
         {
             UndoStates[undoSetupIdx].Init = UndoInitPages + undoSetupIdx;
@@ -718,6 +730,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             undoSetupIdx += 1;
             if(undoSetupIdx == MAX_UNDO_STATES) { isUndoSetupDone = TRUE; }
         }
+#endif
         
         //NOTE: Window starts hidden, and then is shown after the first frame, 
         //      to avoid flashing because initially the frame buffer is all white.

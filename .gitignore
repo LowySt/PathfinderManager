@@ -9,6 +9,7 @@
 *.png
 *.otf
 *.ttf
+back*
 code/asset_main.cpp
 testState
 SaveFile*
