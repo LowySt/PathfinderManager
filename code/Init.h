@@ -5,10 +5,10 @@
 #define _INIT_H
 
 const u32 PARTY_NUM = 3;
-const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Ana", U"Vent" };
+const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Sigismondo", U"Vent" };
 const unistring PartyNameUTF32[PARTY_NUM] = { 
     {(u32 *)PartyName[0], 5, 5}, 
-    {(u32 *)PartyName[1], 3, 3}, 
+    {(u32 *)PartyName[1], 10, 10}, 
     {(u32 *)PartyName[2], 4, 4} 
 };
 
