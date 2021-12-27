@@ -539,6 +539,8 @@ buffer ConvertSaveToNewVersion(buffer *oldSave, u32 oldVersion)
 
 void SaveState()
 {
+    ls_arenaUse(saveArena);
+    
     buffer state = ls_bufferInit(MBytes(1));
     buffer *buf = &state;
     
@@ -696,12 +698,15 @@ void SaveState()
     
     ls_bufferDestroy(buf);
     
+    ls_arenaUse(globalArena);
+    ls_arenaClear(saveArena);
+    
     return;
 }
 
 b32 LoadState(UIContext *cxt)
 {
-    //TODO: Check for previous file versions and convert them to newer version!
+    ls_arenaUse(saveArena);
     
     char fullPathBuff[128] = {};
     char outName[64] = {};
@@ -794,7 +799,12 @@ b32 LoadState(UIContext *cxt)
     }
     
     //NOTE: Quick Exit if not in battle after the save.
-    if(State.inBattle == FALSE) { return TRUE; }
+    if(State.inBattle == FALSE) 
+    { 
+        ls_arenaUse(globalArena);
+        ls_arenaClear(saveArena);
+        return TRUE;
+    }
     
     
     //NOTE: UnSerialize Player Initiative
@@ -926,6 +936,9 @@ b32 LoadState(UIContext *cxt)
     }
     
     ls_bufferDestroy(buf);
+    
+    ls_arenaUse(globalArena);
+    ls_arenaClear(saveArena);
     
     return TRUE;
 }

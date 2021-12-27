@@ -185,4 +185,11 @@ static u32 distanceFromNow = 0;
 static b32 undoRequest = FALSE;
 static b32 redoRequest = FALSE;
 
+
+static Arena globalArena;
+static Arena fileArena;
+static Arena stateArena;
+static Arena saveArena;
+static Arena renderArena;
+
 #endif //_STATE_GLOBALS_H

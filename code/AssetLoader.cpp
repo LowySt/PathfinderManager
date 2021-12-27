@@ -2,7 +2,9 @@ void loadAssetFile(UIContext *cxt, string assetFilePath)
 {
     AssertMsg(cxt, "Context ptr was NULL");
     
+    ls_arenaUse(fileArena);
     buffer buff = ls_bufferInitFromFile(assetFilePath);
+    ls_arenaUse(globalArena);
     
     cxt->numFonts = ls_bufferReadDWord(&buff);
     cxt->fonts = (UIFont *)ls_alloc(sizeof(UIFont)*cxt->numFonts);
@@ -75,4 +77,6 @@ void loadAssetFile(UIContext *cxt, string assetFilePath)
             }
         }
     }
+    
+    ls_arenaDestroy(fileArena);
 }

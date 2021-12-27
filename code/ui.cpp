@@ -1431,7 +1431,7 @@ b32 ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32
                 { 
                     currItem->bkgColor = cxt->highliteColor;
                     if(LeftClick) { 
-                        cxt->mouseCapture = (u64 *)list; 
+                        cxt->mouseCapture = (u64 *)list;
                         
                         list->selectedIndex = i; list->isOpen = FALSE;
                         inputUse = TRUE;
@@ -1873,5 +1873,6 @@ void ls_uiRender(UIContext *c)
     
     
     c->callbackRender();
+    
     return;
 }

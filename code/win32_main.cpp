@@ -2,6 +2,10 @@
 #include "lsWindows.h"
 #undef LS_WINDOWS_IMPLEMENTATION
 
+#define LS_ARENA_IMPLEMENTATION
+#include "lsArena.h"
+#undef LS_ARENA_IMPLEMENTATION
+
 #define LS_CRT_IMPLEMENTATION
 #include "lsCRT.h"
 #undef LS_CRT_IMPLEMENTATION
@@ -582,6 +586,20 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     pcg32_seed(&pcg32_global, rand_init_state, rand_init_seq);
     
+    //-------------------------------------
+    //NOTE: Switch to global memory arena 
+    //      for general allocations
+    
+    globalArena = ls_arenaCreate(MBytes(8));
+    fileArena   = ls_arenaCreate(MBytes(4));
+    stateArena  = ls_arenaCreate(MBytes(4));
+    saveArena   = ls_arenaCreate(MBytes(4));
+    renderArena = ls_arenaCreate(KBytes(8));
+    
+    ls_arenaUse(globalArena);
+    //------------
+    
+    
     RegisterWindow();
     
     MainWindow = CreateWindow();
@@ -602,9 +620,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     uiContext->textColor       = RGBg(0xCC);
     uiContext->invWidgetColor  = RGBg(0xBA);
     uiContext->invTextColor    = RGBg(0x33);
-    uiContext->RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 64);
-    uiContext->RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 64);
-    uiContext->RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 64);
+    uiContext->RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 512);
+    uiContext->RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 512);
+    uiContext->RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 512);
     
     loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
     
@@ -650,6 +668,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
+    
+    ls_arenaUse(stateArena);
+    
     //NOTE: Initialize State and Undo States
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     SetInitTab(uiContext, &State);
@@ -666,6 +687,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         SetInitTab(uiContext, UndoStates + i);
     }
     
+    ls_arenaUse(globalArena);
+    
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
     b32 result = LoadState(uiContext);
@@ -679,15 +702,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
     
     RegionTimer frameTime = {};
+    
     b32 Running = TRUE;
     u32 lastFrameTime = 0;
+    unistring frameTimeString = ls_unistrAlloc(8);
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
-    
-#if 0
-    b32 isUndoSetupDone = FALSE;
-    u32 undoSetupIdx = 1;
-#endif
     
     b32 isStartup = TRUE;
     while(Running)
@@ -721,16 +741,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             TranslateMessage(&Msg);
             DispatchMessageA(&Msg);
         }
-        
-#if 0
-        if(isUndoSetupDone == FALSE)
-        {
-            UndoStates[undoSetupIdx].Init = UndoInitPages + undoSetupIdx;
-            SetInitTab(uiContext, UndoStates + undoSetupIdx);
-            undoSetupIdx += 1;
-            if(undoSetupIdx == MAX_UNDO_STATES) { isUndoSetupDone = TRUE; }
-        }
-#endif
         
         //NOTE: Window starts hidden, and then is shown after the first frame, 
         //      to avoid flashing because initially the frame buffer is all white.
@@ -795,9 +805,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(showDebug)
         {
-            char buff[32] = {};
-            ls_itoa_t(lastFrameTime, buff, 32);
-            ls_uiGlyphString(uiContext, 1248, 760, ls_unistrFromAscii(buff), RGBg(0xEE));
+            ls_unistrFromInt_t(&frameTimeString, lastFrameTime);
+            ls_uiGlyphString(uiContext, 1248, 760, frameTimeString, RGBg(0xEE));
         }
         
         //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
@@ -840,7 +849,17 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(LeftUp || RightUp || MiddleUp)
         { uiContext->mouseCapture = 0; }
         
+        
+        // ----------------
+        // Render Everything
+        ls_arenaUse(renderArena);
+        
         ls_uiRender(uiContext);
+        
+        ls_arenaUse(globalArena);
+        ls_arenaClear(renderArena);
+        //
+        // ----------------
         
         State.hasMouseClicked = FALSE;
         
