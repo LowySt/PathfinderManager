@@ -1214,7 +1214,7 @@ void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h, UIArrowSide s
                 if(x < scRect->x || x >= scRect->x+scRect->w) continue;
                 if(y < scRect->y || y >= scRect->y+scRect->h) continue;
                 
-                At[y*cxt->width + x] = RGBg(0x00);
+                At[y*cxt->width + x] = cxt->borderColor;
             }
             
             xBase += 1;
@@ -1426,7 +1426,10 @@ b32 ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32
                 s32 currY = yPos - (h*(i+1));
                 UIListBoxItem *currItem = list->list.getPointer(i);
                 
+                //TODO: The constant resetting is kinda stupid. Makes me think I should just not
+                //      have listbox items with their own colors. Never even used that feature.
                 currItem->bkgColor = cxt->widgetColor;
+                currItem->textColor = cxt->textColor;
                 if(MouseInRect(xPos+1, currY+1, w-2, h-1)) 
                 { 
                     currItem->bkgColor = cxt->highliteColor;
@@ -1606,13 +1609,13 @@ b32 ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
         s32 yPos   = y-20;
         s32 height = openSub->items.count*20;
         
-        ls_uiBorderedRect(cxt, 99, y-height-2, 102, height+3, cxt->backgroundColor);
+        ls_uiBorderedRect(cxt, 99 + 100*menu->openIdx, y-height-2, 102, height+3, cxt->backgroundColor);
         
         //TODO: Store the xPos of every menu item.
         for(u32 i = 0; i < openSub->items.count; i++)
         {
             UIButton *currItem = &openSub->items[i];
-            inputUse = ls_uiButton(cxt, currItem, 100, yPos, 100, 20);
+            inputUse = ls_uiButton(cxt, currItem, 100 + 100*menu->openIdx, yPos, 100, 20);
             yPos -= 21;
         }
     }
@@ -1819,7 +1822,9 @@ void ls_uiRender(UIContext *c)
                         
                         if(strXPos < xPos+1) { strXPos = xPos + slidePos + slideWidth + 2; textBkgC = slider->rColor; }
                         
-                        Color valueColor = RGBA(0x22, 0x22, 0x22, (0x00 + (slider->isHeld*0xFF)));
+                        Color valueColor = c->borderColor;
+                        u8 alpha = 0x00 + (slider->isHeld*0xFF);
+                        valueColor = SetAlpha(valueColor, alpha);
                         ls_uiGlyphString(c, strXPos, yPos + h - strHeight, val, valueColor);
                         
                         ls_unistrFree(&val);
@@ -1876,3 +1881,4 @@ void ls_uiRender(UIContext *c)
     
     return;
 }
+

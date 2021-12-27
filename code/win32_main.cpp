@@ -633,6 +633,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     closeButton.bmpH     = pixelButtonHeight;
     closeButton.onClick  = ProgramExitOnButton;
     
+    // -----------
+    // STYLE MENU
     UIButton styleDefaultBtn = {};
     styleDefaultBtn.style   = UIBUTTON_TEXT_NOBORDER;
     styleDefaultBtn.name    = ls_unistrFromUTF32(U"Default");
@@ -651,6 +653,31 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     styleMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
     styleMenuBtn.name          = ls_unistrFromUTF32(U"Style");
     styleMenuBtn.onClick       = ls_uiMenuDefaultOnClick;
+    //
+    // -----------
+    
+    // -----------
+    // THEME MENU
+    UIButton themeDefaultBtn = {};
+    themeDefaultBtn.style   = UIBUTTON_TEXT_NOBORDER;
+    themeDefaultBtn.name    = ls_unistrFromUTF32(U"Default");
+    themeDefaultBtn.onClick = selectThemeDefault;
+    
+    UIButton themeDarkNightBtn  = {};
+    themeDarkNightBtn.style     = UIBUTTON_TEXT_NOBORDER;
+    themeDarkNightBtn.name      = ls_unistrFromUTF32(U"Dark Night");
+    themeDarkNightBtn.onClick   = selectThemeDarkNight;
+    
+    UIMenu themeSubMenu     = {};
+    ls_uiMenuAddItem(uiContext, &themeSubMenu, themeDefaultBtn);
+    ls_uiMenuAddItem(uiContext, &themeSubMenu, themeDarkNightBtn);
+    
+    UIButton themeMenuBtn   = {};
+    themeMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
+    themeMenuBtn.name          = ls_unistrFromUTF32(U"Theme");
+    themeMenuBtn.onClick       = ls_uiMenuDefaultOnClick;
+    //
+    // -----------
     
     UIMenu WindowMenu       = {};
     WindowMenu.closeWindow  = closeButton;
@@ -659,6 +686,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     ls_uiMenuAddItem(uiContext, &WindowMenu, styleMenuBtn);
     ls_uiMenuAddSub(uiContext, &WindowMenu, styleSubMenu, 0);
+    
+    ls_uiMenuAddItem(uiContext, &WindowMenu, themeMenuBtn);
+    ls_uiMenuAddSub(uiContext, &WindowMenu, themeSubMenu, 1);
     
     
     ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);

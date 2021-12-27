@@ -25,6 +25,36 @@ b32 selectStylePrana(UIContext *cxt, void *data)
     return FALSE;
 }
 
+
+b32 selectThemeDefault(UIContext *cxt, void *data)
+{
+    cxt->backgroundColor = RGBg(0x38);
+    cxt->highliteColor   = RGBg(0x65);
+    cxt->pressedColor    = RGBg(0x75);
+    cxt->widgetColor     = RGBg(0x45);
+    cxt->borderColor     = RGBg(0x22);
+    cxt->textColor       = RGBg(0xCC);
+    cxt->invWidgetColor  = RGBg(0xBA);
+    cxt->invTextColor    = RGBg(0x33);
+    
+    return FALSE;
+}
+
+b32 selectThemeDarkNight(UIContext *cxt, void *data)
+{
+    cxt->backgroundColor = RGB(0x0C, 0x08, 0x0B);
+    cxt->highliteColor   = RGB(0x14, 0x15, 0x13);
+    cxt->pressedColor    = RGB(0x18, 0x20, 0x19);
+    cxt->widgetColor     = RGB(0x1C, 0x18, 0x1B);
+    cxt->borderColor     = RGB(0x60, 0x7B, 0x7D);
+    cxt->textColor       = RGBg(0xCC); //cxt->textColor       = RGB(0x82, 0x8E, 0x82);
+    cxt->invWidgetColor  = RGB(0xE3, 0xE7, 0xE4);
+    cxt->invTextColor    = RGB(0x7D, 0x71, 0x7D);
+    
+    return FALSE;
+}
+
+
 b32 CustomPlayerText(UIContext *cxt, void *data)
 {
     b32 inputUse = FALSE;
