@@ -159,19 +159,34 @@ struct UIMenu
     u32     maxSub;
 };
 
+enum RenderCommandExtra
+{
+    UI_RCE_NULL,
+    
+    UI_RCE_LEFT,
+    UI_RCE_RIGHT,
+};
+
 enum RenderCommandType
 {
-    UI_RC_TEXTBOX,
+    UI_RC_TEXTBOX = 1,
     UI_RC_BUTTON,
     UI_RC_LISTBOX,
     UI_RC_SLIDER,
     UI_RC_MENU,
+    
+    UI_RC_FRAG_OFF,
+    
+    UI_RC_FRAG_TEXTBOX,
+    UI_RC_FRAG_BUTTON,
+    UI_RC_FRAG_LISTBOX,
+    UI_RC_FRAG_SLIDER,
+    UI_RC_FRAG_MENU,
 };
 
 struct RenderCommand
 {
-    
-    RenderCommandType type;
+    RenderCommandType  type;
     
     s32 x, y, w, h;
     
@@ -186,10 +201,21 @@ struct RenderCommand
     
     Color bkgColor;
     Color textColor;
+    
+    RenderCommandExtra extra;
+    s32 oX, oY, oW, oH;
 };
 
 
 const u32 UI_Z_LAYERS = 3;
+
+struct RenderGroup
+{
+    stack RenderCommands[UI_Z_LAYERS];
+    b32 isDone;
+};
+
+typedef void (*RenderCallback)();
 struct UIContext
 {
     u8 *drawBuffer;
@@ -223,11 +249,83 @@ struct UIContext
     
     u64 *mouseCapture;
     
+    RenderGroup renderGroups[2];
     
-    stack RenderCommands[UI_Z_LAYERS];
-    void (*callbackRender)();
+    CONDITION_VARIABLE startRender;
+    CRITICAL_SECTION crit;
+    
+    RenderCallback renderFunc;
     u32 dt;
 };
+
+struct ___threadCtx
+{
+    UIContext *ctx;
+    u64 ThreadID;
+};
+
+void ls_uiRender__(UIContext *c, u32 threadID);
+DWORD ls_uiRenderThreadProc(void *param)
+{
+    ___threadCtx *t = (___threadCtx *)param;
+    
+    UIContext *ctx = t->ctx;
+    u64 threadID = t->ThreadID;
+    
+    while(TRUE)
+    {
+        EnterCriticalSection(&ctx->crit);
+        SleepConditionVariableCS(&ctx->startRender, &ctx->crit, INFINITE);
+        LeaveCriticalSection(&ctx->crit);
+        
+        ls_uiRender__(ctx, threadID);
+    }
+    
+    AssertMsg(FALSE, "Render Thread should never exit\n");
+    
+    return 0;
+}
+
+UIContext *ls_uiInitDefaultContext(u8 *drawBuffer, u32 width, u32 height, RenderCallback cb)
+{
+    UIContext *uiContext       = (UIContext *)ls_alloc(sizeof(UIContext));
+    uiContext->drawBuffer      = drawBuffer;
+    uiContext->width           = width;
+    uiContext->height          = height;
+    uiContext->renderFunc      = cb;
+    uiContext->backgroundColor = RGBg(0x38);
+    uiContext->highliteColor   = RGBg(0x65);
+    uiContext->pressedColor    = RGBg(0x75);
+    uiContext->widgetColor     = RGBg(0x45);
+    uiContext->borderColor     = RGBg(0x22);
+    uiContext->textColor       = RGBg(0xCC);
+    uiContext->invWidgetColor  = RGBg(0xBA);
+    uiContext->invTextColor    = RGBg(0x33);
+    
+    for(u32 i = 0; i < 2; i++)
+    {
+        uiContext->renderGroups[i].RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 512);
+        uiContext->renderGroups[i].RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 512);
+        uiContext->renderGroups[i].RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 512);
+    }
+    
+    
+    InitializeConditionVariable(&uiContext->startRender);
+    InitializeCriticalSection(&uiContext->crit);
+    
+    ___threadCtx *t1 = (___threadCtx *)ls_alloc(sizeof(___threadCtx));
+    t1->ctx          = uiContext;
+    t1->ThreadID     = 0;
+    
+    ___threadCtx *t2 = (___threadCtx *)ls_alloc(sizeof(___threadCtx));
+    t2->ctx          = uiContext;
+    t2->ThreadID     = 1;
+    
+    CreateThread(NULL, KBytes(512), ls_uiRenderThreadProc, t1, NULL, NULL);
+    CreateThread(NULL, KBytes(512), ls_uiRenderThreadProc, t2, NULL, NULL);
+    
+    return uiContext;
+}
 
 void ls_uiFocusChange(UIContext *cxt, u64 *focus)
 {
@@ -247,9 +345,62 @@ b32 ls_uiHasCapture(UIContext *cxt, void *p)
     return FALSE;
 }
 
+struct RenderRect { s32 x,y,w,h; };
+b32 ls_uiRectIsInside(RenderRect r1, RenderRect check)
+{
+    if((r1.x >= check.x) && ((r1.x + r1.w) <= (check.x + check.w)))
+    {
+        if((r1.y >= check.y) && ((r1.y + r1.h) <= (check.y + check.h)))
+        {
+            return TRUE;
+        }
+    }
+    
+    return FALSE;
+}
+
 void ls_uiPushRenderCommand(UIContext *cxt, RenderCommand command, s32 zLayer)
 {
-    ls_stackPush(&cxt->RenderCommands[zLayer], (void *)&command);
+    
+    RenderRect commandRect = { command.x, command.y, command.w, command.h };
+    
+    if(ls_uiRectIsInside(commandRect, {0, 0, (s32)(cxt->width / 2), (s32)cxt->height}))
+    {
+        ls_stackPush(&cxt->renderGroups[0].RenderCommands[zLayer], (void *)&command);
+        return;
+    }
+    else if(ls_uiRectIsInside(commandRect, {(s32)(cxt->width / 2), 0, (s32)(cxt->width / 2), (s32)cxt->height}))
+    {
+        ls_stackPush(&cxt->renderGroups[1].RenderCommands[zLayer], (void *)&command);
+        return;
+    }
+    else
+    {
+        //Half in one, half in another.
+        
+        RenderCommand section = command;
+        
+        section.type  = (RenderCommandType)(command.type + UI_RC_FRAG_OFF);
+        section.extra = UI_RCE_LEFT;
+        section.oX = command.x;
+        section.oY = command.y;
+        section.oW = command.w;
+        section.oH = command.h;
+        
+        section.x     = command.x;
+        section.w     = (cxt->width/2) - command.x;
+        
+        ls_stackPush(&cxt->renderGroups[0].RenderCommands[zLayer], (void *)&section);
+        
+        section.extra = UI_RCE_RIGHT;
+        section.x     = cxt->width/2;
+        section.w     = command.w - section.w;
+        
+        ls_stackPush(&cxt->renderGroups[1].RenderCommands[zLayer], (void *)&section);
+        return;
+    }
+    
+    AssertMsg(FALSE, "Should never reach this case!\n");
 }
 
 //TODO:NOTE: Scissors are busted. A smaller scissor doesn't check if it is inside it's own parent!
@@ -267,7 +418,7 @@ void ls_uiPushScissor(UIContext *cxt, s32 x, s32 y, s32 w, s32 h)
 void ls_uiPopScissor(UIContext *cxt)
 {
     UIScissor *scissor = &cxt->scissor;
-    AssertMsg(scissor->rects.data, "Scissor stack is null\n");
+    AssertMsg(scissor->rects.data,      "Scissor stack is null\n");
     AssertMsg(scissor->rects.count > 0, "Scissor stack is already empty\n");
     
     ls_stackPop(&scissor->rects);
@@ -769,20 +920,74 @@ s32 ls_uiGetKernAdvance(UIContext *cxt, s32 codepoint1, s32 codepoint2)
 }
 
 //TODO: Use font max descent to determine yOffsets globally
-void ls_uiGlyphString(UIContext *cxt, s32 xPos, s32 yPos, unistring text, Color textColor)
+void ls_uiGlyphString(UIContext *c, s32 xPos, s32 yPos, unistring text, Color textColor)
 {
     s32 currXPos = xPos;
-    s32 currYPos = yPos;
     for(u32 i = 0; i < text.len; i++)
     {
         u32 indexInGlyphArray = text.data[i];
-        AssertMsg(indexInGlyphArray <= cxt->currFont->maxCodepoint, "GlyphIndex OutOfBounds\n");
+        AssertMsg(indexInGlyphArray <= c->currFont->maxCodepoint, "GlyphIndex OutOfBounds\n");
         
-        UIGlyph *currGlyph = &cxt->currFont->glyph[indexInGlyphArray];
-        ls_uiGlyph(cxt, currXPos, yPos, currGlyph, textColor);
+        UIGlyph *currGlyph = &c->currFont->glyph[indexInGlyphArray];
+        ls_uiGlyph(c, currXPos, yPos, currGlyph, textColor);
         
         s32 kernAdvance = 0;
-        if(i < text.len-1) { kernAdvance = ls_uiGetKernAdvance(cxt, text.data[i], text.data[i+1]); }
+        if(i < text.len-1) { kernAdvance = ls_uiGetKernAdvance(c, text.data[i], text.data[i+1]); }
+        
+        currXPos += (currGlyph->xAdv + kernAdvance);
+    }
+}
+
+void ls_uiGlyphFrag(UIContext *c, s32 xPos, s32 yPos, s32 oX, s32 oY, 
+                    s32 maxX, s32 maxY, UIGlyph *glyph, Color textColor)
+{
+    UIScissor::UIRect *scRect = c->scissor.currRect;
+    
+    u32 *At = (u32 *)c->drawBuffer;
+    
+    for(s32 y = yPos-glyph->y1, eY = glyph->height-1; eY >= 0; y++, eY--)
+    {
+        for(s32 x = xPos+glyph->x0, eX = 0; eX < glyph->width; x++, eX++)
+        {
+            if((x >= maxX) || (y >= maxY)) return;
+            
+            if((x < oX) || (y < oY)) continue;
+            if(x < 0 || x >= c->width)  continue;
+            if(y < 0 || y >= c->height) continue;
+            
+            if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+            if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+            
+            Color base = At[y*c->width + x];
+            
+            u8 sourceA = GetAlpha(textColor);
+            u8 dstA = glyph->data[eY*glyph->width + eX];
+            
+            f64 sA = (f64)sourceA / 255.0;
+            f64 dA = (f64)dstA / 255.0;
+            
+            u8 Alpha = (sA * dA) * 255;
+            
+            Color blendedColor = ls_uiAlphaBlend(textColor, base, Alpha);
+            At[y*c->width + x] = blendedColor;
+        }
+    }
+}
+
+void ls_uiGlyphStringFrag(UIContext *c, s32 xPos, s32 yPos, s32 oX, s32 oY, 
+                          s32 maxX, s32 maxY, unistring text, Color textColor)
+{
+    s32 currXPos = xPos;
+    for(u32 i = 0; i < text.len; i++)
+    {
+        u32 indexInGlyphArray = text.data[i];
+        AssertMsg(indexInGlyphArray <= c->currFont->maxCodepoint, "GlyphIndex OutOfBounds\n");
+        
+        UIGlyph *currGlyph = &c->currFont->glyph[indexInGlyphArray];
+        ls_uiGlyphFrag(c, currXPos, yPos, oX, oY, maxX, maxY, currGlyph, textColor);
+        
+        s32 kernAdvance = 0;
+        if(i < text.len-1) { kernAdvance = ls_uiGetKernAdvance(c, text.data[i], text.data[i+1]); }
         
         currXPos += (currGlyph->xAdv + kernAdvance);
     }
@@ -1625,11 +1830,35 @@ b32 ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
 
 void ls_uiRender(UIContext *c)
 {
+    WakeAllConditionVariable(&c->startRender);
+    
+    b32 areAllDone = FALSE;
+    while(areAllDone == FALSE)
+    {
+        b32 allDone = TRUE;
+        for(u32 i = 0; i < 2; i++)
+        {
+            allDone &= c->renderGroups[i].isDone;
+        }
+        
+        areAllDone = allDone;
+    }
+    
+    for(u32 i = 0; i < 2; i++)
+    {
+        c->renderGroups[i].isDone = FALSE;
+    }
+    
+    c->renderFunc();
+}
+
+void ls_uiRender__(UIContext *c, u32 threadID)
+{
     //NOTE: Render Layers in Z-order. Layer Zero is the first to be rendered, 
     //      so it's the one farther away from the screen
     for(u32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
     {
-        stack *currLayer = c->RenderCommands + zLayer;
+        stack *currLayer = c->renderGroups[threadID].RenderCommands + zLayer;
         
         s32 count = currLayer->count;
         for(u32 commandIdx = 0; commandIdx < count; commandIdx++)
@@ -1645,6 +1874,7 @@ void ls_uiRender(UIContext *c)
             
             switch(curr->type)
             {
+                case UI_RC_FRAG_TEXTBOX:
                 case UI_RC_TEXTBOX:
                 {
                     UITextBox *box = curr->textBox;
@@ -1707,6 +1937,7 @@ void ls_uiRender(UIContext *c)
                     
                 } break;
                 
+                case UI_RC_FRAG_LISTBOX:
                 case UI_RC_LISTBOX:
                 {
                     UIListBox *list = curr->listBox;
@@ -1793,6 +2024,7 @@ void ls_uiRender(UIContext *c)
                     
                 } break;
                 
+                case UI_RC_FRAG_SLIDER:
                 case UI_RC_SLIDER:
                 {
                     UISlider *slider = curr->slider;
@@ -1871,13 +2103,69 @@ void ls_uiRender(UIContext *c)
                     
                 } break;
                 
+                case UI_RC_FRAG_BUTTON:
+                {
+                    UIButton *button       = curr->button;
+                    RenderCommandExtra rce = curr->extra;
+                    
+                    s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                    
+                    if(button->style == UIBUTTON_TEXT)
+                    {
+                        Color C = c->borderColor;
+                        
+                        if(rce == UI_RCE_LEFT)
+                        {
+                            ls_uiFillRect(c, xPos, yPos,     w, 1, C);
+                            ls_uiFillRect(c, xPos, yPos+h-1, w, 1, C);
+                            ls_uiFillRect(c, xPos, yPos,     1, h, C);
+                            ls_uiFillRect(c, xPos+1, yPos+1, w-1, h-2, bkgColor);
+                        }
+                        else if (rce == UI_RCE_RIGHT)
+                        {
+                            ls_uiFillRect(c, xPos,     yPos,     w, 1, C);
+                            ls_uiFillRect(c, xPos,     yPos+h-1, w, 1, C);
+                            ls_uiFillRect(c, xPos+w-1, yPos,     1, h, C);
+                            ls_uiFillRect(c, xPos, yPos+1, w-1, h-2, bkgColor);
+                        }
+                        
+                        s32 strWidth = ls_uiGlyphStringLen(c, button->name);
+                        s32 xOff     = (curr->oW - strWidth) / 2; //TODO: What happens when string is too long?
+                        s32 strHeight = c->currFont->pixelHeight;
+                        s32 yOff      = strHeight*0.25; //TODO: @FontDescent
+                        
+                        ls_uiGlyphStringFrag(c, curr->oX+xOff, yPos+yOff, curr->oX, curr->oY, 
+                                             xPos+w, yPos+h, button->name, c->textColor);
+                    }
+                    else if(button->style == UIBUTTON_TEXT_NOBORDER)
+                    {
+                        ls_uiRect(c, xPos, yPos, w, h, bkgColor);
+                        
+                        s32 strWidth = ls_uiGlyphStringLen(c, button->name);
+                        s32 xOff      = (curr->oW - strWidth) / 2; //TODO: What happens when the string is too long?
+                        s32 strHeight = c->currFont->pixelHeight;
+                        s32 yOff      = strHeight*0.25; //TODO: @FontDescent
+                        
+                        ls_uiGlyphStringFrag(c, curr->oX+xOff, yPos+yOff, curr->oX, curr->oY, 
+                                             xPos+w, yPos+h, button->name, c->textColor);
+                    }
+                    else if(button->style == UIBUTTON_BMP)
+                    {
+                        AssertMsg(FALSE, "button style BMP is not implemented yet.");
+                        ls_uiBitmap(c, xPos, yPos, (u32 *)button->bmpData, button->bmpW, button->bmpH);
+                    }
+                    else { AssertMsg(FALSE, "Unhandled button style"); }
+                    
+                } break;
+                
                 default: { AssertMsg(FALSE, "Unhandled Render Command Type\n"); } break;
             }
         }
     }
     
+    c->renderGroups[threadID].isDone = TRUE;
     
-    c->callbackRender();
+    //c->renderFunc();
     
     return;
 }
