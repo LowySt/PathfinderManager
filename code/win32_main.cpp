@@ -607,22 +607,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     UserInput.Keyboard.getClipboard = win32_GetClipboard;
     UserInput.Keyboard.setClipboard = win32_SetClipboard;
     
-    UIContext *uiContext       = (UIContext *)ls_alloc(sizeof(UIContext));
-    uiContext->drawBuffer      = BackBuffer;
-    uiContext->width           = State.windowWidth;
-    uiContext->height          = State.windowHeight;
-    uiContext->callbackRender  = &windows_Render;
-    uiContext->backgroundColor = RGBg(0x38);
-    uiContext->highliteColor   = RGBg(0x65);
-    uiContext->pressedColor    = RGBg(0x75);
-    uiContext->widgetColor     = RGBg(0x45);
-    uiContext->borderColor     = RGBg(0x22);
-    uiContext->textColor       = RGBg(0xCC);
-    uiContext->invWidgetColor  = RGBg(0xBA);
-    uiContext->invTextColor    = RGBg(0x33);
-    uiContext->RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 512);
-    uiContext->RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 512);
-    uiContext->RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 512);
+    UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, State.windowWidth, State.windowHeight, &windows_Render);
     
     loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
     
@@ -796,8 +781,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Window Menu
         ls_uiMenu(uiContext, &WindowMenu, -1, State.windowHeight-20, State.windowWidth, 22);
         
+#if 0
         userInputConsumed = DrawInitTab(uiContext);
-        
+#else
+        userInputConsumed = FALSE;
+#endif
         if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
         {
             undoRequest = FALSE;
@@ -879,6 +867,18 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(LeftUp || RightUp || MiddleUp)
         { uiContext->mouseCapture = 0; }
         
+        
+#if 1
+        //TODO REMOVE
+        UIButton testBtn = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
+        ls_uiButton(uiContext, &testBtn, 300, 300, 100, 100);
+        
+        UIButton testBtn2 = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
+        ls_uiButton(uiContext, &testBtn, 800, 300, 100, 100);
+        
+        UIButton testBtn3 = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
+        ls_uiButton(uiContext, &testBtn, 300, 500, 600, 100);
+#endif
         
         // ----------------
         // Render Everything
