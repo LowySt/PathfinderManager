@@ -2208,7 +2208,28 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
                         s32 diffStringWidth = ls_uiGlyphStringLen(c, diffString);
                         
-                        ls_uiFillRect(c, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, c->invWidgetColor);
+                        s32 startX = curr->oX + horzOff + diffStringWidth;
+                        
+                        if((curr->extra == UI_RCE_LEFT) && (startX < (xPos + w)))
+                        {
+                            s32 fragWidth = selStringWidth;
+                            if((startX + selStringWidth) > (xPos + w)) { fragWidth = (xPos + w) - startX; }
+                            
+                            ls_uiFillRect(c, startX, curr->oY+1, fragWidth, h-2, c->invWidgetColor);
+                        }
+                        else if((curr->extra == UI_RCE_RIGHT) && (startX+selStringWidth > xPos))
+                        {
+                            if(startX < xPos)
+                            {
+                                s32 fragWidth = selStringWidth - (xPos - startX);
+                                ls_uiFillRect(c, xPos, curr->oY+1, fragWidth, h-2, c->invWidgetColor);
+                            }
+                            else
+                            {
+                                s32 fragWidth = selStringWidth;
+                                ls_uiFillRect(c, startX, curr->oY+1, fragWidth, h-2, c->invWidgetColor);
+                            }
+                        }
                         
                         ls_uiGlyphStringFrag(c, curr->oX + horzOff + diffStringWidth, curr->oY + vertOff, curr->oX, curr->oY, xPos, yPos, xPos+w, yPos+h, selString, c->invTextColor);
                         
