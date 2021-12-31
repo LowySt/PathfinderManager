@@ -16,7 +16,7 @@ void loadAssetFile(UIContext *cxt, string assetFilePath)
         font->pixelHeight  = ls_bufferReadDWord(&buff);
         font->maxCodepoint = ls_bufferReadDWord(&buff);
         
-        font->glyph = (UIGlyph *)ls_alloc(sizeof(UIGlyph) * font->maxCodepoint + 1);
+        font->glyph = (UIGlyph *)ls_alloc(sizeof(UIGlyph) * (font->maxCodepoint + 1));
         
         //NOTE: ASCII characters
         for(u32 codepoint = 32; codepoint <= 126; codepoint++)
@@ -56,9 +56,9 @@ void loadAssetFile(UIContext *cxt, string assetFilePath)
             currGlyph->yAdv = ls_bufferReadDWord(&buff);
         }
         
-        font->kernAdvanceTable = (s32 **)ls_alloc(sizeof(s32 *) * font->maxCodepoint + 1);
+        font->kernAdvanceTable = (s32 **)ls_alloc(sizeof(s32 *) * (font->maxCodepoint + 1));
         for(u32 i = 0; i < font->maxCodepoint+1; i++) 
-        { font->kernAdvanceTable[i] = (s32 *)ls_alloc(sizeof(s32) * font->maxCodepoint + 1); }
+        { font->kernAdvanceTable[i] = (s32 *)ls_alloc(sizeof(s32) * (font->maxCodepoint + 1)); }
         
         //NOTE: KernTable will be laid out as rows, so [0][1], [0][2], [0][3]... etc.
         for(u32 cp1 = 32; cp1 <= 126; cp1++)
