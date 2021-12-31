@@ -359,19 +359,19 @@ b32 ls_uiRectIsInside(RenderRect r1, RenderRect check)
     return FALSE;
 }
 
-void ls_uiPushRenderCommand(UIContext *cxt, RenderCommand command, s32 zLayer)
+void ls_uiPushRenderCommand(UIContext *c, RenderCommand command, s32 zLayer)
 {
     
     RenderRect commandRect = { command.x, command.y, command.w, command.h };
     
-    if(ls_uiRectIsInside(commandRect, {0, 0, (s32)(cxt->width / 2), (s32)cxt->height}))
+    if(ls_uiRectIsInside(commandRect, {0, 0, (s32)(c->width / 2), (s32)c->height}))
     {
-        ls_stackPush(&cxt->renderGroups[0].RenderCommands[zLayer], (void *)&command);
+        ls_stackPush(&c->renderGroups[0].RenderCommands[zLayer], (void *)&command);
         return;
     }
-    else if(ls_uiRectIsInside(commandRect, {(s32)(cxt->width / 2), 0, (s32)(cxt->width / 2), (s32)cxt->height}))
+    else if(ls_uiRectIsInside(commandRect, {(s32)(c->width / 2), 0, (s32)(c->width / 2), (s32)c->height}))
     {
-        ls_stackPush(&cxt->renderGroups[1].RenderCommands[zLayer], (void *)&command);
+        ls_stackPush(&c->renderGroups[1].RenderCommands[zLayer], (void *)&command);
         return;
     }
     else
@@ -388,15 +388,15 @@ void ls_uiPushRenderCommand(UIContext *cxt, RenderCommand command, s32 zLayer)
         section.oH = command.h;
         
         section.x     = command.x;
-        section.w     = (cxt->width/2) - command.x;
+        section.w     = (c->width/2) - command.x;
         
-        ls_stackPush(&cxt->renderGroups[0].RenderCommands[zLayer], (void *)&section);
+        ls_stackPush(&c->renderGroups[0].RenderCommands[zLayer], (void *)&section);
         
         section.extra = UI_RCE_RIGHT;
-        section.x     = cxt->width/2;
+        section.x     = c->width/2;
         section.w     = command.w - section.w;
         
-        ls_stackPush(&cxt->renderGroups[1].RenderCommands[zLayer], (void *)&section);
+        ls_stackPush(&c->renderGroups[1].RenderCommands[zLayer], (void *)&section);
         return;
     }
     
@@ -630,6 +630,27 @@ void ls_uiBorder(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color borderC
     ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, C);
     ls_uiFillRect(cxt, xPos,     yPos,     1, h, C);
     ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, C);
+}
+
+inline
+void ls_uiBorderedRectFrag(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor, RenderCommandExtra rce)
+{
+    Color C = c->borderColor;
+    
+    if(rce == UI_RCE_LEFT)
+    {
+        ls_uiFillRect(c, xPos, yPos,     w, 1, C);
+        ls_uiFillRect(c, xPos, yPos+h-1, w, 1, C);
+        ls_uiFillRect(c, xPos, yPos,     1, h, C);
+        ls_uiFillRect(c, xPos+1, yPos+1, w-1, h-2, widgetColor);
+    }
+    else if(rce == UI_RCE_RIGHT)
+    {
+        ls_uiFillRect(c, xPos,     yPos,     w, 1, C);
+        ls_uiFillRect(c, xPos,     yPos+h-1, w, 1, C);
+        ls_uiFillRect(c, xPos+w-1, yPos,     1, h, C);
+        ls_uiFillRect(c, xPos, yPos+1, w-1, h-2, widgetColor);
+    }
 }
 
 inline
@@ -939,7 +960,8 @@ void ls_uiGlyphString(UIContext *c, s32 xPos, s32 yPos, unistring text, Color te
 }
 
 void ls_uiGlyphFrag(UIContext *c, s32 xPos, s32 yPos, s32 oX, s32 oY, 
-                    s32 maxX, s32 maxY, UIGlyph *glyph, Color textColor)
+                    s32 minX, s32 minY, s32 maxX, s32 maxY, 
+                    UIGlyph *glyph, Color textColor)
 {
     UIScissor::UIRect *scRect = c->scissor.currRect;
     
@@ -949,6 +971,7 @@ void ls_uiGlyphFrag(UIContext *c, s32 xPos, s32 yPos, s32 oX, s32 oY,
     {
         for(s32 x = xPos+glyph->x0, eX = 0; eX < glyph->width; x++, eX++)
         {
+            if((x < minX) || (y < minY)) return;
             if((x >= maxX) || (y >= maxY)) return;
             
             if((x < oX) || (y < oY)) continue;
@@ -975,8 +998,10 @@ void ls_uiGlyphFrag(UIContext *c, s32 xPos, s32 yPos, s32 oX, s32 oY,
 }
 
 void ls_uiGlyphStringFrag(UIContext *c, s32 xPos, s32 yPos, s32 oX, s32 oY, 
-                          s32 maxX, s32 maxY, unistring text, Color textColor)
+                          s32 minX, s32 minY, s32 maxX, s32 maxY, 
+                          unistring text, Color textColor)
 {
+    //TODO: Pre-skip the glyphs that appear before (minX,minY)
     s32 currXPos = xPos;
     for(u32 i = 0; i < text.len; i++)
     {
@@ -984,7 +1009,7 @@ void ls_uiGlyphStringFrag(UIContext *c, s32 xPos, s32 yPos, s32 oX, s32 oY,
         AssertMsg(indexInGlyphArray <= c->currFont->maxCodepoint, "GlyphIndex OutOfBounds\n");
         
         UIGlyph *currGlyph = &c->currFont->glyph[indexInGlyphArray];
-        ls_uiGlyphFrag(c, currXPos, yPos, oX, oY, maxX, maxY, currGlyph, textColor);
+        ls_uiGlyphFrag(c, currXPos, yPos, oX, oY, minX, minY, maxX, maxY, currGlyph, textColor);
         
         s32 kernAdvance = 0;
         if(i < text.len-1) { kernAdvance = ls_uiGetKernAdvance(c, text.data[i], text.data[i+1]); }
@@ -1334,7 +1359,7 @@ b32 ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 
         {
             if(box->isSelecting)
             {
-                AssertMsg(FALSE, "Not implemented yet");
+                AssertMsg(FALSE, "Not implemented yet.\n");
             }
             
             u32 buff[128] = {};
@@ -1363,7 +1388,7 @@ b32 ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 
         { 
             if(box->isSelecting)
             {
-                AssertMsg(FALSE, "Not implemented yet");
+                AssertMsg(FALSE, "Not implemented yet.\n");
             }
             
             SetClipboard(box->text.data, box->text.len); 
@@ -1874,7 +1899,6 @@ void ls_uiRender__(UIContext *c, u32 threadID)
             
             switch(curr->type)
             {
-                case UI_RC_FRAG_TEXTBOX:
                 case UI_RC_TEXTBOX:
                 {
                     UITextBox *box = curr->textBox;
@@ -2112,30 +2136,15 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     
                     if(button->style == UIBUTTON_TEXT)
                     {
-                        Color C = c->borderColor;
-                        
-                        if(rce == UI_RCE_LEFT)
-                        {
-                            ls_uiFillRect(c, xPos, yPos,     w, 1, C);
-                            ls_uiFillRect(c, xPos, yPos+h-1, w, 1, C);
-                            ls_uiFillRect(c, xPos, yPos,     1, h, C);
-                            ls_uiFillRect(c, xPos+1, yPos+1, w-1, h-2, bkgColor);
-                        }
-                        else if (rce == UI_RCE_RIGHT)
-                        {
-                            ls_uiFillRect(c, xPos,     yPos,     w, 1, C);
-                            ls_uiFillRect(c, xPos,     yPos+h-1, w, 1, C);
-                            ls_uiFillRect(c, xPos+w-1, yPos,     1, h, C);
-                            ls_uiFillRect(c, xPos, yPos+1, w-1, h-2, bkgColor);
-                        }
+                        ls_uiBorderedRectFrag(c, xPos, yPos, w, h, bkgColor, rce);
                         
                         s32 strWidth = ls_uiGlyphStringLen(c, button->name);
                         s32 xOff     = (curr->oW - strWidth) / 2; //TODO: What happens when string is too long?
                         s32 strHeight = c->currFont->pixelHeight;
                         s32 yOff      = strHeight*0.25; //TODO: @FontDescent
                         
-                        ls_uiGlyphStringFrag(c, curr->oX+xOff, yPos+yOff, curr->oX, curr->oY, 
-                                             xPos+w, yPos+h, button->name, c->textColor);
+                        ls_uiGlyphStringFrag(c, curr->oX+xOff, yPos+yOff, curr->oX, curr->oY,
+                                             xPos, yPos, xPos+w, yPos+h, button->name, c->textColor);
                     }
                     else if(button->style == UIBUTTON_TEXT_NOBORDER)
                     {
@@ -2146,8 +2155,8 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         s32 strHeight = c->currFont->pixelHeight;
                         s32 yOff      = strHeight*0.25; //TODO: @FontDescent
                         
-                        ls_uiGlyphStringFrag(c, curr->oX+xOff, yPos+yOff, curr->oX, curr->oY, 
-                                             xPos+w, yPos+h, button->name, c->textColor);
+                        ls_uiGlyphStringFrag(c, curr->oX+xOff, yPos+yOff, curr->oX, curr->oY,
+                                             xPos, yPos, xPos+w, yPos+h, button->name, c->textColor);
                     }
                     else if(button->style == UIBUTTON_BMP)
                     {
@@ -2156,6 +2165,69 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     }
                     else { AssertMsg(FALSE, "Unhandled button style"); }
                     
+                } break;
+                
+                case UI_RC_FRAG_TEXTBOX:
+                {
+                    UITextBox *box = curr->textBox;
+                    
+                    Color caretColor = textColor;
+                    const s32 horzOff = 4;
+                    
+                    //TODO: Make the font selection more of a global thing??
+                    s32 strPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                    
+                    ls_uiBorderedRectFrag(c, xPos, yPos, w, h, bkgColor, curr->extra);
+                    
+                    s32 vertOff = ((h - strPixelHeight) / 2) + 5; //TODO: @FontDescent
+                    u32 viewLen = box->viewEndIdx - box->viewBeginIdx;
+                    u32 actualViewLen = viewLen <= box->text.len ? viewLen : box->text.len;
+                    unistring viewString = {box->text.data + box->viewBeginIdx, actualViewLen, actualViewLen};
+                    
+                    //NOTE: Finally draw the entire string.
+                    ls_uiGlyphStringFrag(c, curr->oX + horzOff, yPos + vertOff, curr->oX, curr->oY, 
+                                         xPos, yPos, xPos+w, yPos+h, viewString, textColor);
+                    
+                    if(box->isSelecting)
+                    {
+                        //TODO: Draw this more efficiently by drawing text in 3 different non-overlapping calls??
+                        s32 viewSelBegin = box->selectBeginIdx;
+                        if(viewSelBegin <= box->viewBeginIdx) { viewSelBegin = box->viewBeginIdx; }
+                        
+                        s32 viewSelEnd = box->selectEndIdx;
+                        if(box->viewEndIdx != 0 && viewSelEnd >= box->viewEndIdx) { viewSelEnd = box->viewEndIdx; }
+                        
+                        u32 selLen = viewSelEnd -  viewSelBegin;
+                        unistring selString = {box->text.data + viewSelBegin, selLen, selLen};
+                        s32 selStringWidth  = ls_uiGlyphStringLen(c, selString);
+                        
+                        u32 diffLen = 0;
+                        if(box->selectBeginIdx > box->viewBeginIdx) { diffLen = box->selectBeginIdx - box->viewBeginIdx; }
+                        
+                        unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
+                        s32 diffStringWidth = ls_uiGlyphStringLen(c, diffString);
+                        
+                        ls_uiFillRect(c, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, c->invWidgetColor);
+                        ls_uiGlyphString(c, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, c->invTextColor);
+                        
+                        if(box->caretIndex == box->selectBeginIdx)
+                        { caretColor = c->invTextColor; }
+                        
+                        //NOTE: Draw the Caret
+                        if(box->isCaretOn && c->currentFocus == (u64 *)box)
+                        {
+                            UIGlyph *caretGlyph = &c->currFont->glyph['|'];
+                            
+                            u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
+                            unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
+                            
+                            u32 stringLen = ls_uiGlyphStringLen(c, tmp);
+                            
+                            const s32 randffset = 4; //TODO: Maybe try to remove this?
+                            ls_uiGlyph(c, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
+                        }
+                        
+                    } 
                 } break;
                 
                 default: { AssertMsg(FALSE, "Unhandled Render Command Type\n"); } break;

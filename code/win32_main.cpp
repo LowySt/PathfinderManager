@@ -716,6 +716,21 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //TODO: But if I've loaded an undo chain it means it makes sense to load the State with the "current" Undo state
     CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
     
+    
+#if 1
+    //TODO REMOVE
+    UIButton testBtn = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
+    
+    UIButton testBtn2 = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
+    
+    UIButton testBtn3 = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
+    
+    UITextBox txtBox = {};
+    txtBox.text = ls_unistrAlloc(128);
+    //ls_uiTextBoxSet(uiContext, &txtBox, PartyNameUTF32[1]);
+#endif
+    
+    
     RegionTimer frameTime = {};
     
     b32 Running = TRUE;
@@ -870,14 +885,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
 #if 1
         //TODO REMOVE
-        UIButton testBtn = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
-        ls_uiButton(uiContext, &testBtn, 300, 300, 100, 100);
-        
-        UIButton testBtn2 = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
-        ls_uiButton(uiContext, &testBtn, 800, 300, 100, 100);
-        
-        UIButton testBtn3 = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
-        ls_uiButton(uiContext, &testBtn, 300, 500, 600, 100);
+        //ls_uiButton(uiContext, &testBtn, 300, 300, 100, 100);
+        //ls_uiButton(uiContext, &testBtn, 800, 300, 100, 100);
+        //ls_uiButton(uiContext, &testBtn, 300, 500, 600, 30);
+        ls_uiTextBox(uiContext, &txtBox, 300, 560, 600, 30);
 #endif
         
         // ----------------
