@@ -2202,32 +2202,37 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         s32 selStringWidth  = ls_uiGlyphStringLen(c, selString);
                         
                         u32 diffLen = 0;
-                        if(box->selectBeginIdx > box->viewBeginIdx) { diffLen = box->selectBeginIdx - box->viewBeginIdx; }
+                        if(box->selectBeginIdx > box->viewBeginIdx) 
+                        { diffLen = box->selectBeginIdx - box->viewBeginIdx; }
                         
                         unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
                         s32 diffStringWidth = ls_uiGlyphStringLen(c, diffString);
                         
                         ls_uiFillRect(c, xPos + horzOff + diffStringWidth, yPos+1, selStringWidth, h-2, c->invWidgetColor);
-                        ls_uiGlyphString(c, xPos + horzOff + diffStringWidth, yPos + vertOff, selString, c->invTextColor);
+                        
+                        ls_uiGlyphStringFrag(c, curr->oX + horzOff + diffStringWidth, curr->oY + vertOff, curr->oX, curr->oY, xPos, yPos, xPos+w, yPos+h, selString, c->invTextColor);
                         
                         if(box->caretIndex == box->selectBeginIdx)
                         { caretColor = c->invTextColor; }
-                        
-                        //NOTE: Draw the Caret
-                        if(box->isCaretOn && c->currentFocus == (u64 *)box)
-                        {
-                            UIGlyph *caretGlyph = &c->currFont->glyph['|'];
-                            
-                            u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
-                            unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
-                            
-                            u32 stringLen = ls_uiGlyphStringLen(c, tmp);
-                            
-                            const s32 randffset = 4; //TODO: Maybe try to remove this?
-                            ls_uiGlyph(c, xPos + horzOff + stringLen - randffset, yPos+vertOff, caretGlyph, caretColor);
-                        }
-                        
                     } 
+                    
+                    //NOTE: Draw the Caret
+                    if(box->isCaretOn && c->currentFocus == (u64 *)box)
+                    {
+                        UIGlyph *caretGlyph = &c->currFont->glyph['|'];
+                        
+                        u32 caretIndexInView = box->caretIndex - box->viewBeginIdx;
+                        unistring tmp = {viewString.data, caretIndexInView, caretIndexInView};
+                        
+                        u32 stringLen = ls_uiGlyphStringLen(c, tmp);
+                        const s32 randffset = 4; //TODO: Maybe try to remove this?
+                        
+                        s32 finalXPos = curr->oX + horzOff + stringLen - randffset;
+                        
+                        ls_uiGlyphFrag(c, finalXPos, curr->oY+vertOff,
+                                       curr->oX, curr->oY, xPos, yPos, xPos+w, yPos+h, caretGlyph, caretColor);
+                    }
+                    
                 } break;
                 
                 default: { AssertMsg(FALSE, "Unhandled Render Command Type\n"); } break;
