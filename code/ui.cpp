@@ -611,25 +611,45 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
 }
 
 inline
-void ls_uiBorder(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
+void ls_uiBorderFrag(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, RenderCommandExtra rce)
 {
-    Color C = cxt->borderColor;
+    Color C = c->borderColor;
     
-    ls_uiFillRect(cxt, xPos,     yPos,     w, 1, C);
-    ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, C);
-    ls_uiFillRect(cxt, xPos,     yPos,     1, h, C);
-    ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, C);
+    if(rce == UI_RCE_LEFT)
+    {
+        ls_uiFillRect(c, xPos, yPos,     w, 1, C);
+        ls_uiFillRect(c, xPos, yPos+h-1, w, 1, C);
+        ls_uiFillRect(c, xPos, yPos,     1, h, C);
+    }
+    else if(rce == UI_RCE_RIGHT)
+    {
+        ls_uiFillRect(c, xPos,     yPos,     w, 1, C);
+        ls_uiFillRect(c, xPos,     yPos+h-1, w, 1, C);
+        ls_uiFillRect(c, xPos+w-1, yPos,     1, h, C);
+    }
+}
+
+
+inline
+void ls_uiBorder(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h)
+{
+    Color C = c->borderColor;
+    
+    ls_uiFillRect(c, xPos,     yPos,     w, 1, C);
+    ls_uiFillRect(c, xPos,     yPos+h-1, w, 1, C);
+    ls_uiFillRect(c, xPos,     yPos,     1, h, C);
+    ls_uiFillRect(c, xPos+w-1, yPos,     1, h, C);
 }
 
 inline
-void ls_uiBorder(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color borderColor)
+void ls_uiBorder(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, Color borderColor)
 {
     Color C = borderColor;
     
-    ls_uiFillRect(cxt, xPos,     yPos,     w, 1, C);
-    ls_uiFillRect(cxt, xPos,     yPos+h-1, w, 1, C);
-    ls_uiFillRect(cxt, xPos,     yPos,     1, h, C);
-    ls_uiFillRect(cxt, xPos+w-1, yPos,     1, h, C);
+    ls_uiFillRect(c, xPos,     yPos,     w, 1, C);
+    ls_uiFillRect(c, xPos,     yPos+h-1, w, 1, C);
+    ls_uiFillRect(c, xPos,     yPos,     1, h, C);
+    ls_uiFillRect(c, xPos+w-1, yPos,     1, h, C);
 }
 
 inline
@@ -971,10 +991,11 @@ void ls_uiGlyphFrag(UIContext *c, s32 xPos, s32 yPos, s32 oX, s32 oY,
     {
         for(s32 x = xPos+glyph->x0, eX = 0; eX < glyph->width; x++, eX++)
         {
-            if((x < minX) || (y < minY)) return;
-            if((x >= maxX) || (y >= maxY)) return;
+            if((x < minX)  || (y < minY)) continue;
+            if((x >= maxX) || (y >= maxY)) continue;
             
             if((x < oX) || (y < oY)) continue;
+            
             if(x < 0 || x >= c->width)  continue;
             if(y < 0 || y >= c->height) continue;
             
@@ -2048,7 +2069,6 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     
                 } break;
                 
-                case UI_RC_FRAG_SLIDER:
                 case UI_RC_SLIDER:
                 {
                     UISlider *slider = curr->slider;
@@ -2208,8 +2228,8 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
                         s32 diffStringWidth = ls_uiGlyphStringLen(c, diffString);
                         
+                        //TODO: Fragged FillRect done better???
                         s32 startX = curr->oX + horzOff + diffStringWidth;
-                        
                         if((curr->extra == UI_RCE_LEFT) && (startX < (xPos + w)))
                         {
                             s32 fragWidth = selStringWidth;
@@ -2253,6 +2273,112 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         ls_uiGlyphFrag(c, finalXPos, curr->oY+vertOff,
                                        curr->oX, curr->oY, xPos, yPos, xPos+w, yPos+h, caretGlyph, caretColor);
                     }
+                    
+                } break;
+                
+                case UI_RC_FRAG_SLIDER:
+                {
+                    UISlider *slider = curr->slider;
+                    
+                    //NOTE: Box Slider Branchless Opacity Check
+                    //u8 opacity = 0xEE - (0xB0*slider->isHeld);
+                    u8 opacity = 0xC0 - (0xB0*slider->isHeld);
+                    
+                    if(slider->style == SL_BOX)
+                    {
+                        s32 slideWidth = 3;
+                        
+                        ls_uiBorderFrag(c, xPos, yPos, w, h, curr->extra);
+                        
+                        s32 slidePos  = curr->oW*slider->currPos;
+                        
+                        if(curr->extra == UI_RCE_LEFT)
+                        {
+                            s32 startX = curr->oX+1;
+                            s32 fragW  = (xPos+w) < curr->oX+slidePos ? w : slidePos;
+                            
+                            ls_uiFillRect(c, startX, curr->oY+1, fragW-1, h-2, slider->lColor);
+                            
+                            if((curr->oX+slidePos) < (xPos+w))
+                            {
+                                ls_uiFillRect(c, curr->oX+slidePos, curr->oY+1, w-slidePos, h-2, slider->rColor);
+                            }
+                        }
+                        else if(curr->extra == UI_RCE_RIGHT)
+                        {
+                            if((curr->oX+slidePos) > (xPos+1))
+                            {
+                                s32 fragWLeft = curr->oX + slidePos - xPos;
+                                ls_uiFillRect(c, xPos, curr->oY+1, fragWLeft, h-2, slider->lColor);
+                            }
+                            
+                            s32 startX     = xPos > (curr->oX+slidePos) ? xPos : (curr->oX+slidePos);
+                            s32 fragWRight = xPos > (curr->oX+slidePos) ? w : (w - (curr->oX+slidePos - xPos));
+                            ls_uiFillRect(c, startX, curr->oY+1, fragWRight-1, h-2, slider->rColor);
+                        }
+                        
+                        unistring val = ls_unistrFromInt(slider->currValue);
+                        
+                        s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                        
+                        u32 textLen = ls_uiGlyphStringLen(c, val);
+                        s32 strXPos = curr->oX + slidePos - textLen - 2;
+                        Color textBkgC = slider->lColor;
+                        
+                        if(strXPos < curr->oX+1)
+                        { strXPos = curr->oX + slidePos + slideWidth + 2; textBkgC = slider->rColor; }
+                        
+                        Color valueColor = c->borderColor;
+                        u8 alpha = 0x00 + (slider->isHeld*0xFF);
+                        valueColor = SetAlpha(valueColor, alpha);
+                        ls_uiGlyphStringFrag(c, strXPos, curr->oY + h - strHeight, curr->oX, curr->oY, xPos, yPos, xPos+w, yPos+h, val, valueColor);
+                        
+                        ls_unistrFree(&val);
+                        
+                        s32 actualX = (curr->oX + slidePos) - 1;
+                        s32 actualY = curr->oY - 2;
+                        
+                        s32 actualWidth  = slideWidth+2;
+                        s32 actualHeight = 4 + curr->oH;
+                        
+                        if(slider->isHot)
+                        {
+                            if((actualX-1) < (xPos+w))
+                            { ls_uiFillRect(c, actualX-1, actualY, actualWidth+2, actualHeight, c->borderColor); }
+                            
+                        }
+                        else
+                        {
+                            if(actualX < (xPos+w))
+                            { ls_uiFillRect(c, actualX, curr->oY, actualWidth, curr->oH, c->borderColor); }
+                        }
+                        
+                    }
+                    else if(slider->style == SL_LINE)
+                    { AssertMsg(FALSE, "Slider style line is not implemented\n"); }
+                    
+                    //NOTE: Draw the displayed text, and hide through Alpha the slider info.
+                    
+                    Color rectColor = c->widgetColor;
+                    rectColor = SetAlpha(rectColor, opacity);
+                    
+                    if(curr->extra == UI_RCE_LEFT)       { ls_uiFillRect(c, xPos+1, yPos+1, w-1, h-2, rectColor); }
+                    else if(curr->extra == UI_RCE_RIGHT) { ls_uiFillRect(c, xPos,   yPos+1, w-1, h-2, rectColor); }
+                    
+                    s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                    
+                    s32 strWidth  = ls_uiGlyphStringLen(c, slider->text);
+                    s32 xOff      = (curr->oW - strWidth) / 2;
+                    s32 yOff      = (curr->oH - strHeight) + 3; //TODO: @FontDescent
+                    
+                    Color textColor = c->textColor;
+                    textColor = SetAlpha(textColor, opacity);
+                    
+                    ls_uiGlyphStringFrag(c, curr->oX+xOff, curr->oY + yOff, curr->oX, curr->oY, xPos, yPos, xPos+w, yPos+h, slider->text, textColor);
+                    
+                    //NOTETODO: The isHot is a hack to grow the slider as long as
+                    //          the mouse is on top of it. Is it fine for logic to be here in render?
+                    slider->isHot = FALSE;
                     
                 } break;
                 

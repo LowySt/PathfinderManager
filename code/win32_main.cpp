@@ -728,6 +728,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     UITextBox txtBox = {};
     txtBox.text = ls_unistrAlloc(128);
     //ls_uiTextBoxSet(uiContext, &txtBox, PartyNameUTF32[1]);
+    
+    UISlider sldr = {};
+    sldr = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, RGBA(0x10, 0xDD, 0x20, 0x99), RGBA(0xF0, 0xFF, 0x3D, 0x99));
+    sldr.text = ls_unistrFromAscii("Bow cika wow wow this is beautiful!");
 #endif
     
     
@@ -889,6 +893,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //ls_uiButton(uiContext, &testBtn, 800, 300, 100, 100);
         //ls_uiButton(uiContext, &testBtn, 300, 500, 600, 30);
         ls_uiTextBox(uiContext, &txtBox, 300, 560, 600, 30);
+        ls_uiSlider(uiContext, &sldr, 300, 620, 600, 30);
 #endif
         
         // ----------------
