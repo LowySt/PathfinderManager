@@ -653,6 +653,28 @@ void ls_uiBorder(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, Color borderCol
 }
 
 inline
+void ls_uiBorderedRectFrag(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, RenderCommandExtra rce)
+{
+    Color C = c->borderColor;
+    Color W = c->widgetColor;
+    
+    if(rce == UI_RCE_LEFT)
+    {
+        ls_uiFillRect(c, xPos, yPos,     w, 1, C);
+        ls_uiFillRect(c, xPos, yPos+h-1, w, 1, C);
+        ls_uiFillRect(c, xPos, yPos,     1, h, C);
+        ls_uiFillRect(c, xPos+1, yPos+1, w-1, h-2, W);
+    }
+    else if(rce == UI_RCE_RIGHT)
+    {
+        ls_uiFillRect(c, xPos,     yPos,     w, 1, C);
+        ls_uiFillRect(c, xPos,     yPos+h-1, w, 1, C);
+        ls_uiFillRect(c, xPos+w-1, yPos,     1, h, C);
+        ls_uiFillRect(c, xPos, yPos+1, w-1, h-2, W);
+    }
+}
+
+inline
 void ls_uiBorderedRectFrag(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor, RenderCommandExtra rce)
 {
     Color C = c->borderColor;
@@ -1982,7 +2004,6 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     
                 } break;
                 
-                case UI_RC_FRAG_LISTBOX:
                 case UI_RC_LISTBOX:
                 {
                     UIListBox *list = curr->listBox;
@@ -2029,7 +2050,6 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         
                         ls_uiBorder(c, xPos, yPos-maxHeight, w, maxHeight+1);
                     }
-                    
                     
                 } break;
                 
@@ -2379,6 +2399,105 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     //NOTETODO: The isHot is a hack to grow the slider as long as
                     //          the mouse is on top of it. Is it fine for logic to be here in render?
                     slider->isHot = FALSE;
+                    
+                } break;
+                
+                case UI_RC_FRAG_LISTBOX:
+                {
+                    UIListBox *list = curr->listBox;
+                    
+                    s32 strHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+                    s32 vertOff = ((curr->oH - strHeight) / 2) + 4; //TODO: @FontDescent
+                    
+                    ls_uiBorderedRectFrag(c, xPos, yPos, w, h, curr->extra);
+                    
+                    const s32 arrowBoxWidth = 24;
+                    //ls_uiDrawArrow(c, xPos + w, yPos, arrowBoxWidth, h, UIA_DOWN);
+                    {
+                        AssertMsg(FALSE, "Not properly multithreaded yet. also borderedRectFrag smells like wrong, when not dealing with an actually fragged rect...");
+                        UIScissor::UIRect *scRect = c->scissor.currRect;
+                        u32 *At = (u32 *)c->drawBuffer;
+                        
+                        s32 arrowX = curr->oX + curr->oW - 1;
+                        
+                        //TODO: I don't like this being in rendering.
+                        Color bkgColor = c->widgetColor;
+                        if(MouseInRect(arrowX, curr->oY, arrowBoxWidth, h)) { bkgColor = c->highliteColor; }
+                        
+                        ls_uiBorderedRect(c, arrowX, curr->oY, arrowBoxWidth, h, bkgColor);
+                        
+                        s32 arrowWidth = 8;
+                        s32 hBearing = (arrowBoxWidth - arrowWidth)/2;
+                        s32 xBase = arrowX + hBearing;
+                        s32 xEnd  = xBase + arrowWidth;
+                        
+                        s32 arrowHeight = 4;
+                        s32 vBearing = (h - arrowHeight)/2;
+                        s32 yStart = (curr->oY + h - vBearing) - 1;
+                        s32 yEnd = yStart - arrowHeight;
+                        
+                        for(s32 y = yStart; y >= yEnd; y--)
+                        {
+                            for(s32 x = xBase; x < xEnd; x++)
+                            {
+                                if((x < xPos) || (x >= (c->width/2))) continue;
+                                if((y < yPos) || (y >= yPos+h))       continue;
+                                
+                                if(x < 0 || x >= c->width)  continue;
+                                if(y < 0 || y >= c->height) continue;
+                                
+                                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+                                
+                                At[y*c->width + x] = c->borderColor;
+                            }
+                            
+                            xBase += 1;
+                            xEnd  -= 1;
+                        }
+                    }
+                    
+                    if(list->list.count)
+                    {
+                        unistring selected = list->list[list->selectedIndex].name;
+                        ls_uiGlyphStringFrag(c, curr->oX+10, curr->oY + vertOff, curr->oX, curr->oY, xPos, yPos, xPos+w, yPos+h, selected, c->textColor);
+                    }
+                    
+                    s32 maxHeight = (list->list.count)*h;
+                    if(list->isOpening)
+                    {
+                        s32 height = 0;
+                        if(list->dtOpen > 17)  { height = maxHeight*0.10f; }
+                        if(list->dtOpen > 34)  { height = maxHeight*0.35f; }
+                        if(list->dtOpen > 52)  { height = maxHeight*0.70f; }
+                        
+                        if(!list->isOpen)
+                        { 
+                            if(curr->extra == UI_RCE_LEFT)
+                            { ls_uiFillRect(c, xPos+1, yPos-height, w, height, c->widgetColor); }
+                            else if(curr->extra == UI_RCE_RIGHT)
+                            { ls_uiFillRect(c, xPos, yPos-height, w-1, height, c->widgetColor); }
+                        }
+                    }
+                    
+                    if(list->isOpen)
+                    {
+                        for(u32 i = 0; i < list->list.count; i++)
+                        {
+                            s32 iOff = (h*(i+1));
+                            s32 currY = yPos - iOff;
+                            UIListBoxItem *currItem = list->list.getPointer(i);
+                            
+                            ls_uiFillRect(c, xPos, currY, w, h, currItem->bkgColor);
+                            
+                            ls_uiGlyphStringFrag(c, curr->oX+10, curr->oY + vertOff - iOff,
+                                                 curr->oX, curr->oY - iOff, xPos, yPos - iOff, xPos+w, yPos+h,
+                                                 currItem->name, currItem->textColor);
+                            
+                        }
+                        
+                        ls_uiBorderFrag(c, xPos, yPos-maxHeight, w, maxHeight+1, curr->extra);
+                    }
                     
                 } break;
                 
