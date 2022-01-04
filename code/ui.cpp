@@ -218,7 +218,7 @@ const u32 UI_Z_LAYERS = 3;
 struct RenderGroup
 {
     stack RenderCommands[UI_Z_LAYERS];
-    b32 isDone;
+    volatile b32 isDone;
 };
 
 typedef void (*RenderCallback)();
@@ -1940,10 +1940,10 @@ void ls_uiRender(UIContext *c)
 {
     WakeAllConditionVariable(&c->startRender);
     
-    b32 areAllDone = FALSE;
+    volatile b32 areAllDone = FALSE;
     while(areAllDone == FALSE)
     {
-        b32 allDone = TRUE;
+        volatile b32 allDone = TRUE;
         for(u32 i = 0; i < 2; i++)
         {
             allDone &= c->renderGroups[i].isDone;
