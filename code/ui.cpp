@@ -119,6 +119,8 @@ struct UIListBox
     b32 isOpening;
     b32 isOpen;
     
+    Color arrowBkg;
+    
     ListBoxProc onSelect;
     void *data;
 };
@@ -1456,15 +1458,12 @@ b32 ls_uiTextBox(UIContext *cxt, UITextBox *box, s32 xPos, s32 yPos, s32 w, s32 
 
 
 enum UIArrowSide { UIA_LEFT, UIA_RIGHT, UIA_UP, UIA_DOWN };
-void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h, UIArrowSide s)
+void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h, Color bkgColor, UIArrowSide s)
 {
     UIScissor::UIRect *scRect = cxt->scissor.currRect;
     u32 *At = (u32 *)cxt->drawBuffer;
     
     s32 xPos = x-1;
-    
-    Color bkgColor = cxt->widgetColor;
-    if(MouseInRect(xPos, yPos, w, h)) { bkgColor = cxt->highliteColor; }
     
     ls_uiBorderedRect(cxt, xPos, yPos, w, h, bkgColor);
     
@@ -1594,7 +1593,7 @@ void ls_uiDrawArrow(UIContext *cxt, s32 x, s32 yPos, s32 w, s32 h, UIArrowSide s
 }
 
 
-void ls_uiLPane(UIContext *cxt, UILPane *pane, s32 xPos, s32 yPos, s32 w, s32 h)
+void ls_uiLPane(UIContext *c, UILPane *pane, s32 xPos, s32 yPos, s32 w, s32 h)
 {
     if(pane->isOpen)
     {
@@ -1604,19 +1603,20 @@ void ls_uiLPane(UIContext *cxt, UILPane *pane, s32 xPos, s32 yPos, s32 w, s32 h)
         s32 arrowHeight = 14;
         s32 yArrowPos   = yPos + h - arrowHeight;
         
-        ls_uiDrawArrow(cxt, xArrowPos, yArrowPos, arrowWidth, arrowHeight, UIA_LEFT);
+        //TODO: Fix Left Pane Arrow Color
+        ls_uiDrawArrow(c, xArrowPos, yArrowPos, arrowWidth, arrowHeight, c->widgetColor, UIA_LEFT);
         
         if(LeftClickIn(xArrowPos, yArrowPos, arrowWidth, arrowHeight))
         { pane->isOpen = FALSE; }
         
-        ls_uiBorderedRect(cxt, xPos-1, yPos, w, h, cxt->widgetColor);
+        ls_uiBorderedRect(c, xPos-1, yPos, w, h, c->widgetColor);
     }
     else
     {
         s32 width = 0;
         if(pane->isOpening)
         {
-            pane->dtOpen += cxt->dt;
+            pane->dtOpen += c->dt;
             
             s32 maxDT = 120;
             f64 dtFract = (f64)pane->dtOpen / maxDT;
@@ -1624,10 +1624,10 @@ void ls_uiLPane(UIContext *cxt, UILPane *pane, s32 xPos, s32 yPos, s32 w, s32 h)
             
             if(pane->dtOpen >= maxDT) { 
                 pane->isOpen = TRUE; pane->isOpening = FALSE; pane->dtOpen = 0;
-                ls_uiBorderedRect(cxt, xPos-1, yPos, w, h, cxt->widgetColor);
+                ls_uiBorderedRect(c, xPos-1, yPos, w, h, c->widgetColor);
             }
             
-            if(!pane->isOpen) { ls_uiBorderedRect(cxt, xPos-1, yPos, width, h, cxt->widgetColor); }
+            if(!pane->isOpen) { ls_uiBorderedRect(c, xPos-1, yPos, width, h, c->widgetColor); }
         }
         
         s32 xArrowPos  = xPos + width;
@@ -1636,7 +1636,7 @@ void ls_uiLPane(UIContext *cxt, UILPane *pane, s32 xPos, s32 yPos, s32 w, s32 h)
         s32 arrowHeight = 14;
         s32 yArrowPos   = yPos + h - arrowHeight;
         
-        ls_uiDrawArrow(cxt, xArrowPos, yArrowPos, arrowWidth, arrowHeight, UIA_RIGHT);
+        ls_uiDrawArrow(c, xArrowPos, yArrowPos, arrowWidth, arrowHeight, c->widgetColor, UIA_RIGHT);
         
         if(LeftClickIn(xArrowPos, yArrowPos, arrowWidth, arrowHeight))
         { pane->isOpening = TRUE; }
@@ -1686,6 +1686,11 @@ b32 ls_uiListBox(UIContext *c, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h
         //else { list->isOpening = TRUE; } //NOTE:TODO: This is because Claudio wanted instant list open. 
         else { list->isOpen = TRUE; }
     }
+    
+    Color bkgColor = c->widgetColor;
+    s32 arrowX = xPos + w - 1;
+    if(MouseInRect(arrowX, yPos, arrowBoxWidth, h)) { bkgColor = c->highliteColor; }
+    list->arrowBkg = bkgColor;
     
     if(list->isOpening)
     {
@@ -2020,11 +2025,6 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     
                     ls_uiBorderedRect(c, xPos, yPos, w, h);
                     
-                    /*
-                                        const s32 arrowBoxWidth = 24;
-                                        ls_uiDrawArrow(c, xPos + w, yPos, arrowBoxWidth, h, UIA_DOWN);
-                                        */
-                    
                     if(list->list.count)
                     {
                         unistring selected = list->list[list->selectedIndex].name;
@@ -2064,7 +2064,7 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                 
                 case UI_RC_LISTBOX_ARR:
                 {
-                    ls_uiDrawArrow(c, xPos, yPos, w, h, UIA_DOWN);
+                    ls_uiDrawArrow(c, xPos, yPos, w, h, curr->listBox->arrowBkg, UIA_DOWN);
                 } break;
                 
                 case UI_RC_BUTTON:
@@ -2476,13 +2476,7 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     
                     s32 arrowX = curr->oX - 1;
                     
-                    
-                    AssertMsg(FALSE, "right side bordered rect overdrawing arrow\n");
-                    //TODO: I don't like this being in rendering.
-                    Color bkgColor = c->widgetColor;
-                    if(MouseInRect(arrowX, curr->oY, curr->oW, h)) { bkgColor = c->highliteColor; }
-                    
-                    ls_uiBorderedRectFrag(c, xPos-1, yPos, w, h, bkgColor, curr->extra);
+                    ls_uiBorderedRectFrag(c, xPos-1, yPos, w, h, curr->listBox->arrowBkg, curr->extra);
                     
                     s32 arrowWidth = 8;
                     s32 hBearing = (curr->oW - arrowWidth)/2;
@@ -2498,8 +2492,8 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     {
                         for(s32 x = xBase; x < xEnd; x++)
                         {
-                            if((x < xPos) || (x > xPos+w)) continue;
-                            if((y < yPos) || (y > yPos+h)) continue;
+                            if((x < xPos-1) || (x > xPos+w)) continue;
+                            if((y < yPos)   || (y > yPos+h)) continue;
                             
                             if(x < 0 || x >= c->width)  continue;
                             if(y < 0 || y >= c->height) continue;
