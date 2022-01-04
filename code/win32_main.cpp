@@ -717,29 +717,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
     
     
-#if 1
-    //TODO REMOVE
-    UIButton testBtn = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
-    
-    UIButton testBtn2 = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
-    
-    UIButton testBtn3 = { UIBUTTON_TEXT, PartyNameUTF32[0], NULL, 0, 0};
-    
-    UITextBox txtBox = {};
-    txtBox.text = ls_unistrAlloc(128);
-    //ls_uiTextBoxSet(uiContext, &txtBox, PartyNameUTF32[1]);
-    
-    UISlider sldr = {};
-    sldr = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, RGBA(0x10, 0xDD, 0x20, 0x99), RGBA(0xF0, 0xFF, 0x3D, 0x99));
-    sldr.text = ls_unistrFromAscii("Bow cika wow wow this is beautiful!");
-    
-    UIListBox lstbx = {};
-    ls_uiListBoxAddEntry(uiContext, &lstbx, (char *)Enemies[0]);
-    ls_uiListBoxAddEntry(uiContext, &lstbx, "Hello you piece of shit, this is a very long string, for very long people.");
-    ls_uiListBoxAddEntry(uiContext, &lstbx, (char *)Enemies[2]);
-#endif
-    
-    
     RegionTimer frameTime = {};
     
     b32 Running = TRUE;
@@ -805,11 +782,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Window Menu
         ls_uiMenu(uiContext, &WindowMenu, -1, State.windowHeight-20, State.windowWidth, 22);
         
-#if 1
         userInputConsumed = DrawInitTab(uiContext);
-#else
-        userInputConsumed = FALSE;
-#endif
+        
         if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
         {
             undoRequest = FALSE;
@@ -891,17 +865,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(LeftUp || RightUp || MiddleUp)
         { uiContext->mouseCapture = 0; }
         
-        
-#if 0
-        //TODO REMOVE
-        //ls_uiButton(uiContext, &testBtn, 300, 300, 100, 100);
-        //ls_uiButton(uiContext, &testBtn, 800, 300, 100, 100);
-        //ls_uiButton(uiContext, &testBtn, 300, 500, 600, 30);
-        ls_uiTextBox(uiContext, &txtBox, 300, 560, 600, 30);
-        ls_uiSlider(uiContext, &sldr, 300, 620, 600, 30);
-        ls_uiListBox(uiContext, &lstbx, 300, 500, 330, 30);
-#endif
-        
         // ----------------
         // Render Everything
         ls_arenaUse(renderArena);
@@ -931,7 +894,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         u32 frameTimeMs = RegionTimerGet(frameTime);
         
         //NOTE: 60fps lock
-        const u32 frameLock = 16;
+        const u32 frameLock = 0;
         if(frameTimeMs < frameLock)
         {
             u32 deltaTimeInMs = frameLock - frameTimeMs;
