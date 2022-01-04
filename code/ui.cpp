@@ -315,9 +315,9 @@ UIContext *ls_uiInitDefaultContext(u8 *drawBuffer, u32 width, u32 height, Render
     {
         for(u32 i = 0; i < THREAD_COUNT; i++)
         {
-            uiContext->renderGroups[i].RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 512);
-            uiContext->renderGroups[i].RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 512);
-            uiContext->renderGroups[i].RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 512);
+            uiContext->renderGroups[i].RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 384);
+            uiContext->renderGroups[i].RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 64);
+            uiContext->renderGroups[i].RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 64);
         }
         
         
@@ -336,8 +336,8 @@ UIContext *ls_uiInitDefaultContext(u8 *drawBuffer, u32 width, u32 height, Render
     else
     {
         uiContext->renderGroups[0].RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 512);
-        uiContext->renderGroups[0].RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 512);
-        uiContext->renderGroups[0].RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 512);
+        uiContext->renderGroups[0].RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 64);
+        uiContext->renderGroups[0].RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 64);
     }
     
     return uiContext;
