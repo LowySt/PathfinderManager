@@ -172,6 +172,7 @@ enum RenderCommandType
     UI_RC_TEXTBOX = 1,
     UI_RC_BUTTON,
     UI_RC_LISTBOX,
+    UI_RC_LISTBOX_ARR,
     UI_RC_SLIDER,
     UI_RC_MENU,
     
@@ -180,6 +181,7 @@ enum RenderCommandType
     UI_RC_FRAG_TEXTBOX,
     UI_RC_FRAG_BUTTON,
     UI_RC_FRAG_LISTBOX,
+    UI_RC_FRAG_LISTBOX_ARR,
     UI_RC_FRAG_SLIDER,
     UI_RC_FRAG_MENU,
 };
@@ -678,6 +680,7 @@ inline
 void ls_uiBorderedRectFrag(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, Color widgetColor, RenderCommandExtra rce)
 {
     Color C = c->borderColor;
+    
     
     if(rce == UI_RCE_LEFT)
     {
@@ -1669,15 +1672,15 @@ inline void ls_uiListBoxRemoveEntry(UIContext *cxt, UIListBox *list, u32 index)
     list->list.remove(index);
 }
 
-b32 ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h, u32 zLayer = 0)
+b32 ls_uiListBox(UIContext *c, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32 h, u32 zLayer = 0)
 {
     b32 inputUse = FALSE;
     
     const s32 arrowBoxWidth = 24;
-    if(LeftClickIn(xPos+w, yPos, arrowBoxWidth, h) && ls_uiHasCapture(cxt, 0))
+    if(LeftClickIn(xPos+w, yPos, arrowBoxWidth, h) && ls_uiHasCapture(c, 0))
     {
-        cxt->currentFocus = (u64 *)list;
-        cxt->focusWasSetThisFrame = TRUE;
+        c->currentFocus = (u64 *)list;
+        c->focusWasSetThisFrame = TRUE;
         
         if(list->isOpen) { list->isOpen = FALSE; }
         //else { list->isOpening = TRUE; } //NOTE:TODO: This is because Claudio wanted instant list open. 
@@ -1686,11 +1689,11 @@ b32 ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32
     
     if(list->isOpening)
     {
-        list->dtOpen += cxt->dt;
+        list->dtOpen += c->dt;
         if(list->dtOpen > 70) { list->isOpen = TRUE; list->isOpening = FALSE; list->dtOpen = 0; }
     }
     
-    if(ls_uiInFocus(cxt, list))
+    if(ls_uiInFocus(c, list))
     {
         if(list->isOpen)
         {
@@ -1701,17 +1704,17 @@ b32 ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32
                 
                 //TODO: The constant resetting is kinda stupid. Makes me think I should just not
                 //      have listbox items with their own colors. Never even used that feature.
-                currItem->bkgColor = cxt->widgetColor;
-                currItem->textColor = cxt->textColor;
+                currItem->bkgColor  = c->widgetColor;
+                currItem->textColor = c->textColor;
                 if(MouseInRect(xPos+1, currY+1, w-2, h-1)) 
                 { 
-                    currItem->bkgColor = cxt->highliteColor;
+                    currItem->bkgColor = c->highliteColor;
                     if(LeftClick) { 
-                        cxt->mouseCapture = (u64 *)list;
+                        c->mouseCapture = (u64 *)list;
                         
                         list->selectedIndex = i; list->isOpen = FALSE;
                         inputUse = TRUE;
-                        if(list->onSelect) { list->onSelect(cxt, list->data); }
+                        if(list->onSelect) { list->onSelect(c, list->data); }
                     }
                     
                     //TODO: Lost the ability to hold because of mouse capture.
@@ -1723,9 +1726,13 @@ b32 ls_uiListBox(UIContext *cxt, UIListBox *list, s32 xPos, s32 yPos, s32 w, s32
         }
     }
     
-    RenderCommand command = { UI_RC_LISTBOX, xPos, yPos, w, h };
-    command.listBox = list;
-    ls_uiPushRenderCommand(cxt, command, zLayer);
+    RenderCommand list_command = { UI_RC_LISTBOX, xPos, yPos, w, h };
+    list_command.listBox = list;
+    ls_uiPushRenderCommand(c, list_command, zLayer);
+    
+    RenderCommand arr_command = { UI_RC_LISTBOX_ARR, xPos+w, yPos, arrowBoxWidth, h };
+    arr_command.listBox = list;
+    ls_uiPushRenderCommand(c, arr_command, zLayer);
     
     return inputUse;
 }
@@ -2013,8 +2020,10 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     
                     ls_uiBorderedRect(c, xPos, yPos, w, h);
                     
-                    const s32 arrowBoxWidth = 24;
-                    ls_uiDrawArrow(c, xPos + w, yPos, arrowBoxWidth, h, UIA_DOWN);
+                    /*
+                                        const s32 arrowBoxWidth = 24;
+                                        ls_uiDrawArrow(c, xPos + w, yPos, arrowBoxWidth, h, UIA_DOWN);
+                                        */
                     
                     if(list->list.count)
                     {
@@ -2051,6 +2060,11 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         ls_uiBorder(c, xPos, yPos-maxHeight, w, maxHeight+1);
                     }
                     
+                } break;
+                
+                case UI_RC_LISTBOX_ARR:
+                {
+                    ls_uiDrawArrow(c, xPos, yPos, w, h, UIA_DOWN);
                 } break;
                 
                 case UI_RC_BUTTON:
@@ -2411,52 +2425,6 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     
                     ls_uiBorderedRectFrag(c, xPos, yPos, w, h, curr->extra);
                     
-                    const s32 arrowBoxWidth = 24;
-                    //ls_uiDrawArrow(c, xPos + w, yPos, arrowBoxWidth, h, UIA_DOWN);
-                    {
-                        AssertMsg(FALSE, "Not properly multithreaded yet. also borderedRectFrag smells like wrong, when not dealing with an actually fragged rect...");
-                        UIScissor::UIRect *scRect = c->scissor.currRect;
-                        u32 *At = (u32 *)c->drawBuffer;
-                        
-                        s32 arrowX = curr->oX + curr->oW - 1;
-                        
-                        //TODO: I don't like this being in rendering.
-                        Color bkgColor = c->widgetColor;
-                        if(MouseInRect(arrowX, curr->oY, arrowBoxWidth, h)) { bkgColor = c->highliteColor; }
-                        
-                        ls_uiBorderedRect(c, arrowX, curr->oY, arrowBoxWidth, h, bkgColor);
-                        
-                        s32 arrowWidth = 8;
-                        s32 hBearing = (arrowBoxWidth - arrowWidth)/2;
-                        s32 xBase = arrowX + hBearing;
-                        s32 xEnd  = xBase + arrowWidth;
-                        
-                        s32 arrowHeight = 4;
-                        s32 vBearing = (h - arrowHeight)/2;
-                        s32 yStart = (curr->oY + h - vBearing) - 1;
-                        s32 yEnd = yStart - arrowHeight;
-                        
-                        for(s32 y = yStart; y >= yEnd; y--)
-                        {
-                            for(s32 x = xBase; x < xEnd; x++)
-                            {
-                                if((x < xPos) || (x >= (c->width/2))) continue;
-                                if((y < yPos) || (y >= yPos+h))       continue;
-                                
-                                if(x < 0 || x >= c->width)  continue;
-                                if(y < 0 || y >= c->height) continue;
-                                
-                                if(x < scRect->x || x >= scRect->x+scRect->w) continue;
-                                if(y < scRect->y || y >= scRect->y+scRect->h) continue;
-                                
-                                At[y*c->width + x] = c->borderColor;
-                            }
-                            
-                            xBase += 1;
-                            xEnd  -= 1;
-                        }
-                    }
-                    
                     if(list->list.count)
                     {
                         unistring selected = list->list[list->selectedIndex].name;
@@ -2497,6 +2465,53 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         }
                         
                         ls_uiBorderFrag(c, xPos, yPos-maxHeight, w, maxHeight+1, curr->extra);
+                    }
+                    
+                } break;
+                
+                case UI_RC_FRAG_LISTBOX_ARR:
+                {
+                    UIScissor::UIRect *scRect = c->scissor.currRect;
+                    u32 *At = (u32 *)c->drawBuffer;
+                    
+                    s32 arrowX = curr->oX - 1;
+                    
+                    
+                    AssertMsg(FALSE, "right side bordered rect overdrawing arrow\n");
+                    //TODO: I don't like this being in rendering.
+                    Color bkgColor = c->widgetColor;
+                    if(MouseInRect(arrowX, curr->oY, curr->oW, h)) { bkgColor = c->highliteColor; }
+                    
+                    ls_uiBorderedRectFrag(c, xPos-1, yPos, w, h, bkgColor, curr->extra);
+                    
+                    s32 arrowWidth = 8;
+                    s32 hBearing = (curr->oW - arrowWidth)/2;
+                    s32 xBase = arrowX + hBearing;
+                    s32 xEnd  = xBase + arrowWidth;
+                    
+                    s32 arrowHeight = 4;
+                    s32 vBearing = (curr->oH - arrowHeight)/2;
+                    s32 yStart = (curr->oY + curr->oH - vBearing) - 1;
+                    s32 yEnd = yStart - arrowHeight;
+                    
+                    for(s32 y = yStart; y >= yEnd; y--)
+                    {
+                        for(s32 x = xBase; x < xEnd; x++)
+                        {
+                            if((x < xPos) || (x > xPos+w)) continue;
+                            if((y < yPos) || (y > yPos+h)) continue;
+                            
+                            if(x < 0 || x >= c->width)  continue;
+                            if(y < 0 || y >= c->height) continue;
+                            
+                            if(x < scRect->x || x >= scRect->x+scRect->w) continue;
+                            if(y < scRect->y || y >= scRect->y+scRect->h) continue;
+                            
+                            At[y*c->width + x] = c->borderColor;
+                        }
+                        
+                        xBase += 1;
+                        xEnd  -= 1;
                     }
                     
                 } break;

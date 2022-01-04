@@ -899,7 +899,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //ls_uiButton(uiContext, &testBtn, 300, 500, 600, 30);
         ls_uiTextBox(uiContext, &txtBox, 300, 560, 600, 30);
         ls_uiSlider(uiContext, &sldr, 300, 620, 600, 30);
-        ls_uiListBox(uiContext, &lstbx, 300, 500, 600, 30);
+        ls_uiListBox(uiContext, &lstbx, 300, 500, 330, 30);
 #endif
         
         // ----------------
