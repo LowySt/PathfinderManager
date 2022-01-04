@@ -4,6 +4,9 @@
 #define SetAlpha(v, a) (u32)((v & 0x00FFFFFF) | (((u32)a)<<24))
 #define GetAlpha(v)    ( u8)(((v) & 0xFF000000) >> 24)
 
+const     u32 THREAD_COUNT       = 2;
+constexpr u32 RENDER_GROUP_COUNT = THREAD_COUNT == 0 ? 1 : THREAD_COUNT;
+
 typedef u32 Color;
 
 struct UIGlyph
@@ -255,7 +258,7 @@ struct UIContext
     
     u64 *mouseCapture;
     
-    RenderGroup renderGroups[2];
+    RenderGroup renderGroups[RENDER_GROUP_COUNT];
     
     CONDITION_VARIABLE startRender;
     CRITICAL_SECTION crit;
@@ -266,7 +269,7 @@ struct UIContext
 
 struct ___threadCtx
 {
-    UIContext *ctx;
+    UIContext *c;
     u64 ThreadID;
 };
 
@@ -275,16 +278,16 @@ DWORD ls_uiRenderThreadProc(void *param)
 {
     ___threadCtx *t = (___threadCtx *)param;
     
-    UIContext *ctx = t->ctx;
+    UIContext *c = t->c;
     u64 threadID = t->ThreadID;
     
     while(TRUE)
     {
-        EnterCriticalSection(&ctx->crit);
-        SleepConditionVariableCS(&ctx->startRender, &ctx->crit, INFINITE);
-        LeaveCriticalSection(&ctx->crit);
+        EnterCriticalSection(&c->crit);
+        SleepConditionVariableCS(&c->startRender, &c->crit, INFINITE);
+        LeaveCriticalSection(&c->crit);
         
-        ls_uiRender__(ctx, threadID);
+        ls_uiRender__(c, threadID);
     }
     
     AssertMsg(FALSE, "Render Thread should never exit\n");
@@ -308,27 +311,34 @@ UIContext *ls_uiInitDefaultContext(u8 *drawBuffer, u32 width, u32 height, Render
     uiContext->invWidgetColor  = RGBg(0xBA);
     uiContext->invTextColor    = RGBg(0x33);
     
-    for(u32 i = 0; i < 2; i++)
+    if(THREAD_COUNT != 0)
     {
-        uiContext->renderGroups[i].RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 512);
-        uiContext->renderGroups[i].RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 512);
-        uiContext->renderGroups[i].RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 512);
+        for(u32 i = 0; i < THREAD_COUNT; i++)
+        {
+            uiContext->renderGroups[i].RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 512);
+            uiContext->renderGroups[i].RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 512);
+            uiContext->renderGroups[i].RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 512);
+        }
+        
+        
+        InitializeConditionVariable(&uiContext->startRender);
+        InitializeCriticalSection(&uiContext->crit);
+        
+        for(u32 i = 0; i < THREAD_COUNT; i++)
+        {
+            ___threadCtx *t = (___threadCtx *)ls_alloc(sizeof(___threadCtx));
+            t->c            = uiContext;
+            t->ThreadID     = i;
+            
+            CreateThread(NULL, KBytes(512), ls_uiRenderThreadProc, t, NULL, NULL);
+        }
     }
-    
-    
-    InitializeConditionVariable(&uiContext->startRender);
-    InitializeCriticalSection(&uiContext->crit);
-    
-    ___threadCtx *t1 = (___threadCtx *)ls_alloc(sizeof(___threadCtx));
-    t1->ctx          = uiContext;
-    t1->ThreadID     = 0;
-    
-    ___threadCtx *t2 = (___threadCtx *)ls_alloc(sizeof(___threadCtx));
-    t2->ctx          = uiContext;
-    t2->ThreadID     = 1;
-    
-    CreateThread(NULL, KBytes(512), ls_uiRenderThreadProc, t1, NULL, NULL);
-    CreateThread(NULL, KBytes(512), ls_uiRenderThreadProc, t2, NULL, NULL);
+    else
+    {
+        uiContext->renderGroups[0].RenderCommands[0] = ls_stackInit(sizeof(RenderCommand), 512);
+        uiContext->renderGroups[0].RenderCommands[1] = ls_stackInit(sizeof(RenderCommand), 512);
+        uiContext->renderGroups[0].RenderCommands[2] = ls_stackInit(sizeof(RenderCommand), 512);
+    }
     
     return uiContext;
 }
@@ -367,43 +377,58 @@ b32 ls_uiRectIsInside(RenderRect r1, RenderRect check)
 
 void ls_uiPushRenderCommand(UIContext *c, RenderCommand command, s32 zLayer)
 {
-    
-    RenderRect commandRect = { command.x, command.y, command.w, command.h };
-    
-    if(ls_uiRectIsInside(commandRect, {0, 0, (s32)(c->width / 2), (s32)c->height}))
+    switch(THREAD_COUNT)
     {
-        ls_stackPush(&c->renderGroups[0].RenderCommands[zLayer], (void *)&command);
-        return;
-    }
-    else if(ls_uiRectIsInside(commandRect, {(s32)(c->width / 2), 0, (s32)(c->width / 2), (s32)c->height}))
-    {
-        ls_stackPush(&c->renderGroups[1].RenderCommands[zLayer], (void *)&command);
-        return;
-    }
-    else
-    {
-        //Half in one, half in another.
+        case 0:
+        case 1:
+        {
+            ls_stackPush(&c->renderGroups[0].RenderCommands[zLayer], (void *)&command);
+            return;
+        } break;
         
-        RenderCommand section = command;
+        case 2:
+        {
+            RenderRect commandRect = { command.x, command.y, command.w, command.h };
+            
+            if(ls_uiRectIsInside(commandRect, {0, 0, (s32)(c->width / 2), (s32)c->height}))
+            {
+                ls_stackPush(&c->renderGroups[0].RenderCommands[zLayer], (void *)&command);
+                return;
+            }
+            else if(ls_uiRectIsInside(commandRect, {(s32)(c->width / 2), 0, (s32)(c->width / 2), (s32)c->height}))
+            {
+                ls_stackPush(&c->renderGroups[1].RenderCommands[zLayer], (void *)&command);
+                return;
+            }
+            else
+            {
+                //Half in one, half in another.
+                
+                RenderCommand section = command;
+                
+                section.type  = (RenderCommandType)(command.type + UI_RC_FRAG_OFF);
+                section.extra = UI_RCE_LEFT;
+                section.oX = command.x;
+                section.oY = command.y;
+                section.oW = command.w;
+                section.oH = command.h;
+                
+                section.x     = command.x;
+                section.w     = (c->width/2) - command.x;
+                
+                ls_stackPush(&c->renderGroups[0].RenderCommands[zLayer], (void *)&section);
+                
+                section.extra = UI_RCE_RIGHT;
+                section.x     = c->width/2;
+                section.w     = command.w - section.w;
+                
+                ls_stackPush(&c->renderGroups[1].RenderCommands[zLayer], (void *)&section);
+                return;
+            }
+            
+        } break;
         
-        section.type  = (RenderCommandType)(command.type + UI_RC_FRAG_OFF);
-        section.extra = UI_RCE_LEFT;
-        section.oX = command.x;
-        section.oY = command.y;
-        section.oW = command.w;
-        section.oH = command.h;
-        
-        section.x     = command.x;
-        section.w     = (c->width/2) - command.x;
-        
-        ls_stackPush(&c->renderGroups[0].RenderCommands[zLayer], (void *)&section);
-        
-        section.extra = UI_RCE_RIGHT;
-        section.x     = c->width/2;
-        section.w     = command.w - section.w;
-        
-        ls_stackPush(&c->renderGroups[1].RenderCommands[zLayer], (void *)&section);
-        return;
+        default: { AssertMsg(FALSE, "Thread count not supported\n"); } return;
     }
     
     AssertMsg(FALSE, "Should never reach this case!\n");
@@ -1938,13 +1963,20 @@ b32 ls_uiMenu(UIContext *c, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
 
 void ls_uiRender(UIContext *c)
 {
+    if(THREAD_COUNT == 0)
+    {
+        ls_uiRender__(c, 0);
+        c->renderFunc();
+        return;
+    }
+    
     WakeAllConditionVariable(&c->startRender);
     
     volatile b32 areAllDone = FALSE;
     while(areAllDone == FALSE)
     {
         volatile b32 allDone = TRUE;
-        for(u32 i = 0; i < 2; i++)
+        for(u32 i = 0; i < THREAD_COUNT; i++)
         {
             allDone &= c->renderGroups[i].isDone;
         }
@@ -1952,7 +1984,7 @@ void ls_uiRender(UIContext *c)
         areAllDone = allDone;
     }
     
-    for(u32 i = 0; i < 2; i++)
+    for(u32 i = 0; i < THREAD_COUNT; i++)
     {
         c->renderGroups[i].isDone = FALSE;
     }

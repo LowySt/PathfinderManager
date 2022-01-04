@@ -170,7 +170,6 @@ struct ProgramState
     u64 dt = 0;
 };
 
-
 HINSTANCE MainInstance;
 HWND MainWindow;
 PlayerChar pc = {};
