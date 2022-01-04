@@ -176,6 +176,7 @@ enum RenderCommandType
     UI_RC_LISTBOX,
     UI_RC_LISTBOX_ARR,
     UI_RC_SLIDER,
+    UI_RC_RECT,
     UI_RC_MENU,
     
     UI_RC_FRAG_OFF,
@@ -185,6 +186,7 @@ enum RenderCommandType
     UI_RC_FRAG_LISTBOX,
     UI_RC_FRAG_LISTBOX_ARR,
     UI_RC_FRAG_SLIDER,
+    UI_RC_FRAG_RECT,
     UI_RC_FRAG_MENU,
 };
 
@@ -700,6 +702,30 @@ void ls_uiBorderedRectFrag(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, Color
     }
 }
 
+
+inline
+void ls_uiBorderedRectFrag(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h, 
+                           Color widgetColor, Color borderColor, RenderCommandExtra rce)
+{
+    Color C = borderColor;
+    
+    if(rce == UI_RCE_LEFT)
+    {
+        ls_uiFillRect(c, xPos, yPos,     w, 1, C);
+        ls_uiFillRect(c, xPos, yPos+h-1, w, 1, C);
+        ls_uiFillRect(c, xPos, yPos,     1, h, C);
+        ls_uiFillRect(c, xPos+1, yPos+1, w-1, h-2, widgetColor);
+    }
+    else if(rce == UI_RCE_RIGHT)
+    {
+        ls_uiFillRect(c, xPos,     yPos,     w, 1, C);
+        ls_uiFillRect(c, xPos,     yPos+h-1, w, 1, C);
+        ls_uiFillRect(c, xPos+w-1, yPos,     1, h, C);
+        ls_uiFillRect(c, xPos, yPos+1, w-1, h-2, widgetColor);
+    }
+}
+
+
 inline
 void ls_uiBorderedRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h)
 {
@@ -1105,38 +1131,38 @@ s32 ls_uiSelectFontByFontSize(UIContext *cxt, UIFontSize fontSize)
 //     I don't think the menu should deal with things like this [It shouldn't hold the close button first,
 //     and it also shouldn't use 'normal' buttons for its drop down sub-menus, so... basically @MenuIsShit
 //     and I wanna redo it completely.
-b32 ls_uiButton(UIContext *cxt, UIButton *button, s32 xPos, s32 yPos, s32 w, s32 h)
+b32 ls_uiButton(UIContext *c, UIButton *button, s32 xPos, s32 yPos, s32 w, s32 h, s32 zLayer = 0)
 {
     b32 inputUse = FALSE;
     
-    Color bkgColor = cxt->widgetColor;
+    Color bkgColor = c->widgetColor;
     
-    if(button->style == UIBUTTON_TEXT_NOBORDER) { bkgColor = cxt->backgroundColor; }
+    if(button->style == UIBUTTON_TEXT_NOBORDER) { bkgColor = c->backgroundColor; }
     
-    if(MouseInRect(xPos, yPos, w, h) && ls_uiHasCapture(cxt, 0))// && ls_uiInFocus(cxt, 0))
+    if(MouseInRect(xPos, yPos, w, h) && ls_uiHasCapture(c, 0))// && ls_uiInFocus(cxt, 0))
     { 
         button->isHot = TRUE;
-        bkgColor = cxt->highliteColor;
+        bkgColor = c->highliteColor;
         
         //b32 noCapture = ls_uiHasCapture(cxt, 0);
         
         if(button->onClick && LeftClick)// && noCapture)
         {
-            inputUse |= button->onClick(cxt, button->data);
+            inputUse |= button->onClick(c, button->data);
         }
         if(LeftHold)//  && noCapture)
         {
             button->isHeld = TRUE;
-            bkgColor = cxt->pressedColor;
-            if(button->onHold) { inputUse |= button->onHold(cxt, button->data); }
+            bkgColor = c->pressedColor;
+            if(button->onHold) { inputUse |= button->onHold(c, button->data); }
         }
     }
     
     RenderCommand command = { UI_RC_BUTTON, xPos, yPos, w, h };
     command.button        = button;
     command.bkgColor      = bkgColor;
-    command.textColor     = cxt->textColor;
-    ls_uiPushRenderCommand(cxt, command, 0);
+    command.textColor     = c->textColor;
+    ls_uiPushRenderCommand(c, command, zLayer);
     
     return inputUse;
 }
@@ -1836,7 +1862,7 @@ b32 ls_uiMenuDefaultOnClick(UIContext *cxt, void *data)
     return inputUse;
 }
 
-void ls_uiMenuAddItem(UIContext *cxt, UIMenu *menu, UIButton b)
+void ls_uiMenuAddItem(UIMenu *menu, UIButton b)
 {
     if(b.onClick == ls_uiMenuDefaultOnClick)
     {
@@ -1852,36 +1878,35 @@ void ls_uiMenuAddItem(UIContext *cxt, UIMenu *menu, UIButton b)
 }
 
 //TODO This is completely unnecessary
-void ls_uiMenuAddSub(UIContext *cxt, UIMenu *menu, UIMenu sub, s32 idx)
+void ls_uiMenuAddSub(UIMenu *menu, UIMenu sub, s32 idx)
 { menu->sub[idx] = sub; }
 
 //TODO: @MenuIsShit it shouldn't use buttons like this, and shouldn't hold the close button hostage.
-b32 ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
+b32 ls_uiMenu(UIContext *c, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
 {
     b32 inputUse = FALSE;
     
     if(LeftClickIn(x, y, w, h)) {
-        cxt->currentFocus = (u64 *)menu;
-        cxt->focusWasSetThisFrame = TRUE;
+        c->currentFocus = (u64 *)menu;
+        c->focusWasSetThisFrame = TRUE;
     }
     
-    if(cxt->currentFocus != (u64 *)menu) { menu->isOpen = FALSE; }
+    if(c->currentFocus != (u64 *)menu) { menu->isOpen = FALSE; }
     
-    ls_uiPushScissor(cxt, x, y, w, h);
+    RenderCommand commandFirst = { UI_RC_RECT, x, y, w, h };
+    commandFirst.bkgColor  = c->backgroundColor;
+    commandFirst.textColor = RGBg(110); //TODO: Hardcoded
+    ls_uiPushRenderCommand(c, commandFirst, 1);
     
-    ls_uiBorderedRect(cxt, x, y, w, h, cxt->backgroundColor, RGBg(110));
-    
-    ls_uiButton(cxt, &menu->closeWindow, x+w-20, y+2, 16, 16);
+    ls_uiButton(c, &menu->closeWindow, x+w-20, y+2, 16, 16, 2);
     
     s32 xOff = 100;
     for(u32 i = 0; i < menu->items.count; i++)
     {
         UIButton *currItem = &menu->items[i];
-        ls_uiButton(cxt, currItem, x+xOff, y+2, 100, 20);
+        ls_uiButton(c, currItem, x+xOff, y+1, 100, 19, 2);
         xOff += 100;
     }
-    
-    ls_uiPopScissor(cxt);
     
     if(menu->isOpen == TRUE)
     {
@@ -1891,16 +1916,19 @@ b32 ls_uiMenu(UIContext *cxt, UIMenu *menu, s32 x, s32 y, s32 w, s32 h)
         AssertMsg(openItem, "The item doesn't exist\n");
         AssertMsg(openSub, "The sub-menu doesn't exist\n");
         
-        s32 yPos   = y-20;
+        s32 yPos      = y-20;
         s32 height = openSub->items.count*20;
         
-        ls_uiBorderedRect(cxt, 99 + 100*menu->openIdx, y-height-2, 102, height+3, cxt->backgroundColor);
+        RenderCommand command = { UI_RC_RECT, 100 + x + 100*menu->openIdx, y-height-2, 102, height+3 };
+        command.bkgColor  = c->backgroundColor;
+        command.textColor = c->borderColor;
+        ls_uiPushRenderCommand(c, command, 1);
         
         //TODO: Store the xPos of every menu item.
         for(u32 i = 0; i < openSub->items.count; i++)
         {
             UIButton *currItem = &openSub->items[i];
-            inputUse = ls_uiButton(cxt, currItem, 100 + 100*menu->openIdx, yPos, 100, 20);
+            inputUse = ls_uiButton(c, currItem, 100 + 100*menu->openIdx, yPos, 100, 20, 2);
             yPos -= 21;
         }
     }
@@ -2179,6 +2207,12 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     //          the mouse is on top of it. Is it fine for logic to be here in render?
                     slider->isHot = FALSE;
                     
+                } break;
+                
+                case UI_RC_RECT:
+                {
+                    //NOTE: here current text color is being used improperly for the border color
+                    ls_uiBorderedRect(c, xPos, yPos, w, h, c->backgroundColor, curr->textColor);
                 } break;
                 
                 case UI_RC_FRAG_BUTTON:
@@ -2508,6 +2542,12 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         xEnd  -= 1;
                     }
                     
+                } break;
+                
+                case UI_RC_FRAG_RECT:
+                {
+                    //NOTE: here current text color is being used improperly for the border color
+                    ls_uiBorderedRectFrag(c, xPos, yPos, w, h, c->backgroundColor, curr->textColor, curr->extra);
                 } break;
                 
                 default: { AssertMsg(FALSE, "Unhandled Render Command Type\n"); } break;

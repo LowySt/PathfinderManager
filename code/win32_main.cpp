@@ -631,8 +631,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     stylePranaBtn.onClick   = selectStylePrana;
     
     UIMenu styleSubMenu     = {};
-    ls_uiMenuAddItem(uiContext, &styleSubMenu, styleDefaultBtn);
-    ls_uiMenuAddItem(uiContext, &styleSubMenu, stylePranaBtn);
+    ls_uiMenuAddItem(&styleSubMenu, styleDefaultBtn);
+    ls_uiMenuAddItem(&styleSubMenu, stylePranaBtn);
     
     UIButton styleMenuBtn   = {};
     styleMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
@@ -654,8 +654,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     themeDarkNightBtn.onClick   = selectThemeDarkNight;
     
     UIMenu themeSubMenu     = {};
-    ls_uiMenuAddItem(uiContext, &themeSubMenu, themeDefaultBtn);
-    ls_uiMenuAddItem(uiContext, &themeSubMenu, themeDarkNightBtn);
+    ls_uiMenuAddItem(&themeSubMenu, themeDefaultBtn);
+    ls_uiMenuAddItem(&themeSubMenu, themeDarkNightBtn);
     
     UIButton themeMenuBtn   = {};
     themeMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
@@ -669,11 +669,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     WindowMenu.sub          = (UIMenu *)ls_alloc(sizeof(UIMenu) * 32);
     WindowMenu.maxSub       = 32;
     
-    ls_uiMenuAddItem(uiContext, &WindowMenu, styleMenuBtn);
-    ls_uiMenuAddSub(uiContext, &WindowMenu, styleSubMenu, 0);
+    ls_uiMenuAddItem(&WindowMenu, styleMenuBtn);
+    ls_uiMenuAddSub(&WindowMenu, styleSubMenu, 0);
     
-    ls_uiMenuAddItem(uiContext, &WindowMenu, themeMenuBtn);
-    ls_uiMenuAddSub(uiContext, &WindowMenu, themeSubMenu, 1);
+    ls_uiMenuAddItem(&WindowMenu, themeMenuBtn);
+    ls_uiMenuAddSub(&WindowMenu, themeSubMenu, 1);
     
     
     ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
@@ -805,7 +805,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Window Menu
         ls_uiMenu(uiContext, &WindowMenu, -1, State.windowHeight-20, State.windowWidth, 22);
         
-#if 0
+#if 1
         userInputConsumed = DrawInitTab(uiContext);
 #else
         userInputConsumed = FALSE;
@@ -892,7 +892,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         { uiContext->mouseCapture = 0; }
         
         
-#if 1
+#if 0
         //TODO REMOVE
         //ls_uiButton(uiContext, &testBtn, 300, 300, 100, 100);
         //ls_uiButton(uiContext, &testBtn, 800, 300, 100, 100);
