@@ -361,8 +361,19 @@ b32 ls_uiHasCapture(UIContext *cxt, void *p)
     return FALSE;
 }
 
-struct RenderRect { s32 x,y,w,h; };
-b32 ls_uiRectIsInside(RenderRect r1, RenderRect check)
+//TODO: Maybe remove this??
+struct __ls_RenderRect { s32 x,y,w,h; };
+b32 operator==(const __ls_RenderRect& lhs, const __ls_RenderRect& rhs)
+{
+    if(lhs.x != rhs.x) { return FALSE; }
+    if(lhs.y != rhs.y) { return FALSE; }
+    if(lhs.w != rhs.w) { return FALSE; }
+    if(lhs.h != rhs.h) { return FALSE; }
+    
+    return TRUE;
+}
+
+b32 ls_uiRectIsInside(__ls_RenderRect r1, __ls_RenderRect check)
 {
     if((r1.x >= check.x) && ((r1.x + r1.w) <= (check.x + check.w)))
     {
@@ -375,8 +386,44 @@ b32 ls_uiRectIsInside(RenderRect r1, RenderRect check)
     return FALSE;
 }
 
+b32 ls_uiPointInRect(s32 x, s32 y, __ls_RenderRect r)
+{
+    if((x >= r.x) && (x <= (r.x+r.w)))
+    {
+        if((y >= r.y) && (x <= (r.y+r.h)))
+        {
+            return TRUE;
+        }
+    }
+    
+    return FALSE;
+}
+
+__ls_RenderRect ls_uiQuadrantFromPoint(UIContext *c, s32 x, s32 y, u32 *idx)
+{
+    const __ls_RenderRect LL = {0, 0, (s32)(c->width / 2), (s32)(c->height / 2)};
+    const __ls_RenderRect LR = {(s32)(c->width / 2), 0, (s32)(c->width / 2), (s32)(c->height / 2)};
+    const __ls_RenderRect TL = {0, (s32)(c->height / 2), (s32)(c->width / 2), (s32)(c->height / 2)};
+    const __ls_RenderRect TR = {(s32)(c->width / 2), (s32)(c->height / 2), 
+        (s32)(c->width / 2), (s32)(c->height / 2)};
+    
+    if(ls_uiPointInRect(x, y, LL))
+    { *idx = 0; return LL; }
+    else if(ls_uiPointInRect(x, y, LR))
+    { *idx = 1; return LR; }
+    else if(ls_uiPointInRect(x, y, TL))
+    { *idx = 2; return TL; }
+    else if(ls_uiPointInRect(x, y, TR))
+    { *idx = 3; return TR; }
+    
+    AssertMsg(FALSE, "Either invalid point or invalidly defined quadrant. Shouldn't be reachable.\n");
+    return {};
+}
+
 void ls_uiPushRenderCommand(UIContext *c, RenderCommand command, s32 zLayer)
 {
+    __ls_RenderRect commandRect = { command.x, command.y, command.w, command.h };
+    
     switch(THREAD_COUNT)
     {
         case 0:
@@ -388,8 +435,6 @@ void ls_uiPushRenderCommand(UIContext *c, RenderCommand command, s32 zLayer)
         
         case 2:
         {
-            RenderRect commandRect = { command.x, command.y, command.w, command.h };
-            
             if(ls_uiRectIsInside(commandRect, {0, 0, (s32)(c->width / 2), (s32)c->height}))
             {
                 ls_stackPush(&c->renderGroups[0].RenderCommands[zLayer], (void *)&command);
@@ -424,6 +469,57 @@ void ls_uiPushRenderCommand(UIContext *c, RenderCommand command, s32 zLayer)
                 
                 ls_stackPush(&c->renderGroups[1].RenderCommands[zLayer], (void *)&section);
                 return;
+            }
+            
+        } break;
+        
+        case 4:
+        {
+            u32 i1, i2, i3, i4;
+            __ls_RenderRect p1 = ls_uiQuadrantFromPoint(c, command.x,             command.y,             &i1);
+            __ls_RenderRect p2 = ls_uiQuadrantFromPoint(c, command.x + command.w, command.y,             &i2);
+            __ls_RenderRect p3 = ls_uiQuadrantFromPoint(c, command.x,             command.y + command.h, &i3);
+            __ls_RenderRect p4 = ls_uiQuadrantFromPoint(c, command.x + command.w, command.y + command.h, &i4);
+            
+            //NOTE: The command is not fragged and lives in a single rect.
+            if((p1 == p2) && (p2 == p3) && (p3 == p4))
+            { ls_stackPush(&c->renderGroups[i1].RenderCommands[zLayer], (void *)&command); return; }
+            
+            //NOTE: Left Half, Right Half
+            else if((p1 == p3) && (p2 == p4))
+            {
+                RenderCommand section = command;
+                
+                section.type  = (RenderCommandType)(command.type + UI_RC_FRAG_OFF);
+                section.extra = UI_RCE_LEFT;
+                section.oX = command.x;
+                section.oY = command.y;
+                section.oW = command.w;
+                section.oH = command.h;
+                
+                section.x     = command.x;
+                section.w     = (c->width/2) - command.x;
+                
+                ls_stackPush(&c->renderGroups[i1].RenderCommands[zLayer], (void *)&section);
+                
+                section.extra = UI_RCE_RIGHT;
+                section.x     = c->width/2;
+                section.w     = command.w - section.w;
+                
+                ls_stackPush(&c->renderGroups[i2].RenderCommands[zLayer], (void *)&section);
+                return;
+            }
+            
+            //NOTE: Top Half, Bottom Half
+            else if((p1 == p2) && (p3 == p4))
+            {
+                AssertMsg(FALSE, "Not implemented yet\n");
+            }
+            
+            //NOTE: Bullshit case where all quadrants share the quad.
+            else
+            {
+                AssertMsg(FALSE, "Not implemented yet\n");
             }
             
         } break;
