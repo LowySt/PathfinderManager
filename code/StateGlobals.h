@@ -191,4 +191,6 @@ static Arena stateArena;
 static Arena saveArena;
 static Arena renderArena;
 
+static b32 hasReceivedInput = FALSE;
+
 #endif //_STATE_GLOBALS_H

@@ -130,6 +130,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_CHAR:
         {
+            hasReceivedInput = TRUE;
+            
             b32 wasPressed = (l >> 30) & 0x1;
             u16 repeat     = (u16)l;
             
@@ -148,6 +150,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_KEYDOWN:
         {
+            hasReceivedInput = TRUE;
+            
             //Repeat is the first 16 bits of the LPARAM. Bits [0-15];
             u16 rep = (u16)l;
             
@@ -181,6 +185,8 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_KEYUP:
         {
+            hasReceivedInput = TRUE;
+            
             switch(w)
             { 
                 case VK_F2:      KeyUnset(keyMap::F2);        break;
@@ -210,24 +216,30 @@ LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
         
         case WM_LBUTTONDOWN:
         {
+            hasReceivedInput = TRUE;
+            
             Mouse->isLeftPressed = TRUE;
         } break;
         
         case WM_LBUTTONUP:
         {
+            hasReceivedInput = TRUE;
+            
             Mouse->isLeftPressed = FALSE;
             
             State.isDragging = FALSE;
             BOOL success = ReleaseCapture();
         } break;
         
-        case WM_RBUTTONDOWN: { Mouse->isRightPressed = TRUE; } break;
-        case WM_RBUTTONUP:   { Mouse->isRightPressed = FALSE; } break;
+        case WM_RBUTTONDOWN: { hasReceivedInput = TRUE; Mouse->isRightPressed = TRUE; } break;
+        case WM_RBUTTONUP:   { hasReceivedInput = TRUE; Mouse->isRightPressed = FALSE; } break;
         
         case WM_MOUSEMOVE:
         {
             POINTS currMouseClient = *((POINTS *)&l);
             Mouse->currPos = { currMouseClient.x, State.windowHeight - currMouseClient.y };
+            
+            hasReceivedInput = TRUE;
             
             //TODO:NOTE: Page says to return 0, but DO i HAVE to?
         } break;
@@ -725,6 +737,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
     
+    u32 frameLock = 16;
+    
     b32 isStartup = TRUE;
     while(Running)
     {
@@ -750,6 +764,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             uiContext->nextFrameFocusChange = FALSE;
         }
         
+        hasReceivedInput = FALSE;
+        
         // Process Input
         MSG Msg;
         while (PeekMessageA(&Msg, NULL, 0, 0, PM_REMOVE))
@@ -760,121 +776,135 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         //NOTE: Window starts hidden, and then is shown after the first frame, 
         //      to avoid flashing because initially the frame buffer is all white.
-        if(isStartup) { ShowWindow(MainWindow, SW_SHOW); isStartup = FALSE; }
+        if(isStartup) { ShowWindow(MainWindow, SW_SHOW); isStartup = FALSE; hasReceivedInput = TRUE; }
         
-        //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
-        //      The first frame is always registered, so the first Undo State is always valid.
-        if(userInputConsumed == TRUE)
-        {
-            matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
-            CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
-            
-            if(distanceFromOld < (MAX_UNDO_STATES-1)) { distanceFromOld += 1; }
-            
-            //NOTE: If an operation is performed, that is the new NOW, the new Present, 
-            //      and no other REDOs can be performed
-            distanceFromNow = 0;
+        frameLock = 16;
+        if(!hasReceivedInput && !State.isDragging) {
+            Sleep(32);
+            //frameLock = 60; 
         }
-        
-        //NOTE: Render The Frame
-        ls_uiBackground(uiContext);
-        
-        //NOTE: Render The Window Menu
-        ls_uiMenu(uiContext, &WindowMenu, -1, State.windowHeight-20, State.windowWidth, 22);
-        
-        userInputConsumed = DrawInitTab(uiContext);
-        
-        if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
+        else
         {
-            undoRequest = FALSE;
             
-            //NOTE: We only undo when there's available states to undo into (avoid rotation).
-            if(distanceFromOld != 0)
+            //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
+            //      The first frame is always registered, so the first Undo State is always valid.
+            if(userInputConsumed == TRUE)
             {
-                u32 undoIdx = matchingUndoIdx - 1;
-                if(matchingUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
+                matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
+                CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
                 
-                CopyState(uiContext, UndoStates + undoIdx, &State);
-                matchingUndoIdx  = undoIdx;
-                distanceFromOld -= 1;
-                distanceFromNow += 1;
+                if(distanceFromOld < (MAX_UNDO_STATES-1)) { distanceFromOld += 1; }
+                
+                //NOTE: If an operation is performed, that is the new NOW, the new Present, 
+                //      and no other REDOs can be performed
+                distanceFromNow = 0;
             }
-        }
-        
-        if((KeyPress(keyMap::Y) && KeyHeld(keyMap::Control)) || redoRequest)
-        {
-            redoRequest = FALSE;
             
-            //NOTE: We only redo if we have previously perfomed an undo.
-            if(distanceFromNow > 0)
+#if 0
+            //NOTE: Render The Frame
+            ls_uiBackground(uiContext);
+#endif
+            
+            //NOTE: Render The Window Menu
+            ls_uiMenu(uiContext, &WindowMenu, 0, State.windowHeight-20, State.windowWidth, 20);
+            
+            userInputConsumed = DrawInitTab(uiContext);
+            
+            if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
             {
-                u32 redoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
-                CopyState(uiContext, UndoStates + redoIdx, &State);
+                undoRequest = FALSE;
                 
-                matchingUndoIdx  = redoIdx;
-                distanceFromOld += 1;
-                distanceFromNow -= 1;
+                //NOTE: We only undo when there's available states to undo into (avoid rotation).
+                if(distanceFromOld != 0)
+                {
+                    u32 undoIdx = matchingUndoIdx - 1;
+                    if(matchingUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
+                    
+                    CopyState(uiContext, UndoStates + undoIdx, &State);
+                    matchingUndoIdx  = undoIdx;
+                    distanceFromOld -= 1;
+                    distanceFromNow += 1;
+                }
             }
+            
+            if((KeyPress(keyMap::Y) && KeyHeld(keyMap::Control)) || redoRequest)
+            {
+                redoRequest = FALSE;
+                
+                //NOTE: We only redo if we have previously perfomed an undo.
+                if(distanceFromNow > 0)
+                {
+                    u32 redoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
+                    CopyState(uiContext, UndoStates + redoIdx, &State);
+                    
+                    matchingUndoIdx  = redoIdx;
+                    distanceFromOld += 1;
+                    distanceFromNow -= 1;
+                }
+            }
+            
+            //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
+            if(LeftClick && !uiContext->focusWasSetThisFrame)
+            { uiContext->currentFocus = 0; }
+            
+            
+            //NOTE: Dragging code, only happens when menu is selected.
+            //TODO: Dragging while interacting with menu items! /Separate items region from draggable region!
+            if(LeftClick && uiContext->currentFocus == (u64 *)&WindowMenu)
+            { 
+                State.isDragging = TRUE;
+                POINT currMouse = {};
+                GetCursorPos(&currMouse);
+                State.prevMousePos = currMouse;
+            }
+            if(State.isDragging && LeftHold)
+            { 
+                MouseInput *Mouse = &UserInput.Mouse;
+                
+                POINT currMouse = {};
+                GetCursorPos(&currMouse);
+                
+                POINT prevMouse = State.prevMousePos;
+                
+                SHORT newX = prevMouse.x - currMouse.x;
+                SHORT newY = prevMouse.y - currMouse.y;
+                
+                SHORT newWinX = State.currWindowPos.x - newX;
+                SHORT newWinY = State.currWindowPos.y - newY;
+                
+                State.currWindowPos = { newWinX, newWinY };
+                State.prevMousePos  = currMouse; 
+                SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+                
+                if(LeftUp) { State.isDragging = FALSE; }
+            }
+            
+            
+            if(LeftUp || RightUp || MiddleUp)
+            { uiContext->mouseCapture = 0; }
+            
+            // ----------------
+            // Render Everything
+            ls_arenaUse(renderArena);
+            
+            ls_uiRender(uiContext);
+            
+            ls_arenaUse(globalArena);
+            ls_arenaClear(renderArena);
+            //
+            // ----------------
+            
         }
         
         if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
         
         if(showDebug)
         {
+            ls_uiFillRect(uiContext, 1248, 760, 20, 20, uiContext->backgroundColor);
             ls_unistrFromInt_t(&frameTimeString, lastFrameTime);
             ls_uiGlyphString(uiContext, 1248, 760, frameTimeString, RGBg(0xEE));
         }
         
-        //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
-        if(LeftClick && !uiContext->focusWasSetThisFrame)
-        { uiContext->currentFocus = 0; }
-        
-        
-        //NOTE: Dragging code, only happens when menu is selected.
-        //TODO: Dragging while interacting with menu items! /Separate items region from draggable region!
-        if(LeftClick && uiContext->currentFocus == (u64 *)&WindowMenu)
-        { 
-            State.isDragging = TRUE;
-            POINT currMouse = {};
-            GetCursorPos(&currMouse);
-            State.prevMousePos = currMouse;
-        }
-        if(State.isDragging && LeftHold)
-        { 
-            MouseInput *Mouse = &UserInput.Mouse;
-            
-            POINT currMouse = {};
-            GetCursorPos(&currMouse);
-            
-            POINT prevMouse = State.prevMousePos;
-            
-            SHORT newX = prevMouse.x - currMouse.x;
-            SHORT newY = prevMouse.y - currMouse.y;
-            
-            SHORT newWinX = State.currWindowPos.x - newX;
-            SHORT newWinY = State.currWindowPos.y - newY;
-            
-            State.currWindowPos = { newWinX, newWinY };
-            State.prevMousePos  = currMouse; 
-            SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-            
-            if(LeftUp) { State.isDragging = FALSE; }
-        }
-        
-        
-        if(LeftUp || RightUp || MiddleUp)
-        { uiContext->mouseCapture = 0; }
-        
-        // ----------------
-        // Render Everything
-        ls_arenaUse(renderArena);
-        
-        ls_uiRender(uiContext);
-        
-        ls_arenaUse(globalArena);
-        ls_arenaClear(renderArena);
-        //
-        // ----------------
         
         State.hasMouseClicked = FALSE;
         
@@ -893,8 +923,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         RegionTimerEnd(frameTime);
         u32 frameTimeMs = RegionTimerGet(frameTime);
         
-        //NOTE: 60fps lock
-        const u32 frameLock = 0;
         if(frameTimeMs < frameLock)
         {
             u32 deltaTimeInMs = frameLock - frameTimeMs;
