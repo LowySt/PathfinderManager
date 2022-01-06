@@ -4,7 +4,7 @@
 #define SetAlpha(v, a) (u32)((v & 0x00FFFFFF) | (((u32)a)<<24))
 #define GetAlpha(v)    ( u8)(((v) & 0xFF000000) >> 24)
 
-const     u32 THREAD_COUNT       = 4;
+const     u32 THREAD_COUNT       = 2;
 constexpr u32 RENDER_GROUP_COUNT = THREAD_COUNT == 0 ? 1 : THREAD_COUNT;
 
 typedef u32 Color;
@@ -2470,6 +2470,9 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                 
                 case UI_RC_SLIDER:
                 {
+                    //TODO: There seems to be a rendering bug in here. the top right square of pixels
+                    //      in the colored slider area seem to not be properly colored.
+                    
                     UISlider *slider = curr->slider;
                     
                     //NOTE: Box Slider Branchless Opacity Check
