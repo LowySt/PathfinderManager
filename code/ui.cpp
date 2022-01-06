@@ -2230,8 +2230,6 @@ void ls_uiRender(UIContext *c)
 void ls_uiRender__(UIContext *c, u32 threadID)
 {
     //NOTE: First clear the background?
-    
-#if 1
     switch(THREAD_COUNT)
     {
         case 0:
@@ -2298,7 +2296,7 @@ void ls_uiRender__(UIContext *c, u32 threadID)
             
         } break;
     }
-#endif
+    
     
     //NOTE: Render Layers in Z-order. Layer Zero is the first to be rendered, 
     //      so it's the one farther away from the screen

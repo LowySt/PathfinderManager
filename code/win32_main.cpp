@@ -737,8 +737,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
     
-    u32 frameLock = 16;
-    
     b32 isStartup = TRUE;
     while(Running)
     {
@@ -778,38 +776,43 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //      to avoid flashing because initially the frame buffer is all white.
         if(isStartup) { ShowWindow(MainWindow, SW_SHOW); isStartup = FALSE; hasReceivedInput = TRUE; }
         
-        frameLock = 16;
-        if(!hasReceivedInput && !State.isDragging) {
+        //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
+        //      The first frame is always registered, so the first Undo State is always valid.
+        if(userInputConsumed == TRUE)
+        {
+            matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
+            CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
+            
+            if(distanceFromOld < (MAX_UNDO_STATES-1)) { distanceFromOld += 1; }
+            
+            //NOTE: If an operation is performed, that is the new NOW, the new Present, 
+            //      and no other REDOs can be performed
+            distanceFromNow = 0;
+        }
+        
+#if 0
+        //NOTE: Render The Frame
+        ls_uiBackground(uiContext);
+#endif
+        
+        //NOTE: Render The Window Menu
+        ls_uiMenu(uiContext, &WindowMenu, 0, State.windowHeight-20, State.windowWidth, 20);
+        
+        userInputConsumed = DrawInitTab(uiContext);
+        
+        if(!hasReceivedInput && !State.isDragging)
+        {
+            for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
+            {
+                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[0]);
+                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[1]);
+                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[2]);
+            }
+            
             Sleep(32);
-            //frameLock = 60; 
         }
         else
         {
-            
-            //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
-            //      The first frame is always registered, so the first Undo State is always valid.
-            if(userInputConsumed == TRUE)
-            {
-                matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
-                CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
-                
-                if(distanceFromOld < (MAX_UNDO_STATES-1)) { distanceFromOld += 1; }
-                
-                //NOTE: If an operation is performed, that is the new NOW, the new Present, 
-                //      and no other REDOs can be performed
-                distanceFromNow = 0;
-            }
-            
-#if 0
-            //NOTE: Render The Frame
-            ls_uiBackground(uiContext);
-#endif
-            
-            //NOTE: Render The Window Menu
-            ls_uiMenu(uiContext, &WindowMenu, 0, State.windowHeight-20, State.windowWidth, 20);
-            
-            userInputConsumed = DrawInitTab(uiContext);
-            
             if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
             {
                 undoRequest = FALSE;
@@ -922,7 +925,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         RegionTimerEnd(frameTime);
         u32 frameTimeMs = RegionTimerGet(frameTime);
-        
+        const u32 frameLock = 16;
         if(frameTimeMs < frameLock)
         {
             u32 deltaTimeInMs = frameLock - frameTimeMs;
