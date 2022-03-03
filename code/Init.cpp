@@ -1605,7 +1605,7 @@ b32 DrawDefaultStyle(UIContext *cxt)
     }
     
     // Mob Info Left Pane
-    ls_uiLPane(cxt, &Page->InfoPane, 0, 180, 360, 580);
+    _ls_uiLPane(cxt, &Page->InfoPane, 0, 180, 360, 580);
     
     //Mob Info
     if(Page->InfoPane.isOpen)

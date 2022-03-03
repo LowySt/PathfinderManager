@@ -766,6 +766,9 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
     }
     
     //NOTE: Complete the 2 remaining Sub-Rectangles at the right and top. (if there are).
+    //      We decide to have the right rectangle be full height
+    //      And the top one be less-than-full width, to avoid over-drawing the small subrect
+    //        in the top right corner.
     u32 *At = (u32 *)cxt->drawBuffer;
     
     if(diffWidth) 
@@ -791,7 +794,7 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
     {
         for(s32 y = yPos+simdHeight; y < yPos+h; y++)
         {
-            for(s32 x = xPos; x < xPos+w; x++)
+            for(s32 x = xPos; x < xPos+simdWidth; x++)
             {
                 if(x < 0 || x >= cxt->width)  continue;
                 if(y < 0 || y >= cxt->height) continue;
@@ -805,6 +808,47 @@ void ls_uiFillRect(UIContext *cxt, s32 xPos, s32 yPos, s32 w, s32 h, Color c)
             }
         }
     }
+}
+
+inline
+void ls_uiFillRectFrag(UIContext *c, s32 xPos, s32 yPos, s32 w, s32 h,
+                       s32 minX, s32 maxX, s32 minY, s32 maxY, Color col, RenderCommandExtra rce)
+{
+    if(xPos > maxX) { return; }
+    if(yPos > maxY) { return; }
+    if((xPos + w) < minX) { return; }
+    if((yPos + h) < minY) { return; }
+    
+    s32 realX = 0;
+    s32 realY = 0;
+    s32 realW = 0;
+    s32 realH = 0;
+    
+    if(xPos >= minX)
+    {
+        realX = xPos;
+        realW = (xPos + w) <= maxX ? w : maxX - realX;
+    }
+    else
+    {
+        realX = minX;
+        realW = w - (minX - xPos);
+        realW = (minX + realW) <= maxX ? realW : maxX - minX;
+    }
+    
+    if(yPos >= minY)
+    {
+        realY = yPos;
+        realH = (yPos + h) <= maxY ? h : maxY - realY;
+    }
+    else
+    {
+        realY = minY;
+        realH = h - (minY - yPos);
+        realH = (minY + realH) <= maxY ? realH : maxY - minY;
+    }
+    
+    ls_uiFillRect(c, realX, realY, realW, realH, col);
 }
 
 inline
@@ -2636,28 +2680,9 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         unistring diffString = { box->text.data + box->viewBeginIdx, diffLen, diffLen };
                         s32 diffStringWidth = ls_uiGlyphStringLen(c, diffString);
                         
-                        //TODO: Fragged FillRect done better???
                         s32 startX = curr->oX + horzOff + diffStringWidth;
-                        if((curr->extra == UI_RCE_LEFT) && (startX < (xPos + w)))
-                        {
-                            s32 fragWidth = selStringWidth;
-                            if((startX + selStringWidth) > (xPos + w)) { fragWidth = (xPos + w) - startX; }
-                            
-                            ls_uiFillRect(c, startX, curr->oY+1, fragWidth, h-2, c->invWidgetColor);
-                        }
-                        else if((curr->extra == UI_RCE_RIGHT) && (startX+selStringWidth > xPos))
-                        {
-                            if(startX < xPos)
-                            {
-                                s32 fragWidth = selStringWidth - (xPos - startX);
-                                ls_uiFillRect(c, xPos, curr->oY+1, fragWidth, h-2, c->invWidgetColor);
-                            }
-                            else
-                            {
-                                s32 fragWidth = selStringWidth;
-                                ls_uiFillRect(c, startX, curr->oY+1, fragWidth, h-2, c->invWidgetColor);
-                            }
-                        }
+                        
+                        ls_uiFillRectFrag(c, startX, curr->oY+1, selStringWidth, strPixelHeight, xPos, xPos+w, yPos, yPos+h, c->invWidgetColor, curr->extra);
                         
                         ls_uiGlyphStringFrag(c, curr->oX + horzOff + diffStringWidth, curr->oY + vertOff, curr->oX, curr->oY, xPos, yPos, xPos+w, yPos+h, selString, c->invTextColor);
                         
@@ -2700,6 +2725,8 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         
                         s32 slidePos  = curr->oW*slider->currPos;
                         
+                        //AssertMsg(FALSE, "All fucked\n");
+#if 0
                         if(curr->extra == UI_RCE_LEFT)
                         {
                             s32 startX = curr->oX+1;
@@ -2724,6 +2751,16 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                             s32 fragWRight = xPos > (curr->oX+slidePos) ? w : (w - (curr->oX+slidePos - xPos));
                             ls_uiFillRect(c, startX, curr->oY+1, fragWRight-1, h-2, slider->rColor);
                         }
+#else
+                        s32 leftX  = curr->oX + 1;
+                        s32 rightX = leftX + slidePos;
+                        s32 leftW  = slidePos;
+                        s32 rightW = curr->oW - slidePos - 2;
+                        ls_uiFillRectFrag(c, leftX,  curr->oY+1, leftW,  h-2, 
+                                          xPos, xPos+w, yPos, yPos+h, slider->lColor, curr->extra);
+                        ls_uiFillRectFrag(c, rightX, curr->oY+1, rightW, h-2,
+                                          xPos, xPos+w, yPos, yPos+h, slider->rColor, curr->extra);
+#endif
                         
                         unistring val = ls_unistrFromInt(slider->currValue);
                         
@@ -2743,11 +2780,33 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                         
                         ls_unistrFree(&val);
                         
+#if 0
                         s32 actualX = (curr->oX + slidePos) - 1;
-                        s32 actualY = curr->oY - 2;
+                        s32 hotX = actualX - 1;
+                        //s32 actualY = curr->oY;
+                        //s32 hotY = actualY - 2;
                         
-                        s32 actualWidth  = slideWidth+2;
-                        s32 actualHeight = 4 + curr->oH;
+                        s32 actualWidth = slideWidth+2;
+                        s32 hotWidth    = actualWidth+2;
+                        
+                        s32 actualHeight = curr->oH;
+                        s32 hotHeight    = actualHeight + 4;
+                        
+                        if(slider->isHot)
+                        {
+                            ls_uiFillRectFrag(c, hotX, curr->oY-2, hotWidth, hotHeight,
+                                              xPos, xPos+w+hotWidth, yPos-2, yPos+h+2, c->borderColor, curr->extra);
+                        }
+                        else
+                        {
+                            ls_uiFillRectFrag(c, actualX, curr->oY, actualWidth, actualHeight,
+                                              xPos, xPos+w+actualWidth, yPos, yPos+h, c->borderColor, curr->extra);
+                        }
+#else
+                        s32 actualX = (curr->oX + slidePos) - 1;
+                        s32 actualY = curr->oY;
+                        s32 actualWidth = slideWidth+2;
+                        s32 actualHeight = curr->oH + 4;
                         
                         if(slider->isHot)
                         {
@@ -2760,6 +2819,7 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                             if(actualX < (xPos+w))
                             { ls_uiFillRect(c, actualX, curr->oY, actualWidth, curr->oH, c->borderColor); }
                         }
+#endif
                         
                     }
                     else if(slider->style == SL_LINE)

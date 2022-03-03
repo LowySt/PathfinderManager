@@ -53,7 +53,13 @@
 
 
 #include "Input.cpp"
-#include "ui.cpp"
+//#include "ui.cpp"
+
+#if 1
+#define LS_UI_IMPLEMENTATION
+#include "lsUI.h"
+#undef LS_UI_IMPLEMENTATION
+#endif
 
 #include "Init.h"
 #include "Class.h"
@@ -729,6 +735,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
     
     
+    //UISlider sldr = ls_uiSliderInit(U"This is a very long slider test", 
+    //100, -20, 1.0f, SL_BOX, RGB(0xFF, 0, 0), RGB(0, 0xFF, 0));
+    
+    
     RegionTimer frameTime = {};
     
     b32 Running = TRUE;
@@ -795,11 +805,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiBackground(uiContext);
 #endif
         
+#if 1
         //NOTE: Render The Window Menu
         ls_uiMenu(uiContext, &WindowMenu, 0, State.windowHeight-20, State.windowWidth, 20);
         
-        userInputConsumed = DrawInitTab(uiContext);
         
+        userInputConsumed = DrawInitTab(uiContext);
+#else
+        userInputConsumed = FALSE;
+#endif
         if(!hasReceivedInput && !State.isDragging)
         {
             for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
@@ -885,6 +899,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             if(LeftUp || RightUp || MiddleUp)
             { uiContext->mouseCapture = 0; }
+            
+            //ls_uiSlider(uiContext, &sldr, 400, 300, 300, 20);
             
             // ----------------
             // Render Everything
