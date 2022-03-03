@@ -537,8 +537,10 @@ buffer ConvertSaveToNewVersion(buffer *oldSave, u32 oldVersion)
     return currentSaveBuffer;
 }
 
-void SaveState()
+void SaveState(UIContext *c)
 {
+    (void)c;
+    
     ls_arenaUse(saveArena);
     
     buffer state = ls_bufferInit(MBytes(1));

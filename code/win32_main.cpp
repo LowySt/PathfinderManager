@@ -52,13 +52,18 @@
 #include "pcg.c"
 
 
-#include "Input.cpp"
-//#include "ui.cpp"
-
 #if 1
+#include "lsInput.h"
+
 #define LS_UI_IMPLEMENTATION
 #include "lsUI.h"
 #undef LS_UI_IMPLEMENTATION
+
+#else
+
+#include "Input.cpp"
+#include "ui.cpp"
+
 #endif
 
 #include "Init.h"
@@ -80,386 +85,6 @@
 #include "SaveState.cpp"
 
 #include "AssetLoader.cpp"
-
-HBITMAP closeButton;
-HDC     closeButtonDC;
-void    *closeButtBackbuff;
-
-HDC WindowDC;
-HDC BackBufferDC;
-u8  *BackBuffer;
-
-LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
-{
-    LRESULT Result = 0;
-    
-    MouseInput *Mouse = &UserInput.Mouse;
-    
-    switch (msg)
-    {
-        case WM_ERASEBKGND: return TRUE; break;
-        
-        case WM_PAINT:
-        {
-            PAINTSTRUCT ps = {};
-            RECT r;
-            
-            //NOTE: I have to call BeginPaint() - EndPaint() Anyway.
-            //If I don't, the message loop is gonna get stuck in PAINT calls.
-            BeginPaint(h, &ps);
-            
-            //NOTE: Draw Background
-            GetClientRect(h, &r);
-            
-            BITMAPINFO BitmapInfo = {};
-            BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-            BitmapInfo.bmiHeader.biWidth = State.windowWidth;
-            BitmapInfo.bmiHeader.biHeight = State.windowHeight;
-            BitmapInfo.bmiHeader.biPlanes = 1;
-            BitmapInfo.bmiHeader.biBitCount = 32;
-            BitmapInfo.bmiHeader.biCompression = BI_RGB;
-            
-            StretchDIBits(BackBufferDC, 0, 0, State.windowWidth, State.windowHeight,
-                          0, 0, State.windowWidth, State.windowHeight,
-                          BackBuffer, &BitmapInfo, DIB_RGB_COLORS, SRCCOPY);
-            
-            Result = BitBlt(WindowDC, r.left, r.top, r.right, r.bottom,
-                            BackBufferDC, 0, 0, SRCCOPY);
-            
-            if(Result == 0) {
-                DWORD Err = GetLastError();
-                int breakHere = 0;
-            }
-            
-            EndPaint(h, &ps);
-        } break;
-        
-        case WM_CHAR:
-        {
-            hasReceivedInput = TRUE;
-            
-            b32 wasPressed = (l >> 30) & 0x1;
-            u16 repeat     = (u16)l;
-            
-            b32 asciiRange  = ((w >= 32) && (w <= 126));
-            b32 plane0Latin = ((w >= 0x00A1) && (w <= 0x024F));
-            
-            if(asciiRange || plane0Latin)
-            {
-                if(!wasPressed || repeat > 0)
-                {
-                    UserInput.Keyboard.hasPrintableKey = TRUE;
-                    UserInput.Keyboard.keyCodepoint    = w;
-                }
-            }
-        } break;
-        
-        case WM_KEYDOWN:
-        {
-            hasReceivedInput = TRUE;
-            
-            //Repeat is the first 16 bits of the LPARAM. Bits [0-15];
-            u16 rep = (u16)l;
-            
-            switch(w)
-            { 
-                case VK_F2:      KeySetAndRepeat(keyMap::F2, rep);        break;
-                case VK_F12:     KeySetAndRepeat(keyMap::F12, rep);       break;
-                
-                case VK_DOWN:    KeySetAndRepeat(keyMap::DArrow, rep);    break;
-                case VK_UP:      KeySetAndRepeat(keyMap::UArrow, rep);    break;
-                case VK_LEFT:    KeySetAndRepeat(keyMap::LArrow, rep);    break;
-                case VK_RIGHT:   KeySetAndRepeat(keyMap::RArrow, rep);    break;
-                
-                case VK_RETURN:  KeySetAndRepeat(keyMap::Enter, rep);     break;
-                case VK_BACK:    KeySetAndRepeat(keyMap::Backspace, rep); break;
-                case VK_DELETE:  KeySetAndRepeat(keyMap::Delete, rep);    break;
-                case VK_HOME:    KeySetAndRepeat(keyMap::Home, rep);      break;
-                case VK_END:     KeySetAndRepeat(keyMap::End, rep);       break;
-                case VK_CONTROL: KeySetAndRepeat(keyMap::Control, rep);   break;
-                case VK_SHIFT:   KeySetAndRepeat(keyMap::Shift, rep);     break; //TODO: Differentiate L/R Shift
-                
-                case 'A':        KeySetAndRepeat(keyMap::A, rep);         break;
-                case 'C':        KeySetAndRepeat(keyMap::C, rep);         break;
-                case 'V':        KeySetAndRepeat(keyMap::V, rep);         break;
-                case 'G':        KeySetAndRepeat(keyMap::G, rep);         break;
-                case 'Y':        KeySetAndRepeat(keyMap::Y, rep);         break;
-                case 'Z':        KeySetAndRepeat(keyMap::Z, rep);         break;
-            }
-            
-        } break;
-        
-        case WM_KEYUP:
-        {
-            hasReceivedInput = TRUE;
-            
-            switch(w)
-            { 
-                case VK_F2:      KeyUnset(keyMap::F2);        break;
-                case VK_F12:     KeyUnset(keyMap::F12);       break;
-                
-                case VK_DOWN:    KeyUnset(keyMap::DArrow);    break;
-                case VK_UP:      KeyUnset(keyMap::UArrow);    break;
-                case VK_LEFT:    KeyUnset(keyMap::LArrow);    break;
-                case VK_RIGHT:   KeyUnset(keyMap::RArrow);    break;
-                
-                case VK_RETURN:  KeyUnset(keyMap::Enter);     break;
-                case VK_BACK:    KeyUnset(keyMap::Backspace); break;
-                case VK_DELETE:  KeyUnset(keyMap::Delete);    break;
-                case VK_HOME:    KeyUnset(keyMap::Home);      break;
-                case VK_END:     KeyUnset(keyMap::End);       break;
-                case VK_CONTROL: KeyUnset(keyMap::Control);   break;
-                case VK_SHIFT:   KeyUnset(keyMap::Shift);     break; //TODO: Differentiate L/R Shift
-                
-                case 'A':        KeyUnset(keyMap::A);         break;
-                case 'C':        KeyUnset(keyMap::C);         break;
-                case 'V':        KeyUnset(keyMap::V);         break;
-                case 'G':        KeyUnset(keyMap::G);         break;
-                case 'Y':        KeyUnset(keyMap::Y);         break;
-                case 'Z':        KeyUnset(keyMap::Z);         break;
-            }
-        } break;
-        
-        case WM_LBUTTONDOWN:
-        {
-            hasReceivedInput = TRUE;
-            
-            Mouse->isLeftPressed = TRUE;
-        } break;
-        
-        case WM_LBUTTONUP:
-        {
-            hasReceivedInput = TRUE;
-            
-            Mouse->isLeftPressed = FALSE;
-            
-            State.isDragging = FALSE;
-            BOOL success = ReleaseCapture();
-        } break;
-        
-        case WM_RBUTTONDOWN: { hasReceivedInput = TRUE; Mouse->isRightPressed = TRUE; } break;
-        case WM_RBUTTONUP:   { hasReceivedInput = TRUE; Mouse->isRightPressed = FALSE; } break;
-        
-        case WM_MOUSEMOVE:
-        {
-            POINTS currMouseClient = *((POINTS *)&l);
-            Mouse->currPos = { currMouseClient.x, State.windowHeight - currMouseClient.y };
-            
-            hasReceivedInput = TRUE;
-            
-            //TODO:NOTE: Page says to return 0, but DO i HAVE to?
-        } break;
-        
-        case WM_DESTROY:
-        {
-            SaveState();
-            ExitProcess(0);
-        } break;
-        
-        default: { return DefWindowProcA(h, msg, w, l); }
-    }
-    
-    return Result;
-}
-
-u32 win32_convertUTF16To32(u32 *utf32Buff, u32 maxBuff, wchar_t* data, u32 u16Len)
-{
-    //NOTE: isSurrogate is checking if the code is in range [0xD800 - 0xDFFF], with smartypants unsined math.
-    auto isSurrogate     = [](wchar_t code) -> b32 { return ((u16)code - (u16)0xD800) < (u16)2048; };
-    auto isHighSurrogate = [](wchar_t code) -> b32 { return (code & 0xFFFFFC00) == 0xD800; };
-    auto isLowSurrogate  = [](wchar_t code) -> b32 { return (code & 0xFFFFFC00) == 0xDC00; };
-    auto surrogateTo32   = [](wchar_t h, wchar_t l) -> u32 { return ((h << 10) + l - 0x35FDC00); };
-    
-    u32 idx = 0;
-    
-    wchar_t *In = data;
-    while(In < (data + u16Len))
-    {
-        wchar_t curr16 = *In; 
-        In += 1;
-        
-        b32 isSurr = (curr16 >= 0xD800) && (curr16 <= 0xDFFF);
-        if(!isSurr) { utf32Buff[idx] = (u32)curr16; idx += 1; }
-        else
-        {
-            AssertMsg(In < (data + u16Len), "Input cut off low surrogate??\n");
-            
-            wchar_t next16 = *In;
-            In += 1;
-            
-            b32 hS = isHighSurrogate(curr16);
-            b32 lS = isLowSurrogate(next16);
-            
-            AssertMsg((hS && lS) == TRUE, "Surrogate missing either High or Low\n");
-            
-            utf32Buff[idx] = surrogateTo32(curr16, next16);
-        }
-        
-        AssertMsg(idx < maxBuff, "UTF32 buffer provided is too small\n");
-    }
-    
-    return idx;
-}
-
-//NOTE:TODO: Stuff copy-pasted from the internet. Those left and right shifts are just masking bits...
-u32 win32_convertUTF32To16(wchar_t* utf16Buff, u32 maxBuff, u32 *data, u32 u32Len)
-{
-    u32 *In = data;
-    
-    u32 index = 0;
-    while(In < (data + u32Len))
-    {
-        u32 codepoint = *In;
-        In += 1;
-        
-        wchar_t high = 0;
-        wchar_t low  = 0;
-        
-        if(codepoint < 0x10000) 
-        { 
-            utf16Buff[index] = (wchar_t)codepoint; 
-            index += 1; 
-            continue; 
-        }
-        
-        u32 temp = codepoint -  0x10000;
-        high = (((temp << 12) >> 22) + 0xD800);
-        low  = (((temp << 22) >> 22) + 0xDC00);
-        
-        utf16Buff[index]   = high;
-        utf16Buff[index+1] = low;
-        
-        index += 1;
-    }
-    
-    return index;
-}
-
-u32 win32_GetClipboard(void *buff, u32 maxUTF32Len)
-{
-    if(OpenClipboard(NULL) == 0) { return 0; }
-    
-    HANDLE Clipboard = GetClipboardData(CF_UNICODETEXT);
-    
-    wchar_t* data = (wchar_t *)GlobalLock(Clipboard);
-    
-    wchar_t* At = data;
-    u32 strLen = 0;
-    while(*At != 0) { strLen += 1; At += 1; }
-    
-    u32 utf32Buff[256] = {}; //TODO: I am unsure about this.
-    
-    u32 utf32Len = win32_convertUTF16To32(utf32Buff, 256, data, strLen);
-    
-    u32 copyLen = utf32Len < maxUTF32Len ? utf32Len : maxUTF32Len;
-    
-    ls_memcpy(utf32Buff, buff, copyLen*sizeof(u32));
-    GlobalUnlock(Clipboard);
-    
-    CloseClipboard();
-    
-    return copyLen;
-}
-
-u32 win32_SetClipboard(void *data, u32 len)
-{
-    if(OpenClipboard(NULL) == 0) { return 0; }
-    
-    HANDLE Clipboard = GetClipboardData(CF_UNICODETEXT);
-    EmptyClipboard();
-    
-    wchar_t charBuff[256] = {};
-    u32 buffLen = win32_convertUTF32To16(charBuff, 256, (u32 *)data, len);
-    
-    HGLOBAL clipMem = GlobalAlloc(GMEM_MOVEABLE, (buffLen+1)*sizeof(u32));
-    wchar_t *clipData = (wchar_t *)GlobalLock(clipMem);
-    
-    ls_memcpy(charBuff, clipData, buffLen*sizeof(wchar_t));
-    clipData[buffLen] = 0;
-    
-    GlobalUnlock(clipMem);
-    
-    SetClipboardData(CF_UNICODETEXT, clipMem);
-    
-    CloseClipboard();
-    
-    return len;
-}
-
-void RegisterWindow()
-{
-    
-    u32 prop = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
-    
-    HCURSOR cursor = LoadCursorA(NULL, IDC_ARROW);
-    
-    WNDCLASSA WindowClass = { 0 };
-    WindowClass.style = prop;
-    WindowClass.lpfnWndProc = WindowProc;
-    WindowClass.hInstance = MainInstance;
-    WindowClass.lpszClassName = "WndClass";
-    WindowClass.hCursor = cursor;
-    
-    if (!RegisterClassA(&WindowClass))
-    {
-        DWORD Error = GetLastError();
-        ls_printf("When Registering WindowClass in Win32_SetupScreen got error: %d", Error);
-    }
-}
-
-HWND CreateWindow()
-{
-    u32 style = LS_THIN_BORDER | LS_POPUP;// | LS_VISIBLE; //| LS_OVERLAPPEDWINDOW;
-    BOOL Result;
-    
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    int screenWidth  = GetSystemMetrics(SM_CXSCREEN);
-    
-    int windowWidth = 1280;
-    int windowHeight = 860;
-    const int taskbarHeight = 20;
-    
-    int spaceX = (screenWidth - windowWidth) / 2;
-    int spaceY = ((screenHeight - windowHeight) / 2);// - taskbarHeight;
-    if(spaceX < 0) { spaceX = 0; }
-    if(spaceY < 0) { spaceY = 0; }
-    
-    //NOTE:TODO: Hardcoded!!
-    State.windowWidth = 1280;
-    State.windowHeight = 800;
-    
-    HWND WindowHandle;
-    if ((WindowHandle = CreateWindowExA(0, "WndClass",
-                                        "PCMan", style,
-                                        spaceX, spaceY, //CW_USEDEFAULT, CW_USEDEFAULT,
-                                        State.windowWidth, State.windowHeight,
-                                        0, 0, MainInstance, 0)) == nullptr)
-    {
-        DWORD Error = GetLastError();
-        ls_printf("When Retrieving a WindowHandle in Win32_SetupScreen got error: %d", Error);
-    }
-    
-    
-    
-    
-    BITMAPINFO BackBufferInfo = {};
-    BackBufferInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    BackBufferInfo.bmiHeader.biWidth = State.windowWidth;
-    BackBufferInfo.bmiHeader.biHeight = State.windowHeight;
-    BackBufferInfo.bmiHeader.biPlanes = 1;
-    BackBufferInfo.bmiHeader.biBitCount = 32;
-    BackBufferInfo.bmiHeader.biCompression = BI_RGB;
-    
-    WindowDC           = GetDC(WindowHandle);
-    BackBufferDC       = CreateCompatibleDC(WindowDC);
-    HBITMAP DibSection = CreateDIBSection(BackBufferDC, &BackBufferInfo,
-                                          DIB_RGB_COLORS, (void **)&BackBuffer, NULL, 0);
-    SelectObject(BackBufferDC, DibSection);
-    
-    State.currWindowPos = { (s16)spaceX, (s16)spaceY }; //NOTE:TODO: Hardcoded!!
-    
-    return WindowHandle;
-}
 
 void windows_Render()
 {
@@ -618,14 +243,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //------------
     
     
-    RegisterWindow();
+    //TODO Hardcoded
+    const int windowWidth = 1280;
+    const int windowHeight = 860;
+    UIContext *uiContext = ls_uiInitDefaultContext(windowWidth, windowHeight, &windows_Render);
+    MainWindow = ls_uiCreateWindow(MainInstance, BackBuffer, uiContext);
     
-    MainWindow = CreateWindow();
+    ls_uiAddOnDestroyCallback(uiContext, SaveState);
     
-    UserInput.Keyboard.getClipboard = win32_GetClipboard;
-    UserInput.Keyboard.setClipboard = win32_SetClipboard;
-    
-    UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, State.windowWidth, State.windowHeight, &windows_Render);
     
     loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
     
@@ -694,7 +319,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiMenuAddSub(&WindowMenu, themeSubMenu, 1);
     
     
-    ls_uiPushScissor(uiContext, 0, 0, State.windowWidth, State.windowHeight);
+    ls_uiPushScissor(uiContext, 0, 0, uiContext->windowWidth, uiContext->windowHeight);
     
     State.isInitialized = TRUE;
     
@@ -747,44 +372,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
     
-    b32 isStartup = TRUE;
     while(Running)
     {
         RegionTimerBegin(frameTime);
         
-        UserInput.Keyboard.prevState = UserInput.Keyboard.currentState;
-        UserInput.Keyboard.repeatState = {};
-        
-        UserInput.Keyboard.hasPrintableKey = FALSE;
-        UserInput.Keyboard.keyCodepoint    = 0;
-        
-        UserInput.Mouse.prevPos          = UserInput.Mouse.currPos;
-        UserInput.Mouse.wasLeftPressed   = UserInput.Mouse.isLeftPressed;
-        UserInput.Mouse.wasRightPressed  = UserInput.Mouse.isRightPressed;
-        UserInput.Mouse.wasMiddlePressed = UserInput.Mouse.isMiddlePressed;
-        
-        uiContext->focusWasSetThisFrame = FALSE;
-        uiContext->lastFocus            = uiContext->currentFocus;
-        if(uiContext->nextFrameFocusChange == TRUE)
-        {
-            uiContext->currentFocus = uiContext->nextFrameFocus;
-            uiContext->lastFocus    = uiContext->currentFocus;
-            uiContext->nextFrameFocusChange = FALSE;
-        }
-        
-        hasReceivedInput = FALSE;
-        
-        // Process Input
-        MSG Msg;
-        while (PeekMessageA(&Msg, NULL, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&Msg);
-            DispatchMessageA(&Msg);
-        }
-        
-        //NOTE: Window starts hidden, and then is shown after the first frame, 
-        //      to avoid flashing because initially the frame buffer is all white.
-        if(isStartup) { ShowWindow(MainWindow, SW_SHOW); isStartup = FALSE; hasReceivedInput = TRUE; }
+        ls_uiFrameBegin(uiContext);
         
         //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
         //      The first frame is always registered, so the first Undo State is always valid.
@@ -807,14 +399,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
 #if 1
         //NOTE: Render The Window Menu
-        ls_uiMenu(uiContext, &WindowMenu, 0, State.windowHeight-20, State.windowWidth, 20);
+        ls_uiMenu(uiContext, &WindowMenu, 0, uiContext->windowHeight-20, uiContext->windowWidth, 20);
         
         
         userInputConsumed = DrawInitTab(uiContext);
 #else
         userInputConsumed = FALSE;
 #endif
-        if(!hasReceivedInput && !State.isDragging)
+        if(!uiContext->hasReceivedInput && !uiContext->isDragging)
         {
             for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
             {
@@ -869,31 +461,36 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             //TODO: Dragging while interacting with menu items! /Separate items region from draggable region!
             if(LeftClick && uiContext->currentFocus == (u64 *)&WindowMenu)
             { 
-                State.isDragging = TRUE;
+                uiContext->isDragging = TRUE;
                 POINT currMouse = {};
                 GetCursorPos(&currMouse);
-                State.prevMousePos = currMouse;
+                uiContext->prevMousePosX = currMouse.x;
+                uiContext->prevMousePosY = currMouse.y;
             }
-            if(State.isDragging && LeftHold)
+            if(uiContext->isDragging && LeftHold)
             { 
                 MouseInput *Mouse = &UserInput.Mouse;
                 
                 POINT currMouse = {};
                 GetCursorPos(&currMouse);
                 
-                POINT prevMouse = State.prevMousePos;
+                POINT prevMouse = { uiContext->prevMousePosX, uiContext->prevMousePosY };
                 
                 SHORT newX = prevMouse.x - currMouse.x;
                 SHORT newY = prevMouse.y - currMouse.y;
                 
-                SHORT newWinX = State.currWindowPos.x - newX;
-                SHORT newWinY = State.currWindowPos.y - newY;
+                SHORT newWinX = uiContext->windowPosX - newX;
+                SHORT newWinY = uiContext->windowPosY - newY;
                 
-                State.currWindowPos = { newWinX, newWinY };
-                State.prevMousePos  = currMouse; 
+                uiContext->windowPosX = newWinX;
+                uiContext->windowPosY = newWinY;
+                
+                uiContext->prevMousePosX  = currMouse.x;
+                uiContext->prevMousePosY  = currMouse.y;
+                
                 SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
                 
-                if(LeftUp) { State.isDragging = FALSE; }
+                if(LeftUp) { uiContext->isDragging = FALSE; }
             }
             
             
@@ -934,7 +531,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(State.timePassed >= 30)
         {
             State.timePassed = 0;
-            SaveState();
+            SaveState(NULL);
         }
         
         beginT = endT;

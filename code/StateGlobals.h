@@ -156,14 +156,6 @@ struct ProgramState
     
     b32 isInitialized;
     
-    //Window management
-    u32 windowWidth;
-    u32 windowHeight;
-    
-    b32    isDragging;
-    POINT  prevMousePos;
-    POINTS currWindowPos;
-    
     b32 hasMouseClicked;
     
     u64 timePassed;
@@ -190,7 +182,5 @@ static Arena fileArena;
 static Arena stateArena;
 static Arena saveArena;
 static Arena renderArena;
-
-static b32 hasReceivedInput = FALSE;
 
 #endif //_STATE_GLOBALS_H
