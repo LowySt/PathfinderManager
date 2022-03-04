@@ -241,8 +241,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //TODO Hardcoded
     const int windowWidth = 1280;
     const int windowHeight = 860;
-    UIContext *uiContext = ls_uiInitDefaultContext(windowWidth, windowHeight);
-    MainWindow = ls_uiCreateWindow(MainInstance, BackBuffer, uiContext);
+    UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, windowWidth, windowHeight);
+    MainWindow = ls_uiCreateWindow(MainInstance, uiContext);
     
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
     

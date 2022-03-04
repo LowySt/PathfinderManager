@@ -164,6 +164,7 @@ struct ProgramState
 
 HINSTANCE MainInstance;
 HWND MainWindow;
+u8 *BackBuffer;
 PlayerChar pc = {};
 ProgramState State = {};
 
