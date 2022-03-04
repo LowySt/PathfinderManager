@@ -359,15 +359,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     RegionTimer frameTime = {};
     
     b32 Running = TRUE;
-    u32 lastFrameTime = 0;
     unistring frameTimeString = ls_unistrAlloc(8);
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
     
     while(Running)
     {
-        RegionTimerBegin(frameTime);
-        
         ls_uiFrameBegin(uiContext);
         
         //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
@@ -509,7 +506,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(showDebug)
         {
             ls_uiFillRect(uiContext, 1248, 760, 20, 20, uiContext->backgroundColor);
-            ls_unistrFromInt_t(&frameTimeString, lastFrameTime);
+            ls_unistrFromInt_t(&frameTimeString, uiContext->dt);
             ls_uiGlyphString(uiContext, 1248, 760, frameTimeString, RGBg(0xEE));
         }
         
@@ -528,19 +525,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         beginT = endT;
         
-        RegionTimerEnd(frameTime);
-        u32 frameTimeMs = RegionTimerGet(frameTime);
         const u32 frameLock = 16;
-        if(frameTimeMs < frameLock)
-        {
-            u32 deltaTimeInMs = frameLock - frameTimeMs;
-            Sleep(deltaTimeInMs);
-        }
-        
-        RegionTimerEnd(frameTime);
-        uiContext->dt = RegionTimerGet(frameTime); //frameTimeMs;
-        lastFrameTime = uiContext->dt;
-        
+        ls_uiFrameEnd(uiContext, frameLock);
     }
     
     //NOTE: Technically useless, just reminding myself of this function's existance
