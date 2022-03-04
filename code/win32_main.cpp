@@ -86,11 +86,6 @@
 
 #include "AssetLoader.cpp"
 
-void windows_Render()
-{
-    InvalidateRect(MainWindow, NULL, TRUE);
-}
-
 b32 ProgramExitOnButton(UIContext *cxt, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
 
 void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
@@ -246,7 +241,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //TODO Hardcoded
     const int windowWidth = 1280;
     const int windowHeight = 860;
-    UIContext *uiContext = ls_uiInitDefaultContext(windowWidth, windowHeight, &windows_Render);
+    UIContext *uiContext = ls_uiInitDefaultContext(windowWidth, windowHeight);
     MainWindow = ls_uiCreateWindow(MainInstance, BackBuffer, uiContext);
     
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
