@@ -313,9 +313,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiMenuAddItem(&WindowMenu, themeMenuBtn);
     ls_uiMenuAddSub(&WindowMenu, themeSubMenu, 1);
     
-    
-    ls_uiPushScissor(uiContext, 0, 0, uiContext->windowWidth, uiContext->windowHeight);
-    
     State.isInitialized = TRUE;
     
     SYSTEMTIME endT, beginT;
