@@ -1545,7 +1545,7 @@ b32 DrawDefaultStyle(UIContext *cxt)
     s32 yPos = 638;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 650, yPos+6);
+        ls_uiLabel(cxt, PartyName[i], 650, yPos+6);
         inputUse |= ls_uiTextBox(cxt, Page->PlayerInit + i, 732, yPos, 32, 20);
         yPos -= 20;
     }
@@ -1721,7 +1721,7 @@ b32 DrawDefaultStyle(UIContext *cxt)
     return inputUse;
 }
 
-b32 DrawPranaStyle(UIContext *cxt)
+b32 DrawPranaStyle(UIContext *c)
 {
     InitPage *Page = State.Init;
     
@@ -1735,22 +1735,22 @@ b32 DrawPranaStyle(UIContext *cxt)
     {
         if(!State.inBattle)
         {
-            inputUse |= ls_uiListBox(cxt, &Page->EncounterSel,  480, 718, 120, 20, 2);
-            inputUse |= ls_uiTextBox(cxt, &Page->EncounterName, 624, 718, 100, 20);
+            inputUse |= ls_uiListBox(c, &Page->EncounterSel,  480, 718, 120, 20, 2);
+            inputUse |= ls_uiTextBox(c, &Page->EncounterName, 624, 718, 100, 20);
             
-            inputUse |= ls_uiButton(cxt, &Page->SaveEnc, 601, 740, 44, 20);
-            inputUse |= ls_uiButton(cxt, &Page->RemoveEnc, 455, 718, 24, 20);
+            inputUse |= ls_uiButton(c, &Page->SaveEnc, 601, 740, 44, 20);
+            inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, 718, 24, 20);
             
-            inputUse |= ls_uiListBox(cxt, &Page->Mobs,   406, 678, 100, 20, 1);
-            inputUse |= ls_uiListBox(cxt, &Page->Allies, 641, 498, 100, 20, 1);
+            inputUse |= ls_uiListBox(c, &Page->Mobs,   406, 678, 100, 20, 1);
+            inputUse |= ls_uiListBox(c, &Page->Allies, 641, 498, 100, 20, 1);
             
-            inputUse |= ls_uiButton(cxt, &Page->Roll, 556, 678, 48, 20);
-            inputUse |= ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
+            inputUse |= ls_uiButton(c, &Page->Roll, 556, 678, 48, 20);
+            inputUse |= ls_uiButton(c, &Page->Set,  780, 678, 48, 20);
         }
         
         //NOTE: We hijack the globals to know when to show the buttons.
-        if(distanceFromOld != 0) { ls_uiButton(cxt, &Page->Undo, 1180, 754, 24, 20); }
-        if(distanceFromNow != 0) { ls_uiButton(cxt, &Page->Redo, 1220, 754, 24, 20); }
+        if(distanceFromOld != 0) { ls_uiButton(c, &Page->Undo, 1180, 754, 24, 20); }
+        if(distanceFromNow != 0) { ls_uiButton(c, &Page->Redo, 1220, 754, 24, 20); }
     }
     
     //NOTE: Z Layer 0 Input
@@ -1759,8 +1759,8 @@ b32 DrawPranaStyle(UIContext *cxt)
     s32 yPos = 638;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        ls_uiLabel(cxt, ls_unistrConstant(PartyName[i]), 650, yPos+6);
-        inputUse |= ls_uiTextBox(cxt, Page->PlayerInit + i, 732, yPos, 32, 20);
+        ls_uiLabel(c, PartyName[i], 650, yPos+6);
+        inputUse |= ls_uiTextBox(c, Page->PlayerInit + i, 732, yPos, 32, 20);
         yPos -= 20;
     }
     
@@ -1768,7 +1768,7 @@ b32 DrawPranaStyle(UIContext *cxt)
     yPos = 458;
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        inputUse |= DrawInitField(cxt, Page->AllyFields + i, 616, yPos);
+        inputUse |= DrawInitField(c, Page->AllyFields + i, 616, yPos);
         yPos -= 20;
     }
     
@@ -1778,8 +1778,8 @@ b32 DrawPranaStyle(UIContext *cxt)
     {
         InitField *f = Page->MobFields + i;
         
-        inputUse |= DrawInitField(cxt, f, 378, yPos);
-        inputUse |= DrawInitExtra(cxt, f, 378, yPos);
+        inputUse |= DrawInitField(c, f, 378, yPos);
+        inputUse |= DrawInitExtra(c, f, 378, yPos);
         yPos -= 20;
     }
     
@@ -1787,10 +1787,10 @@ b32 DrawPranaStyle(UIContext *cxt)
     yPos = 638;
     for(u32 i = 0; i < visibleOrder; i += 2)
     {
-        inputUse |= DrawOrderField(cxt, Page->OrderFields + i, 870, yPos);
+        inputUse |= DrawOrderField(c, Page->OrderFields + i, 870, yPos);
         
         if((i+1) < visibleOrder)
-        { inputUse |= DrawOrderField(cxt, Page->OrderFields + (i+1), 1056, yPos); }
+        { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1056, yPos); }
         
         yPos -= 20;
     }
@@ -1807,16 +1807,16 @@ b32 DrawPranaStyle(UIContext *cxt)
         if((i % 3) == 1) { yPos = 76; }
         if((i % 3) == 2) { yPos = 28; xDiff = 216; }
         
-        ls_uiLabel(cxt, ls_unistrConstant(CounterNames[i]), xPos, yPos+24);
+        ls_uiLabel(c, ls_unistrConstant(CounterNames[i]), xPos, yPos+24);
         
-        inputUse |= ls_uiTextBox(cxt, &f->name, xPos, yPos, 100, 20);
-        inputUse |= ls_uiTextBox(cxt, &f->rounds, xPos + 105, yPos, 36, 20);
+        inputUse |= ls_uiTextBox(c, &f->name, xPos, yPos, 100, 20);
+        inputUse |= ls_uiTextBox(c, &f->rounds, xPos + 105, yPos, 36, 20);
         
-        if(!f->isActive) { inputUse |= ls_uiButton(cxt, &f->start, xPos + 146, yPos, 48, 20); }
+        if(!f->isActive) { inputUse |= ls_uiButton(c, &f->start, xPos + 146, yPos, 48, 20); }
         else
         {
-            inputUse |= ls_uiButton(cxt, &f->plusOne, xPos + 146, yPos, 48, 20);
-            inputUse |= ls_uiButton(cxt, &f->stop, xPos + 93, yPos+22, 48, 20);
+            inputUse |= ls_uiButton(c, &f->plusOne, xPos + 146, yPos, 48, 20);
+            inputUse |= ls_uiButton(c, &f->stop, xPos + 93, yPos+22, 48, 20);
         }
         
         xPos += xDiff;
@@ -1834,27 +1834,27 @@ b32 DrawPranaStyle(UIContext *cxt)
         if((i % 2) == 1) { yPos = 20; xDiff = 186; }
         
         
-        inputUse |= ls_uiTextBox(cxt, &f->name,    xPos,      yPos + 40, 98, 20);
-        inputUse |= ls_uiButton(cxt, &f->throwDie, xPos + 98, yPos + 40, 36, 20);
+        inputUse |= ls_uiTextBox(c, &f->name,    xPos,      yPos + 40, 98, 20);
+        inputUse |= ls_uiButton(c, &f->throwDie, xPos + 98, yPos + 40, 36, 20);
         
-        inputUse |= ls_uiTextBox(cxt, &f->damage, xPos,       yPos + 20, 134, 20);
-        inputUse |= ls_uiTextBox(cxt, &f->dmgRes, xPos + 134, yPos + 20, 36,  20);
+        inputUse |= ls_uiTextBox(c, &f->damage, xPos,       yPos + 20, 134, 20);
+        inputUse |= ls_uiTextBox(c, &f->dmgRes, xPos + 134, yPos + 20, 36,  20);
         
-        inputUse |= ls_uiTextBox(cxt, &f->toHit,  xPos,       yPos, 134, 20);
-        inputUse |= ls_uiTextBox(cxt, &f->hitRes, xPos + 134, yPos, 36,  20);
+        inputUse |= ls_uiTextBox(c, &f->toHit,  xPos,       yPos, 134, 20);
+        inputUse |= ls_uiTextBox(c, &f->hitRes, xPos + 134, yPos, 36,  20);
         
         xPos += xDiff;
         xDiff = 0;
     }
     
-    inputUse |= ls_uiButton(cxt, &Page->Reset, 670, 678, 48, 20);
+    inputUse |= ls_uiButton(c, &Page->Reset, 670, 678, 48, 20);
     
     if(State.inBattle)
     {
-        inputUse |= ls_uiTextBox(cxt, &Page->Current,      1010, 668, 100, 20);
-        inputUse |= ls_uiTextBox(cxt, &Page->RoundCounter, 1230, 720, 30, 20);
+        inputUse |= ls_uiTextBox(c, &Page->Current,      1010, 668, 100, 20);
+        inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1230, 720, 30, 20);
         
-        inputUse |= ls_uiButton(cxt, &Page->Next, 1036, 698, 48, 20);
+        inputUse |= ls_uiButton(c, &Page->Next, 1036, 698, 48, 20);
         
         if(visibleAllies < ALLY_NUM)
         {
@@ -1863,14 +1863,14 @@ b32 DrawPranaStyle(UIContext *cxt)
             u32 addY = 454 - (20*visibleAllies);
             if(!f->isAdding)
             {
-                inputUse |= ls_uiButton(cxt, &f->addNew, 678, addY, 36, 20);
+                inputUse |= ls_uiButton(c, &f->addNew, 678, addY, 36, 20);
             }
             else
             {
-                inputUse |= ls_uiTextBox(cxt, &f->addName, 616, addY+4, 120, 20);
-                inputUse |= ls_uiTextBox(cxt, &f->addInit, 736, addY+4, 26, 20);
+                inputUse |= ls_uiTextBox(c, &f->addName, 616, addY+4, 120, 20);
+                inputUse |= ls_uiTextBox(c, &f->addInit, 736, addY+4, 26, 20);
                 
-                inputUse |= ls_uiButton(cxt, &f->addConfirm, 762, addY+4, 26, 20);
+                inputUse |= ls_uiButton(c, &f->addConfirm, 762, addY+4, 26, 20);
             }
         }
         
@@ -1881,16 +1881,16 @@ b32 DrawPranaStyle(UIContext *cxt)
             u32 addY = 634 - (20*visibleMobs);
             if(!f->isAdding)
             {
-                inputUse |= ls_uiButton(cxt, &f->addNew, 428, addY, 36, 20);
+                inputUse |= ls_uiButton(c, &f->addNew, 428, addY, 36, 20);
             }
             else
             {
-                inputUse |= DrawInitExtra(cxt, f, 378, addY+4);
+                inputUse |= DrawInitExtra(c, f, 378, addY+4);
                 
-                inputUse |= ls_uiTextBox(cxt, &f->addName, 378, addY+4, 120, 20);
-                inputUse |= ls_uiTextBox(cxt, &f->addInit, 498, addY+4, 26, 20);
+                inputUse |= ls_uiTextBox(c, &f->addName, 378, addY+4, 120, 20);
+                inputUse |= ls_uiTextBox(c, &f->addInit, 498, addY+4, 26, 20);
                 
-                inputUse |= ls_uiButton(cxt, &f->addConfirm, 524, addY+4, 26, 20);
+                inputUse |= ls_uiButton(c, &f->addConfirm, 524, addY+4, 26, 20);
             }
         }
     }
@@ -1898,12 +1898,12 @@ b32 DrawPranaStyle(UIContext *cxt)
     return inputUse;
 }
 
-b32 DrawInitTab(UIContext *cxt)
+b32 DrawInitTab(UIContext *c)
 {
     switch(currentStyle)
     {
-        case INIT_STYLE_DEFAULT: return DrawDefaultStyle(cxt); break;
-        case INIT_STYLE_PRANA:   return DrawPranaStyle(cxt); break;
+        case INIT_STYLE_DEFAULT: return DrawDefaultStyle(c); break;
+        case INIT_STYLE_PRANA:   return DrawPranaStyle(c); break;
         
         default: AssertMsg(FALSE, "Unhandled Init Style\n"); return  FALSE;
     }

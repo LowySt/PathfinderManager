@@ -179,8 +179,33 @@ enum RenderCommandExtra
     UI_RCE_BR,
 };
 
+const char** RenderCommandTypeAsString = {
+    "UI_RC_INVALID",
+    "UI_RC_TEXTBOX",
+    "UI_RC_BUTTON",
+    "UI_RC_LISTBOX",
+    "UI_RC_LISTBOX_ARR",
+    "UI_RC_SLIDER",
+    "UI_RC_RECT",
+    "UI_RC_MENU",
+    "UI_RC_BACKGROUND",
+    
+    "UI_RC_FRAG_OFF",
+    
+    "UI_RC_FRAG_TEXTBOX",
+    "UI_RC_FRAG_BUTTON",
+    "UI_RC_FRAG_LISTBOX",
+    "UI_RC_FRAG_LISTBOX_ARR",
+    "UI_RC_FRAG_SLIDER",
+    "UI_RC_FRAG_RECT",
+    "UI_RC_FRAG_MENU",
+    "UI_RC_FRAG_BACKGROUND",
+};
+
 enum RenderCommandType
 {
+    UI_RC_INVALID = 0,
+    
     UI_RC_TEXTBOX = 1,
     UI_RC_BUTTON,
     UI_RC_LISTBOX,
@@ -429,6 +454,9 @@ __ls_RenderRect ls_uiQuadrantFromPoint(UIContext *c, s32 x, s32 y, u32 *idx)
 
 void ls_uiPushRenderCommand(UIContext *c, RenderCommand command, s32 zLayer)
 {
+    AssertMsg(command.type != UI_RC_INVALID,  "Uninitialized Render Command?\n");
+    AssertMsg(command.type != UI_RC_FRAG_OFF, "Offset as Render Command?\n");
+    
     __ls_RenderRect commandRect = { command.x, command.y, command.w, command.h };
     
     switch(THREAD_COUNT)
@@ -2950,7 +2978,12 @@ void ls_uiRender__(UIContext *c, u32 threadID)
                     ls_uiBorderedRectFrag(c, xPos, yPos, w, h, c->backgroundColor, curr->textColor, curr->extra);
                 } break;
                 
-                default: { AssertMsg(FALSE, "Unhandled Render Command Type\n"); } break;
+                default: {
+                    char error[128] = "Unhandled Render Command Type ";
+                    ls_memcpy(RenderCommandTypeAsString[command.type], error + 29, ls_len(RenderCommandTypeAsString[command.type]));
+                    
+                    AssertMsg(FALSE, (const char *)error);
+                } break;
             }
         }
     }

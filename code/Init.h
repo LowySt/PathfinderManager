@@ -9,7 +9,7 @@ const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Sigismondo", U"Vent" };
 const unistring PartyNameUTF32[PARTY_NUM] = { 
     {(u32 *)PartyName[0], 5, 5}, 
     {(u32 *)PartyName[1], 10, 10}, 
-    {(u32 *)PartyName[2], 4, 4} 
+    {(u32 *)PartyName[2], 4, 4},
 };
 
 const u32 MOB_NUM = 24;
