@@ -4,12 +4,13 @@
 #ifndef _INIT_H
 #define _INIT_H
 
-const u32 PARTY_NUM = 3;
-const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Sigismondo", U"Vent" };
+const u32 PARTY_NUM = 4;
+const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Sigismondo", U"Alice", U"Bruce" };
 const unistring PartyNameUTF32[PARTY_NUM] = { 
     {(u32 *)PartyName[0], 5, 5}, 
     {(u32 *)PartyName[1], 10, 10}, 
-    {(u32 *)PartyName[2], 4, 4},
+    {(u32 *)PartyName[2], 5, 5},
+    {(u32 *)PartyName[3], 5, 5},
 };
 
 const u32 MOB_NUM = 24;

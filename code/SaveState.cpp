@@ -1,4 +1,4 @@
-void CopyStateToBuffer(ProgramState *curr, buffer *buf)
+void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveVersion)
 {
     //NOTE: Copy Init Page
     InitPage *init = curr->Init;
@@ -8,7 +8,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf)
     //8
     ls_bufferAddDWord(buf, init->Allies.selectedIndex);
     
-    //8+(4*PARTY_NUM) = 20
+    //8+(4*PARTY_NUM)
     for(u32 i = 0; i < PARTY_NUM; i++)
     { ls_bufferAddUnistring(buf, init->PlayerInit[i].text); }
     
@@ -109,7 +109,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf)
     ls_bufferAddDWord(buf, curr->inBattle);
 }
 
-void CopyStateFromBuffer(ProgramState *curr, buffer *buf)
+void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveVersion)
 {
     //NOTE: Copy Init Page
     InitPage *init = curr->Init;
@@ -119,7 +119,6 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf)
     
     for(u32 i = 0; i < PARTY_NUM; i++)
     { ls_bufferReadIntoUnistring(buf, &init->PlayerInit[i].text); }
-    
     
     for(u32 i = 0; i < ALLY_NUM; i++)
     {
@@ -150,7 +149,6 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf)
         mob->isAdding = ls_bufferReadDWord(buf);
         mob->ID       = ls_bufferReadDWord(buf);
     }
-    
     
     for(u32 i = 0; i < ORDER_NUM; i++)
     {
@@ -602,6 +600,8 @@ void SaveState(UIContext *c)
     s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
     
     //NOTE: Serialize Player Initiative
+    ls_bufferAddDWord(buf, PARTY_NUM);
+    
     for(u32 i = 0; i < PARTY_NUM; i++)
     { ls_bufferAddUnistring(buf, Page->PlayerInit[i].text); }
     
@@ -719,22 +719,7 @@ b32 LoadState(UIContext *cxt)
     buffer state = {};
     buffer *buf = NULL;
     
-    if(ls_fileExists(fullPathBuff) == FALSE)
-    {
-        //NOTE: Check for v3
-        u32 len = ls_getFullPathName((char *)"SaveFile_v3", fullPathBuff, 128);
-        
-        if(ls_fileExists(fullPathBuff))
-        {
-            string path = ls_strConstant(fullPathBuff);
-            buffer tmp = ls_bufferInitFromFile(path);
-            buffer *tmpPtr = &tmp;
-            
-            state = ConvertSaveToNewVersion(tmpPtr, 3);
-            buf = &state;
-        }
-        else { return FALSE; }
-    }
+    if(ls_fileExists(fullPathBuff) == FALSE) { return FALSE; }
     else
     {
         string path = ls_strConstant(fullPathBuff);
@@ -810,7 +795,9 @@ b32 LoadState(UIContext *cxt)
     
     
     //NOTE: UnSerialize Player Initiative
-    for(u32 i = 0; i < PARTY_NUM; i++)
+    u32 partyNum = ls_bufferReadDWord(buf);
+    u32 unserializePartyNum = partyNum < PARTY_NUM ? partyNum : PARTY_NUM;
+    for(u32 i = 0; i < unserializePartyNum; i++)
     {
         ls_bufferReadIntoUnistring(buf, &Page->PlayerInit[i].text);
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;

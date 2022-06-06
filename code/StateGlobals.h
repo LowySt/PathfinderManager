@@ -3,7 +3,7 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 4;
+const u32 global_saveVersion = 5;
 
 enum InitFieldIndex
 {
@@ -176,7 +176,6 @@ static u32 distanceFromNow = 0;
 
 static b32 undoRequest = FALSE;
 static b32 redoRequest = FALSE;
-
 
 static Arena globalArena;
 static Arena fileArena;
