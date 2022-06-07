@@ -94,6 +94,9 @@ b32 CustomInitFieldText(UIContext *cxt, void *data)
     
     if(KeyPress(keyMap::Enter))
     {
+        //NOTE: Clear up the '\n' printable key
+        ClearPrintableKey();
+        
         if(f->parent == lastMob)  { ls_uiFocusChange(cxt, 0x0); return inputUse; }
         if(f->parent == lastAlly) { ls_uiFocusChange(cxt, 0x0); return inputUse; }
         
@@ -1159,18 +1162,21 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     unistring zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_unistrConstant(name));
-    f->editFields[IF_IDX_NAME].preInput    = CustomInitFieldText;
-    f->editFields[IF_IDX_NAME].data        = &textHandler[0];
+    f->editFields[IF_IDX_NAME].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_NAME].data         = &textHandler[0];
+    f->editFields[IF_IDX_NAME].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_BONUS], zeroUTF32);
-    f->editFields[IF_IDX_BONUS].maxLen     = 2;
-    f->editFields[IF_IDX_BONUS].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_BONUS].data       = &textHandler[1];
+    f->editFields[IF_IDX_BONUS].maxLen       = 2;
+    f->editFields[IF_IDX_BONUS].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_BONUS].data         = &textHandler[1];
+    f->editFields[IF_IDX_BONUS].isSingleLine = TRUE;
     
-    f->editFields[IF_IDX_EXTRA].text       = ls_unistrAlloc(16);
-    f->editFields[IF_IDX_EXTRA].viewEndIdx = f->editFields[IF_IDX_EXTRA].text.len;
-    f->editFields[IF_IDX_EXTRA].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_EXTRA].data       = &textHandler[2];
+    f->editFields[IF_IDX_EXTRA].text         = ls_unistrAlloc(16);
+    f->editFields[IF_IDX_EXTRA].viewEndIdx   = f->editFields[IF_IDX_EXTRA].text.len;
+    f->editFields[IF_IDX_EXTRA].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_EXTRA].data         = &textHandler[2];
+    f->editFields[IF_IDX_EXTRA].isSingleLine = TRUE;
     
     MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     handler->parent   = &f->maxLife;
@@ -1178,54 +1184,65 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     handler->previous = ls_unistrAlloc(16);
     
     ls_uiTextBoxSet(cxt, &f->maxLife, zeroUTF32);
-    f->maxLife.maxLen     = 4;
-    f->maxLife.preInput   = CustomMobLifeField;
-    f->maxLife.data       = handler;
+    f->maxLife.maxLen       = 4;
+    f->maxLife.preInput     = CustomMobLifeField;
+    f->maxLife.data         = handler;
+    f->maxLife.isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_TOTALAC], zeroUTF32);
-    f->editFields[IF_IDX_TOTALAC].maxLen     = 2;
-    f->editFields[IF_IDX_TOTALAC].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_TOTALAC].data       = &textHandler[3];
+    f->editFields[IF_IDX_TOTALAC].maxLen       = 2;
+    f->editFields[IF_IDX_TOTALAC].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_TOTALAC].data         = &textHandler[3];
+    f->editFields[IF_IDX_TOTALAC].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_TOUCHAC], zeroUTF32);
-    f->editFields[IF_IDX_TOUCHAC].maxLen     = 2;
-    f->editFields[IF_IDX_TOUCHAC].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_TOUCHAC].data       = &textHandler[4];
+    f->editFields[IF_IDX_TOUCHAC].maxLen       = 2;
+    f->editFields[IF_IDX_TOUCHAC].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_TOUCHAC].data         = &textHandler[4];
+    f->editFields[IF_IDX_TOUCHAC].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FLATAC], zeroUTF32);
-    f->editFields[IF_IDX_FLATAC].maxLen      = 2;
-    f->editFields[IF_IDX_FLATAC].preInput    = CustomInitFieldText;
-    f->editFields[IF_IDX_FLATAC].data        = &textHandler[5];
+    f->editFields[IF_IDX_FLATAC].maxLen       = 2;
+    f->editFields[IF_IDX_FLATAC].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_FLATAC].data         = &textHandler[5];
+    f->editFields[IF_IDX_FLATAC].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_LOWAC], zeroUTF32);
     f->editFields[IF_IDX_LOWAC].maxLen       = 2;
     f->editFields[IF_IDX_LOWAC].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_LOWAC].data         = &textHandler[6];
+    f->editFields[IF_IDX_LOWAC].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_CONSAVE], zeroUTF32);
-    f->editFields[IF_IDX_CONSAVE].maxLen     = 2;
-    f->editFields[IF_IDX_CONSAVE].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_CONSAVE].data       = &textHandler[7];
+    f->editFields[IF_IDX_CONSAVE].maxLen       = 2;
+    f->editFields[IF_IDX_CONSAVE].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_CONSAVE].data         = &textHandler[7];
+    f->editFields[IF_IDX_CONSAVE].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_DEXSAVE], zeroUTF32);
-    f->editFields[IF_IDX_DEXSAVE].maxLen     = 2;
-    f->editFields[IF_IDX_DEXSAVE].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_DEXSAVE].data       = &textHandler[8];
+    f->editFields[IF_IDX_DEXSAVE].maxLen       = 2;
+    f->editFields[IF_IDX_DEXSAVE].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_DEXSAVE].data         = &textHandler[8];
+    f->editFields[IF_IDX_DEXSAVE].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_WISSAVE], zeroUTF32);
-    f->editFields[IF_IDX_WISSAVE].maxLen     = 2;
-    f->editFields[IF_IDX_WISSAVE].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_WISSAVE].data       = &textHandler[9];
+    f->editFields[IF_IDX_WISSAVE].maxLen       = 2;
+    f->editFields[IF_IDX_WISSAVE].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_WISSAVE].data         = &textHandler[9];
+    f->editFields[IF_IDX_WISSAVE].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FINAL], zeroUTF32);
-    f->editFields[IF_IDX_FINAL].maxLen     = 2;
-    f->editFields[IF_IDX_FINAL].preInput   = CustomInitFieldText;
-    f->editFields[IF_IDX_FINAL].data       = &textHandler[10];
+    f->editFields[IF_IDX_FINAL].maxLen       = 2;
+    f->editFields[IF_IDX_FINAL].preInput     = CustomInitFieldText;
+    f->editFields[IF_IDX_FINAL].data         = &textHandler[10];
+    f->editFields[IF_IDX_FINAL].isSingleLine = TRUE;
     
     
-    f->addName.text       = ls_unistrAlloc(16);
-    f->addInit.text       = ls_unistrAlloc(16);
-    f->addInit.maxLen     = 2;
+    f->addName.text         = ls_unistrAlloc(16);
+    f->addName.isSingleLine = TRUE;
+    f->addInit.text         = ls_unistrAlloc(16);
+    f->addInit.maxLen       = 2;
+    f->addInit.isSingleLine = TRUE;
     
     f->addNew.style       = UIBUTTON_TEXT;
     f->addNew.name        = ls_unistrFromUTF32(U"+");
@@ -1244,21 +1261,21 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     *currID += 1;
 }
 
-void SetInitTab(UIContext *cxt, ProgramState *PState)
+void SetInitTab(UIContext *c, ProgramState *PState)
 {
     InitPage *Page = PState->Init;
     
-    for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Mobs, (char *)Enemies[i]); }
-    for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(cxt, &Page->Allies, (char *)Allies[i]); }
+    for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Mobs, (char *)Enemies[i]); }
+    for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Allies, (char *)Allies[i]); }
     
     for(u32 i = 0; i < PARTY_NUM; i++) 
     { 
         UITextBox *f = Page->PlayerInit + i;
-        f->text       = ls_unistrFromUTF32(U"0");
-        f->viewEndIdx = f->text.len;
-        f->maxLen     = 2;
-        f->preInput   = CustomPlayerText;
-        f->data       = f;
+        ls_uiTextBoxSet(c, f, ls_unistrConstant(U"0"));
+        f->maxLen       = 2;
+        f->preInput     = CustomPlayerText;
+        f->data         = f;
+        f->isSingleLine = TRUE;
     }
     
     s32 currID = PARTY_NUM;
@@ -1266,34 +1283,35 @@ void SetInitTab(UIContext *cxt, ProgramState *PState)
     { 
         InitField *f = Page->MobFields + i;
         
-        InitFieldInit(cxt, f, &currID, MobName[i]);
+        InitFieldInit(c, f, &currID, MobName[i]);
     }
     
     for(u32 i = 0; i < ALLY_NUM; i++)  
     { 
         InitField *f = Page->AllyFields + i;
         
-        InitFieldInit(cxt, f, &currID, AllyName[i]);
+        InitFieldInit(c, f, &currID, AllyName[i]);
     }
     
     for(u32 i = 0; i < ORDER_NUM; i++)
     {
         Order *f = Page->OrderFields + i;
         
-        Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), cxt->widgetColor);
-        Color rColor      = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), cxt->widgetColor);
+        Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), c->widgetColor);
+        Color rColor      = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor);
         f->field          = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
         
         OrderHandler *orderHandler = (OrderHandler *)ls_alloc(sizeof(OrderHandler));
         orderHandler->parent = &f->pos;
         orderHandler->order  = f;
         
-        f->pos.text       = ls_unistrFromInt(i);
-        f->pos.viewEndIdx = f->pos.text.len;
-        f->pos.maxLen     = 2;
-        f->pos.preInput   = ChangeOrder;
-        f->pos.data       = orderHandler;
-        f->pos.isReadonly = TRUE;
+        f->pos.text         = ls_unistrFromInt(i);
+        f->pos.viewEndIdx   = f->pos.text.len;
+        f->pos.maxLen       = 2;
+        f->pos.preInput     = ChangeOrder;
+        f->pos.data         = orderHandler;
+        f->pos.isReadonly   = TRUE;
+        f->pos.isSingleLine = TRUE;
         
         f->remove.style   = UIBUTTON_TEXT;
         f->remove.name    = ls_unistrFromUTF32(U"X");
@@ -1306,9 +1324,12 @@ void SetInitTab(UIContext *cxt, ProgramState *PState)
     {
         Counter *f = Page->Counters + i;
         
-        f->name.text     = ls_unistrAlloc(16);
-        f->rounds.text   = ls_unistrAlloc(16);
-        f->rounds.maxLen = 2;
+        f->name.text        = ls_unistrAlloc(16);
+        f->name.isSingleLine = TRUE;
+        
+        f->rounds.text         = ls_unistrAlloc(16);
+        f->rounds.maxLen       = 2;
+        f->rounds.isSingleLine = TRUE;
         
         f->start.style   = UIBUTTON_TEXT;
         f->start.name    = ls_unistrFromUTF32(U"Start");
@@ -1339,11 +1360,17 @@ void SetInitTab(UIContext *cxt, ProgramState *PState)
         f->damage.text = ls_unistrAlloc(32);
         f->dmgRes.text = ls_unistrAlloc(16);
         
-        f->hitRes.maxLen = 4;
-        f->hitRes.isReadonly = TRUE;
+        f->name.isSingleLine   = TRUE;
+        f->toHit.isSingleLine  = TRUE;
+        f->damage.isSingleLine = TRUE;
         
-        f->dmgRes.maxLen = 4;
-        f->dmgRes.isReadonly = TRUE;
+        f->hitRes.maxLen       = 4;
+        f->hitRes.isReadonly   = TRUE;
+        f->hitRes.isSingleLine = TRUE;
+        
+        f->dmgRes.maxLen       = 4;
+        f->dmgRes.isReadonly   = TRUE;
+        f->dmgRes.isSingleLine = TRUE;
         
         f->throwDie.style   = UIBUTTON_TEXT;
         f->throwDie.name    = ls_unistrFromUTF32(U"Go");
@@ -1360,11 +1387,16 @@ void SetInitTab(UIContext *cxt, ProgramState *PState)
         Page->GeneralThrower.damage.text   = ls_unistrAlloc(32);
         Page->GeneralThrower.dmgRes.text   = ls_unistrAlloc(16);
         
-        Page->GeneralThrower.hitRes.maxLen = 4;
-        Page->GeneralThrower.hitRes.isReadonly = TRUE;
+        Page->GeneralThrower.name.isSingleLine  = TRUE;
+        Page->GeneralThrower.toHit.isSingleLine = TRUE;
         
-        Page->GeneralThrower.dmgRes.maxLen = 4;
-        Page->GeneralThrower.dmgRes.isReadonly = TRUE;
+        Page->GeneralThrower.hitRes.maxLen       = 4;
+        Page->GeneralThrower.hitRes.isReadonly   = TRUE;
+        Page->GeneralThrower.hitRes.isSingleLine = TRUE;
+        
+        Page->GeneralThrower.dmgRes.maxLen       = 4;
+        Page->GeneralThrower.dmgRes.isReadonly   = TRUE;
+        Page->GeneralThrower.dmgRes.isSingleLine = TRUE;
         
         Page->GeneralThrower.throwDie.style   = UIBUTTON_TEXT;
         Page->GeneralThrower.throwDie.name    = ls_unistrFromUTF32(U"Go");
@@ -1377,11 +1409,12 @@ void SetInitTab(UIContext *cxt, ProgramState *PState)
     {
         Page->EncounterSel.onSelect = OnEncounterSelect;
         Page->EncounterSel.data = &Page->EncounterSel;
-        ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, ls_unistrConstant(NoEncounterStr));
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, ls_unistrConstant(NoEncounterStr));
         for(u32 i = 0; i < PState->encounters.numEncounters; i++)
-        { ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, PState->encounters.Enc[i].name); }
+        { ls_uiListBoxAddEntry(c, &Page->EncounterSel, PState->encounters.Enc[i].name); }
         
-        Page->EncounterName.text = ls_unistrAlloc(16);
+        Page->EncounterName.text         = ls_unistrAlloc(16);
+        Page->EncounterName.isSingleLine = TRUE;
     }
     
     
@@ -1394,12 +1427,14 @@ void SetInitTab(UIContext *cxt, ProgramState *PState)
     Page->RemoveEnc.name    = ls_unistrFromUTF32(U"X");
     Page->RemoveEnc.onClick = RemoveEncounterOnClick;
     
-    Page->Current.text            = ls_unistrAlloc(16);
-    Page->Current.isReadonly      = TRUE;
+    Page->Current.text         = ls_unistrAlloc(16);
+    Page->Current.isReadonly   = TRUE;
+    Page->Current.isSingleLine = TRUE;
     
-    Page->RoundCounter.text       = ls_unistrFromUTF32(U"0");
-    Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
-    Page->RoundCounter.isReadonly = TRUE;
+    Page->RoundCounter.text         = ls_unistrFromUTF32(U"0");
+    Page->RoundCounter.viewEndIdx   = Page->RoundCounter.text.len;
+    Page->RoundCounter.isReadonly   = TRUE;
+    Page->RoundCounter.isSingleLine = TRUE;
     
     Page->Roll.style    = UIBUTTON_TEXT;
     Page->Roll.name     = ls_unistrFromUTF32(U"Roll");
