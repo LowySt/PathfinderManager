@@ -7,6 +7,13 @@
 *.bin
 *.bmp
 *.png
+*.otf
+*.ttf
+back*
+code/asset_main.cpp
 testState
+SaveFile*
 Releases/
 out/
+lib/
+gccout/
