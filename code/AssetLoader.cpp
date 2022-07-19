@@ -1,17 +1,17 @@
-void loadAssetFile(UIContext *cxt, string assetFilePath)
+void loadAssetFile(UIContext *c, string assetFilePath)
 {
-    AssertMsg(cxt, "Context ptr was NULL");
+    AssertMsg(c, "Context ptr was NULL");
     
     ls_arenaUse(fileArena);
     buffer buff = ls_bufferInitFromFile(assetFilePath);
     ls_arenaUse(globalArena);
     
-    cxt->numFonts = ls_bufferReadDWord(&buff);
-    cxt->fonts = (UIFont *)ls_alloc(sizeof(UIFont)*cxt->numFonts);
+    c->numFonts = ls_bufferReadDWord(&buff);
+    c->fonts = (UIFont *)ls_alloc(sizeof(UIFont)*c->numFonts);
     
-    for(u32 i = 0; i < cxt->numFonts; i++)
+    for(u32 i = 0; i < c->numFonts; i++)
     {
-        UIFont *font = cxt->fonts + i;
+        UIFont *font = c->fonts + i;
         
         font->pixelHeight  = ls_bufferReadDWord(&buff);
         font->maxCodepoint = ls_bufferReadDWord(&buff);
