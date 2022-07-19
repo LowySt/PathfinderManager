@@ -1,4 +1,4 @@
-
+#if 0
 void saveAS()
 {
     string as = getText(State.PC->Scores->Box[ABILITY_STR]->box);
@@ -391,3 +391,4 @@ void DrawPCTab(HWND WindowHandle, u64 *ElementId)
     
     Page->numWindows += 18;
 }
+#endif

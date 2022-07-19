@@ -3,137 +3,45 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 4;
+const u32 global_saveVersion = 5;
 
-const u32 WINARR_INIT_NUM  = 1024;
-const u32 WINARR_PC_NUM    = 64;
-const u32 WINARR_FEATS_NUM = 64;
-
-const u32 ELEM_MAP_NUM = WINARR_INIT_NUM + WINARR_PC_NUM + WINARR_FEATS_NUM;
-
-enum LabelAlign : u8
+enum InitFieldIndex
 {
-    LABEL_NULL,
+    IF_IDX_NAME = 0,
+    IF_IDX_BONUS,
+    IF_IDX_EXTRA,
+    IF_IDX_TOTALAC,
+    IF_IDX_TOUCHAC,
+    IF_IDX_FLATAC,
+    IF_IDX_LOWAC,
+    IF_IDX_CONSAVE,
+    IF_IDX_DEXSAVE,
+    IF_IDX_WISSAVE,
     
-    LABEL_UP,
-    LABEL_DOWN,
-    LABEL_LEFT,
-    LABEL_RIGHT,
+    //NOTE: Final HAS to be the last entry because 
+    //      CustomInitFieldText depends on its position
+    IF_IDX_FINAL,
     
-    LABEL_COUNT
+    IF_IDX_COUNT
 };
 
-struct dim
-{
-    u32 width;
-    u32 height;
-};
-
-//TODO: Support Unicode in WindowCreation
-struct TextBox
-{
-    HWND box;
-    HWND label;
-    
-    u64 id;
-};
-
-struct ComboBox
-{
-    HWND box;
-    HWND label;
-    
-    u64 id;
-};
-
-struct ListBox
-{
-    HWND box;
-    HWND label;
-    
-    u64 id;
-};
-
-struct Button
-{
-    HWND box;
-    
-    union
-    {
-        TextBox *LinkedText;
-    };
-    u32 value;
-    
-    u64 id;
-    
-    b32 hasBackground;
-};
-
-struct AbilityScores
-{
-    TextBox *Box[6];
-    TextBox *Bonus[6];
-    Button *Plus1[6];
-    Button *Plus10[6];
-};
-
-struct PCPage
-{
-    HWND TabControl; //DEBUG
-    
-    TextBox *Name;
-    TextBox *Player;
-    ComboBox *Race;
-    
-    ComboBox *Class;
-    b32 wasClassChosen;
-    
-    AbilityScores *Scores;
-    
-    ListBox *RacialTraits;
-    
-    TextBox *currLevel;
-    TextBox *currXP;
-    TextBox *nextLevelXP;
-    ComboBox *XPCurve;
-    XPCurveIdx xpIdx;
-    
-    TextBox *SavingThrows[3];
-    TextBox *BaseAttackBonus;
-    
-    HWND WindowsArray[WINARR_PC_NUM];
-    u32 numWindows;
-};
-
-struct FeatsPage
-{
-    ListBox *Feats;
-    TextBox *FeatsDesc;
-    ListBox *ChosenFeats;
-    u32 ChosenFeatsIndices[64];
-    u8 usedFeats;
-    
-    HWND WindowsArray[WINARR_FEATS_NUM];
-    u32 numWindows;
-};
+const u32 MOB_INIT_ENC_FIELDS = IF_IDX_COUNT+1;
 
 struct Encounter
 {
-    char name[32];
+    unistring name;
     
     u32 numMobs;
-    char mobNames[MOB_NUM][32];
-    char mobBonus[MOB_NUM][8];
-    char mobAC[MOB_NUM][8];
+    unistring mob[MOB_NUM][MOB_INIT_ENC_FIELDS];
     
     u32 numAllies;
-    char allyNames[ALLY_NUM][32];
-    char allyBonus[ALLY_NUM][8];
-    char allyAC[ALLY_NUM][8];
+    unistring allyName[ALLY_NUM];
+    unistring allyBonus[ALLY_NUM];
+    unistring allyFinal[ALLY_NUM];
     
-    char throwerNames[THROWER_NUM][32];
-    char throwerHit[THROWER_NUM][64];
-    char throwerDamage[THROWER_NUM][64];
+    unistring throwerName[THROWER_NUM];
+    unistring throwerHit[THROWER_NUM];
+    unistring throwerDamage[THROWER_NUM];
 };
 
 struct EncList
@@ -142,110 +50,104 @@ struct EncList
     Encounter Enc[64];
 };
 
+struct InitField
+{
+    //NOTE: This makes referring to other boxes in the same InitField much easier
+    //      For things like: CustomInitFieldText Handler.
+    UITextBox editFields[IF_IDX_COUNT];
+    
+    UITextBox maxLife;
+    
+    UITextBox addName;
+    UITextBox addInit;
+    
+    UIButton  addNew;
+    UIButton  addConfirm;
+    b32 isAdding;
+    
+    s32 ID;
+};
+
 struct Counter
 {
-    TextBox *Field;
-    TextBox *Rounds;
-    Button  *Start;
+    UITextBox name;
+    UITextBox rounds;
+    s32 roundsLeft;
     
-    Button  *PlusOne;
-    Button  *Stop;
+    UIButton  start;
+    UIButton  plusOne;
+    UIButton  stop;
     
     u32 startIdxInOrder;
-    u32 roundCounter;
+    u32 turnCounter;
     b32 isActive;
 };
 
-struct AddInit
+struct Order
 {
-    TextBox *Name;
-    TextBox *Bonus;
+    UISlider  field;
+    UITextBox pos;
     
-    Button  *Add;
-    Button  *Ok;
-};
-
-struct OrderField
-{
-    TextBox *Field;
-    TextBox *Pos;
+    UIButton  remove;
     
-    Button  *Remove;
-    
-    u32 fieldId;
-    b32 isMob;
-    b32 isParty;
-};
-
-struct InitField
-{
-    TextBox *Name;
-    TextBox *Bonus;
-    TextBox *Final;
-    
-    TextBox *AC;
-    TextBox *Touch;
-    TextBox *NoDex;
-    
-    AddInit New;
-    
-    u64     id;
-    b32     isSelected;
+    s32 ID;
 };
 
 struct DiceThrow
 {
-    TextBox *Name;
-    TextBox *ToHit;
-    TextBox *HitRes;
-    TextBox *Damage;
-    TextBox *DmgRes;
-    Button  *Throw;
+    UITextBox name;
+    UITextBox toHit;
+    UITextBox hitRes;
+    UITextBox damage;
+    UITextBox dmgRes;
+    
+    UIButton  throwDie;
 };
 
 struct InitPage
 {
-    ComboBox   *Mobs;
-    ComboBox   *Allies;
+    UIListBox  Mobs;
+    UIListBox  Allies;
     
-    InitField  PlayerFields[PARTY_NUM];
-    
-    InitField  MobFields[MOB_NUM];
-    u32        VisibleMobs;
+    UITextBox  PlayerInit[PARTY_NUM];
     
     InitField  AllyFields[ALLY_NUM];
-    u32        VisibleAllies;
+    InitField  MobFields[MOB_NUM];
     
-    OrderField Order[ORDER_NUM];
-    u32        VisibleOrder;
+    UILPane    InfoPane;
+    
+    UIButton   Roll;
+    UIButton   Set;
+    UIButton   Reset;
+    UIButton   Next;
+    
+    Order      OrderFields[ORDER_NUM];
     u32        turnsInRound;
+    s32        orderAdjust;
     
-    TextBox    *Current;
+    UITextBox  RoundCounter;
+    u32        roundCount;
+    
+    UITextBox  Current;
     u32        currIdx;
     
-    Button     *Roll;
-    Button     *Set;
-    Button     *Next;
-    Button     *Reset;
-    Button     *Save;
-    
-    ComboBox   *EncounterSel;
-    TextBox    *EncounterName;
-    
     Counter    Counters[COUNTER_NUM];
-    TextBox    *RoundCounter;
     
     DiceThrow  Throwers[THROWER_NUM];
     DiceThrow  GeneralThrower;
     
-    HWND WindowsArray[WINARR_INIT_NUM];
-    u32 numWindows;
+    
+    UIListBox  EncounterSel;
+    UITextBox  EncounterName;
+    UIButton   SaveEnc;
+    UIButton   RemoveEnc;
+    
+    UIButton   Undo;
+    UIButton   Redo;
 };
 
 struct ProgramState
 {
-    PCPage    *PC;
-    FeatsPage *Feats;
     InitPage  *Init;
     
     //State Management
@@ -254,60 +156,31 @@ struct ProgramState
     
     b32 isInitialized;
     
-    //Window management
-    b32    isDragging;
-    POINTS prevMousePos;
-    POINTS currWindowPos;
-    
     b32 hasMouseClicked;
     
     u64 timePassed;
+    u64 dt = 0;
 };
-
-struct Element
-{
-    void *ptr;
-    
-    b32 isButton;
-    b32 isTextBox;
-    b32 isComboBox;
-    b32 isListBox;
-};
-
 
 HINSTANCE MainInstance;
 HWND MainWindow;
+u8 *BackBuffer;
 PlayerChar pc = {};
 ProgramState State = {};
 
-const HBRUSH controlBkgBrush = CreateSolidBrush(0x00565656); // 0x00 BB GG RR
-const COLORREF controlBkgRGB = win32RGB(0x56, 0x56, 0x56);
+const u32 MAX_UNDO_STATES  = 32;
+ProgramState UndoStates[MAX_UNDO_STATES] = {};
+static u32 matchingUndoIdx = 0;
+static u32 distanceFromOld = 0;
+static u32 distanceFromNow = 0;
 
-const HBRUSH appBkgBrush     = CreateSolidBrush(0x00383838); // 0x00 BB GG RR
-const COLORREF appBkgRGB     = win32RGB(0x38, 0x38, 0x38);
+static b32 undoRequest = FALSE;
+static b32 redoRequest = FALSE;
 
-const HBRUSH menuBkgBrush    = CreateSolidBrush(0x00787878);
-const COLORREF menuBkgRGB    = win32RGB(0x78, 0x78, 0x78);
-
-const HBRUSH whiteBrush      = CreateSolidBrush(0x00FFFFFF); // 0x00 BB GG RR
-const COLORREF whiteRGB      = win32RGB(255, 255, 255);
-
-const HBRUSH testColor  = CreateSolidBrush(0x008B1FA7);
-
-
-//---- MENU ----//
-
-const u32 FILE_MENU_SAVE_IDX = 0;
-const u32 FILE_MENU_LOAD_IDX = 1;
-
-const u32 MENU_FILE_ITEM_ID = 76;
-const u32 MENU_CLOSE_APP_ID = 77;
-const u32 MENU_FILE_IDX      = 0;
-const u32 MENU_CLOSE_APP_IDX = 1;
-
-HMENU MenuBar;
-HMENU SubMenu;
-
-Element ElementMap[ELEM_MAP_NUM] = {};
+static Arena globalArena;
+static Arena fileArena;
+static Arena stateArena;
+static Arena saveArena;
+static Arena renderArena;
 
 #endif //_STATE_GLOBALS_H

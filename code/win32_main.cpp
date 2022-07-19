@@ -2,6 +2,10 @@
 #include "lsWindows.h"
 #undef LS_WINDOWS_IMPLEMENTATION
 
+#define LS_ARENA_IMPLEMENTATION
+#include "lsArena.h"
+#undef LS_ARENA_IMPLEMENTATION
+
 #define LS_CRT_IMPLEMENTATION
 #include "lsCRT.h"
 #undef LS_CRT_IMPLEMENTATION
@@ -14,6 +18,14 @@
 #include "lsBuffer.h"
 #undef LS_BUFFER_IMPLEMENTATION
 
+#define LS_STACK_IMPLEMENTATION
+#include "lsStack.h"
+#undef LS_STACK_IMPLEMENTATION
+
+#define LS_SORT_IMPLEMENTATION
+#include "lsSort.h"
+#undef LS_SORT_IMPLEMENTATION
+
 //NOTE: Used by bitmap
 #define LS_MATH_IMPLEMENTATION
 #include "lsMath.h"
@@ -23,6 +35,15 @@
 #include "lsBitmap.h"
 #undef LS_BITMAP_IMPLEMENTATION
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#define STBTT_ifloor(x)     ls_floor(x)
+#define STBTT_iceil(x)      ls_ceil(x)
+#define STBTT_malloc(x, u) ((void)(u),ls_alloc(x))
+#define STBTT_free(x, u)   ((void)(u),ls_free(x))
+#define STBTT_assert(x)    Assert(x)
+
+#include "..\lib\stb_truetype.h"
+#undef STB_TRUETYPE_IMPLEMENTATION
 
 #define HAS_TABS 0
 
@@ -31,7 +52,20 @@
 #include "pcg.c"
 
 
-#include "win32_widgets.h"
+#if 1
+#include "lsInput.h"
+
+#define LS_UI_IMPLEMENTATION
+#include "lsUI.h"
+#undef LS_UI_IMPLEMENTATION
+
+#else
+
+#include "Input.cpp"
+#include "ui.cpp"
+
+#endif
+
 #include "Init.h"
 #include "Class.h"
 #include "PlayerChar.h"
@@ -50,689 +84,484 @@
 #include "OnButton.cpp"
 #include "SaveState.cpp"
 
-#include "win32_widgets.cpp"
-#include "subEdit.cpp"
+#include "AssetLoader.cpp"
 
-#define HidePage(page) for(u32 i = 0; i < page->numWindows; i++) { \
-ShowWindow(page->WindowsArray[i], SW_HIDE); }
+b32 ProgramExitOnButton(UIContext *cxt, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
 
-#define ShowPage(page) for(u32 i = 0; i < page->numWindows; i++) { \
-ShowWindow(page->WindowsArray[i], SW_SHOW); }
-
-HBITMAP closeButton;
-HDC     closeButtonDC;
-void *backbuff;
-
-LRESULT WindowProc(HWND h, UINT msg, WPARAM w, LPARAM l)
+void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
 {
-    LRESULT Result = 0;
+    //NOTE: Copy Init Page
+    InitPage *curr = FromState->Init;
+    InitPage *dest = ToState->Init;
     
-    switch (msg)
+    dest->Mobs.selectedIndex   = curr->Mobs.selectedIndex;
+    dest->Allies.selectedIndex = curr->Allies.selectedIndex;
+    
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    { ls_uiTextBoxSet(cxt, dest->PlayerInit + i, curr->PlayerInit[i].text); }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++)
     {
-        case WM_NCLBUTTONDOWN:
-        {
-            State.isDragging = TRUE;
-            State.prevMousePos = *((POINTS *)&l);
-            
-            POINTS cursorPos = State.prevMousePos;
-            
-            RECT screenRect = {};
-            GetMenuItemRect(h, MenuBar, 1, &screenRect);
-            
-            screenRect.right  = screenRect.right + 1234;
-            screenRect.left   = screenRect.left + 1218;
-            screenRect.top    = screenRect.top + 1;
-            screenRect.bottom = screenRect.bottom + 1;
-            
-            //NOTE:TODO:NOTE:TODO:
-            // HACK HACK HACK HACK HACK HACK
-            if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
-               (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
-            { 
-                PostMessageA(h, WM_DESTROY, 0, 0);
-            }
-            
-            SetCapture(h);
-            //TODO:NOTE: Page says to return 0, but DO i HAVE to?
-            
-        } break;
+        InitField *From = curr->AllyFields + i;
+        InitField *To   = dest->AllyFields + i;
         
-        case WM_LBUTTONUP:
-        {
-            State.isDragging = FALSE;
-            BOOL success = ReleaseCapture();
-        } break;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_uiTextBoxSet(cxt, To->editFields + j, From->editFields[j].text); }
         
-        case WM_MOUSEMOVE:
-        {
-            if(State.isDragging) {
-                POINTS currMouseClient = *((POINTS *)&l);
-                POINT currMouse = {currMouseClient.x, currMouseClient.y};
-                BOOL success = ClientToScreen(h, &currMouse);
-                
-                SHORT newX = State.prevMousePos.x - currMouse.x;
-                SHORT newY = State.prevMousePos.y - currMouse.y;
-                
-                SHORT newWinX = State.currWindowPos.x - newX;
-                SHORT newWinY = State.currWindowPos.y - newY;
-                
-                State.currWindowPos = { newWinX, newWinY };
-                State.prevMousePos  = POINTS { (SHORT)currMouse.x, (SHORT)currMouse.y};
-                //State.isDragging = FALSE;
-                
-                SetWindowPos(h, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-            }
-            //TODO:NOTE: Page says to return 0, but DO i HAVE to?
-        } break;
+        ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
+        ls_uiTextBoxSet(cxt, &To->addName, From->addName.text);
+        ls_uiTextBoxSet(cxt, &To->addInit, From->addInit.text);
         
-        case WM_DESTROY:
-        {
-            SaveState();
-            ExitProcess(0);
-        } break;
-        
-        case WM_MEASUREITEM:
-        {
-            MEASUREITEMSTRUCT *item = (MEASUREITEMSTRUCT *)l;
-            
-            if(item->CtlType == ODT_MENU) {
-                
-                if(item->itemID == MENU_FILE_ITEM_ID)
-                {
-                    u32 len = ls_len((char *)item->itemData);
-                    SIZE size = {};
-                    BOOL success = GetTextExtentPoint32A(GetDC(h), (LPCSTR)item->itemData, len, &size);
-                    
-                    //NOTE: Used to center Text inside the rect.
-                    u32 marginX = 0;
-                    u32 marginY = 0;
-                    
-                    item->itemWidth  = size.cx + (2*marginX);
-                    item->itemHeight = size.cy + (2*marginY);
-                }
-                else if(item->itemID == MENU_CLOSE_APP_ID)
-                {
-                    item->itemWidth = 16;
-                    item->itemHeight = 16;
-                }
-            }
-            
-        } break;
-        
-        case WM_DRAWITEM:
-        {
-            //NOTE: Only owner drawn right now are static (labels)
-            DRAWITEMSTRUCT *item = (DRAWITEMSTRUCT *)l;
-            
-            if(item->CtlType == ODT_STATIC)
-            {
-                //NOTE: Why does this work on the Labels, but it works differently on the
-                // read only edit boxes, for which I am using the CTLCOLOR message?
-                FillRect(item->hDC, &item->rcItem, appBkgBrush);
-                
-                SetBkColor(item->hDC, appBkgRGB);
-                SetTextColor(item->hDC, whiteRGB);
-                char text[32] = {};
-                int len = SendMessageA(item->hwndItem, WM_GETTEXT, 32, (LPARAM)text);
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, text, len);
-            }
-            
-            if(item->CtlType == ODT_MENU)
-            {
-                if(item->itemID == MENU_FILE_ITEM_ID)
-                {
-                    POINT cursorPos = {};
-                    GetCursorPos(&cursorPos);
-                    
-                    RECT screenRect = {};
-                    GetMenuItemRect(h, MenuBar, 0, &screenRect);
-                    
-                    HBRUSH brush      = appBkgBrush;
-                    COLORREF brushRGB = appBkgRGB;
-                    if((cursorPos.x > screenRect.left) && (cursorPos.x < screenRect.right) &&
-                       (cursorPos.y < screenRect.bottom) && (cursorPos.y > screenRect.top))
-                    { brush = menuBkgBrush; brushRGB = menuBkgRGB; }
-                    
-                    FillRect(item->hDC, &item->rcItem, brush);
-                    
-                    SetBkColor(item->hDC, brushRGB);
-                    SetTextColor(item->hDC, whiteRGB);
-                    
-                    u32 marginX = 8, marginY = 2;
-                    TextOutA(item->hDC, item->rcItem.left + marginX, item->rcItem.top + marginY, 
-                             (LPCSTR)item->itemData, 4);
-                }
-                else if(item->itemID == MENU_CLOSE_APP_ID)
-                {
-                    //NOTE:TODO:NOTE:TODO:
-                    // HACK HACK HACK HACK HACK HACK
-                    RECT hackRect  = item->rcItem;
-                    hackRect.right = hackRect.right + 1234;
-                    hackRect.left  = hackRect.left + 1218;
-                    hackRect.top   = hackRect.top + 1;
-                    hackRect.bottom = hackRect.bottom + 1;
-                    
-                    if(!BitBlt(item->hDC, hackRect.left, hackRect.top, 16, 16, closeButtonDC, 0, 0, SRCCOPY))
-                    {
-                        DWORD Error = GetLastError();
-                        ls_printf("When Blitting got error: %d", Error);
-                    }
-                }
-            }
-            
-            if(item->CtlType == ODT_COMBOBOX)
-            {
-                FillRect(item->hDC, &item->rcItem, controlBkgBrush);
-                
-                SetBkColor(item->hDC, controlBkgRGB);
-                SetTextColor(item->hDC, whiteRGB);
-                
-                u32 count = SendMessageA(item->hwndItem, CB_GETCOUNT, 0, 0);
-                
-                //for(u32 i = 0; i < count; i++)
-                //{
-                char text[32] = {};
-                u32 textLen = SendMessageA(item->hwndItem, CB_GETLBTEXTLEN , item->itemID, 0);
-                SendMessageA(item->hwndItem, CB_GETLBTEXT, item->itemID, (LPARAM)text);
-                
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
-                //}
-            }
-            
-            if(item->CtlType == ODT_LISTBOX)
-            {
-                u32 count = SendMessageA(item->hwndItem, LB_GETCOUNT, 0, 0);
-                u32 textLen = SendMessageA(item->hwndItem, LB_GETTEXTLEN , item->itemID, 0);
-                
-                char *text = (char *)ls_alloc(sizeof(char)*(textLen + 1));
-                SendMessageA(item->hwndItem, LB_GETTEXT, item->itemID, (LPARAM)text);
-                
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
-                ls_free(text);
-            }
-            
-            if(item->CtlType == ODT_BUTTON)
-            {
-                int textLen = GetWindowTextLengthA(item->hwndItem) + 1; //Add the null
-                char *text = (char *)ls_alloc(sizeof(char)*textLen);
-                
-                GetWindowTextA(item->hwndItem, text, textLen);
-                
-                TextOutA(item->hDC, item->rcItem.left, item->rcItem.top, (LPCSTR)text, textLen);
-                ls_free(text);
-            }
-            
-        } break;
-        
-        case WM_CTLCOLORBTN:
-        {
-            HDC buttonHDC   = (HDC)w;
-            
-            SetBkColor(buttonHDC, win32RGB(0x56, 0x56, 0x56));
-            SetTextColor(buttonHDC, win32RGB(255, 255, 255));
-            
-            return (LRESULT)controlBkgBrush;
-        } break;
-        
-        case WM_CTLCOLORLISTBOX:
-        {
-            HDC listboxHDC = (HDC)w;
-            
-            SetBkColor(listboxHDC, win32RGB(0x56, 0x56, 0x56));
-            SetTextColor(listboxHDC, win32RGB(255, 255, 255));
-            
-            return (LRESULT)controlBkgBrush;
-        } break;
-        
-        case WM_CTLCOLOREDIT:
-        {
-            HDC editHDC = (HDC)w;
-            
-            SetBkColor(editHDC, win32RGB(0x56, 0x56, 0x56));
-            SetTextColor(editHDC, win32RGB(255, 255, 255));
-            
-            return (LRESULT)controlBkgBrush;
-        } break;
-        
-        case WM_CTLCOLORSTATIC:
-        {
-            HDC editHDC = (HDC)w;
-            
-            SetBkColor(editHDC, win32RGB(0x56, 0x56, 0x56));
-            SetTextColor(editHDC, win32RGB(255, 255, 255));
-            
-            return (LRESULT)controlBkgBrush;
-        };
-        
-        case WM_MENUCOMMAND:
-        {
-            u32 itemIdx = w;
-            HMENU menuHandle = (HMENU)l;
-            
-            if(menuHandle == SubMenu)
-            {
-                switch(itemIdx)
-                {
-                    case FILE_MENU_SAVE_IDX:
-                    {
-#if HAS_TABS
-                        //First update Ability Scores then serialize.
-                        saveAS();
-                        SerializePC(&pc);
-#endif
-                        SaveState();
-                    } break;
-                    
-                    case FILE_MENU_LOAD_IDX:
-                    {
-#if HAS_TABS
-                        LoadPC(&pc);
-                        
-                        char nameBuff[128] = {};
-                        char playerBuff[128] = {};
-                        
-                        ls_strToCStr_t(pc.Name, nameBuff, 128);
-                        Edit_SetText(State.PC->Name->box, nameBuff);
-                        
-                        ls_strToCStr_t(pc.Player, playerBuff, 128);
-                        Edit_SetText(State.PC->Player->box, playerBuff);
-                        
-                        ComboBox_SelectString(State.PC->Race->box, -1, Races[pc.Race]);
-                        ComboBox_SelectString(State.PC->Class->box, -1, Classes[pc.Class]);
-                        
-                        State.PC->wasClassChosen = TRUE;
-                        
-                        loadAS();
-                        
-                        char **TraitsList;
-                        u32 arrSize = 0;
-                        
-                        TraitsList = (char **)RaceTraits[pc.Race];
-                        arrSize = RaceTraitsArraySize[pc.Race];
-                        
-                        ListBox_ResetContent(State.PC->RacialTraits->box);
-                        AddAllListBoxItems(State.PC->RacialTraits->box, TraitsList, arrSize);
-                        
-                        //TODO: Check why lvl is not being update at loading
-                        char lvlBuff[32] = {}
-                        ls_itoa_t(pc.lvl, lvlBuff, 32);
-                        Edit_SetText(State.PC->currLevel->box, lvlBuff);
-                        
-                        Edit_SetText(State.PC->BaseAttackBonus->box,
-                                     ClassBABString[pc.Class][0][pc.lvl]);
-                        
-                        char xpBuff[32] = {}
-                        ls_itoa(pc.xp, xpBuff, 32);
-                        Edit_SetText(State.PC->currXP->box, xpBuff);
-                        
-                        State.PC->xpIdx = pc.xpCurve;
-                        ComboBox_SelectString(State.PC->XPCurve->box, -1,
-                                              XPCurvesString[pc.xpCurve]);
-                        
-                        char **xpCurve = (char **)XPCurvesArr[State.PC->xpIdx];
-                        Edit_SetText(State.PC->nextLevelXP->box, xpCurve[pc.lvl]);
-                        
-                        UpdateSavingThrows();
-#endif
-                        
-                    } break;
-                }
-            }
-            else if(menuHandle == MenuBar) { }
-        } break;
-        
-        case WM_COMMAND:
-        {
-            u32 commandID = LOWORD(w);
-            u32 notificationCode = HIWORD(w);
-            HWND handle = (HWND)l;
-            
-            //TODO: NOTE: ASBonus doesn't check Out Of Bounds
-            switch(notificationCode)
-            {
-                case EN_KILLFOCUS:
-                {
-                    //NOTE: Handles storing data for save on the fields in the PC Tab
-                    //TODO: Could probably be handled better if it was moved in the subEditProc
-                    //      CAREFUL! If more is added a found flag has to be returned.
-#if HAS_TABS
-                    PCTabOnKillFocus(commandID, handle);
-#endif
-                } break;
-                
-                case CBN_SELENDOK:
-                {
-                    b32 found = FALSE;
-                    //NOTE:TODO: This is easier to read. But it forces me to add a check
-                    //           for the early break. Bad or Acceptable??
-#if HAS_TABS
-                    found = PCTabOnComboSelect(commandID, handle);
-                    if(found) break;
-#endif
-                    found = InitTabOnComboSelect(commandID, handle);
-                    if(found) break;
-                    
-                } break;
-                
-                case LBN_SELCHANGE:
-                {
-                    //TODO: THIS DOESN'T MAKE ANY SENSE!!!
-                    // THERE'S NO DIFFERENTIATION BETWEEN THE FEATS AND THE CHOSEN ONES!
-#if HAS_TABS
-                    if(commandID == State.Feats->Feats->id)
-                    {
-                        u32 index = ListBox_GetCurSel(handle);
-                        if(index > ArraySize(FeatsDesc))
-                        {
-                            ls_printf("Not implemented description of Feat n°%d\n", index);
-                            Assert(FALSE);
-                        }
-                        char *Desc = (char *)FeatsDesc[index];
-                        
-                        Edit_SetText(State.Feats->FeatsDesc->box, Desc);
-                    }
-#endif
-                } break;
-                
-                case LBN_DBLCLK:
-                {
-                    //NOTE: Handles selecting feats and chosen feats from the ListBoxes
-#if HAS_TABS
-                    FeatsTabOnDoubleClick(commandID, handle);
-#endif
-                } break;
-                
-                case BN_CLICKED: { OnButton(commandID, notificationCode, handle); } break;
-            }
-            
-        } break;
-        
-        default:
-        {
-            return DefWindowProcA(h, msg, w, l);
-        }
+        To->isAdding = From->isAdding;
+        To->ID       = From->ID;
     }
     
-    return Result;
-}
-
-void RegisterWindow()
-{
-    
-    u32 prop = CS_OWNDC | CS_VREDRAW | CS_HREDRAW;
-    
-    WNDCLASSA WindowClass = { 0 };
-    WindowClass.style = prop;
-    WindowClass.lpfnWndProc = WindowProc;
-    WindowClass.hInstance = MainInstance;
-    WindowClass.hbrBackground = appBkgBrush; //RGB(0x38, 0x38, 0x38);
-    WindowClass.lpszClassName = "WndClass";
-    
-    if (!RegisterClassA(&WindowClass))
+    for(u32 i = 0; i < MOB_NUM; i++)
     {
-        DWORD Error = GetLastError();
-        ls_printf("When Registering WindowClass in Win32_SetupScreen got error: %d", Error);
-    }
-}
-
-HWND CreateWindow(HMENU MenuBar)
-{
-    u32 style = LS_VISIBLE | LS_THIN_BORDER | LS_POPUP | LS_MINIMIZE_BUTTON | LS_MAXIMIZE_BUTTON; //| LS_OVERLAPPEDWINDOW;
-    BOOL Result;
-    
-    SubMenu = CreateMenu();
-    Result = AppendMenuA(SubMenu, MF_STRING, 0, "Save");
-    Result = AppendMenuA(SubMenu, MF_STRING, 1, "Load");
-    
-    MENUITEMINFOA FileMenuInfo = {};
-    FileMenuInfo.cbSize     = sizeof(MENUITEMINFOA);
-    FileMenuInfo.fMask      = MIIM_SUBMENU | MIIM_DATA | MIIM_FTYPE | MIIM_ID;
-    FileMenuInfo.fType      = MFT_OWNERDRAW;
-    FileMenuInfo.wID        = MENU_FILE_ITEM_ID;
-    FileMenuInfo.dwItemData = (ULONG_PTR)"File";
-    FileMenuInfo.hSubMenu   = SubMenu;
-    FileMenuInfo.cch        = 5;
-    Result = InsertMenuItemA(MenuBar, MENU_FILE_IDX, TRUE, &FileMenuInfo);
-    
-    BITMAPINFO BitmapInfo = {};
-    BitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    BitmapInfo.bmiHeader.biWidth = 16;
-    BitmapInfo.bmiHeader.biHeight = -16; //Should it be negative?
-    BitmapInfo.bmiHeader.biPlanes = 1;
-    BitmapInfo.bmiHeader.biBitCount = 24;
-    BitmapInfo.bmiHeader.biCompression = BI_RGB;
-    
-    closeButton = CreateDIBSection(NULL, &BitmapInfo, DIB_RGB_COLORS, 
-                                   &backbuff, NULL, NULL);
-    closeButtonDC = CreateCompatibleDC(NULL);
-    SelectObject(closeButtonDC, closeButton);
-    ls_memcpy(pixelButtonData, backbuff, 16*16*3);
-    
-    MENUITEMINFOA CloseBitmap = {};
-    CloseBitmap.cbSize     = sizeof(MENUITEMINFOA);
-    CloseBitmap.fMask      = MIIM_ID | MIIM_FTYPE;
-    CloseBitmap.fType      = MFT_OWNERDRAW;
-    CloseBitmap.wID        = MENU_CLOSE_APP_ID;
-    Result = InsertMenuItemA(MenuBar, MENU_CLOSE_APP_IDX, TRUE, &CloseBitmap);
-    
-    MENUINFO menuInfo = {};
-    menuInfo.cbSize  = sizeof(MENUINFO);
-    menuInfo.fMask   = MIM_APPLYTOSUBMENUS | MIM_BACKGROUND;
-    menuInfo.hbrBack = appBkgBrush;  //RGB(0x38, 0x38, 0x38);
-    
-    int screenHeight = GetSystemMetrics(SM_CYSCREEN);
-    int screenWidth  = GetSystemMetrics(SM_CXSCREEN);
-    
-    int windowWidth = 1280;
-    int windowHeight = 840;
-    
-    int spaceX = (screenWidth - windowWidth) / 2;
-    int spaceY = (screenHeight - windowHeight) / 2;
-    if(spaceX < 0) {}
-    if(spaceY < 0) {}
-    
-    int yWinPos = spaceY;
-    int xWinPos = spaceX;
-    
-    
-    
-    //NOTE:TODO: Hardcoded!!
-    HWND WindowHandle;
-    if ((WindowHandle = CreateWindowExA(0, "WndClass",
-                                        "PCMan", style,
-                                        spaceX, spaceY, //CW_USEDEFAULT, CW_USEDEFAULT,
-                                        1280, 840,//1350, 900,
-                                        0, MenuBar, MainInstance, 0)) == nullptr)
-    {
-        DWORD Error = GetLastError();
-        ls_printf("When Retrieving a WindowHandle in Win32_SetupScreen got error: %d", Error);
+        InitField *From = curr->MobFields + i;
+        InitField *To   = dest->MobFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_uiTextBoxSet(cxt, To->editFields + j, From->editFields[j].text); }
+        
+        ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
+        ls_uiTextBoxSet(cxt, &To->addName, From->addName.text);
+        ls_uiTextBoxSet(cxt, &To->addInit, From->addInit.text);
+        
+        To->isAdding = From->isAdding;
+        To->ID = From->ID;
     }
     
-    RECT test = {100, 100, 200, 200};
-    DrawCaption(WindowHandle, GetDC(WindowHandle), &test, DC_BUTTONS);
+    for(u32 i = 0; i < ORDER_NUM; i++)
+    {
+        Order *From = curr->OrderFields + i;
+        Order *To   = dest->OrderFields + i;
+        
+        ls_unistrSet(&To->field.text, From->field.text);
+        To->field.currValue = From->field.currValue;
+        To->field.maxValue  = From->field.maxValue;
+        To->field.minValue  = From->field.minValue;
+        To->field.currPos   = From->field.currPos;
+        To->field.lColor    = From->field.lColor;
+        To->field.rColor    = From->field.rColor;
+        
+        To->ID = From->ID;
+    }
     
-    State.currWindowPos = { (s16)spaceX, (s16)spaceY }; //NOTE:TODO: Hardcoded!!
+    dest->turnsInRound = curr->turnsInRound;
+    dest->orderAdjust  = curr->orderAdjust;
     
-    return WindowHandle;
+    ls_uiTextBoxSet(cxt, &dest->RoundCounter, curr->RoundCounter.text);
+    dest->roundCount = curr->roundCount;
+    
+    ls_uiTextBoxSet(cxt, &dest->Current, curr->Current.text);
+    dest->currIdx = curr->currIdx;
+    
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *From = curr->Counters + i;
+        Counter *To   = dest->Counters + i;
+        
+        ls_uiTextBoxSet(cxt, &To->name, From->name.text);
+        ls_uiTextBoxSet(cxt, &To->rounds, From->rounds.text);
+        
+        To->roundsLeft      = From->roundsLeft;
+        To->startIdxInOrder = From->startIdxInOrder;
+        To->turnCounter     = From->turnCounter;
+        To->isActive        = From->isActive;
+    }
+    
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *From = curr->Throwers + i;
+        DiceThrow *To   = dest->Throwers + i;
+        
+        ls_uiTextBoxSet(cxt, &To->name,   From->name.text);
+        ls_uiTextBoxSet(cxt, &To->toHit,  From->toHit.text);
+        ls_uiTextBoxSet(cxt, &To->hitRes, From->hitRes.text);
+        ls_uiTextBoxSet(cxt, &To->damage, From->damage.text);
+        ls_uiTextBoxSet(cxt, &To->dmgRes, From->dmgRes.text);
+    }
+    
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.name,   curr->GeneralThrower.name.text);
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.toHit,  curr->GeneralThrower.toHit.text);
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.hitRes, curr->GeneralThrower.hitRes.text);
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.damage, curr->GeneralThrower.damage.text);
+    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
+   
+    dest->EncounterSel.selectedIndex = curr->EncounterSel.selectedIndex;
+    
+    
+    //NOTE: Copy General Info
+    ToState->inBattle = FromState->inBattle;
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
     
-#ifdef __GNUG__
-    u64 rand_init_state = 2349879125314230;
-    u64 rand_init_seq = 9827346259348;
-#else
+    //------------------------------------------------------
+    //NOTE: This shit is necessary to request millisecond-precision sleeps.
+    //      An equivalent call to timeEndPeriod should happen at the end. It technically
+    //      Doesn't in this program, because we use it every frame, so we don't re-call it.
+    //      But I'm pointing it out for possible microsoft weirdness...
+    TIMECAPS tc = {};
+    MMRESULT res = timeGetDevCaps(&tc, sizeof(TIMECAPS));
+    res = timeBeginPeriod(tc.wPeriodMin);
+    //------------------------------------------------------
+    
+    windows_initRegionTimer(RT_MILLISECOND);
+    
+#if 0 //RDRAND was introduced in IvyBridge (2012). It may be too new to put in.
     u64 rand_init_state = 0;
     u64 rand_init_seq = 0;
     _rdseed64_step(&rand_init_state);
     _rdseed64_step(&rand_init_seq);
+#else
+    u64 rand_init_state = windows_GetUnix64Time();
+    u64 rand_init_seq = windows_GetWindowsTimeInMicrosec();
 #endif
     
     pcg32_seed(&pcg32_global, rand_init_state, rand_init_seq);
     
-    RegisterWindow();
+    //-------------------------------------
+    //NOTE: Switch to global memory arena 
+    //      for general allocations
     
-    MenuBar = CreateMenu();
-    MENUINFO Info = {};
-    Info.cbSize = sizeof(MENUINFO);
-    Info.fMask = MIM_APPLYTOSUBMENUS | MIM_STYLE | MIM_BACKGROUND;
-    Info.dwStyle = MNS_NOTIFYBYPOS;
-    Info.hbrBack = appBkgBrush;
-    SetMenuInfo(MenuBar, &Info);
+    globalArena = ls_arenaCreate(MBytes(8));
+    fileArena   = ls_arenaCreate(MBytes(4));
+    stateArena  = ls_arenaCreate(MBytes(6));
+    saveArena   = ls_arenaCreate(MBytes(4));
+    renderArena = ls_arenaCreate(KBytes(8));
     
-    MainWindow = CreateWindow(MenuBar);
-    
-    State.isInitialized = FALSE;
-#if HAS_TABS
-    State.PC    = (PCPage *)ls_alloc(sizeof(PCPage));
-    State.Feats = (FeatsPage *)ls_alloc(sizeof(FeatsPage));
-#endif
-    
-    State.Init  = (InitPage *)ls_alloc(sizeof(InitPage));
-    
-    u64 ElementId = 0;
-    
-#if HAS_TABS
-    for(size_t i = 0; i < ArraySize(State.Feats->ChosenFeatsIndices); i++)
-    { State.Feats->ChosenFeatsIndices[i] = u32(-1); }
-#endif
+    ls_arenaUse(globalArena);
+    //------------
     
     
+    //TODO Hardcoded
+    const int windowWidth = 1280;
+    const int windowHeight = 860;
+    UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, windowWidth, windowHeight);
+    MainWindow = ls_uiCreateWindow(MainInstance, uiContext);
+    
+    ls_uiAddOnDestroyCallback(uiContext, SaveState);
+    
+    
+    loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
+    
+    UIButton closeButton = {};
+    closeButton.style    = UIBUTTON_BMP;
+    closeButton.bmpData  = pixelButtonData;
+    closeButton.bmpW     = pixelButtonWidth;
+    closeButton.bmpH     = pixelButtonHeight;
+    closeButton.onClick  = ProgramExitOnButton;
+    
+    // -----------
+    // STYLE MENU
+    UIButton styleDefaultBtn = {};
+    styleDefaultBtn.style   = UIBUTTON_TEXT_NOBORDER;
+    styleDefaultBtn.name    = ls_unistrFromUTF32(U"Default");
+    styleDefaultBtn.onClick = selectStyleDefault;
+    
+    UIButton stylePranaBtn  = {};
+    stylePranaBtn.style     = UIBUTTON_TEXT_NOBORDER;
+    stylePranaBtn.name      = ls_unistrFromUTF32(U"Prana");
+    stylePranaBtn.onClick   = selectStylePrana;
+    
+    UIMenu styleSubMenu     = {};
+    ls_uiMenuAddItem(&styleSubMenu, styleDefaultBtn);
+    ls_uiMenuAddItem(&styleSubMenu, stylePranaBtn);
+    
+    UIButton styleMenuBtn   = {};
+    styleMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
+    styleMenuBtn.name          = ls_unistrFromUTF32(U"Style");
+    styleMenuBtn.onClick       = ls_uiMenuDefaultOnClick;
     //
-    // Create Tabs
+    // -----------
+    
+    // -----------
+    // THEME MENU
+    UIButton themeDefaultBtn = {};
+    themeDefaultBtn.style   = UIBUTTON_TEXT_NOBORDER;
+    themeDefaultBtn.name    = ls_unistrFromUTF32(U"Default");
+    themeDefaultBtn.onClick = selectThemeDefault;
+    
+    UIButton themeDarkNightBtn  = {};
+    themeDarkNightBtn.style     = UIBUTTON_TEXT_NOBORDER;
+    themeDarkNightBtn.name      = ls_unistrFromUTF32(U"Dark Night");
+    themeDarkNightBtn.onClick   = selectThemeDarkNight;
+    
+    UIMenu themeSubMenu     = {};
+    ls_uiMenuAddItem(&themeSubMenu, themeDefaultBtn);
+    ls_uiMenuAddItem(&themeSubMenu, themeDarkNightBtn);
+    
+    UIButton themeMenuBtn   = {};
+    themeMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
+    themeMenuBtn.name          = ls_unistrFromUTF32(U"Theme");
+    themeMenuBtn.onClick       = ls_uiMenuDefaultOnClick;
     //
+    // -----------
     
-#if HAS_TABS
-    HWND TabControl = CreateWindowExA(0, WC_TABCONTROL, "",
-                                      WS_CHILD | WS_VISIBLE | WS_BORDER,
-                                      0, 0, 300, 20,
-                                      MainWindow, (HMENU)99, MainInstance, 0);
-    State.PC->TabControl = TabControl;
-    TCITEMA TabItem = {};
-    TabItem.mask = TCIF_TEXT;
-    TabItem.pszText = (char *)"PC";
-    TabItem.cchTextMax = 3;
-    TabItem.iImage = -1;
-    Tab_InsertItem(TabControl, 0, &TabItem);
+    UIMenu WindowMenu       = {};
+    WindowMenu.closeWindow  = closeButton;
+    WindowMenu.sub          = (UIMenu *)ls_alloc(sizeof(UIMenu) * 32);
+    WindowMenu.maxSub       = 32;
     
-    TCITEMA TabItem2 = {};
-    TabItem2.mask = TCIF_TEXT;
-    TabItem2.pszText = (char *)"Feats";
-    TabItem2.cchTextMax = 6;
-    TabItem2.iImage = -1;
-    Tab_InsertItem(TabControl, 1, &TabItem2);
+    ls_uiMenuAddItem(&WindowMenu, styleMenuBtn);
+    ls_uiMenuAddSub(&WindowMenu, styleSubMenu, 0);
     
-    TCITEMA TabItem3 = {};
-    TabItem3.mask = TCIF_TEXT;
-    TabItem3.pszText = (char *)"Init";
-    TabItem3.cchTextMax = 4;
-    TabItem3.iImage = -1;
-    Tab_InsertItem(TabControl, 2, &TabItem3);
-    
-    DrawPCTab(MainWindow, &ElementId);
-    DrawFeatsTab(MainWindow, &ElementId);
-#endif
-    
-    DrawInitTab(MainWindow, &ElementId);
+    ls_uiMenuAddItem(&WindowMenu, themeMenuBtn);
+    ls_uiMenuAddSub(&WindowMenu, themeSubMenu, 1);
     
     State.isInitialized = TRUE;
-    
-#if HAS_TABS
-    HidePage(State.Feats);
-    HidePage(State.PC);
-#endif
-    
-    ShowPage(State.Init);
-    
-    //Initialization of Init Page
-    HideInitElem(State.Init);
-    ShowOrder(State.Init->Order, PARTY_NUM);
-    HideElem(State.Init->Next->box);          
-    
-#if HAS_TABS
-    TabCtrl_SetCurSel(TabControl, 2);
-    
-    u32 oldPageIdx = 2;
-    u32 newPageIdx = 0;
-#endif
-    
-    b32 success = LoadState();
-    if(success == FALSE)
-    {
-        //NOTE:TODO: How to fail?
-        // Nothing should have been changed yet, so the program shouldn't be in a bad state...
-    }
     
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
+    
+    ls_arenaUse(stateArena);
+    
+    //NOTE: Initialize State and Undo States
+    State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
+    SetInitTab(uiContext, &State);
+    
+    //NOTE: Single block allocation for all Init Pages.
+    InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);
+    
+    
+    //TODO: I had to nerf frame-by-frame initialization because LoadState needs to load the entire
+    //      undo chain, even if it was unused. And all at once. Want to try and fix it with multithreading.
+    for(u32 i = 0; i < MAX_UNDO_STATES; i++)
+    {
+        UndoStates[i].Init = UndoInitPages + i;
+        SetInitTab(uiContext, UndoStates + i);
+    }
+    
+    ls_arenaUse(globalArena);
+    
+    //NOTE: The state HAS to be loaded after the InitTab 
+    //      has ben Initialized to allow data to be properly set.
+    b32 result = LoadState(uiContext);
+    
+    //NOTE: We initialize the first Undo State to a valid setting
+    //TODO: I've now added serialization of undo-chains, also all undo states are initialized by default,
+    //      So there's no point in trying to Copy the state???
+    //CopyState(uiContext, &State, UndoStates);
+    
+    //TODO: But if I've loaded an undo chain it means it makes sense to load the State with the "current" Undo state
+    CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
+    
+    
+    RegionTimer frameTime = {};
+    
     b32 Running = TRUE;
+    unistring frameTimeString = ls_unistrAlloc(8);
+    b32 showDebug = FALSE;
+    b32 userInputConsumed = FALSE;
+    
+#if 0
+    UITextBox tb = {};
+    UIListBox lb = {};
+    UIButton  bt = {};
+    UISlider  sl = {};
+    
+    Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), uiContext->widgetColor);
+    Color rColor      = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), uiContext->widgetColor);
+    sl = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
+    
+    bt.style     = UIBUTTON_TEXT;
+    bt.name      = ls_unistrFromUTF32(U"Button");
+    bt.onClick   = [](UIContext *, void *) -> b32 { return FALSE; };
+    bt.onHold    = [](UIContext *, void *) -> b32 { return FALSE; };
+    bt.data      = 0x0;
+    
+    ls_uiListBoxAddEntry(uiContext, &lb, "Item 1___");
+    ls_uiListBoxAddEntry(uiContext, &lb, "Item 2___");
+    ls_uiTextBoxSet(uiContext, &tb, ls_unistrConstant(U""));
+#endif
     while(Running)
     {
-        // Process Input
-        MSG Msg;
+        ls_uiFrameBegin(uiContext);
         
-#if HAS_TABS
-        newPageIdx = TabCtrl_GetCurSel(TabControl);
-        
-        if(newPageIdx != oldPageIdx)
+        //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
+        //      The first frame is always registered, so the first Undo State is always valid.
+        if(userInputConsumed == TRUE)
         {
-            switch(newPageIdx)
-            {
-                case 0:
-                {
-                    HidePage(State.Feats);
-                    HidePage(State.Init);
-                    ShowPage(State.PC);
-                } break;
-                
-                case 1:
-                {
-                    HidePage(State.PC);
-                    //HidePage(State.Init);
-                    
-                    for(u32 i = 0; i < State.Init->numWindows; i++) 
-                    {
-                        ShowWindow(State.Init->WindowsArray[i], SW_HIDE);
-                    }
-                    
-                    ShowPage(State.Feats);
-                } break;
-                
-                case 2:
-                {
-                    HidePage(State.PC);
-                    HidePage(State.Feats);
-                    ShowPage(State.Init);
-                    HideInitElem(State.Init);
-                    
-                } break;
-            }
+            matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
+            CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
+            
+            if(distanceFromOld < (MAX_UNDO_STATES-1)) { distanceFromOld += 1; }
+            
+            //NOTE: If an operation is performed, that is the new NOW, the new Present, 
+            //      and no other REDOs can be performed
+            distanceFromNow = 0;
         }
         
-        oldPageIdx = newPageIdx;
+#if 0
+        //NOTE: Render The Frame
+        ls_uiBackground(uiContext);
 #endif
         
-        while (PeekMessageA(&Msg, NULL, 0, 0, PM_REMOVE))
+#if 1
+        //NOTE: Render The Window Menu
+        ls_uiMenu(uiContext, &WindowMenu, 0, uiContext->windowHeight-20, uiContext->windowWidth, 20);
+        
+        
+        userInputConsumed = DrawInitTab(uiContext);
+#else
+        ls_uiTextBox(uiContext, &tb, 400, 400, 500, 30);
+        
+        ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
+        ls_uiLabel(uiContext, U"--test--", 630, 430);
+        ls_uiListBox(uiContext, &lb, 580, 500, 100, 20);
+        ls_uiButton(uiContext, &bt, 600, 540, 100, 20);
+        ls_uiSlider(uiContext, &sl, 460, 580, 300, 20);
+        
+        //userInputConsumed = FALSE;
+#endif
+        if(!uiContext->hasReceivedInput && !uiContext->isDragging)
         {
-            TranslateMessage(&Msg);
-            DispatchMessageA(&Msg);
+            for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
+            {
+                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[0]);
+                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[1]);
+                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[2]);
+            }
+            
+            Sleep(32);
+        }
+        else
+        {
+            if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
+            {
+                undoRequest = FALSE;
+                
+                //NOTE: We only undo when there's available states to undo into (avoid rotation).
+                if(distanceFromOld != 0)
+                {
+                    u32 undoIdx = matchingUndoIdx - 1;
+                    if(matchingUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
+                    
+                    CopyState(uiContext, UndoStates + undoIdx, &State);
+                    matchingUndoIdx  = undoIdx;
+                    distanceFromOld -= 1;
+                    distanceFromNow += 1;
+                }
+            }
+            
+            if((KeyPress(keyMap::Y) && KeyHeld(keyMap::Control)) || redoRequest)
+            {
+                redoRequest = FALSE;
+                
+                //NOTE: We only redo if we have previously perfomed an undo.
+                if(distanceFromNow > 0)
+                {
+                    u32 redoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
+                    CopyState(uiContext, UndoStates + redoIdx, &State);
+                    
+                    matchingUndoIdx  = redoIdx;
+                    distanceFromOld += 1;
+                    distanceFromNow -= 1;
+                }
+            }
+            
+            //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
+            if(LeftClick && !uiContext->focusWasSetThisFrame)
+            { uiContext->currentFocus = 0; }
+            
+            
+            //NOTE: Dragging code, only happens when menu is selected.
+            //TODO: Dragging while interacting with menu items! /Separate items region from draggable region!
+            if(LeftClick && uiContext->currentFocus == (u64 *)&WindowMenu)
+            { 
+                uiContext->isDragging = TRUE;
+                POINT currMouse = {};
+                GetCursorPos(&currMouse);
+                uiContext->prevMousePosX = currMouse.x;
+                uiContext->prevMousePosY = currMouse.y;
+            }
+            if(uiContext->isDragging && LeftHold)
+            { 
+                MouseInput *Mouse = &UserInput.Mouse;
+                
+                POINT currMouse = {};
+                GetCursorPos(&currMouse);
+                
+                POINT prevMouse = { uiContext->prevMousePosX, uiContext->prevMousePosY };
+                
+                SHORT newX = prevMouse.x - currMouse.x;
+                SHORT newY = prevMouse.y - currMouse.y;
+                
+                SHORT newWinX = uiContext->windowPosX - newX;
+                SHORT newWinY = uiContext->windowPosY - newY;
+                
+                uiContext->windowPosX = newWinX;
+                uiContext->windowPosY = newWinY;
+                
+                uiContext->prevMousePosX  = currMouse.x;
+                uiContext->prevMousePosY  = currMouse.y;
+                
+                SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+                
+                if(LeftUp) { uiContext->isDragging = FALSE; }
+            }
+            
+            
+            if(LeftUp || RightUp || MiddleUp)
+            { uiContext->mouseCapture = 0; }
+            
+            //ls_uiSlider(uiContext, &sldr, 400, 300, 300, 20);
+            
+            // ----------------
+            // Render Everything
+            ls_arenaUse(renderArena);
+            
+            ls_uiRender(uiContext);
+            
+            ls_arenaUse(globalArena);
+            ls_arenaClear(renderArena);
+            //
+            // ----------------
+            
+        }
+        
+        if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
+        
+        if(showDebug)
+        {
+            ls_uiFillRect(uiContext, 1248, 760, 20, 20, 0, uiContext->width, 0, uiContext->height, uiContext->backgroundColor);
+            ls_unistrFromInt_t(&frameTimeString, uiContext->dt);
+            ls_uiGlyphString(uiContext, 1248, 760, 0, uiContext->width, 0, uiContext->height, frameTimeString, RGBg(0xEE));
+            
+#if 0
+            ls_uiFillRect(uiContext, (uiContext->width/2)-5, 0, 10, 40, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
+            ls_uiFillRect(uiContext, (uiContext->width/2)-5, uiContext->height-40, 10, 40, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
+            ls_uiFillRect(uiContext, 0, (uiContext->height/2)-5, 40, 10, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
+            ls_uiFillRect(uiContext, uiContext->width-40, (uiContext->height/2)-5, 40, 10, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
+#endif
+            
+            
         }
         
         State.hasMouseClicked = FALSE;
         
         GetSystemTime(&endT);
         
+        
         State.timePassed += (endT.wSecond - beginT.wSecond);
         if(State.timePassed >= 30)
         {
             State.timePassed = 0;
-            SaveState();
+            SaveState(NULL);
         }
+        
         beginT = endT;
+        
+        const u32 frameLock = 16;
+        ls_uiFrameEnd(uiContext, frameLock);
     }
     
+    //NOTE: Technically useless, just reminding myself of this function's existance
+    res = timeEndPeriod(tc.wPeriodMin);
     return 0;
 }
