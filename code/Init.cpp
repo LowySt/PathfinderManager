@@ -1640,7 +1640,8 @@ b32 DrawDefaultStyle(UIContext *cxt)
     }
     
     // Mob Info Left Pane
-    _ls_uiLPane(cxt, &Page->InfoPane, 0, 180, 360, 580);
+    //TODO:RECOVER nocheckin
+    //_ls_uiLPane(cxt, &Page->InfoPane, 0, 180, 360, 580);
     
     //Mob Info
     if(Page->InfoPane.isOpen)
@@ -1765,6 +1766,8 @@ b32 DrawPranaStyle(UIContext *c)
     s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
     
     b32 inputUse = FALSE;
+    
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
     
     //NOTE: Z Layer 1 Input
     {

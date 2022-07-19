@@ -230,7 +230,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     globalArena = ls_arenaCreate(MBytes(8));
     fileArena   = ls_arenaCreate(MBytes(4));
-    stateArena  = ls_arenaCreate(MBytes(4));
+    stateArena  = ls_arenaCreate(MBytes(6));
     saveArena   = ls_arenaCreate(MBytes(4));
     renderArena = ls_arenaCreate(KBytes(8));
     
@@ -352,10 +352,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
     
     
-    //UISlider sldr = ls_uiSliderInit(U"This is a very long slider test", 
-    //100, -20, 1.0f, SL_BOX, RGB(0xFF, 0, 0), RGB(0, 0xFF, 0));
-    
-    
     RegionTimer frameTime = {};
     
     b32 Running = TRUE;
@@ -363,6 +359,26 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
     
+#if 0
+    UITextBox tb = {};
+    UIListBox lb = {};
+    UIButton  bt = {};
+    UISlider  sl = {};
+    
+    Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), uiContext->widgetColor);
+    Color rColor      = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), uiContext->widgetColor);
+    sl = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
+    
+    bt.style     = UIBUTTON_TEXT;
+    bt.name      = ls_unistrFromUTF32(U"Button");
+    bt.onClick   = [](UIContext *, void *) -> b32 { return FALSE; };
+    bt.onHold    = [](UIContext *, void *) -> b32 { return FALSE; };
+    bt.data      = 0x0;
+    
+    ls_uiListBoxAddEntry(uiContext, &lb, "Item 1___");
+    ls_uiListBoxAddEntry(uiContext, &lb, "Item 2___");
+    ls_uiTextBoxSet(uiContext, &tb, ls_unistrConstant(U""));
+#endif
     while(Running)
     {
         ls_uiFrameBegin(uiContext);
@@ -393,7 +409,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         userInputConsumed = DrawInitTab(uiContext);
 #else
-        userInputConsumed = FALSE;
+        ls_uiTextBox(uiContext, &tb, 400, 400, 500, 30);
+        
+        ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
+        ls_uiLabel(uiContext, U"--test--", 630, 430);
+        ls_uiListBox(uiContext, &lb, 580, 500, 100, 20);
+        ls_uiButton(uiContext, &bt, 600, 540, 100, 20);
+        ls_uiSlider(uiContext, &sl, 460, 580, 300, 20);
+        
+        //userInputConsumed = FALSE;
 #endif
         if(!uiContext->hasReceivedInput && !uiContext->isDragging)
         {
@@ -505,11 +529,19 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(showDebug)
         {
-            ls_uiFillRect(uiContext, 1248, 760, 20, 20, uiContext->backgroundColor);
+            ls_uiFillRect(uiContext, 1248, 760, 20, 20, 0, uiContext->width, 0, uiContext->height, uiContext->backgroundColor);
             ls_unistrFromInt_t(&frameTimeString, uiContext->dt);
-            ls_uiGlyphString(uiContext, 1248, 760, frameTimeString, RGBg(0xEE));
+            ls_uiGlyphString(uiContext, 1248, 760, 0, uiContext->width, 0, uiContext->height, frameTimeString, RGBg(0xEE));
+            
+#if 0
+            ls_uiFillRect(uiContext, (uiContext->width/2)-5, 0, 10, 40, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
+            ls_uiFillRect(uiContext, (uiContext->width/2)-5, uiContext->height-40, 10, 40, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
+            ls_uiFillRect(uiContext, 0, (uiContext->height/2)-5, 40, 10, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
+            ls_uiFillRect(uiContext, uiContext->width-40, (uiContext->height/2)-5, 40, 10, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
+#endif
+            
+            
         }
-        
         
         State.hasMouseClicked = FALSE;
         
