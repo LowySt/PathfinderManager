@@ -244,42 +244,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_arenaUse(globalArena);
     //------------
     
-#if 0
-    Bitmap image = {};
-    ls_bitmapLoad(ls_strConstant("minusButton.bmp"), &image);
-    
-    u8 *At = (u8 *)image.data;
-    
-    
-    u32 imageData[16*16*4] = {};
-    for(u32 y = 0; y < image.height; y++)
-    {
-        for(u32 x = 0; x < image.width; x++)
-        {
-            /*
-            u8 b = *At;
-            u8 a = *(At+1);
-            u8 g = *(At+2);
-            u8 r = *(At+3);
-*/
-            
-            u8 a = *At;
-            u8 b = *(At+1);
-            u8 g = *(At+2);
-            u8 r = *(At+3);
-            
-            u32 convertedColor = RGBA(r, g, b, a);
-            imageData[(y*image.width) + x] = convertedColor;
-            
-            At += 4;
-        }
-    }
-    
-    ls_writeFile("minusButtonData", imageData, 16*16*4, 0);
-    
-    return 0;
-#endif
-    
     //TODO Hardcoded
     const int windowWidth = 1280;
     const int windowHeight = 860;
