@@ -87,6 +87,14 @@
 
 b32 ProgramExitOnButton(UIContext *cxt, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
 
+b32 ProgramMinimizeOnButton(UIContext *cxt, void *data) { 
+    //NOTE: We have to send an LButtonUp, else our Input handling will be confused
+    //      and not register the un-pressing of the left button.
+    SendMessageA(MainWindow, WM_LBUTTONUP, 0, 0);
+    ShowWindow(MainWindow, SW_MINIMIZE); return FALSE;
+    return FALSE;
+}
+
 void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
 {
     //NOTE: Copy Init Page
@@ -187,7 +195,7 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     ls_uiTextBoxSet(cxt, &dest->GeneralThrower.hitRes, curr->GeneralThrower.hitRes.text);
     ls_uiTextBoxSet(cxt, &dest->GeneralThrower.damage, curr->GeneralThrower.damage.text);
     ls_uiTextBoxSet(cxt, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
-   
+    
     dest->EncounterSel.selectedIndex = curr->EncounterSel.selectedIndex;
     
     
@@ -236,6 +244,41 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_arenaUse(globalArena);
     //------------
     
+#if 0
+    Bitmap image = {};
+    ls_bitmapLoad(ls_strConstant("minusButton.bmp"), &image);
+    
+    u8 *At = (u8 *)image.data;
+    
+    
+    u32 imageData[16*16*4] = {};
+    for(u32 y = 0; y < image.height; y++)
+    {
+        for(u32 x = 0; x < image.width; x++)
+        {
+            /*
+            u8 b = *At;
+            u8 a = *(At+1);
+            u8 g = *(At+2);
+            u8 r = *(At+3);
+*/
+            
+            u8 a = *At;
+            u8 b = *(At+1);
+            u8 g = *(At+2);
+            u8 r = *(At+3);
+            
+            u32 convertedColor = RGBA(r, g, b, a);
+            imageData[(y*image.width) + x] = convertedColor;
+            
+            At += 4;
+        }
+    }
+    
+    ls_writeFile("minusButtonData", imageData, 16*16*4, 0);
+    
+    return 0;
+#endif
     
     //TODO Hardcoded
     const int windowWidth = 1280;
@@ -250,67 +293,31 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     UIButton closeButton = {};
     closeButton.style    = UIBUTTON_BMP;
-    closeButton.bmpData  = pixelButtonData;
-    closeButton.bmpW     = pixelButtonWidth;
-    closeButton.bmpH     = pixelButtonHeight;
+    closeButton.bmpData  = closeButtonData;
+    closeButton.bmpW     = closeButtonWidth;
+    closeButton.bmpH     = closeButtonHeight;
     closeButton.onClick  = ProgramExitOnButton;
     
-    // -----------
-    // STYLE MENU
-    UIButton styleDefaultBtn = {};
-    styleDefaultBtn.style   = UIBUTTON_TEXT_NOBORDER;
-    styleDefaultBtn.name    = ls_unistrFromUTF32(U"Default");
-    styleDefaultBtn.onClick = selectStyleDefault;
-    
-    UIButton stylePranaBtn  = {};
-    stylePranaBtn.style     = UIBUTTON_TEXT_NOBORDER;
-    stylePranaBtn.name      = ls_unistrFromUTF32(U"Prana");
-    stylePranaBtn.onClick   = selectStylePrana;
-    
-    UIMenu styleSubMenu     = {};
-    ls_uiMenuAddItem(&styleSubMenu, styleDefaultBtn);
-    ls_uiMenuAddItem(&styleSubMenu, stylePranaBtn);
-    
-    UIButton styleMenuBtn   = {};
-    styleMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
-    styleMenuBtn.name          = ls_unistrFromUTF32(U"Style");
-    styleMenuBtn.onClick       = ls_uiMenuDefaultOnClick;
-    //
-    // -----------
-    
-    // -----------
-    // THEME MENU
-    UIButton themeDefaultBtn = {};
-    themeDefaultBtn.style   = UIBUTTON_TEXT_NOBORDER;
-    themeDefaultBtn.name    = ls_unistrFromUTF32(U"Default");
-    themeDefaultBtn.onClick = selectThemeDefault;
-    
-    UIButton themeDarkNightBtn  = {};
-    themeDarkNightBtn.style     = UIBUTTON_TEXT_NOBORDER;
-    themeDarkNightBtn.name      = ls_unistrFromUTF32(U"Dark Night");
-    themeDarkNightBtn.onClick   = selectThemeDarkNight;
-    
-    UIMenu themeSubMenu     = {};
-    ls_uiMenuAddItem(&themeSubMenu, themeDefaultBtn);
-    ls_uiMenuAddItem(&themeSubMenu, themeDarkNightBtn);
-    
-    UIButton themeMenuBtn   = {};
-    themeMenuBtn.style         = UIBUTTON_TEXT_NOBORDER;
-    themeMenuBtn.name          = ls_unistrFromUTF32(U"Theme");
-    themeMenuBtn.onClick       = ls_uiMenuDefaultOnClick;
-    //
-    // -----------
+    UIButton minimizeButton = {};
+    minimizeButton.style    = UIBUTTON_BMP;
+    minimizeButton.bmpData  = minimizeButtonData;
+    minimizeButton.bmpW     = minimizeButtonWidth;
+    minimizeButton.bmpH     = minimizeButtonHeight;
+    minimizeButton.onClick  = ProgramMinimizeOnButton;
     
     UIMenu WindowMenu       = {};
     WindowMenu.closeWindow  = closeButton;
-    WindowMenu.sub          = (UIMenu *)ls_alloc(sizeof(UIMenu) * 32);
-    WindowMenu.maxSub       = 32;
+    WindowMenu.minimize     = minimizeButton;
+    WindowMenu.itemWidth    = 100;
     
-    ls_uiMenuAddItem(&WindowMenu, styleMenuBtn);
-    ls_uiMenuAddSub(&WindowMenu, styleSubMenu, 0);
     
-    ls_uiMenuAddItem(&WindowMenu, themeMenuBtn);
-    ls_uiMenuAddSub(&WindowMenu, themeSubMenu, 1);
+    ls_uiMenuAddSub(uiContext, &WindowMenu, U"Style");
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 0, U"Default", selectStyleDefault, NULL);
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 0, U"Prana", selectStylePrana, NULL);
+    
+    ls_uiMenuAddSub(uiContext, &WindowMenu, U"Theme");
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Default", selectThemeDefault, NULL);
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
     
     State.isInitialized = TRUE;
     
@@ -358,26 +365,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
     
-#if 0
-    UITextBox tb = {};
-    UIListBox lb = {};
-    UIButton  bt = {};
-    UISlider  sl = {};
-    
-    Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), uiContext->widgetColor);
-    Color rColor      = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), uiContext->widgetColor);
-    sl = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
-    
-    bt.style     = UIBUTTON_TEXT;
-    bt.name      = ls_unistrFromUTF32(U"Button");
-    bt.onClick   = [](UIContext *, void *) -> b32 { return FALSE; };
-    bt.onHold    = [](UIContext *, void *) -> b32 { return FALSE; };
-    bt.data      = 0x0;
-    
-    ls_uiListBoxAddEntry(uiContext, &lb, "Item 1___");
-    ls_uiListBoxAddEntry(uiContext, &lb, "Item 2___");
-    ls_uiTextBoxSet(uiContext, &tb, ls_unistrConstant(U""));
-#endif
     while(Running)
     {
         ls_uiFrameBegin(uiContext);
@@ -401,23 +388,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiBackground(uiContext);
 #endif
         
-#if 1
         //NOTE: Render The Window Menu
-        ls_uiMenu(uiContext, &WindowMenu, 0, uiContext->windowHeight-20, uiContext->windowWidth, 20);
-        
+        ls_uiMenu(uiContext, &WindowMenu, -1, uiContext->windowHeight-20, uiContext->windowWidth+1, 21);
         
         userInputConsumed = DrawInitTab(uiContext);
-#else
-        ls_uiTextBox(uiContext, &tb, 400, 400, 500, 30);
         
-        ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
-        ls_uiLabel(uiContext, U"--test--", 630, 430);
-        ls_uiListBox(uiContext, &lb, 580, 500, 100, 20);
-        ls_uiButton(uiContext, &bt, 600, 540, 100, 20);
-        ls_uiSlider(uiContext, &sl, 460, 580, 300, 20);
-        
-        //userInputConsumed = FALSE;
-#endif
         if(!uiContext->hasReceivedInput && !uiContext->isDragging)
         {
             for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
@@ -469,9 +444,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             { uiContext->currentFocus = 0; }
             
             
-            //NOTE: Dragging code, only happens when menu is selected.
-            //TODO: Dragging while interacting with menu items! /Separate items region from draggable region!
-            if(LeftClick && uiContext->currentFocus == (u64 *)&WindowMenu)
+            //NOTE: Right-Alt Drag, only when nothing is in focus
+            if(KeyHeld(keyMap::RAlt) && LeftClick && uiContext->currentFocus == 0)
             { 
                 uiContext->isDragging = TRUE;
                 POINT currMouse = {};
@@ -479,6 +453,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 uiContext->prevMousePosX = currMouse.x;
                 uiContext->prevMousePosY = currMouse.y;
             }
+            
             if(uiContext->isDragging && LeftHold)
             { 
                 MouseInput *Mouse = &UserInput.Mouse;

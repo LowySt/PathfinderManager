@@ -801,6 +801,7 @@ b32 LoadState(UIContext *cxt)
     {
         ls_bufferReadIntoUnistring(buf, &Page->PlayerInit[i].text);
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
+        Page->PlayerInit[i].isReadonly = TRUE;
     }
     
     
@@ -815,6 +816,7 @@ b32 LoadState(UIContext *cxt)
         {
             ls_bufferReadIntoUnistring(buf, &f->editFields[j].text);
             f->editFields[j].viewEndIdx = f->editFields[j].text.len;
+            f->editFields[j].isReadonly = TRUE;
         }
         
         ls_bufferReadIntoUnistring(buf, &f->maxLife.text);
@@ -833,12 +835,15 @@ b32 LoadState(UIContext *cxt)
         
         ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_NAME].text);
         f->editFields[IF_IDX_NAME].viewEndIdx = f->editFields[IF_IDX_NAME].text.len;
+        f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
         
         ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_BONUS].text);
         f->editFields[IF_IDX_BONUS].viewEndIdx = f->editFields[IF_IDX_BONUS].text.len;
+        f->editFields[IF_IDX_BONUS].isReadonly = TRUE;
         
         ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_FINAL].text);
         f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
+        f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
         
         f->ID = ls_bufferReadDWord(buf);
     }
@@ -853,7 +858,7 @@ b32 LoadState(UIContext *cxt)
         
         ls_bufferReadIntoUnistring(buf, &f->field.text);
         
-        f->pos.isReadonly = FALSE;
+        f->pos.isReadonly = TRUE;
         
         f->field.maxValue = ls_bufferReadDWord(buf);
         f->field.minValue = ls_bufferReadDWord(buf);
