@@ -440,9 +440,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 uiContext->prevMousePosY  = currMouse.y;
                 
                 SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-                
-                if(LeftUp) { uiContext->isDragging = FALSE; }
             }
+            
+            if(uiContext->isDragging && LeftUp) { uiContext->isDragging = FALSE; }
             
             
             if(LeftUp || RightUp || MiddleUp)
