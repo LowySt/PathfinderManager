@@ -85,13 +85,27 @@
 
 #include "AssetLoader.cpp"
 
-b32 ProgramExitOnButton(UIContext *cxt, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
+#include "Compendium.cpp"
 
-b32 ProgramMinimizeOnButton(UIContext *cxt, void *data) { 
+b32 ProgramExitOnButton(UIContext *c, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
+
+b32 ProgramMinimizeOnButton(UIContext *c, void *data) { 
     //NOTE: We have to send an LButtonUp, else our Input handling will be confused
     //      and not register the un-pressing of the left button.
     SendMessageA(MainWindow, WM_LBUTTONUP, 0, 0);
-    ShowWindow(MainWindow, SW_MINIMIZE); return FALSE;
+    ShowWindow(MainWindow, SW_MINIMIZE);
+    return FALSE;
+}
+
+b32 ProgramOpenCompendium(UIContext *c, void *data) {
+    
+    if(CompendiumWindow)
+    {
+        ShowWindow(CompendiumWindow, SW_SHOW);
+        return FALSE;
+    }
+    
+    ls_printf("No Compendium Window yet.!");
     return FALSE;
 }
 
@@ -244,16 +258,28 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_arenaUse(globalArena);
     //------------
     
-    //TODO Hardcoded
+    
+    //TODO: Hardcoded Compendium Window
+    const int compendiumWidth  = 480;
+    const int compendiumHeight = 640;
+    UIContext *compendiumContext = ls_uiInitDefaultContext(CompendiumBackBuffer, compendiumWidth, compendiumHeight);
+    CompendiumWindow = ls_uiCreateWindow(MainInstance, compendiumContext, "Compendium");
+    
+    //TODO Hardcoded MainWindow
     const int windowWidth = 1280;
     const int windowHeight = 860;
     UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, windowWidth, windowHeight);
-    MainWindow = ls_uiCreateWindow(MainInstance, uiContext);
+    MainWindow = ls_uiCreateWindow(MainInstance, uiContext, "PCMan");
     
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
     
-    
     loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
+    
+    //NOTETODOHACK:
+    compendiumContext->fonts    = uiContext->fonts;
+    compendiumContext->numFonts = uiContext->numFonts;
+    compendiumContext->currFont = uiContext->currFont;
+    
     
     UIButton closeButton = {};
     closeButton.style    = UIBUTTON_BMP;
@@ -282,6 +308,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiMenuAddSub(uiContext, &WindowMenu, U"Theme");
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Default", selectThemeDefault, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
+    
+    ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
     
     State.isInitialized = TRUE;
     
@@ -481,10 +509,89 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
         }
         
-        State.hasMouseClicked = FALSE;
+        //-------------------------------
+        //NOTE: Begin Compendium Frame
+        
+        ls_uiFrameBegin(compendiumContext);
+        
+        DrawCompendium(compendiumContext);
+        
+        if(!compendiumContext->hasReceivedInput && !compendiumContext->isDragging)
+        {
+            for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
+            {
+                ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[0]);
+                ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[1]);
+                ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[2]);
+            }
+            
+            Sleep(64);
+        }
+        else
+        {
+            
+            //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
+            if(LeftClick && !compendiumContext->focusWasSetThisFrame) { compendiumContext->currentFocus = 0; }
+            
+            //NOTE: Right-Alt Drag, only when nothing is in focus
+            if(KeyHeld(keyMap::RAlt) && LeftClick && compendiumContext->currentFocus == 0)
+            { 
+                compendiumContext->isDragging = TRUE;
+                POINT currMouse = {};
+                GetCursorPos(&currMouse);
+                compendiumContext->prevMousePosX = currMouse.x;
+                compendiumContext->prevMousePosY = currMouse.y;
+            }
+            
+            if(compendiumContext->isDragging && LeftHold)
+            { 
+                MouseInput *Mouse = &UserInput.Mouse;
+                
+                POINT currMouse = {};
+                GetCursorPos(&currMouse);
+                
+                POINT prevMouse = { compendiumContext->prevMousePosX, compendiumContext->prevMousePosY };
+                
+                SHORT newX = prevMouse.x - currMouse.x;
+                SHORT newY = prevMouse.y - currMouse.y;
+                
+                SHORT newWinX = compendiumContext->windowPosX - newX;
+                SHORT newWinY = compendiumContext->windowPosY - newY;
+                
+                compendiumContext->windowPosX = newWinX;
+                compendiumContext->windowPosY = newWinY;
+                
+                compendiumContext->prevMousePosX  = currMouse.x;
+                compendiumContext->prevMousePosY  = currMouse.y;
+                
+                SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+            }
+            
+            if(compendiumContext->isDragging && LeftUp) { compendiumContext->isDragging = FALSE; }
+            
+            
+            if(LeftUp || RightUp || MiddleUp)
+            { compendiumContext->mouseCapture = 0; }
+            
+            // ----------------
+            // Render Everything
+            ls_arenaUse(renderArena);
+            
+            ls_uiRender(compendiumContext);
+            
+            ls_arenaUse(globalArena);
+            ls_arenaClear(renderArena);
+            //
+            // ----------------
+            
+        }
+        
+        ls_uiFrameEnd(compendiumContext, 32);
+        
+        //NOTE: End Compendium Frame
+        //-------------------------------
         
         GetSystemTime(&endT);
-        
         
         State.timePassed += (endT.wSecond - beginT.wSecond);
         if(State.timePassed >= 30)

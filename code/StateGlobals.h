@@ -156,15 +156,17 @@ struct ProgramState
     
     b32 isInitialized;
     
-    b32 hasMouseClicked;
-    
     u64 timePassed;
     u64 dt = 0;
 };
 
-HINSTANCE MainInstance;
-HWND MainWindow;
+HINSTANCE MainInstance = 0;
+HWND MainWindow        = 0;
+HWND CompendiumWindow  = 0;
+
 u8 *BackBuffer;
+u8 *CompendiumBackBuffer
+;
 PlayerChar pc = {};
 ProgramState State = {};
 
