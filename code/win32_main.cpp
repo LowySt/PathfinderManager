@@ -88,12 +88,14 @@
 #include "Compendium.cpp"
 
 b32 ProgramExitOnButton(UIContext *c, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
+b32 CompendiumExitOnButton(UIContext *c, void *data) { ShowWindow(CompendiumWindow, SW_HIDE); return FALSE; }
+
 
 b32 ProgramMinimizeOnButton(UIContext *c, void *data) { 
     //NOTE: We have to send an LButtonUp, else our Input handling will be confused
     //      and not register the un-pressing of the left button.
-    SendMessageA(MainWindow, WM_LBUTTONUP, 0, 0);
-    ShowWindow(MainWindow, SW_MINIMIZE);
+    SendMessageA(c->Window, WM_LBUTTONUP, 0, 0);
+    ShowWindow(c->Window, SW_MINIMIZE);
     return FALSE;
 }
 
@@ -282,25 +284,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     compendiumContext->currFont = uiContext->currFont;
     
     
-    UIButton closeButton = {};
-    closeButton.style    = UIBUTTON_BMP;
-    closeButton.bmpData  = closeButtonData;
-    closeButton.bmpW     = closeButtonWidth;
-    closeButton.bmpH     = closeButtonHeight;
-    closeButton.onClick  = ProgramExitOnButton;
-    
-    UIButton minimizeButton = {};
-    minimizeButton.style    = UIBUTTON_BMP;
-    minimizeButton.bmpData  = minimizeButtonData;
-    minimizeButton.bmpW     = minimizeButtonWidth;
-    minimizeButton.bmpH     = minimizeButtonHeight;
-    minimizeButton.onClick  = ProgramMinimizeOnButton;
-    
     UIMenu WindowMenu       = {};
-    WindowMenu.closeWindow  = closeButton;
-    WindowMenu.minimize     = minimizeButton;
+    WindowMenu.closeWindow  = ls_uiMenuButton(ProgramExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
+    WindowMenu.minimize     = ls_uiMenuButton(ProgramMinimizeOnButton, minBtnData, minBtnWidth, minBtnHeight);
     WindowMenu.itemWidth    = 100;
-    
     
     ls_uiMenuAddSub(uiContext, &WindowMenu, U"Style");
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 0, U"Default", selectStyleDefault, NULL);
@@ -311,6 +298,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
     
     ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
+    
+    
+    UIMenu CompendiumMenu = {};
+    CompendiumMenu.closeWindow  = ls_uiMenuButton(CompendiumExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
+    CompendiumMenu.itemWidth    = 100;
+    
     
     State.isInitialized = TRUE;
     
@@ -519,6 +512,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Begin Compendium Frame
         
         ls_uiFrameBeginChild(compendiumContext);
+        
+        ls_uiMenu(compendiumContext, &CompendiumMenu, -1, compendiumContext->windowHeight-20, compendiumContext->windowWidth+1, 21);
         
         DrawCompendium(compendiumContext);
         
