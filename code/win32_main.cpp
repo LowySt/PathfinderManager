@@ -102,6 +102,7 @@ b32 ProgramOpenCompendium(UIContext *c, void *data) {
     if(CompendiumWindow)
     {
         ShowWindow(CompendiumWindow, SW_SHOW);
+        c->renderFunc(c);
         return FALSE;
     }
     
@@ -398,6 +399,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
         else
         {
+            //NOTETODO: annoying non-global user input
+            Input *UserInput = &uiContext->UserInput;
+            
             if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
             {
                 undoRequest = FALSE;
@@ -448,7 +452,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             if(uiContext->isDragging && LeftHold)
             { 
-                MouseInput *Mouse = &UserInput.Mouse;
+                MouseInput *Mouse = &uiContext->UserInput.Mouse;
                 
                 POINT currMouse = {};
                 GetCursorPos(&currMouse);
@@ -491,7 +495,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
         }
         
-        if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
+        //NOTETODO: just annoying non global user input bullshit.
+        if(uiContext->UserInput.Keyboard.currentState.keyMap::F12 == 1 && 
+           uiContext->UserInput.Keyboard.prevState.keyMap::F12 == 0) { showDebug = !showDebug; }
         
         if(showDebug)
         {
@@ -512,7 +518,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //-------------------------------
         //NOTE: Begin Compendium Frame
         
-        ls_uiFrameBegin(compendiumContext);
+        ls_uiFrameBeginChild(compendiumContext);
         
         DrawCompendium(compendiumContext);
         
@@ -524,11 +530,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[1]);
                 ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[2]);
             }
-            
-            Sleep(64);
         }
         else
         {
+            //NOTETODO: annoying non-global user input
+            Input *UserInput = &compendiumContext->UserInput;
             
             //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
             if(LeftClick && !compendiumContext->focusWasSetThisFrame) { compendiumContext->currentFocus = 0; }
@@ -545,7 +551,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             if(compendiumContext->isDragging && LeftHold)
             { 
-                MouseInput *Mouse = &UserInput.Mouse;
+                MouseInput *Mouse = &compendiumContext->UserInput.Mouse;
                 
                 POINT currMouse = {};
                 GetCursorPos(&currMouse);
@@ -564,7 +570,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 compendiumContext->prevMousePosX  = currMouse.x;
                 compendiumContext->prevMousePosY  = currMouse.y;
                 
-                SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+                SetWindowPos(CompendiumWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
             }
             
             if(compendiumContext->isDragging && LeftUp) { compendiumContext->isDragging = FALSE; }
@@ -584,9 +590,13 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             //
             // ----------------
             
+            ls_uiFillRect(compendiumContext, 400, 500, 20, 20, 0, compendiumContext->width, 0, compendiumContext->height, compendiumContext->backgroundColor);
+            ls_unistrFromInt_t(&frameTimeString, compendiumContext->dt);
+            ls_uiGlyphString(compendiumContext, 400, 500, 0, compendiumContext->width, 0, compendiumContext->height, frameTimeString, RGBg(0xEE));
+            
         }
         
-        ls_uiFrameEnd(compendiumContext, 32);
+        ls_uiFrameEndChild(compendiumContext, 0);
         
         //NOTE: End Compendium Frame
         //-------------------------------

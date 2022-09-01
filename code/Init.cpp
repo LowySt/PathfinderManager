@@ -55,39 +55,41 @@ b32 selectThemeDarkNight(UIContext *cxt, void *data)
 }
 
 
-b32 CustomPlayerText(UIContext *cxt, void *data)
+b32 CustomPlayerText(UIContext *c, void *data)
 {
+    Input *UserInput = &c->UserInput;
     b32 inputUse = FALSE;
     
     InitPage *Page = State.Init;
     
     UITextBox *f = (UITextBox *)data;
     
-    if(cxt->lastFocus != (u64 *)f) { ls_uiTextBoxClear(cxt, f); inputUse = TRUE; }
+    if(c->lastFocus != (u64 *)f) { ls_uiTextBoxClear(c, f); inputUse = TRUE; }
     
     if(KeyPress(keyMap::Enter))
     {
         UITextBox *lastPlayerBox = Page->PlayerInit + (PARTY_NUM - 1);
         
-        if(f == lastPlayerBox) { ls_uiFocusChange(cxt, 0x0); return TRUE; }
+        if(f == lastPlayerBox) { ls_uiFocusChange(c, 0x0); return TRUE; }
         
-        ls_uiFocusChange(cxt, (u64 *)(f + 1));
+        ls_uiFocusChange(c, (u64 *)(f + 1));
         return TRUE;
     }
     
     return inputUse;
 }
 
-b32 CustomInitFieldText(UIContext *cxt, void *data)
+b32 CustomInitFieldText(UIContext *c, void *data)
 {
+    Input *UserInput = &c->UserInput;
     b32 inputUse = FALSE;
     
     CustomFieldTextHandler *f = (CustomFieldTextHandler *)data;
     
     InitPage *Page = State.Init;
     
-    if((cxt->lastFocus != (u64 *)f->field) && (cxt->currentFocus == (u64 *)f->field)) 
-    { ls_uiTextBoxClear(cxt, f->field); inputUse = TRUE; }
+    if((c->lastFocus != (u64 *)f->field) && (c->currentFocus == (u64 *)f->field)) 
+    { ls_uiTextBoxClear(c, f->field); inputUse = TRUE; }
     
     InitField *lastMob  = State.Init->MobFields  + (MOB_NUM-1);
     InitField *lastAlly = State.Init->AllyFields + (ALLY_NUM-1);
@@ -97,14 +99,14 @@ b32 CustomInitFieldText(UIContext *cxt, void *data)
         //NOTE: Clear up the '\n' printable key
         ClearPrintableKey();
         
-        if(f->parent == lastMob)  { ls_uiFocusChange(cxt, 0x0); return inputUse; }
-        if(f->parent == lastAlly) { ls_uiFocusChange(cxt, 0x0); return inputUse; }
+        if(f->parent == lastMob)  { ls_uiFocusChange(c, 0x0); return inputUse; }
+        if(f->parent == lastAlly) { ls_uiFocusChange(c, 0x0); return inputUse; }
         
         //NOTE: The maxLife field gets handled specially using the index 999
         if(f->idx == 999) {
             UITextBox *next = &((f->parent + 1)->maxLife);
-            ls_uiTextBoxClear(cxt, next);
-            ls_uiFocusChange(cxt, (u64 *)next);
+            ls_uiTextBoxClear(c, next);
+            ls_uiFocusChange(c, (u64 *)next);
             
             return TRUE;
         }
@@ -112,8 +114,8 @@ b32 CustomInitFieldText(UIContext *cxt, void *data)
         AssertMsg(f->idx < INIT_FIELD_EDITFIELDS_NUM, "Out of bounds index\n");
         
         UITextBox *next = &((f->parent + 1)->editFields[f->idx]);
-        ls_uiTextBoxClear(cxt, next);
-        ls_uiFocusChange(cxt, (u64 *)next);
+        ls_uiTextBoxClear(c, next);
+        ls_uiFocusChange(c, (u64 *)next);
         
         return TRUE;
     }
@@ -122,16 +124,16 @@ b32 CustomInitFieldText(UIContext *cxt, void *data)
     
     if(KeyPress(keyMap::DArrow))
     {
-        if(f->parent == lastMob)  { ls_uiFocusChange(cxt, 0x0); return inputUse; }
-        if(f->parent == lastAlly) { ls_uiFocusChange(cxt, 0x0); return inputUse; }
+        if(f->parent == lastMob)  { ls_uiFocusChange(c, 0x0); return inputUse; }
+        if(f->parent == lastAlly) { ls_uiFocusChange(c, 0x0); return inputUse; }
         
         u32 numStrings = 0;
         unistring *words = ls_unistrSeparateByNumber(parentFields[IF_IDX_NAME].text, &numStrings);
         
         AssertMsg(words, "The returned words array was null.\n");
-        if(!words) { ls_uiFocusChange(cxt, 0x0); return inputUse; }
+        if(!words) { ls_uiFocusChange(c, 0x0); return inputUse; }
         
-        if(numStrings != 2) { ls_uiFocusChange(cxt, 0x0); return inputUse; }
+        if(numStrings != 2) { ls_uiFocusChange(c, 0x0); return inputUse; }
         
         s64 newNumber = ls_unistrToInt(words[1]) + 1;
         ls_unistrFromInt_t(&words[1], newNumber);
@@ -139,7 +141,7 @@ b32 CustomInitFieldText(UIContext *cxt, void *data)
         InitField *next = f->parent + 1;
         UITextBox *nextFields = next->editFields;
         
-        ls_uiTextBoxClear(cxt, &nextFields[IF_IDX_NAME]);
+        ls_uiTextBoxClear(c, &nextFields[IF_IDX_NAME]);
         ls_unistrSet(&nextFields[IF_IDX_NAME].text, words[0]);
         ls_unistrAppend(&nextFields[IF_IDX_NAME].text, words[1]);
         nextFields[IF_IDX_NAME].viewEndIdx = nextFields[IF_IDX_NAME].text.len;
@@ -148,18 +150,18 @@ b32 CustomInitFieldText(UIContext *cxt, void *data)
         //      We stop at COUNT-1 because the last field is 'final' which should not be modified by this routine.
         for(u32 i = 1; i < IF_IDX_COUNT-1; i++)
         {
-            ls_uiTextBoxClear(cxt, &nextFields[i]);
-            ls_uiTextBoxSet(cxt, &nextFields[i], parentFields[i].text);
+            ls_uiTextBoxClear(c, &nextFields[i]);
+            ls_uiTextBoxSet(c, &nextFields[i], parentFields[i].text);
         }
         
-        ls_uiTextBoxClear(cxt, &next->maxLife);
-        ls_uiTextBoxSet(cxt, &next->maxLife, f->parent->maxLife.text);
+        ls_uiTextBoxClear(c, &next->maxLife);
+        ls_uiTextBoxSet(c, &next->maxLife, f->parent->maxLife.text);
         
         //NOTE: The maxLife field gets handled specially using the index 999
-        if(f->idx == 999) { ls_uiFocusChange(cxt, (u64 *)&(next->maxLife)); return inputUse; }
+        if(f->idx == 999) { ls_uiFocusChange(c, (u64 *)&(next->maxLife)); return inputUse; }
         
         AssertMsg(f->idx < INIT_FIELD_EDITFIELDS_NUM, "Out of bounds index\n");
-        ls_uiFocusChange(cxt, (u64 *)&(nextFields[f->idx]));
+        ls_uiFocusChange(c, (u64 *)&(nextFields[f->idx]));
         
         return TRUE;
     }
@@ -168,8 +170,9 @@ b32 CustomInitFieldText(UIContext *cxt, void *data)
 }
 
 
-b32 CustomMobLifeField(UIContext *cxt, void *data)
+b32 CustomMobLifeField(UIContext *c, void *data)
 {
+    Input *UserInput = &c->UserInput;
     b32 inputUse = FALSE;
     
     MobLifeHandler *h = (MobLifeHandler *)data;
@@ -177,10 +180,10 @@ b32 CustomMobLifeField(UIContext *cxt, void *data)
     
     if(!State.inBattle) {
         CustomFieldTextHandler dummy = {h->mob, h->parent, 999};
-        inputUse |= CustomInitFieldText(cxt, &dummy);
+        inputUse |= CustomInitFieldText(c, &dummy);
     };
     
-    if((cxt->lastFocus != (u64 *)f) && h->isEditing) {
+    if((c->lastFocus != (u64 *)f) && h->isEditing) {
         //NOTE: We lost focus, let's reset the box
         //TODO: Should we also reset what was being written?
         
@@ -190,7 +193,7 @@ b32 CustomMobLifeField(UIContext *cxt, void *data)
     if(LeftClick && !h->isEditing && State.inBattle)
     { 
         ls_unistrSet(&h->previous, f->text);
-        ls_uiTextBoxClear(cxt, f);
+        ls_uiTextBoxClear(c, f);
         
         h->isEditing = TRUE;
         inputUse = TRUE;
@@ -203,23 +206,23 @@ b32 CustomMobLifeField(UIContext *cxt, void *data)
         
         s32 diff = ls_unistrToInt(f->text);
         
-        ls_uiSliderChangeValueBy(cxt, &order->field, diff);
+        ls_uiSliderChangeValueBy(c, &order->field, diff);
         
-        s32 currVal = ls_uiSliderGetValue(cxt, &order->field);
+        s32 currVal = ls_uiSliderGetValue(c, &order->field);
         if(currVal == 0)
-        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), cxt->widgetColor); }
+        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
         
         else if(currVal < 0)
-        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor); }
+        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
         
         else if(currVal > 0)
-        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), cxt->widgetColor); }
+        { order->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
         
-        ls_uiTextBoxClear(cxt, f);
-        ls_uiTextBoxSet(cxt, f, h->previous);
+        ls_uiTextBoxClear(c, f);
+        ls_uiTextBoxSet(c, f, h->previous);
         
         h->isEditing = FALSE;
-        ls_uiFocusChange(cxt, NULL);
+        ls_uiFocusChange(c, NULL);
         
         inputUse = TRUE;
     }
@@ -227,8 +230,9 @@ b32 CustomMobLifeField(UIContext *cxt, void *data)
     return inputUse;
 }
 
-b32 ChangeOrder(UIContext *cxt, void *data)
+b32 ChangeOrder(UIContext *c, void *data)
 {
+    Input *UserInput = &c->UserInput;
     b32 inputUse = FALSE;
     
     OrderHandler *h = (OrderHandler *)data;
@@ -239,7 +243,7 @@ b32 ChangeOrder(UIContext *cxt, void *data)
     if(LeftClick && !h->isEditing)
     { 
         ls_unistrSet(&h->previous, f->text);
-        ls_uiTextBoxClear(cxt, f);
+        ls_uiTextBoxClear(c, f);
         
         h->isEditing = TRUE;
         inputUse = TRUE;
@@ -261,11 +265,11 @@ b32 ChangeOrder(UIContext *cxt, void *data)
         
         if((newPosition >= visibleOrder) || (newPosition == oldPosition) || (newPosition < 0))
         {
-            ls_uiTextBoxClear(cxt, f);
-            ls_uiTextBoxSet(cxt, f, h->previous);
+            ls_uiTextBoxClear(c, f);
+            ls_uiTextBoxSet(c, f, h->previous);
             
             h->isEditing = FALSE;
-            ls_uiFocusChange(cxt, NULL);
+            ls_uiFocusChange(c, NULL);
             return TRUE;
         }
         
@@ -333,18 +337,18 @@ b32 ChangeOrder(UIContext *cxt, void *data)
         Init->OrderFields[newPosition].field.currPos   = slidePos;
         
         //NOTE: Reset the position to actual ordinal
-        ls_uiTextBoxClear(cxt, f);
-        ls_uiTextBoxSet(cxt, f, h->previous);
+        ls_uiTextBoxClear(c, f);
+        ls_uiTextBoxSet(c, f, h->previous);
         
         //NOTE: Update "Current" TextBox to reflect change if there was any
         //NOTE:TODO: Do I actually like this? Do we want this?
         if(Init->currIdx == newPosition)
-        { ls_uiTextBoxSet(cxt, &Init->Current, oldName); }
+        { ls_uiTextBoxSet(c, &Init->Current, oldName); }
         
         ls_unistrFree(&oldName); //TODO: yuck... look upward at horrible temp saving.
         
         h->isEditing = FALSE;
-        ls_uiFocusChange(cxt, NULL);
+        ls_uiFocusChange(c, NULL);
         
         return TRUE;
     }
@@ -353,13 +357,13 @@ b32 ChangeOrder(UIContext *cxt, void *data)
 }
 
 b32 ResetOnClick(UIContext *, void *);
-void OnEncounterSelect(UIContext *cxt, void *data)
+void OnEncounterSelect(UIContext *c, void *data)
 {
     UIListBox *b = (UIListBox *)data;
     
     u32 idx = b->selectedIndex;
     
-    if(idx == 0) { ResetOnClick(cxt, 0); return; }
+    if(idx == 0) { ResetOnClick(c, 0); return; }
     
     Encounter *e = &State.encounters.Enc[idx-1];
     
@@ -371,9 +375,9 @@ void OnEncounterSelect(UIContext *cxt, void *data)
         InitField *m = State.Init->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_uiTextBoxSet(cxt, &m->editFields[j], e->mob[i][j]); }
+        { ls_uiTextBoxSet(c, &m->editFields[j], e->mob[i][j]); }
         
-        ls_uiTextBoxSet(cxt, &m->maxLife, e->mob[i][MOB_INIT_ENC_FIELDS-1]);
+        ls_uiTextBoxSet(c, &m->maxLife, e->mob[i][MOB_INIT_ENC_FIELDS-1]);
         
     }
     
@@ -381,20 +385,20 @@ void OnEncounterSelect(UIContext *cxt, void *data)
     {
         InitField *a = State.Init->AllyFields + i;
         
-        ls_uiTextBoxSet(cxt, &a->editFields[IF_IDX_NAME],  e->allyName[i]);
-        ls_uiTextBoxSet(cxt, &a->editFields[IF_IDX_BONUS], e->allyBonus[i]);
-        ls_uiTextBoxSet(cxt, &a->editFields[IF_IDX_FINAL], e->allyFinal[i]);
+        ls_uiTextBoxSet(c, &a->editFields[IF_IDX_NAME],  e->allyName[i]);
+        ls_uiTextBoxSet(c, &a->editFields[IF_IDX_BONUS], e->allyBonus[i]);
+        ls_uiTextBoxSet(c, &a->editFields[IF_IDX_FINAL], e->allyFinal[i]);
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
         DiceThrow *t = State.Init->Throwers + i;
         
-        ls_uiTextBoxClear(cxt, &t->name);
-        ls_uiTextBoxClear(cxt, &t->toHit);
-        ls_uiTextBoxClear(cxt, &t->hitRes);
-        ls_uiTextBoxClear(cxt, &t->damage);
-        ls_uiTextBoxClear(cxt, &t->dmgRes);
+        ls_uiTextBoxClear(c, &t->name);
+        ls_uiTextBoxClear(c, &t->toHit);
+        ls_uiTextBoxClear(c, &t->hitRes);
+        ls_uiTextBoxClear(c, &t->damage);
+        ls_uiTextBoxClear(c, &t->dmgRes);
         
         ls_unistrSet(&t->name.text, e->throwerName[i]);     t->name.viewEndIdx   = t->name.text.len;
         
@@ -657,7 +661,7 @@ b32 SetOnClick(UIContext *cxt, void *data)
         
         idx += 1;
     }
-
+    
     ls_quicksortCustom(ord, sizeof(tmp_order), visibleOrder, sortTmpOrder);
     
     for(u32 i = 0, j = visibleOrder - 1; i < visibleOrder; i++, j--)
