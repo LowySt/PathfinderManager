@@ -25,7 +25,7 @@ void loadAssetFile(UIContext *c, string assetFilePath)
             
             currGlyph->size = ls_bufferPeekDWord(&buff);
             currGlyph->data = (u8 *)ls_alloc(sizeof(u8)*currGlyph->size);
-            ls_bufferReadData(&buff, currGlyph->data); //TODO: Bad design
+            ls_bufferReadData32(&buff, currGlyph->data); //TODO: Bad design
             
             currGlyph->width = ls_bufferReadDWord(&buff);
             currGlyph->height = ls_bufferReadDWord(&buff);
@@ -44,7 +44,7 @@ void loadAssetFile(UIContext *c, string assetFilePath)
             
             currGlyph->size = ls_bufferPeekDWord(&buff);
             currGlyph->data = (u8 *)ls_alloc(sizeof(u8)*currGlyph->size);
-            ls_bufferReadData(&buff, currGlyph->data); //TODO: Bad design
+            ls_bufferReadData32(&buff, currGlyph->data); //TODO: Bad design
             
             currGlyph->width = ls_bufferReadDWord(&buff);
             currGlyph->height = ls_bufferReadDWord(&buff);

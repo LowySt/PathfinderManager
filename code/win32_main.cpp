@@ -277,6 +277,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
     
     loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
+    LoadCompendium({});
     
     //NOTETODOHACK:
     compendiumContext->fonts    = uiContext->fonts;
@@ -316,6 +317,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Initialize State and Undo States
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     SetInitTab(uiContext, &State);
+    
+    SetMonsterTable(compendiumContext);
     
     //NOTE: Single block allocation for all Init Pages.
     InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);
@@ -497,15 +500,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_uiFillRect(uiContext, 1248, 760, 20, 20, 0, uiContext->width, 0, uiContext->height, uiContext->backgroundColor);
             ls_unistrFromInt_t(&frameTimeString, uiContext->dt);
             ls_uiGlyphString(uiContext, 1248, 760, 0, uiContext->width, 0, uiContext->height, frameTimeString, RGBg(0xEE));
-            
-#if 0
-            ls_uiFillRect(uiContext, (uiContext->width/2)-5, 0, 10, 40, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
-            ls_uiFillRect(uiContext, (uiContext->width/2)-5, uiContext->height-40, 10, 40, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
-            ls_uiFillRect(uiContext, 0, (uiContext->height/2)-5, 40, 10, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
-            ls_uiFillRect(uiContext, uiContext->width-40, (uiContext->height/2)-5, 40, 10, 0, uiContext->width, 0, uiContext->height, RGB(255, 255, 255));
-#endif
-            
-            
         }
         
         //-------------------------------
@@ -584,11 +578,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_arenaClear(renderArena);
             //
             // ----------------
-            
-            ls_uiFillRect(compendiumContext, 400, 500, 20, 20, 0, compendiumContext->width, 0, compendiumContext->height, compendiumContext->backgroundColor);
-            ls_unistrFromInt_t(&frameTimeString, compendiumContext->dt);
-            ls_uiGlyphString(compendiumContext, 400, 500, 0, compendiumContext->width, 0, compendiumContext->height, frameTimeString, RGBg(0xEE));
-            
         }
         
         ls_uiFrameEndChild(compendiumContext, 0);

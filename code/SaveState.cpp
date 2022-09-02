@@ -54,8 +54,8 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         ls_bufferAddDWord(buf, order->field.maxValue);
         ls_bufferAddDWord(buf, order->field.minValue);
         ls_bufferAddDouble(buf, order->field.currPos);
-        ls_bufferAddData(buf, &order->field.lColor, sizeof(Color));
-        ls_bufferAddData(buf, &order->field.rColor, sizeof(Color));
+        ls_bufferAddData32(buf, &order->field.lColor, sizeof(Color));
+        ls_bufferAddData32(buf, &order->field.rColor, sizeof(Color));
         
         ls_bufferAddDWord(buf, order->ID);
     }
@@ -160,8 +160,8 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         order->field.minValue  = ls_bufferReadDWord(buf);
         order->field.currPos   = ls_bufferReadDouble(buf);
         
-        ls_bufferReadData(buf, &order->field.lColor);
-        ls_bufferReadData(buf, &order->field.rColor);
+        ls_bufferReadData32(buf, &order->field.lColor);
+        ls_bufferReadData32(buf, &order->field.rColor);
         
         order->ID = ls_bufferReadDWord(buf);
     }
