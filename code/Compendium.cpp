@@ -127,6 +127,25 @@ void SetMonsterTable(UIContext *c)
 
 void DrawMonsterTable(UIContext *c)
 {
+    s32 baseX = 20;
+    s32 baseY = 540;
+    
+    for(u32 i = 0; i < monsterTable.displayIndices.count; i++)
+    {
+        u16 index        = monsterTable.displayIndices[i];
+        TableEntry entry = monsterTable.entries[index];
+        
+        Color bkgColor = RGBg(0x40);
+        
+        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.names, entry.name), baseX, baseY, 1);
+        
+        ls_uiRect(c, baseX-4+79, baseY-4, 80, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.sources, entry.source), baseX+80, baseY, 1);
+        
+        baseY -= 19;
+    }
+    
     return;
 }
 
@@ -138,19 +157,7 @@ void DrawCompendium(UIContext *c)
     {
         ls_uiButton(c, &codex->newEntry, 20, 560, 20, 20);
         
-        s32 baseX = 20;
-        s32 baseY = 540;
-        
-        for(u32 i = 0; i < monsterTable.displayIndices.count; i++)
-        {
-            u16 index        = monsterTable.displayIndices[i];
-            TableEntry entry = monsterTable.entries[index];
-            
-            ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.names, entry.name), baseX, baseY);
-            ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.sources, entry.source), baseX+100, baseY);
-            
-            baseY -= 20;
-        }
+        DrawMonsterTable(c);
     }
     else
     {
@@ -159,6 +166,5 @@ void DrawCompendium(UIContext *c)
         ls_uiButton(c, &codex->confirmNewEntry, 260, 540, 40, 20);
     }
     
-    DrawMonsterTable(c);
     return;
 }
