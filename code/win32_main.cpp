@@ -10,6 +10,10 @@
 #include "lsCRT.h"
 #undef LS_CRT_IMPLEMENTATION
 
+#define LS_ARRAY_IMPLEMENTATION
+#include "lsArray.h"
+#undef LS_ARRAY_IMPLEMENTATION
+
 #define LS_STRING_IMPLEMENTATION
 #include "lsString.h"
 #undef LS_STRING_IMPLEMENTATION
@@ -252,19 +256,20 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Switch to global memory arena 
     //      for general allocations
     
-    globalArena = ls_arenaCreate(MBytes(8));
-    fileArena   = ls_arenaCreate(MBytes(4));
-    stateArena  = ls_arenaCreate(MBytes(6));
-    saveArena   = ls_arenaCreate(MBytes(4));
-    renderArena = ls_arenaCreate(KBytes(8));
+    globalArena     = ls_arenaCreate(MBytes(8));
+    fileArena       = ls_arenaCreate(MBytes(4));
+    stateArena      = ls_arenaCreate(MBytes(6));
+    saveArena       = ls_arenaCreate(MBytes(4));
+    renderArena     = ls_arenaCreate(KBytes(8));
+    compendiumArena = ls_arenaCreate(KBytes(8));
     
     ls_arenaUse(globalArena);
     //------------
     
     
     //TODO: Hardcoded Compendium Window
-    const int compendiumWidth  = 480;
-    const int compendiumHeight = 640;
+    const int compendiumWidth  = 640;
+    const int compendiumHeight = 720;
     UIContext *compendiumContext = ls_uiInitDefaultContext(CompendiumBackBuffer, compendiumWidth, compendiumHeight);
     CompendiumWindow = ls_uiCreateWindow(MainInstance, compendiumContext, "Compendium");
     
@@ -276,8 +281,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
     
-    loadAssetFile(uiContext, ls_strConstant((char *)"assetFile"));
-    LoadCompendium({});
+    loadAssetFile(uiContext, ls_strConstant("assetFile"));
+    LoadCompendium(ls_strConstant("Compendium"));
     
     //NOTETODOHACK:
     compendiumContext->fonts    = uiContext->fonts;

@@ -184,5 +184,6 @@ static Arena fileArena;
 static Arena stateArena;
 static Arena saveArena;
 static Arena renderArena;
+static Arena compendiumArena;
 
 #endif //_STATE_GLOBALS_H
