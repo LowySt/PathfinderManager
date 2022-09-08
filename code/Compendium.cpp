@@ -116,10 +116,16 @@ struct Compendium
     Codex codex;
     
     b32 isSettingNewEntry;
+    
+    b32         isViewingPage;
+    u32         pageIndex;
+    TableEntry *tableEntry;
 };
 
 MonsterTable monsterTable = {};
 Compendium   compendium   = {};
+
+u32          globalPageCount = 0;
 
 u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
 {
@@ -354,6 +360,8 @@ void SetMonsterTable(UIContext *c)
 
 void DrawMonsterTable(UIContext *c)
 {
+    Input *UserInput = &c->UserInput;
+    
     s32 baseX = 20;
     s32 baseY = 540;
     
@@ -363,6 +371,13 @@ void DrawMonsterTable(UIContext *c)
         TableEntry entry = monsterTable.entries[index];
         
         Color bkgColor = RGBg(0x40);
+        
+        if(LeftClickIn(baseX, baseY, 80, 20)) 
+        { 
+            compendium.isViewingPage = TRUE; 
+            compendium.pageIndex     = entry.page;
+            compendium.tableEntry    = monsterTable.entries + index;
+        }
         
         ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
         
@@ -403,18 +418,151 @@ void DrawMonsterTable(UIContext *c)
     return;
 }
 
+void DrawPage(UIContext *c, TableEntry *entry, PageEntry *page)
+{
+    if(page)
+    {
+    }
+    else
+    {
+        s32 baseY = 670;
+        s32 valueBaseX = 148;
+        
+        //NOTE: Draw an empty page template
+        
+        ls_uiSelectFontByFontSize(c, FS_LARGE);
+        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.names, entry->name), 10, baseY);
+        ls_uiLabel(c, U"GS", 440, baseY);
+        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.gs, entry->gs), 480, baseY);
+        ls_uiLabel(c, U"PE", 545, baseY);
+        ls_uiLabel(c, U"---", 580, baseY);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY -= 30;
+        
+        ls_uiLabel(c, U"Descrizione breve...", 10, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Allineamento: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Categoria: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Iniziativa: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Sensi: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 30;
+        
+        ls_uiSelectFontByFontSize(c, FS_LARGE);
+        ls_uiLabel(c, U"Difesa", 10, baseY);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY -= 30;
+        
+        ls_uiLabel(c, U"CA: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"PF: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Tiri Salvezza: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"RD: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Immunit\U000000E0: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 30;
+        
+        ls_uiSelectFontByFontSize(c, FS_LARGE);
+        ls_uiLabel(c, U"Attacco", 10, baseY);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY -= 30;
+        
+        ls_uiLabel(c, U"Velocit\U000000E0: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Mischia: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 30;
+        
+        ls_uiSelectFontByFontSize(c, FS_LARGE);
+        ls_uiLabel(c, U"Statistiche", 10, baseY);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY -= 30;
+        
+        ls_uiLabel(c, U"Caratteristiche: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"BAB: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"BMC: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"DMC: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Talenti: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 20;
+        
+        ls_uiLabel(c, U"Qualit\U000000E0 Speciali: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+        baseY -= 30;
+        
+        ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+        ls_uiLabel(c, U"Barcollante (Str)", 10, baseY);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        baseY -= 40;
+        
+        ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+        ls_uiLabel(c, U"Tratti dei Non Morti (Str)", 10, baseY);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        baseY -= 40;
+        
+        ls_uiSelectFontByFontSize(c, FS_LARGE);
+        ls_uiLabel(c, U"Descrizione", 10, baseY);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        baseY -= 30;
+        
+        ls_uiSelectFontByFontSize(c, FS_SMALL);
+        ls_uiLabel(c, U"---", 10, baseY);
+        baseY -= 30;
+        
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(30, 30, 30));
+        ls_uiLabel(c, U"Fonte: ", 10, baseY);
+        ls_uiLabel(c, U"---", valueBaseX, baseY);
+    }
+}
+
 void DrawCompendium(UIContext *c)
 {
     Codex *codex = &compendium.codex;
     
-    if(!compendium.isSettingNewEntry)
-    {
-        ls_uiButton(c, &codex->newEntry, 20, 670, 20, 20);
-        ls_uiButton(c, &codex->saveCompendium, 120, 670, 50, 20);
-        
-        DrawMonsterTable(c);
-    }
-    else
+    if(compendium.isSettingNewEntry)
     {
         ls_uiTextBox(c, &codex->newEntryName,    20,  660, 80, 20);
         ls_uiTextBox(c, &codex->newEntryGS,      100, 660, 80, 20);
@@ -425,6 +573,21 @@ void DrawCompendium(UIContext *c)
         ls_uiTextBox(c, &codex->newEntrySource,  500, 660, 80, 20);
         
         ls_uiButton(c, &codex->confirmNewEntry,  580, 660, 40, 20);
+    }
+    else if(compendium.isViewingPage)
+    {
+        PageEntry *page = 0;
+        
+        if(compendium.pageIndex != 0) page = compendium.codex.pages + compendium.pageIndex;
+        
+        DrawPage(c, compendium.tableEntry, page);
+    }
+    else
+    {
+        ls_uiButton(c, &codex->newEntry, 20, 670, 20, 20);
+        ls_uiButton(c, &codex->saveCompendium, 120, 670, 50, 20);
+        
+        DrawMonsterTable(c);
     }
     
     return;

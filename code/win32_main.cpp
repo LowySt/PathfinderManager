@@ -382,6 +382,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiBackground(uiContext);
 #endif
         
+        ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
         //NOTE: Render The Window Menu
         ls_uiMenu(uiContext, &WindowMenu, -1, uiContext->windowHeight-20, uiContext->windowWidth+1, 21);
         
