@@ -1,15 +1,13 @@
 struct PageEntry
 {
-    buffer stringBuffer;
-    
     /*Image?*/
     /*Menù*/
     
     u16 name;
     u16 gs;
-    u16 origin;
-    u16 shortDesc;
     u16 pe;
+    u32 origin;
+    u32 shortDesc;
     u16 alignment;
     u16 type;
     u16 subtype[8];
@@ -19,24 +17,24 @@ struct PageEntry
     u16 senses[8];
     u16 perception;
     u16 aura;
-    u16 AC;
-    u16 HP;
-    u16 ST;
-    u16 RD;
-    u16 RI;
+    u32 AC;
+    u32 HP;
+    u32 ST;
+    u32 RD;
+    u32 RI;
     u16 immunities[16];
     u16 resistances[16];
-    u16 defensiveCapacity;
     u16 weaknesses[16];
+    u32 defensiveCapacity;
     u16 speed;
-    u16 melee;
-    u16 ranged;
+    u32 melee;
+    u32 ranged;
+    u32 specialAttacks;
     u16 space;
     u16 reach;
-    u16 specialAttacks;
-    u16 magics;
-    u16 psych;
-    u16 spells;
+    u32 psych;
+    u32 magics;
+    u32 spells;
     u16 STR;
     u16 DEX;
     u16 CON;
@@ -48,15 +46,15 @@ struct PageEntry
     u16 DMC;
     u16 talents[24];
     u16 skills[24]; //TODO Separate type from value
-    u16 capacities; //Duplicate of defensiveCapacity + magicalCapacity +  special attacks??
     u16 languages[24];
-    u16 racialMods;
+    u32 racialMods;
+    u32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
     u16 specials[24];
     u16 enviroment;
-    u16 org;
-    u16 treasure;
-    u16 desc;
-    u16 source;
+    u32 org;
+    u32 treasure;
+    u32 desc;
+    u32 source;
 };
 
 struct TableEntry
@@ -77,7 +75,8 @@ struct MonsterTable
     //      but most informations will be used globally as well.
     buffer names;
     buffer gs;
-    buffer environments;
+    buffer terrains;
+    buffer climates;
     buffer types;
     buffer subtypes;
     buffer sources;
@@ -88,6 +87,7 @@ struct MonsterTable
 
 struct Codex
 {
+    buffer generalStrings;
     buffer numericValues;
     buffer pe;
     buffer alignment;
@@ -105,6 +105,7 @@ struct Codex
     buffer languages;
     buffer specials;
     
+    //TODO: Change this with a FixedArray
     Array<PageEntry> pages;
     
     UIButton  newEntry;
@@ -138,6 +139,7 @@ Compendium   compendium   = {};
 
 u32          globalPageCount = 0;
 
+#if 0 //TODO Re-implement correct
 u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
 {
     //TODO: This HAS to change the data size. It MUST be 16 bit otherwise strings just won't fit.
@@ -172,6 +174,7 @@ u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
     
     return cursor;
 }
+#endif
 
 unistring GetEntryFromBuffer(buffer *buf, u16 index)
 {
@@ -179,7 +182,9 @@ unistring GetEntryFromBuffer(buffer *buf, u16 index)
     
     buf->cursor = index;
     u32 byteLen = ls_bufferPeekData8(buf, (void **)&result.data);
-    result.len  = byteLen / sizeof(u32);
+    
+    AssertMsg("Need to change to utf8 string");
+    result.len  = byteLen / sizeof(u32); //TODO WRONG
     
     ls_bufferSeekBegin(buf);
     
@@ -195,8 +200,10 @@ void LoadCompendium(string path)
     //NOTE: No valid file was found.
     if(CompendiumBuff.data == 0)
     {
+        compendium.codex.numericValues  = ls_bufferInit(128);
         compendium.codex.pe             = ls_bufferInit(128);
         compendium.codex.alignment      = ls_bufferInit(128);
+        compendium.codex.archetypes     = ls_bufferInit(128);
         compendium.codex.senses         = ls_bufferInit(128);
         compendium.codex.auras          = ls_bufferInit(128);
         compendium.codex.immunities     = ls_bufferInit(128);
@@ -205,53 +212,61 @@ void LoadCompendium(string path)
         compendium.codex.specialAttacks = ls_bufferInit(128);
         compendium.codex.spells         = ls_bufferInit(128);
         compendium.codex.talents        = ls_bufferInit(128);
+        compendium.codex.skills         = ls_bufferInit(128);
+        compendium.codex.languages      = ls_bufferInit(128);
+        compendium.codex.specials       = ls_bufferInit(128);
         
-        monsterTable.names    = ls_bufferInit(128);
-        monsterTable.gs       = ls_bufferInit(128);
-        monsterTable.terrains = ls_bufferInit(128);
-        monsterTable.climates = ls_bufferInit(128);
-        monsterTable.types    = ls_bufferInit(128);
-        monsterTable.subtypes = ls_bufferInit(128);
-        monsterTable.sources  = ls_bufferInit(128);
+        monsterTable.names              = ls_bufferInit(128);
+        monsterTable.gs                 = ls_bufferInit(128);
+        monsterTable.terrains           = ls_bufferInit(128);
+        monsterTable.climates           = ls_bufferInit(128);
+        monsterTable.types              = ls_bufferInit(128);
+        monsterTable.subtypes           = ls_bufferInit(128);
+        monsterTable.sources            = ls_bufferInit(128);
     }
     else
     {
         const u32 reserve = 32;
         
-        auto copyIntoBuffer = [reserve](buffer *src, buffer *dst) {
+        auto viewIntoBuffer = [reserve](buffer *src, buffer *dst) {
             u8 *blockBegin       = (u8 *)src->data + src->cursor;
             u32 blockSize        = ls_bufferReadDWord(src);
-            *dst                 = ls_bufferFromPtrArray((void *)blockBegin, blockSize + sizeof(u32) + reserve);
+            *dst                 = ls_bufferViewIntoPtr((void *)blockBegin, blockSize + sizeof(u32) + reserve);
             ls_bufferReadSkip(src, blockSize);
         };
         
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.names);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.gs);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.terrains);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.climates);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.types);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.subtypes);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.sources);
+        
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.generalStrings);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.numericValues);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.pe);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.alignment);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.archetypes);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.sizes);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.senses);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.auras);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.immunities);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.resistances);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.weaknesses);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.specialAttacks);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.spells);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.talents);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.skills);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.languages);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.specials);
+        
+        //TODO: Change this with a FixedArray 
+        u8 *pagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
+        u32 entryCount = ls_bufferReadDWord(&CompendiumBuff);
+        ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
+        
         AssertMsg(FALSE, "This is not synced with hyperGol's serialization\n");
-        
-        copyIntoBuffer(&CompendiumBuff, &monsterTable.names);
-        copyIntoBuffer(&CompendiumBuff, &monsterTable.gs);
-        copyIntoBuffer(&CompendiumBuff, &monsterTable.terrains);
-        copyIntoBuffer(&CompendiumBuff, &monsterTable.climates);
-        copyIntoBuffer(&CompendiumBuff, &monsterTable.types);
-        copyIntoBuffer(&CompendiumBuff, &monsterTable.subtypes);
-        copyIntoBuffer(&CompendiumBuff, &monsterTable.sources);
-        
-        //NOTETODO We are not writing explicitly the size of this last array.
-        //         For now it's fine because being the last it can be implied from the total size of the file.
-        u8 *entriesData      = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
-        u32 entriesSize      = CompendiumBuff.size - CompendiumBuff.cursor;
-        u32 entriesCount     = entriesSize / sizeof(TableEntry);
-        
-        monsterTable.entries        = ls_arrayAlloc<TableEntry>(entriesCount + reserve);
-        monsterTable.displayIndices = ls_arrayAlloc<u16>(entriesCount + reserve);
-        
-        ls_memcpy(entriesData, monsterTable.entries.data, entriesSize);
-        monsterTable.entries.count = entriesCount;
-        
-        //NOTE Set display indices
-        for(u32 i = 0; i < monsterTable.entries.count; i++)
-        {
-            ls_arrayAppend(&monsterTable.displayIndices, (u16)i);
-        }
     }
     
     
@@ -262,6 +277,8 @@ void LoadCompendium(string path)
 
 void SaveCompendium(string path)
 {
+    AssertMsg(FALSE, "This is completely wrong and has to be re-implemented");
+#if 0
     char cPath[128] = {};
     ls_strToCStr_t(path, cPath, 128);
     
@@ -292,12 +309,14 @@ void SaveCompendium(string path)
     //NOTETODO We are not writing explicitly the size of this last array.
     //         For now it's fine because being the last it can be implied from the total size of the file.
     ls_writeFile(cPath, monsterTable.entries.data, monsterTable.entries.count*sizeof(TableEntry), TRUE);
-    
+#endif
     return;
 }
 
 b32 AddEntryToCompendium(UIContext *c, void *userData)
 {
+    AssertMsg(FALSE, "This is completely wrong and has to be re-implemented");
+#if 0
     Codex *codex = &compendium.codex;
     
     compendium.isSettingNewEntry = FALSE;
@@ -321,6 +340,7 @@ b32 AddEntryToCompendium(UIContext *c, void *userData)
     ls_uiTextBoxClear(c, &codex->newEntryType);
     ls_uiTextBoxClear(c, &codex->newEntrySubtype);
     ls_uiTextBoxClear(c, &codex->newEntrySource);
+#endif
     
     //TODONOTE: Should this be undoable??
     return FALSE;

@@ -261,7 +261,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     stateArena      = ls_arenaCreate(MBytes(6));
     saveArena       = ls_arenaCreate(MBytes(4));
     renderArena     = ls_arenaCreate(KBytes(8));
-    compendiumArena = ls_arenaCreate(KBytes(8));
+    
+    //TODO: Make this much smaller. It can be reduced to at least 8 MBytes, probably smaller
+    compendiumArena = ls_arenaCreate(MBytes(32));
     
     ls_arenaUse(globalArena);
     //------------
