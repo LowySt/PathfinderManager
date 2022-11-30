@@ -11,28 +11,31 @@ struct PageEntry
     u16 shortDesc;
     u16 pe;
     u16 alignment;
-    u16 type[4];
-    u16 subtype[4];
+    u16 type;
+    u16 subtype[8];
     u16 archetype[4];
     u16 size;
     u16 initiative;
-    u16 senses;
+    u16 senses[8];
+    u16 perception;
     u16 aura;
     u16 AC;
     u16 HP;
-    u16 ST[3];
-    u16 RD_RI;
-    u16 immunities;
-    u16 resistances;
+    u16 ST;
+    u16 RD;
+    u16 RI;
+    u16 immunities[16];
+    u16 resistances[16];
     u16 defensiveCapacity;
-    u16 weaknesses;
+    u16 weaknesses[16];
     u16 speed;
     u16 melee;
     u16 ranged;
-    u16 specials;
     u16 space;
     u16 reach;
+    u16 specialAttacks;
     u16 magics;
+    u16 psych;
     u16 spells;
     u16 STR;
     u16 DEX;
@@ -43,10 +46,12 @@ struct PageEntry
     u16 BAB;
     u16 BMC;
     u16 DMC;
-    u16 talents;
+    u16 talents[24];
+    u16 skills[24]; //TODO Separate type from value
     u16 capacities; //Duplicate of defensiveCapacity + magicalCapacity +  special attacks??
-    u16 languages;
+    u16 languages[24];
     u16 racialMods;
+    u16 specials[24];
     u16 enviroment;
     u16 org;
     u16 treasure;
@@ -58,8 +63,7 @@ struct TableEntry
 {
     u16 name;
     u16 gs;
-    u16 terrain;
-    u16 climate;
+    u16 environment;
     u16 type;
     u16 subtype;
     u16 source;
@@ -73,8 +77,7 @@ struct MonsterTable
     //      but most informations will be used globally as well.
     buffer names;
     buffer gs;
-    buffer terrains;
-    buffer climates;
+    buffer environments;
     buffer types;
     buffer subtypes;
     buffer sources;
@@ -85,6 +88,11 @@ struct MonsterTable
 
 struct Codex
 {
+    buffer numericValues;
+    buffer pe;
+    buffer alignment;
+    buffer archetypes;
+    buffer sizes;
     buffer senses;
     buffer auras;
     buffer immunities;
@@ -93,6 +101,9 @@ struct Codex
     buffer specialAttacks;
     buffer spells;
     buffer talents;
+    buffer skills;
+    buffer languages;
+    buffer specials;
     
     Array<PageEntry> pages;
     
@@ -129,6 +140,7 @@ u32          globalPageCount = 0;
 
 u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
 {
+    //TODO: This HAS to change the data size. It MUST be 16 bit otherwise strings just won't fit.
     buf->cursor = 4;
     
     //NOTE: The first 32bit integer of the reference tables are the size of the entire buffer 
@@ -183,6 +195,8 @@ void LoadCompendium(string path)
     //NOTE: No valid file was found.
     if(CompendiumBuff.data == 0)
     {
+        compendium.codex.pe             = ls_bufferInit(128);
+        compendium.codex.alignment      = ls_bufferInit(128);
         compendium.codex.senses         = ls_bufferInit(128);
         compendium.codex.auras          = ls_bufferInit(128);
         compendium.codex.immunities     = ls_bufferInit(128);
@@ -210,6 +224,8 @@ void LoadCompendium(string path)
             *dst                 = ls_bufferFromPtrArray((void *)blockBegin, blockSize + sizeof(u32) + reserve);
             ls_bufferReadSkip(src, blockSize);
         };
+        
+        AssertMsg(FALSE, "This is not synced with hyperGol's serialization\n");
         
         copyIntoBuffer(&CompendiumBuff, &monsterTable.names);
         copyIntoBuffer(&CompendiumBuff, &monsterTable.gs);
@@ -435,7 +451,7 @@ void DrawPage(UIContext *c, TableEntry *entry, PageEntry *page)
         ls_uiLabel(c, U"GS", 440, baseY);
         ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.gs, entry->gs), 480, baseY);
         ls_uiLabel(c, U"PE", 545, baseY);
-        ls_uiLabel(c, U"---", 580, baseY);
+        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.pe, entry->pe), 580, baseY);
         ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
         
         ls_uiSelectFontByFontSize(c, FS_SMALL);
