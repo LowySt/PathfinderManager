@@ -230,6 +230,9 @@ void LoadCompendium(string path)
     {
         const u32 reserve = 32;
         
+        //NOTE: We point to the beginning of the block, which contains a 4 bytes size
+        //      And also copy the size into the buffer struct itself. This is necessary
+        //      Because all the indices in the Page Entries are relative to the complete block, size included
         auto viewIntoBuffer = [reserve](buffer *src, buffer *dst) {
             u8 *blockBegin       = (u8 *)src->data + src->cursor;
             u32 blockSize        = ls_bufferReadDWord(src);
@@ -265,8 +268,8 @@ void LoadCompendium(string path)
         //viewIntoBuffer(&CompendiumBuff, &monsterTable.sources);
         
         //TODO: Change this with a FixedArray 
-        u8 *pagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
         u32 entryCount = ls_bufferReadDWord(&CompendiumBuff);
+        u8 *pagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
         ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
     }
     
