@@ -75,11 +75,11 @@ struct MonsterTable
     //      but most informations will be used globally as well.
     buffer names;
     buffer gs;
-    buffer terrains;
-    buffer climates;
+    //buffer terrains;
+    //buffer climates;
     buffer types;
     buffer subtypes;
-    buffer sources;
+    //buffer sources;
     
     Array<TableEntry> entries;
     Array<u16>        displayIndices;
@@ -103,6 +103,7 @@ struct Codex
     buffer talents;
     buffer skills;
     buffer languages;
+    buffer environment;
     buffer specials;
     
     //TODO: Change this with a FixedArray
@@ -183,7 +184,7 @@ unistring GetEntryFromBuffer(buffer *buf, u16 index)
     buf->cursor = index;
     u32 byteLen = ls_bufferPeekData8(buf, (void **)&result.data);
     
-    AssertMsg("Need to change to utf8 string");
+    AssertMsg(FALSE, "Need to change to utf8 string");
     result.len  = byteLen / sizeof(u32); //TODO WRONG
     
     ls_bufferSeekBegin(buf);
@@ -214,15 +215,16 @@ void LoadCompendium(string path)
         compendium.codex.talents        = ls_bufferInit(128);
         compendium.codex.skills         = ls_bufferInit(128);
         compendium.codex.languages      = ls_bufferInit(128);
+        compendium.codex.environment    = ls_bufferInit(128);
         compendium.codex.specials       = ls_bufferInit(128);
         
         monsterTable.names              = ls_bufferInit(128);
         monsterTable.gs                 = ls_bufferInit(128);
-        monsterTable.terrains           = ls_bufferInit(128);
-        monsterTable.climates           = ls_bufferInit(128);
+        //monsterTable.terrains           = ls_bufferInit(128);
+        //monsterTable.climates           = ls_bufferInit(128);
         monsterTable.types              = ls_bufferInit(128);
         monsterTable.subtypes           = ls_bufferInit(128);
-        monsterTable.sources            = ls_bufferInit(128);
+        //monsterTable.sources            = ls_bufferInit(128);
     }
     else
     {
@@ -231,22 +233,18 @@ void LoadCompendium(string path)
         auto viewIntoBuffer = [reserve](buffer *src, buffer *dst) {
             u8 *blockBegin       = (u8 *)src->data + src->cursor;
             u32 blockSize        = ls_bufferReadDWord(src);
-            *dst                 = ls_bufferViewIntoPtr((void *)blockBegin, blockSize + sizeof(u32) + reserve);
+            *dst                 = ls_bufferViewIntoPtr((void *)blockBegin, blockSize);
             ls_bufferReadSkip(src, blockSize);
         };
         
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.names);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.gs);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.terrains);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.climates);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.types);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.subtypes);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.sources);
-        
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.generalStrings);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.numericValues);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.names);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.gs);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.pe);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.alignment);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.types);
+        viewIntoBuffer(&CompendiumBuff, &monsterTable.subtypes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.archetypes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.sizes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.senses);
@@ -259,16 +257,18 @@ void LoadCompendium(string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.talents);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.skills);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.languages);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.environment);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.specials);
+        
+        //viewIntoBuffer(&CompendiumBuff, &monsterTable.terrains);
+        //viewIntoBuffer(&CompendiumBuff, &monsterTable.climates);
+        //viewIntoBuffer(&CompendiumBuff, &monsterTable.sources);
         
         //TODO: Change this with a FixedArray 
         u8 *pagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
         u32 entryCount = ls_bufferReadDWord(&CompendiumBuff);
         ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
-        
-        AssertMsg(FALSE, "This is not synced with hyperGol's serialization\n");
     }
-    
     
     ls_arenaUse(globalArena);
     
@@ -396,6 +396,8 @@ void SetMonsterTable(UIContext *c)
 
 void DrawMonsterTable(UIContext *c)
 {
+    AssertMsg(FALSE, "Need to re-implement first");
+#if 0
     Input *UserInput = &c->UserInput;
     
     s32 baseX = 20;
@@ -450,7 +452,7 @@ void DrawMonsterTable(UIContext *c)
         baseY -= 19;
         baseX = 20;
     }
-    
+#endif
     return;
 }
 
@@ -471,7 +473,7 @@ void DrawPage(UIContext *c, TableEntry *entry, PageEntry *page)
         ls_uiLabel(c, U"GS", 440, baseY);
         ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.gs, entry->gs), 480, baseY);
         ls_uiLabel(c, U"PE", 545, baseY);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.pe, entry->pe), 580, baseY);
+        ls_uiLabel(c, GetEntryFromBuffer(&compendium.codex.pe, page->pe), 580, baseY);
         ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
         
         ls_uiSelectFontByFontSize(c, FS_SMALL);
