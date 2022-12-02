@@ -3,11 +3,30 @@ struct PageEntry
     /*Image?*/
     /*Menù*/
     
+    u32 origin;
+    u32 shortDesc;
+    u32 AC;
+    u32 HP;
+    u32 ST;
+    u32 RD;
+    u32 RI;
+    u32 defensiveCapacity;
+    u32 melee;
+    u32 ranged;
+    u32 specialAttacks;
+    u32 psych;
+    u32 magics;
+    u32 spells;
+    u32 racialMods;
+    u32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
+    u32 org;
+    u32 treasure;
+    u32 desc;
+    u32 source;
+    
     u16 name;
     u16 gs;
     u16 pe;
-    u32 origin;
-    u32 shortDesc;
     u16 alignment;
     u16 type;
     u16 subtype[8];
@@ -17,24 +36,12 @@ struct PageEntry
     u16 senses[8];
     u16 perception;
     u16 aura;
-    u32 AC;
-    u32 HP;
-    u32 ST;
-    u32 RD;
-    u32 RI;
     u16 immunities[16];
     u16 resistances[16];
     u16 weaknesses[16];
-    u32 defensiveCapacity;
     u16 speed;
-    u32 melee;
-    u32 ranged;
-    u32 specialAttacks;
     u16 space;
     u16 reach;
-    u32 psych;
-    u32 magics;
-    u32 spells;
     u16 STR;
     u16 DEX;
     u16 CON;
@@ -47,14 +54,8 @@ struct PageEntry
     u16 talents[24];
     u16 skills[24]; //TODO Separate type from value
     u16 languages[24];
-    u32 racialMods;
-    u32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
     u16 specials[24];
     u16 enviroment;
-    u32 org;
-    u32 treasure;
-    u32 desc;
-    u32 source;
 };
 
 struct TableEntry
