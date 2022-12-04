@@ -1,3 +1,60 @@
+struct CachedPageEntry
+{
+    utf32 origin;
+    utf32 shortDesc;
+    utf32 AC;
+    utf32 HP;
+    utf32 ST;
+    utf32 RD;
+    utf32 RI;
+    utf32 defensiveCapacity;
+    utf32 melee;
+    utf32 ranged;
+    utf32 specialAttacks;
+    utf32 psych;
+    utf32 magics;
+    utf32 spells;
+    utf32 racialMods;
+    utf32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
+    utf32 org;
+    utf32 treasure;
+    utf32 desc;
+    utf32 source;
+    
+    utf32 name;
+    utf32 gs;
+    utf32 pe;
+    utf32 alignment;
+    utf32 type;
+    utf32 subtype[8];
+    utf32 archetype[4];
+    utf32 size;
+    utf32 initiative;
+    utf32 senses[8];
+    utf32 perception;
+    utf32 aura;
+    utf32 immunities[16];
+    utf32 resistances[16];
+    utf32 weaknesses[16];
+    utf32 speed;
+    utf32 space;
+    utf32 reach;
+    utf32 STR;
+    utf32 DEX;
+    utf32 CON;
+    utf32 INT;
+    utf32 WIS;
+    utf32 CHA;
+    utf32 BAB;
+    utf32 BMC;
+    utf32 DMC;
+    utf32 talents[24];
+    utf32 skills[24]; //TODO Separate type from value
+    utf32 languages[24];
+    utf32 specials[24];
+    utf32 enviroment;
+};
+
 struct PageEntry
 {
     /*Image?*/
@@ -83,11 +140,18 @@ struct MonsterTable
     //buffer sources;
     
     Array<TableEntry> entries;
-    Array<u16>        displayIndices;
+    
+    //TODO: We'll add this when adding sorting / searching
+    //Array<u16>        displayIndices;
 };
 
 struct Codex
 {
+    buffer names;
+    buffer gs;
+    buffer types;
+    buffer subtypes;
+    
     buffer generalStrings;
     buffer numericValues;
     buffer pe;
@@ -107,7 +171,7 @@ struct Codex
     buffer environment;
     buffer specials;
     
-    //TODO: Change this with a FixedArray
+    //TODO: Change this to a FixedArray
     Array<PageEntry> pages;
     
     UIButton  newEntry;
@@ -133,13 +197,11 @@ struct Compendium
     
     b32         isViewingPage;
     u32         pageIndex;
-    TableEntry *tableEntry;
 };
 
-MonsterTable monsterTable = {};
-Compendium   compendium   = {};
-
-u32          globalPageCount = 0;
+//MonsterTable monsterTable = {};
+Compendium      compendium = {};
+CachedPageEntry cachedPage = {};
 
 #if 0 //TODO Re-implement correct
 u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
@@ -178,20 +240,25 @@ u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
 }
 #endif
 
-unistring GetEntryFromBuffer(buffer *buf, u16 index)
+utf32 GetEntryFromBuffer(buffer *buf, u32 index)
 {
-    unistring result = {};
-    
     buf->cursor = index;
-    u32 byteLen = ls_bufferPeekData8(buf, (void **)&result.data);
     
-    AssertMsg(FALSE, "Need to change to utf8 string");
-    result.len  = byteLen / sizeof(u32); //TODO WRONG
+    u32 byteLen   = (u32)ls_bufferPeekWord(buf);
+    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
+    
+    utf32 result = ls_utf32FromUTF8(utf8_data, byteLen);
     
     ls_bufferSeekBegin(buf);
     
     return result;
 }
+
+utf32 GetEntryFromBuffer(buffer *buf, u16 index)
+{
+    return GetEntryFromBuffer(buf, (u32)index);
+}
+
 
 void LoadCompendium(string path)
 {
@@ -202,6 +269,11 @@ void LoadCompendium(string path)
     //NOTE: No valid file was found.
     if(CompendiumBuff.data == 0)
     {
+        compendium.codex.names          = ls_bufferInit(128);
+        compendium.codex.gs             = ls_bufferInit(128);
+        compendium.codex.types          = ls_bufferInit(128);
+        compendium.codex.subtypes       = ls_bufferInit(128);
+        
         compendium.codex.numericValues  = ls_bufferInit(128);
         compendium.codex.pe             = ls_bufferInit(128);
         compendium.codex.alignment      = ls_bufferInit(128);
@@ -218,14 +290,6 @@ void LoadCompendium(string path)
         compendium.codex.languages      = ls_bufferInit(128);
         compendium.codex.environment    = ls_bufferInit(128);
         compendium.codex.specials       = ls_bufferInit(128);
-        
-        monsterTable.names              = ls_bufferInit(128);
-        monsterTable.gs                 = ls_bufferInit(128);
-        //monsterTable.terrains           = ls_bufferInit(128);
-        //monsterTable.climates           = ls_bufferInit(128);
-        monsterTable.types              = ls_bufferInit(128);
-        monsterTable.subtypes           = ls_bufferInit(128);
-        //monsterTable.sources            = ls_bufferInit(128);
     }
     else
     {
@@ -243,12 +307,12 @@ void LoadCompendium(string path)
         
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.generalStrings);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.numericValues);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.names);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.gs);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.names);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.gs);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.pe);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.alignment);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.types);
-        viewIntoBuffer(&CompendiumBuff, &monsterTable.subtypes);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.types);
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.subtypes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.archetypes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.sizes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.senses);
@@ -264,11 +328,7 @@ void LoadCompendium(string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.environment);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.specials);
         
-        //viewIntoBuffer(&CompendiumBuff, &monsterTable.terrains);
-        //viewIntoBuffer(&CompendiumBuff, &monsterTable.climates);
-        //viewIntoBuffer(&CompendiumBuff, &monsterTable.sources);
-        
-        //TODO: Change this with a FixedArray 
+        //TODO: Change this to a FixedArray 
         u32 entryCount = ls_bufferReadDWord(&CompendiumBuff);
         u8 *pagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
         ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
@@ -400,68 +460,55 @@ void SetMonsterTable(UIContext *c)
 
 void DrawMonsterTable(UIContext *c)
 {
-    AssertMsg(FALSE, "Need to re-implement first");
-#if 0
     Input *UserInput = &c->UserInput;
+    Codex *codex     = &compendium.codex;
     
     s32 baseX = 20;
     s32 baseY = 540;
     
-    for(u32 i = 0; i < monsterTable.displayIndices.count; i++)
+    for(u32 i = 0; i < codex->pages.count; i++)
     {
-        u16 index        = monsterTable.displayIndices[i];
-        TableEntry entry = monsterTable.entries[index];
+        PageEntry entry = codex->pages[i];
         
         Color bkgColor = RGBg(0x40);
         
+        //NOTETODO: MAYBE I don't like a lot how this works.
         if(LeftClickIn(baseX, baseY, 80, 20)) 
         { 
             compendium.isViewingPage = TRUE; 
-            compendium.pageIndex     = entry.page;
-            compendium.tableEntry    = monsterTable.entries + index;
+            compendium.pageIndex     = i;
         }
         
-        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
+        ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
         
-        //NOTE: Color the name red if the page is currently missing.
-        Color prevTextColor = c->textColor;
-        if(entry.page == 0) { c->textColor = RGBA(230, 0, 10, 255); }
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.names, entry.name), baseX, baseY, 1);
-        baseX += 79;
-        c->textColor = prevTextColor;
+        ls_uiLabel(c, GetEntryFromBuffer(&codex->names, entry.name), baseX, baseY, 1);
+        baseX += 119;
         
-        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.gs, entry.gs), baseX, baseY, 1);
-        baseX += 79;
+        ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer(&codex->gs, entry.gs), baseX, baseY, 1);
+        baseX += 119;
         
-        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.terrains, entry.terrain), baseX, baseY, 1);
-        baseX += 79;
+        ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer(&codex->types, entry.type), baseX, baseY, 1);
+        baseX += 119;
         
-        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.climates, entry.climate), baseX, baseY, 1);
-        baseX += 79;
-        
-        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.types, entry.type), baseX, baseY, 1);
-        baseX += 79;
-        
-        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.subtypes, entry.subtype), baseX, baseY, 1);
-        baseX += 79;
-        
-        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.sources, entry.source), baseX, baseY, 1);
+        //TODO: Show all subtypes. Right now we only grab one.
+        //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
+        ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer(&codex->subtypes, entry.subtype[0]), baseX, baseY, 1);
+        baseX += 119;
         
         baseY -= 19;
         baseX = 20;
     }
-#endif
+    
     return;
 }
 
-void DrawPage(UIContext *c, TableEntry *entry, PageEntry *page)
+void DrawPage(UIContext *c, PageEntry *page)
 {
+    AssertMsg(FALSE, "Not implemented yet");
+#if 0
     if(page)
     {
     }
@@ -598,6 +645,7 @@ void DrawPage(UIContext *c, TableEntry *entry, PageEntry *page)
         ls_uiLabel(c, U"Fonte: ", 10, baseY);
         ls_uiLabel(c, U"---", valueBaseX, baseY);
     }
+#endif
 }
 
 void DrawCompendium(UIContext *c)
@@ -622,7 +670,7 @@ void DrawCompendium(UIContext *c)
         
         if(compendium.pageIndex != 0) page = compendium.codex.pages + compendium.pageIndex;
         
-        DrawPage(c, compendium.tableEntry, page);
+        //DrawPage(c, compendium.tableEntry, page);
     }
     else
     {
