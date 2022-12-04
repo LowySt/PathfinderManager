@@ -128,22 +128,22 @@ b32 CustomInitFieldText(UIContext *c, void *data)
         if(f->parent == lastAlly) { ls_uiFocusChange(c, 0x0); return inputUse; }
         
         u32 numStrings = 0;
-        unistring *words = ls_unistrSeparateByNumber(parentFields[IF_IDX_NAME].text, &numStrings);
+        utf32 *words = ls_utf32SeparateByNumber(parentFields[IF_IDX_NAME].text, &numStrings);
         
         AssertMsg(words, "The returned words array was null.\n");
         if(!words) { ls_uiFocusChange(c, 0x0); return inputUse; }
         
         if(numStrings != 2) { ls_uiFocusChange(c, 0x0); return inputUse; }
         
-        s64 newNumber = ls_unistrToInt(words[1]) + 1;
-        ls_unistrFromInt_t(&words[1], newNumber);
+        s64 newNumber = ls_utf32ToInt(words[1]) + 1;
+        ls_utf32FromInt_t(&words[1], newNumber);
         
         InitField *next = f->parent + 1;
         UITextBox *nextFields = next->editFields;
         
         ls_uiTextBoxClear(c, &nextFields[IF_IDX_NAME]);
-        ls_unistrSet(&nextFields[IF_IDX_NAME].text, words[0]);
-        ls_unistrAppend(&nextFields[IF_IDX_NAME].text, words[1]);
+        ls_utf32Set(&nextFields[IF_IDX_NAME].text, words[0]);
+        ls_utf32Append(&nextFields[IF_IDX_NAME].text, words[1]);
         nextFields[IF_IDX_NAME].viewEndIdx = nextFields[IF_IDX_NAME].text.len;
         
         //NOTE: We start at i == 1, because the name field has already been handled,
@@ -192,7 +192,7 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     
     if(LeftClick && !h->isEditing && State.inBattle)
     { 
-        ls_unistrSet(&h->previous, f->text);
+        ls_utf32Set(&h->previous, f->text);
         ls_uiTextBoxClear(c, f);
         
         h->isEditing = TRUE;
@@ -204,7 +204,7 @@ b32 CustomMobLifeField(UIContext *c, void *data)
         Order *order = GetOrderByID(h->mob->ID);
         AssertMsg(order, "Could not find order by ID. Fucked up ID?\n");
         
-        s32 diff = ls_unistrToInt(f->text);
+        s32 diff = ls_utf32ToInt(f->text);
         
         ls_uiSliderChangeValueBy(c, &order->field, diff);
         
@@ -242,7 +242,7 @@ b32 ChangeOrder(UIContext *c, void *data)
     
     if(LeftClick && !h->isEditing)
     { 
-        ls_unistrSet(&h->previous, f->text);
+        ls_utf32Set(&h->previous, f->text);
         ls_uiTextBoxClear(c, f);
         
         h->isEditing = TRUE;
@@ -260,8 +260,8 @@ b32 ChangeOrder(UIContext *c, void *data)
         
         Order *order = h->order;
         
-        s32 newPosition = ls_unistrToInt(f->text);
-        s32 oldPosition = ls_unistrToInt(h->previous);
+        s32 newPosition = ls_utf32ToInt(f->text);
+        s32 oldPosition = ls_utf32ToInt(h->previous);
         
         if((newPosition >= visibleOrder) || (newPosition == oldPosition) || (newPosition < 0))
         {
@@ -279,8 +279,8 @@ b32 ChangeOrder(UIContext *c, void *data)
         //
         Order *oldOrder = &Init->OrderFields[oldPosition];
         
-        unistring oldName = {}; 
-        ls_unistrSet(&oldName, oldOrder->field.text);
+        utf32 oldName = {}; 
+        ls_utf32Set(&oldName, oldOrder->field.text);
         
         s32 oldID = oldOrder->ID;
         
@@ -301,7 +301,7 @@ b32 ChangeOrder(UIContext *c, void *data)
                 UISlider *curr = &Init->OrderFields[j].field;
                 UISlider *next = &Init->OrderFields[j+1].field;
                 
-                ls_unistrSet(&curr->text, next->text);
+                ls_utf32Set(&curr->text, next->text);
                 Init->OrderFields[j].ID = Init->OrderFields[j+1].ID;
                 
                 curr->currValue = next->currValue;
@@ -318,7 +318,7 @@ b32 ChangeOrder(UIContext *c, void *data)
                 UISlider *curr = &Init->OrderFields[j].field;
                 UISlider *prev = &Init->OrderFields[j-1].field;
                 
-                ls_unistrSet(&curr->text, prev->text);
+                ls_utf32Set(&curr->text, prev->text);
                 Init->OrderFields[j].ID = Init->OrderFields[j-1].ID;
                 
                 curr->currValue = prev->currValue;
@@ -328,7 +328,7 @@ b32 ChangeOrder(UIContext *c, void *data)
             }
         }
         
-        ls_unistrSet(&Init->OrderFields[newPosition].field.text, oldName);
+        ls_utf32Set(&Init->OrderFields[newPosition].field.text, oldName);
         
         Init->OrderFields[newPosition].ID = oldID;
         Init->OrderFields[newPosition].field.currValue = slideCurr;
@@ -345,7 +345,7 @@ b32 ChangeOrder(UIContext *c, void *data)
         if(Init->currIdx == newPosition)
         { ls_uiTextBoxSet(c, &Init->Current, oldName); }
         
-        ls_unistrFree(&oldName); //TODO: yuck... look upward at horrible temp saving.
+        ls_utf32Free(&oldName); //TODO: yuck... look upward at horrible temp saving.
         
         h->isEditing = FALSE;
         ls_uiFocusChange(c, NULL);
@@ -400,10 +400,10 @@ void OnEncounterSelect(UIContext *c, void *data)
         ls_uiTextBoxClear(c, &t->damage);
         ls_uiTextBoxClear(c, &t->dmgRes);
         
-        ls_unistrSet(&t->name.text, e->throwerName[i]);     t->name.viewEndIdx   = t->name.text.len;
+        ls_utf32Set(&t->name.text, e->throwerName[i]);     t->name.viewEndIdx   = t->name.text.len;
         
-        ls_unistrSet(&t->toHit.text,  e->throwerHit[i]);    t->toHit.viewEndIdx  = t->toHit.text.len;
-        ls_unistrSet(&t->damage.text, e->throwerDamage[i]); t->damage.viewEndIdx = t->damage.text.len;
+        ls_utf32Set(&t->toHit.text,  e->throwerHit[i]);    t->toHit.viewEndIdx  = t->toHit.text.len;
+        ls_utf32Set(&t->damage.text, e->throwerDamage[i]); t->damage.viewEndIdx = t->damage.text.len;
     }
     
     //NOTE: This is to avoid the program never being reset. I don't think it's necessary,
@@ -436,7 +436,7 @@ b32 SaveEncounterOnClick(UIContext *cxt, void *data)
     u32 numEncounters = State.encounters.numEncounters;
     Encounter *curr = State.encounters.Enc + numEncounters;
     
-    ls_unistrSet(&curr->name, State.Init->EncounterName.text);
+    ls_utf32Set(&curr->name, State.Init->EncounterName.text);
     
     curr->numMobs = visibleMobs;
     curr->numAllies = visibleAllies;
@@ -444,23 +444,23 @@ b32 SaveEncounterOnClick(UIContext *cxt, void *data)
     for(u32 i = 0; i < visibleMobs; i++)
     {
         for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
-        { ls_unistrSet(&curr->mob[i][j], State.Init->MobFields[i].editFields[j].text); }
+        { ls_utf32Set(&curr->mob[i][j], State.Init->MobFields[i].editFields[j].text); }
         
-        ls_unistrSet(&curr->mob[i][MOB_INIT_ENC_FIELDS-1], State.Init->MobFields[i].maxLife.text);
+        ls_utf32Set(&curr->mob[i][MOB_INIT_ENC_FIELDS-1], State.Init->MobFields[i].maxLife.text);
     }
     
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        ls_unistrSet(&curr->allyName[i],  State.Init->AllyFields[i].editFields[IF_IDX_NAME].text);
-        ls_unistrSet(&curr->allyBonus[i], State.Init->AllyFields[i].editFields[IF_IDX_BONUS].text);
-        ls_unistrSet(&curr->allyFinal[i], State.Init->AllyFields[i].editFields[IF_IDX_FINAL].text);
+        ls_utf32Set(&curr->allyName[i],  State.Init->AllyFields[i].editFields[IF_IDX_NAME].text);
+        ls_utf32Set(&curr->allyBonus[i], State.Init->AllyFields[i].editFields[IF_IDX_BONUS].text);
+        ls_utf32Set(&curr->allyFinal[i], State.Init->AllyFields[i].editFields[IF_IDX_FINAL].text);
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        ls_unistrSet(&curr->throwerName[i],   State.Init->Throwers[i].name.text);
-        ls_unistrSet(&curr->throwerHit[i],    State.Init->Throwers[i].toHit.text);
-        ls_unistrSet(&curr->throwerDamage[i], State.Init->Throwers[i].damage.text);
+        ls_utf32Set(&curr->throwerName[i],   State.Init->Throwers[i].name.text);
+        ls_utf32Set(&curr->throwerHit[i],    State.Init->Throwers[i].toHit.text);
+        ls_utf32Set(&curr->throwerDamage[i], State.Init->Throwers[i].damage.text);
     }
     
     State.encounters.numEncounters += 1;
@@ -494,24 +494,25 @@ b32 RemoveEncounterOnClick(UIContext *cxt, void *data)
         //NOTE: In this case I have to free memory, else I will leak
         //TODO: Should I change how Encounters are stored to avoid this annoyance?
         
+        //TODO: Why don't I clear instead of free??????
         for(u32 i = 0; i < MOB_NUM; i++)
         {
             for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
-            { ls_unistrFree(&selected->mob[i][j]); }
+            { ls_utf32Free(&selected->mob[i][j]); }
         }
         
         for(u32 i = 0; i < ALLY_NUM; i++)
         {
-            ls_unistrFree(&selected->allyName[i]);
-            ls_unistrFree(&selected->allyBonus[i]);
-            ls_unistrFree(&selected->allyFinal[i]);
+            ls_utf32Free(&selected->allyName[i]);
+            ls_utf32Free(&selected->allyBonus[i]);
+            ls_utf32Free(&selected->allyFinal[i]);
         }
         
         for(u32 i = 0; i < THROWER_NUM; i++)
         {
-            ls_unistrFree(&selected->throwerName[i]);
-            ls_unistrFree(&selected->throwerHit[i]);
-            ls_unistrFree(&selected->throwerDamage[i]);
+            ls_utf32Free(&selected->throwerName[i]);
+            ls_utf32Free(&selected->throwerHit[i]);
+            ls_utf32Free(&selected->throwerDamage[i]);
         }
         
         ls_memcpy(last, selected, sizeof(Encounter));
@@ -531,10 +532,10 @@ b32 ThrowDiceOnClick(UIContext *cxt, void *data)
     if(f == &State.Init->GeneralThrower.throwDie)
     {
         char toThrow[128] = {};
-        s32 len = ls_unistrToAscii_t(&State.Init->GeneralThrower.toHit.text, toThrow, 128);
+        s32 len = ls_utf32ToAscii_t(&State.Init->GeneralThrower.toHit.text, toThrow, 128);
         s32 result = (s32)diceRoll(toThrow, len);
         
-        ls_unistrFromInt_t(&State.Init->GeneralThrower.hitRes.text, result);
+        ls_utf32FromInt_t(&State.Init->GeneralThrower.hitRes.text, result);
         State.Init->GeneralThrower.hitRes.viewEndIdx = State.Init->GeneralThrower.hitRes.text.len;
     }
     else
@@ -548,17 +549,17 @@ b32 ThrowDiceOnClick(UIContext *cxt, void *data)
         DiceThrow *f = State.Init->Throwers + idx;
         
         char toThrow[128] = {};
-        s32 len = ls_unistrToAscii_t(&f->toHit.text, toThrow, 128);
+        s32 len = ls_utf32ToAscii_t(&f->toHit.text, toThrow, 128);
         s32 result = (s32)diceRoll(toThrow, len);
         
-        ls_unistrFromInt_t(&f->hitRes.text, result);
+        ls_utf32FromInt_t(&f->hitRes.text, result);
         f->hitRes.viewEndIdx = f->hitRes.text.len;
         
         char dmgThrow[128] = {};
-        len = ls_unistrToAscii_t(&f->damage.text, dmgThrow, 128);
+        len = ls_utf32ToAscii_t(&f->damage.text, dmgThrow, 128);
         result = (s32)diceRoll(dmgThrow, len);
         
-        ls_unistrFromInt_t(&f->dmgRes.text, result);
+        ls_utf32FromInt_t(&f->dmgRes.text, result);
         f->dmgRes.viewEndIdx = f->dmgRes.text.len;
     }
     
@@ -586,14 +587,14 @@ b32 RollOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->MobFields + i;
         
-        s32 finalVal = ls_unistrToInt(f->editFields[IF_IDX_FINAL].text);
+        s32 finalVal = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         if(finalVal != 0) { continue; }
         
         s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
-        s32 bonus = ls_unistrToInt(f->editFields[IF_IDX_BONUS].text);
+        s32 bonus = ls_utf32ToInt(f->editFields[IF_IDX_BONUS].text);
         
-        ls_unistrClear(&f->editFields[IF_IDX_FINAL].text);
-        ls_unistrFromInt_t(&f->editFields[IF_IDX_FINAL].text, bonus + die);
+        ls_utf32Clear(&f->editFields[IF_IDX_FINAL].text);
+        ls_utf32FromInt_t(&f->editFields[IF_IDX_FINAL].text, bonus + die);
         f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
     }
     
@@ -601,14 +602,14 @@ b32 RollOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->AllyFields + i;
         
-        s32 finalVal = ls_unistrToInt(f->editFields[IF_IDX_FINAL].text);
+        s32 finalVal = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         if(finalVal != 0) { continue; }
         
         s32 die = pcg32_bounded(&pcg32_global, 20) + 1;
-        s32 bonus = ls_unistrToInt(f->editFields[IF_IDX_BONUS].text);
+        s32 bonus = ls_utf32ToInt(f->editFields[IF_IDX_BONUS].text);
         
-        ls_unistrClear(&f->editFields[IF_IDX_FINAL].text);
-        ls_unistrFromInt_t(&f->editFields[IF_IDX_FINAL].text, bonus + die);
+        ls_utf32Clear(&f->editFields[IF_IDX_FINAL].text);
+        ls_utf32FromInt_t(&f->editFields[IF_IDX_FINAL].text, bonus + die);
         f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
     }
     
@@ -632,9 +633,9 @@ b32 SetOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->MobFields + i;
         
-        ord[idx].init    = ls_unistrToInt(f->editFields[IF_IDX_FINAL].text);
+        ord[idx].init    = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         ord[idx].name    = &f->editFields[IF_IDX_NAME].text;
-        ord[idx].maxLife = ls_unistrToInt(f->maxLife.text);
+        ord[idx].maxLife = ls_utf32ToInt(f->maxLife.text);
         ord[idx].ID      = f->ID;
         
         idx += 1;
@@ -644,7 +645,7 @@ b32 SetOnClick(UIContext *cxt, void *data)
     {
         InitField *f = Page->AllyFields + i;
         
-        ord[idx].init    = ls_unistrToInt(f->editFields[IF_IDX_FINAL].text);
+        ord[idx].init    = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         ord[idx].name    = &f->editFields[IF_IDX_NAME].text;
         ord[idx].maxLife = 0;
         ord[idx].ID      = f->ID;
@@ -654,8 +655,8 @@ b32 SetOnClick(UIContext *cxt, void *data)
     
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        ord[idx].init    = ls_unistrToInt(Page->PlayerInit[i].text);
-        ord[idx].name    = (unistring *)(PartyNameUTF32 + i);
+        ord[idx].init    = ls_utf32ToInt(Page->PlayerInit[i].text);
+        ord[idx].name    = (utf32 *)(PartyNameUTF32 + i);
         ord[idx].maxLife = 0;
         ord[idx].ID      = i;
         
@@ -668,14 +669,14 @@ b32 SetOnClick(UIContext *cxt, void *data)
     {
         Order *f = Page->OrderFields + i;
         
-        ls_unistrSet(&f->field.text, *ord[j].name);
+        ls_utf32Set(&f->field.text, *ord[j].name);
         f->field.maxValue = ord[j].maxLife;
         f->ID = ord[j].ID;
         
         //TODO: Make this just a reference to Order[i].field.text ??
         if(i == 0) 
         { 
-            ls_unistrSet(&Page->Current.text, *ord[j].name); 
+            ls_utf32Set(&Page->Current.text, *ord[j].name); 
             Page->Current.viewEndIdx = Page->Current.text.len;
         }
     }
@@ -714,12 +715,12 @@ b32 ResetOnClick(UIContext *cxt, void *data)
     Page->Allies.selectedIndex = 0;
     State.inBattle = FALSE;
     
-    unistring zeroUTF32 = { (u32 *)U"0", 1, 1 };
+    utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
     for(u32 i = 0; i < PARTY_NUM; i++) 
     { 
         ls_uiTextBoxClear(cxt, Page->PlayerInit + i);
-        ls_unistrSet(&Page->PlayerInit[i].text, zeroUTF32);
+        ls_utf32Set(&Page->PlayerInit[i].text, zeroUTF32);
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
     }
     
@@ -729,7 +730,7 @@ b32 ResetOnClick(UIContext *cxt, void *data)
         InitField *f = Page->MobFields + i;
         
         ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_NAME]);
-        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_unistrConstant(MobName[i]));
+        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_utf32Constant(MobName[i]));
         
         for(u32 j = 1; j < IF_IDX_COUNT; j++)
         {
@@ -751,7 +752,7 @@ b32 ResetOnClick(UIContext *cxt, void *data)
         InitField *f = Page->AllyFields + i;
         
         ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_NAME]);
-        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_unistrConstant(AllyName[i]));
+        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_utf32Constant(AllyName[i]));
         
         ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_BONUS]);
         ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_BONUS], zeroUTF32);
@@ -769,7 +770,7 @@ b32 ResetOnClick(UIContext *cxt, void *data)
         
         f->pos.isReadonly = TRUE;
         
-        ls_unistrClear(&f->field.text);
+        ls_utf32Clear(&f->field.text);
         f->field.maxValue = 100;
         f->field.minValue = -30;
         f->field.currPos = 1.0;
@@ -807,9 +808,9 @@ b32 ResetOnClick(UIContext *cxt, void *data)
     
     Page->EncounterSel.selectedIndex = 0;
     
-    ls_unistrClear(&Page->Current.text);
+    ls_utf32Clear(&Page->Current.text);
     
-    ls_unistrSet(&Page->RoundCounter.text, zeroUTF32);
+    ls_utf32Set(&Page->RoundCounter.text, zeroUTF32);
     Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     Page->roundCount = 0;
     
@@ -834,12 +835,12 @@ b32 NextOnClick(UIContext *cxt, void *data)
     if(Page->currIdx == 0)
     {
         Page->roundCount += 1;
-        ls_unistrFromInt_t(&Page->RoundCounter.text, Page->roundCount);
+        ls_utf32FromInt_t(&Page->RoundCounter.text, Page->roundCount);
         Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     }
     
     //NOTE: Set the Current
-    ls_unistrSet(&Page->Current.text, Page->OrderFields[Page->currIdx].field.text);
+    ls_utf32Set(&Page->Current.text, Page->OrderFields[Page->currIdx].field.text);
     Page->Current.viewEndIdx = Page->Current.text.len;
     
     //NOTE: Advance the Counters
@@ -869,7 +870,7 @@ b32 NextOnClick(UIContext *cxt, void *data)
                     continue;
                 }
                 
-                ls_unistrFromInt_t(&C->rounds.text, C->roundsLeft);
+                ls_utf32FromInt_t(&C->rounds.text, C->roundsLeft);
                 C->rounds.viewEndIdx = C->rounds.text.len;
                 
                 continue;
@@ -888,7 +889,7 @@ void CopyOrder(Order *From, Order *To)
     To->field.isHot  = From->field.isHot;
     To->field.isHeld = From->field.isHeld;
     
-    ls_unistrSet(&To->field.text, From->field.text);
+    ls_utf32Set(&To->field.text, From->field.text);
     
     To->field.currValue = From->field.currValue;
     To->field.maxValue  = From->field.maxValue;
@@ -1037,7 +1038,7 @@ b32 StartCounterOnClick(UIContext *cxt, void *data)
     
     if(State.inBattle == FALSE) { return FALSE; }
     
-    s32 val = ls_unistrToInt(C->rounds.text);
+    s32 val = ls_utf32ToInt(C->rounds.text);
     if(val <= 0) { return FALSE; }
     
     C->name.isReadonly   = TRUE;
@@ -1056,7 +1057,7 @@ b32 PlusOneCounterOnClick(UIContext *cxt, void *data)
     Counter *C = (Counter *)data;
     
     C->roundsLeft += 1;
-    ls_unistrFromInt_t(&C->rounds.text, C->roundsLeft);
+    ls_utf32FromInt_t(&C->rounds.text, C->roundsLeft);
     
     return TRUE;
 }
@@ -1124,7 +1125,7 @@ b32 AddConfirmOnClick(UIContext *cxt, void *data)
     
     Order *o = State.Init->OrderFields + visibleOrder;
     
-    ls_unistrSet(&o->field.text, f->addName.text);
+    ls_utf32Set(&o->field.text, f->addName.text);
     ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], f->addName.text);
     
     f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
@@ -1137,7 +1138,7 @@ b32 AddConfirmOnClick(UIContext *cxt, void *data)
         for(u32 i = 2; i < IF_IDX_COUNT-1; i++)
         { f->editFields[i].isReadonly = TRUE; }
         
-        o->field.maxValue = ls_unistrToInt(f->maxLife.text);
+        o->field.maxValue = ls_utf32ToInt(f->maxLife.text);
     }
     
     //NOTE: Because IDs in the InitFields get overwritten when removing from order 
@@ -1163,9 +1164,9 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
         textHandler[i].idx = i;
     }
     
-    unistring zeroUTF32 = { (u32 *)U"0", 1, 1 };
+    utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_unistrConstant(name));
+    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_utf32Constant(name));
     f->editFields[IF_IDX_NAME].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_NAME].data         = &textHandler[0];
     f->editFields[IF_IDX_NAME].isSingleLine = TRUE;
@@ -1176,7 +1177,7 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     f->editFields[IF_IDX_BONUS].data         = &textHandler[1];
     f->editFields[IF_IDX_BONUS].isSingleLine = TRUE;
     
-    f->editFields[IF_IDX_EXTRA].text         = ls_unistrAlloc(16);
+    f->editFields[IF_IDX_EXTRA].text         = ls_utf32Alloc(16);
     f->editFields[IF_IDX_EXTRA].viewEndIdx   = f->editFields[IF_IDX_EXTRA].text.len;
     f->editFields[IF_IDX_EXTRA].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_EXTRA].data         = &textHandler[2];
@@ -1185,7 +1186,7 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     handler->parent   = &f->maxLife;
     handler->mob      = f;
-    handler->previous = ls_unistrAlloc(16);
+    handler->previous = ls_utf32Alloc(16);
     
     ls_uiTextBoxSet(cxt, &f->maxLife, zeroUTF32);
     f->maxLife.maxLen       = 4;
@@ -1242,20 +1243,20 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     f->editFields[IF_IDX_FINAL].isSingleLine = TRUE;
     
     
-    f->addName.text         = ls_unistrAlloc(16);
+    f->addName.text         = ls_utf32Alloc(16);
     f->addName.isSingleLine = TRUE;
-    f->addInit.text         = ls_unistrAlloc(16);
+    f->addInit.text         = ls_utf32Alloc(16);
     f->addInit.maxLen       = 2;
     f->addInit.isSingleLine = TRUE;
     
     f->addNew.style       = UIBUTTON_TEXT;
-    f->addNew.name        = ls_unistrFromUTF32(U"+");
+    f->addNew.name        = ls_utf32FromUTF32(U"+");
     f->addNew.onClick     = AddNewInitOnClick;
     f->addNew.data        = f;
     f->addNew.onHold      = 0x0;
     
     f->addConfirm.style   = UIBUTTON_TEXT;
-    f->addConfirm.name    = ls_unistrFromUTF32(U"Ok");
+    f->addConfirm.name    = ls_utf32FromUTF32(U"Ok");
     f->addConfirm.onClick = AddConfirmOnClick;
     f->addConfirm.data    = f;
     f->addConfirm.onHold  = 0x0;
@@ -1275,7 +1276,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     for(u32 i = 0; i < PARTY_NUM; i++) 
     { 
         UITextBox *f = Page->PlayerInit + i;
-        ls_uiTextBoxSet(c, f, ls_unistrConstant(U"0"));
+        ls_uiTextBoxSet(c, f, ls_utf32Constant(U"0"));
         f->maxLen       = 2;
         f->preInput     = CustomPlayerText;
         f->data         = f;
@@ -1309,7 +1310,8 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         orderHandler->parent = &f->pos;
         orderHandler->order  = f;
         
-        f->pos.text         = ls_unistrFromInt(i);
+        //TODO: Use a constant increasing number table. No point int allocating data for numbers in the [0-24] range
+        f->pos.text         = ls_utf32FromInt(i);
         f->pos.viewEndIdx   = f->pos.text.len;
         f->pos.maxLen       = 2;
         f->pos.preInput     = ChangeOrder;
@@ -1318,37 +1320,38 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->pos.isSingleLine = TRUE;
         
         f->remove.style   = UIBUTTON_TEXT;
-        f->remove.name    = ls_unistrFromUTF32(U"X");
+        f->remove.name    = ls_utf32FromUTF32(U"X");
         f->remove.onClick = RemoveOrderOnClick;
         f->remove.data    = (void *)((u64)i);
         f->remove.onHold  = 0x0;
     }
     
+    //TODO: Many of these strings should be constant, rather than allocated.
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
         Counter *f = Page->Counters + i;
         
-        f->name.text        = ls_unistrAlloc(16);
+        f->name.text        = ls_utf32Alloc(16);
         f->name.isSingleLine = TRUE;
         
-        f->rounds.text         = ls_unistrAlloc(16);
+        f->rounds.text         = ls_utf32Alloc(16);
         f->rounds.maxLen       = 2;
         f->rounds.isSingleLine = TRUE;
         
         f->start.style   = UIBUTTON_TEXT;
-        f->start.name    = ls_unistrFromUTF32(U"Start");
+        f->start.name    = ls_utf32FromUTF32(U"Start");
         f->start.onClick = StartCounterOnClick;
         f->start.data    = (void *)f;
         f->start.onHold  = 0x0;
         
         f->plusOne.style   = UIBUTTON_TEXT;
-        f->plusOne.name    = ls_unistrFromUTF32(U"+1");
+        f->plusOne.name    = ls_utf32FromUTF32(U"+1");
         f->plusOne.onClick = PlusOneCounterOnClick;
         f->plusOne.data    = (void *)f;
         f->plusOne.onHold  = 0x0;
         
         f->stop.style   = UIBUTTON_TEXT;
-        f->stop.name    = ls_unistrFromUTF32(U"Stop");
+        f->stop.name    = ls_utf32FromUTF32(U"Stop");
         f->stop.onClick = StopCounterOnClick;
         f->stop.data    = (void *)f;
         f->stop.onHold  = 0x0;
@@ -1358,11 +1361,11 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     {
         DiceThrow *f = Page->Throwers + i;
         
-        f->name.text   = ls_unistrAlloc(32);
-        f->toHit.text  = ls_unistrAlloc(32);
-        f->hitRes.text = ls_unistrAlloc(16);
-        f->damage.text = ls_unistrAlloc(32);
-        f->dmgRes.text = ls_unistrAlloc(16);
+        f->name.text   = ls_utf32Alloc(32);
+        f->toHit.text  = ls_utf32Alloc(32);
+        f->hitRes.text = ls_utf32Alloc(16);
+        f->damage.text = ls_utf32Alloc(32);
+        f->dmgRes.text = ls_utf32Alloc(16);
         
         f->name.isSingleLine   = TRUE;
         f->toHit.isSingleLine  = TRUE;
@@ -1377,7 +1380,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->dmgRes.isSingleLine = TRUE;
         
         f->throwDie.style   = UIBUTTON_TEXT;
-        f->throwDie.name    = ls_unistrFromUTF32(U"Go");
+        f->throwDie.name    = ls_utf32FromUTF32(U"Go");
         f->throwDie.onClick = ThrowDiceOnClick;
         f->throwDie.data    = &f->throwDie;
         f->throwDie.onHold  = 0x0;
@@ -1385,11 +1388,11 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     
     {
         // General Thrower
-        Page->GeneralThrower.name.text     = ls_unistrAlloc(32);
-        Page->GeneralThrower.toHit.text    = ls_unistrAlloc(32);
-        Page->GeneralThrower.hitRes.text   = ls_unistrAlloc(16);
-        Page->GeneralThrower.damage.text   = ls_unistrAlloc(32);
-        Page->GeneralThrower.dmgRes.text   = ls_unistrAlloc(16);
+        Page->GeneralThrower.name.text     = ls_utf32Alloc(32);
+        Page->GeneralThrower.toHit.text    = ls_utf32Alloc(32);
+        Page->GeneralThrower.hitRes.text   = ls_utf32Alloc(16);
+        Page->GeneralThrower.damage.text   = ls_utf32Alloc(32);
+        Page->GeneralThrower.dmgRes.text   = ls_utf32Alloc(16);
         
         Page->GeneralThrower.name.isSingleLine  = TRUE;
         Page->GeneralThrower.toHit.isSingleLine = TRUE;
@@ -1403,7 +1406,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         Page->GeneralThrower.dmgRes.isSingleLine = TRUE;
         
         Page->GeneralThrower.throwDie.style   = UIBUTTON_TEXT;
-        Page->GeneralThrower.throwDie.name    = ls_unistrFromUTF32(U"Go");
+        Page->GeneralThrower.throwDie.name    = ls_utf32FromUTF32(U"Go");
         Page->GeneralThrower.throwDie.onClick = ThrowDiceOnClick;
         Page->GeneralThrower.throwDie.data    = &Page->GeneralThrower.throwDie;
         Page->GeneralThrower.throwDie.onHold  = 0x0;
@@ -1413,60 +1416,60 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     {
         Page->EncounterSel.onSelect = OnEncounterSelect;
         Page->EncounterSel.data = &Page->EncounterSel;
-        ls_uiListBoxAddEntry(c, &Page->EncounterSel, ls_unistrConstant(NoEncounterStr));
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, ls_utf32Constant(NoEncounterStr));
         for(u32 i = 0; i < PState->encounters.numEncounters; i++)
         { ls_uiListBoxAddEntry(c, &Page->EncounterSel, PState->encounters.Enc[i].name); }
         
-        Page->EncounterName.text         = ls_unistrAlloc(16);
+        Page->EncounterName.text         = ls_utf32Alloc(16);
         Page->EncounterName.isSingleLine = TRUE;
     }
     
     
     Page->SaveEnc.style     = UIBUTTON_TEXT;
-    Page->SaveEnc.name      = ls_unistrFromUTF32(U"Save");
+    Page->SaveEnc.name      = ls_utf32FromUTF32(U"Save");
     Page->SaveEnc.onClick   = SaveEncounterOnClick;
     Page->SaveEnc.data      = 0x0;
     
     Page->RemoveEnc.style   = UIBUTTON_TEXT;
-    Page->RemoveEnc.name    = ls_unistrFromUTF32(U"X");
+    Page->RemoveEnc.name    = ls_utf32FromUTF32(U"X");
     Page->RemoveEnc.onClick = RemoveEncounterOnClick;
     
-    Page->Current.text         = ls_unistrAlloc(16);
+    Page->Current.text         = ls_utf32Alloc(16);
     Page->Current.isReadonly   = TRUE;
     Page->Current.isSingleLine = TRUE;
     
-    Page->RoundCounter.text         = ls_unistrFromUTF32(U"0");
+    Page->RoundCounter.text         = ls_utf32FromUTF32(U"0");
     Page->RoundCounter.viewEndIdx   = Page->RoundCounter.text.len;
     Page->RoundCounter.isReadonly   = TRUE;
     Page->RoundCounter.isSingleLine = TRUE;
     
     Page->Roll.style    = UIBUTTON_TEXT;
-    Page->Roll.name     = ls_unistrFromUTF32(U"Roll");
+    Page->Roll.name     = ls_utf32FromUTF32(U"Roll");
     Page->Roll.onClick  = RollOnClick;
     Page->Roll.onHold   = 0x0;
     
     Page->Set.style     = UIBUTTON_TEXT;
-    Page->Set.name      = ls_unistrFromUTF32(U"Set");
+    Page->Set.name      = ls_utf32FromUTF32(U"Set");
     Page->Set.onClick   = SetOnClick;
     Page->Set.onHold    = 0x0;
     
     Page->Reset.style   = UIBUTTON_TEXT;
-    Page->Reset.name    = ls_unistrFromUTF32(U"Reset");
+    Page->Reset.name    = ls_utf32FromUTF32(U"Reset");
     Page->Reset.onClick = ResetOnClick;
     Page->Reset.onHold  = 0x0;
     
     Page->Next.style    = UIBUTTON_TEXT;
-    Page->Next.name     = ls_unistrFromUTF32(U"Next");
+    Page->Next.name     = ls_utf32FromUTF32(U"Next");
     Page->Next.onClick  = NextOnClick;
     Page->Next.onHold   = 0x0;
     
     Page->Undo.style    = UIBUTTON_TEXT;
-    Page->Undo.name     = ls_unistrFromUTF32(U"<-");
+    Page->Undo.name     = ls_utf32FromUTF32(U"<-");
     Page->Undo.onClick  = RequestUndoOnClick;
     Page->Undo.onHold   = 0x0;
     
     Page->Redo.style    = UIBUTTON_TEXT;
-    Page->Redo.name     = ls_unistrFromUTF32(U"->");
+    Page->Redo.name     = ls_utf32FromUTF32(U"->");
     Page->Redo.onClick  = RequestRedoOnClick;
     Page->Redo.onHold   = 0x0;
 }
@@ -1627,7 +1630,7 @@ b32 DrawDefaultStyle(UIContext *cxt)
         {
             Counter *f = Page->Counters + i;
             
-            ls_uiLabel(cxt, ls_unistrConstant(CounterNames[i]), 20, yPos+24);
+            ls_uiLabel(cxt, ls_utf32Constant(CounterNames[i]), 20, yPos+24);
             
             inputUse |= ls_uiTextBox(cxt, &f->name, 20, yPos, 100, 20);
             inputUse |= ls_uiTextBox(cxt, &f->rounds, 125, yPos, 36, 20);
@@ -1849,7 +1852,7 @@ b32 DrawPranaStyle(UIContext *c)
         if((i % 3) == 1) { yPos = 76; }
         if((i % 3) == 2) { yPos = 28; xDiff = 216; }
         
-        ls_uiLabel(c, ls_unistrConstant(CounterNames[i]), xPos, yPos+24);
+        ls_uiLabel(c, ls_utf32Constant(CounterNames[i]), xPos, yPos+24);
         
         inputUse |= ls_uiTextBox(c, &f->name, xPos, yPos, 100, 20);
         inputUse |= ls_uiTextBox(c, &f->rounds, xPos + 105, yPos, 36, 20);

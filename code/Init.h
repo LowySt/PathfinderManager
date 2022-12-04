@@ -6,7 +6,7 @@
 
 const u32 PARTY_NUM = 4;
 const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Sigismondo", U"Alice", U"Bruce" };
-const unistring PartyNameUTF32[PARTY_NUM] = { 
+const utf32 PartyNameUTF32[PARTY_NUM] = { 
     {(u32 *)PartyName[0], 5, 5}, 
     {(u32 *)PartyName[1], 10, 10}, 
     {(u32 *)PartyName[2], 5, 5},
@@ -52,11 +52,11 @@ const u32 PRANA_THROWER_NUM = 8;
 const char32_t *NoEncounterStr = U"No Selection";
 
 struct tmp_order {
-    s32 init;
-    unistring *name;
-    s32 maxLife;
+    s32    init;
+    utf32 *name;
+    s32    maxLife;
     
-    s32 ID;
+    s32    ID;
 };
 
 
@@ -68,8 +68,8 @@ struct MobLifeHandler
     InitField *mob;
     UITextBox *parent;
     
-    unistring previous;
-    b32 isEditing;
+    utf32      previous;
+    b32        isEditing;
 };
 
 struct Order;
@@ -78,7 +78,7 @@ struct OrderHandler
     Order     *order;
     UITextBox *parent;
     
-    unistring  previous;
+    utf32      previous;
     b32        isEditing;
 };
 

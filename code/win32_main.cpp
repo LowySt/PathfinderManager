@@ -165,7 +165,7 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         Order *From = curr->OrderFields + i;
         Order *To   = dest->OrderFields + i;
         
-        ls_unistrSet(&To->field.text, From->field.text);
+        ls_utf32Set(&To->field.text, From->field.text);
         To->field.currValue = From->field.currValue;
         To->field.maxValue  = From->field.maxValue;
         To->field.minValue  = From->field.minValue;
@@ -357,7 +357,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     RegionTimer frameTime = {};
     
     b32 Running = TRUE;
-    unistring frameTimeString = ls_unistrAlloc(8);
+    utf32 frameTimeString = ls_utf32Alloc(8);
     b32 showDebug = FALSE;
     b32 userInputConsumed = FALSE;
     
@@ -506,7 +506,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(showDebug)
         {
             ls_uiFillRect(uiContext, 1248, 760, 20, 20, 0, uiContext->width, 0, uiContext->height, uiContext->backgroundColor);
-            ls_unistrFromInt_t(&frameTimeString, uiContext->dt);
+            ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
             ls_uiGlyphString(uiContext, 1248, 760, 0, uiContext->width, 0, uiContext->height, frameTimeString, RGBg(0xEE));
         }
         

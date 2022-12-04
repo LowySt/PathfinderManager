@@ -10,7 +10,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
     
     //8+(4*PARTY_NUM)
     for(u32 i = 0; i < PARTY_NUM; i++)
-    { ls_bufferAddUnistring(buf, init->PlayerInit[i].text); }
+    { ls_bufferAddUTF32(buf, init->PlayerInit[i].text); }
     
     //20 + [(4*IDX_COUNT) + 20]*ALLY_NUM = 20 + (64*ALLY_NUM) = 532
     for(u32 i = 0; i < ALLY_NUM; i++)
@@ -18,11 +18,11 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         InitField *ally = init->AllyFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_bufferAddUnistring(buf, ally->editFields[j].text); }
+        { ls_bufferAddUTF32(buf, ally->editFields[j].text); }
         
-        ls_bufferAddUnistring(buf, ally->maxLife.text);
-        ls_bufferAddUnistring(buf, ally->addName.text);
-        ls_bufferAddUnistring(buf, ally->addInit.text);
+        ls_bufferAddUTF32(buf, ally->maxLife.text);
+        ls_bufferAddUTF32(buf, ally->addName.text);
+        ls_bufferAddUTF32(buf, ally->addInit.text);
         
         ls_bufferAddDWord(buf, ally->isAdding);
         ls_bufferAddDWord(buf, ally->ID);
@@ -34,11 +34,11 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         InitField *mob = init->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_bufferAddUnistring(buf, mob->editFields[j].text); }
+        { ls_bufferAddUTF32(buf, mob->editFields[j].text); }
         
-        ls_bufferAddUnistring(buf, mob->maxLife.text);
-        ls_bufferAddUnistring(buf, mob->addName.text);
-        ls_bufferAddUnistring(buf, mob->addInit.text);
+        ls_bufferAddUTF32(buf, mob->maxLife.text);
+        ls_bufferAddUTF32(buf, mob->addName.text);
+        ls_bufferAddUTF32(buf, mob->addInit.text);
         
         ls_bufferAddDWord(buf, mob->isAdding);
         ls_bufferAddDWord(buf, mob->ID);
@@ -49,7 +49,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
     {
         Order *order = init->OrderFields + i;
         
-        ls_bufferAddUnistring(buf, order->field.text);
+        ls_bufferAddUTF32(buf, order->field.text);
         ls_bufferAddDWord(buf, order->field.currValue);
         ls_bufferAddDWord(buf, order->field.maxValue);
         ls_bufferAddDWord(buf, order->field.minValue);
@@ -64,10 +64,10 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
     ls_bufferAddDWord(buf, init->turnsInRound);
     ls_bufferAddDWord(buf, init->orderAdjust);
     
-    ls_bufferAddUnistring(buf, init->RoundCounter.text);
+    ls_bufferAddUTF32(buf, init->RoundCounter.text);
     ls_bufferAddDWord(buf, init->roundCount);
     
-    ls_bufferAddUnistring(buf, init->Current.text);
+    ls_bufferAddUTF32(buf, init->Current.text);
     ls_bufferAddDWord(buf, init->currIdx);
     
     //3.352 + (24*COUNTER_NUM) = 3.568
@@ -75,8 +75,8 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
     {
         Counter *counter = init->Counters + i;
         
-        ls_bufferAddUnistring(buf, counter->name.text);
-        ls_bufferAddUnistring(buf, counter->rounds.text);
+        ls_bufferAddUTF32(buf, counter->name.text);
+        ls_bufferAddUTF32(buf, counter->rounds.text);
         
         ls_bufferAddDWord(buf, counter->roundsLeft);
         ls_bufferAddDWord(buf, counter->startIdxInOrder);
@@ -89,19 +89,19 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
     {
         DiceThrow *thrower = init->Throwers + i;
         
-        ls_bufferAddUnistring(buf, thrower->name.text);
-        ls_bufferAddUnistring(buf, thrower->toHit.text);
-        ls_bufferAddUnistring(buf, thrower->hitRes.text);
-        ls_bufferAddUnistring(buf, thrower->damage.text);
-        ls_bufferAddUnistring(buf, thrower->dmgRes.text);
+        ls_bufferAddUTF32(buf, thrower->name.text);
+        ls_bufferAddUTF32(buf, thrower->toHit.text);
+        ls_bufferAddUTF32(buf, thrower->hitRes.text);
+        ls_bufferAddUTF32(buf, thrower->damage.text);
+        ls_bufferAddUTF32(buf, thrower->dmgRes.text);
     }
     
     //3.728 + 28 = 3.756 bytes in an Undo State
-    ls_bufferAddUnistring(buf, init->GeneralThrower.name.text);
-    ls_bufferAddUnistring(buf, init->GeneralThrower.toHit.text);
-    ls_bufferAddUnistring(buf, init->GeneralThrower.hitRes.text);
-    ls_bufferAddUnistring(buf, init->GeneralThrower.damage.text);
-    ls_bufferAddUnistring(buf, init->GeneralThrower.dmgRes.text);
+    ls_bufferAddUTF32(buf, init->GeneralThrower.name.text);
+    ls_bufferAddUTF32(buf, init->GeneralThrower.toHit.text);
+    ls_bufferAddUTF32(buf, init->GeneralThrower.hitRes.text);
+    ls_bufferAddUTF32(buf, init->GeneralThrower.damage.text);
+    ls_bufferAddUTF32(buf, init->GeneralThrower.dmgRes.text);
     
     ls_bufferAddDWord(buf, init->EncounterSel.selectedIndex);
     
@@ -118,18 +118,18 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
     init->Allies.selectedIndex = (s32)ls_bufferReadDWord(buf);
     
     for(u32 i = 0; i < PARTY_NUM; i++)
-    { ls_bufferReadIntoUnistring(buf, &init->PlayerInit[i].text); }
+    { ls_bufferReadIntoUTF32(buf, &init->PlayerInit[i].text); }
     
     for(u32 i = 0; i < ALLY_NUM; i++)
     {
         InitField *ally = init->AllyFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_bufferReadIntoUnistring(buf, &ally->editFields[j].text); }
+        { ls_bufferReadIntoUTF32(buf, &ally->editFields[j].text); }
         
-        ls_bufferReadIntoUnistring(buf, &ally->maxLife.text);
-        ls_bufferReadIntoUnistring(buf, &ally->addName.text);
-        ls_bufferReadIntoUnistring(buf, &ally->addInit.text);
+        ls_bufferReadIntoUTF32(buf, &ally->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &ally->addName.text);
+        ls_bufferReadIntoUTF32(buf, &ally->addInit.text);
         
         ally->isAdding = ls_bufferReadDWord(buf);
         ally->ID       = ls_bufferReadDWord(buf);
@@ -140,11 +140,11 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         InitField *mob = init->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_bufferReadIntoUnistring(buf, &mob->editFields[j].text); }
+        { ls_bufferReadIntoUTF32(buf, &mob->editFields[j].text); }
         
-        ls_bufferReadIntoUnistring(buf, &mob->maxLife.text);
-        ls_bufferReadIntoUnistring(buf, &mob->addName.text);
-        ls_bufferReadIntoUnistring(buf, &mob->addInit.text);
+        ls_bufferReadIntoUTF32(buf, &mob->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &mob->addName.text);
+        ls_bufferReadIntoUTF32(buf, &mob->addInit.text);
         
         mob->isAdding = ls_bufferReadDWord(buf);
         mob->ID       = ls_bufferReadDWord(buf);
@@ -154,7 +154,7 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
     {
         Order *order = init->OrderFields + i;
         
-        ls_bufferReadIntoUnistring(buf, &order->field.text);
+        ls_bufferReadIntoUTF32(buf, &order->field.text);
         order->field.currValue = ls_bufferReadDWord(buf);
         order->field.maxValue  = ls_bufferReadDWord(buf);
         order->field.minValue  = ls_bufferReadDWord(buf);
@@ -169,18 +169,18 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
     init->turnsInRound = ls_bufferReadDWord(buf);
     init->orderAdjust = ls_bufferReadDWord(buf);
     
-    ls_bufferReadIntoUnistring(buf, &init->RoundCounter.text);
+    ls_bufferReadIntoUTF32(buf, &init->RoundCounter.text);
     init->roundCount = ls_bufferReadDWord(buf);
     
-    ls_bufferReadIntoUnistring(buf, &init->Current.text);
+    ls_bufferReadIntoUTF32(buf, &init->Current.text);
     init->currIdx = ls_bufferReadDWord(buf);
     
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
         Counter *counter = init->Counters + i;
         
-        ls_bufferReadIntoUnistring(buf, &counter->name.text);
-        ls_bufferReadIntoUnistring(buf, &counter->rounds.text);
+        ls_bufferReadIntoUTF32(buf, &counter->name.text);
+        ls_bufferReadIntoUTF32(buf, &counter->rounds.text);
         
         counter->roundsLeft = ls_bufferReadDWord(buf);
         counter->startIdxInOrder = ls_bufferReadDWord(buf);
@@ -192,18 +192,18 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
     {
         DiceThrow *thrower = init->Throwers + i;
         
-        ls_bufferReadIntoUnistring(buf, &thrower->name.text);
-        ls_bufferReadIntoUnistring(buf, &thrower->toHit.text);
-        ls_bufferReadIntoUnistring(buf, &thrower->hitRes.text);
-        ls_bufferReadIntoUnistring(buf, &thrower->damage.text);
-        ls_bufferReadIntoUnistring(buf, &thrower->dmgRes.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->name.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->toHit.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->hitRes.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->damage.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->dmgRes.text);
     }
     
-    ls_bufferReadIntoUnistring(buf, &init->GeneralThrower.name.text);
-    ls_bufferReadIntoUnistring(buf, &init->GeneralThrower.toHit.text);
-    ls_bufferReadIntoUnistring(buf, &init->GeneralThrower.hitRes.text);
-    ls_bufferReadIntoUnistring(buf, &init->GeneralThrower.damage.text);
-    ls_bufferReadIntoUnistring(buf, &init->GeneralThrower.dmgRes.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.name.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.toHit.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.hitRes.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.damage.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.dmgRes.text);
     
     
     init->EncounterSel.selectedIndex = ls_bufferReadDWord(buf);
@@ -251,9 +251,9 @@ buffer ConvertSaveToV4(buffer *buff)
     //NOTE: Encounters
     for(u32 i = 0; i < numEncounters; i++)
     {
-        unistring name = ls_bufferReadUnistring(buff);
-        ls_bufferAddUnistring(out, name);
-        ls_unistrFree(&name);
+        utf32 name = ls_bufferReadUTF32(buff);
+        ls_bufferAddUTF32(out, name);
+        ls_utf32Free(&name);
         
         u32 numMobs = ls_bufferReadDWord(buff);
         ls_bufferAddDWord(out, numMobs);
@@ -267,9 +267,9 @@ buffer ConvertSaveToV4(buffer *buff)
             
             for(u32 k = 0; k < encounterFields; k++) 
             { 
-                unistring mobField = ls_bufferReadUnistring(buff);
-                ls_bufferAddUnistring(out, mobField); 
-                ls_unistrFree(&mobField);
+                utf32 mobField = ls_bufferReadUTF32(buff);
+                ls_bufferAddUTF32(out, mobField); 
+                ls_utf32Free(&mobField);
             }
             
             // NOTE: Make sure the newer version has all data properly padded if older is missing it.
@@ -277,7 +277,7 @@ buffer ConvertSaveToV4(buffer *buff)
             {
                 u32 diff = MOB_INIT_ENC_FIELDS_V4 - MOB_INIT_ENC_FIELDS_V3;
                 for(u32 k = 0; k < diff; k++) 
-                { ls_bufferAddUnistring(out, {NULL, 0, 0}); }
+                { ls_bufferAddUTF32(out, {NULL, 0, 0}); }
                 
             }
         }
@@ -287,17 +287,17 @@ buffer ConvertSaveToV4(buffer *buff)
         
         for(u32 j = 0; j < numAllies; j++)
         {
-            unistring name  = ls_bufferReadUnistring(buff);
-            unistring bonus = ls_bufferReadUnistring(buff);
-            unistring final = ls_bufferReadUnistring(buff);
+            utf32 name  = ls_bufferReadUTF32(buff);
+            utf32 bonus = ls_bufferReadUTF32(buff);
+            utf32 final = ls_bufferReadUTF32(buff);
             
-            ls_bufferAddUnistring(out, name);
-            ls_bufferAddUnistring(out, bonus);
-            ls_bufferAddUnistring(out, final);
+            ls_bufferAddUTF32(out, name);
+            ls_bufferAddUTF32(out, bonus);
+            ls_bufferAddUTF32(out, final);
             
-            ls_unistrFree(&name);
-            ls_unistrFree(&bonus);
-            ls_unistrFree(&final);
+            ls_utf32Free(&name);
+            ls_utf32Free(&bonus);
+            ls_utf32Free(&final);
         }
         
         //NOTE: Discrepancy in non-variable data has to be taken into account.
@@ -306,17 +306,17 @@ buffer ConvertSaveToV4(buffer *buff)
         
         for(u32 j = 0; j < throwerNum; j++)
         {
-            unistring name  = ls_bufferReadUnistring(buff);
-            unistring hit   = ls_bufferReadUnistring(buff);
-            unistring dmg   = ls_bufferReadUnistring(buff);
+            utf32 name  = ls_bufferReadUTF32(buff);
+            utf32 hit   = ls_bufferReadUTF32(buff);
+            utf32 dmg   = ls_bufferReadUTF32(buff);
             
-            ls_bufferAddUnistring(out, name);
-            ls_bufferAddUnistring(out, hit);
-            ls_bufferAddUnistring(out, dmg);
+            ls_bufferAddUTF32(out, name);
+            ls_bufferAddUTF32(out, hit);
+            ls_bufferAddUTF32(out, dmg);
             
-            ls_unistrFree(&name);
-            ls_unistrFree(&hit);
-            ls_unistrFree(&dmg);
+            ls_utf32Free(&name);
+            ls_utf32Free(&hit);
+            ls_utf32Free(&dmg);
         }
         
         // NOTE: Make sure the newer version has all data properly padded if older is missing it.
@@ -325,9 +325,9 @@ buffer ConvertSaveToV4(buffer *buff)
             u32 diff = THROWER_NUM_V4 - THROWER_NUM_V3;
             for(u32 k = 0; k < diff; k++) 
             { 
-                ls_bufferAddUnistring(out, {NULL, 0, 0});
-                ls_bufferAddUnistring(out, {NULL, 0, 0});
-                ls_bufferAddUnistring(out, {NULL, 0, 0});
+                ls_bufferAddUTF32(out, {NULL, 0, 0});
+                ls_bufferAddUTF32(out, {NULL, 0, 0});
+                ls_bufferAddUTF32(out, {NULL, 0, 0});
             }
             
         }
@@ -359,9 +359,9 @@ buffer ConvertSaveToV4(buffer *buff)
     //NOTE: Player Initiative
     for(u32 i = 0; i < PARTY_NUM_V3; i++)
     {
-        unistring init = ls_bufferReadUnistring(buff);
-        ls_bufferAddUnistring(out, init);
-        ls_unistrFree(&init);
+        utf32 init = ls_bufferReadUTF32(buff);
+        ls_bufferAddUTF32(out, init);
+        ls_utf32Free(&init);
     }
     
     //NOTE: Mob Initiative
@@ -377,9 +377,9 @@ buffer ConvertSaveToV4(buffer *buff)
         
         for(u32 k = 0; k < encounterFields; k++) 
         { 
-            unistring mobField = ls_bufferReadUnistring(buff);
-            ls_bufferAddUnistring(out, mobField); 
-            ls_unistrFree(&mobField);
+            utf32 mobField = ls_bufferReadUTF32(buff);
+            ls_bufferAddUTF32(out, mobField); 
+            ls_utf32Free(&mobField);
         }
         
         // NOTE: Make sure the newer version has all data properly padded if older is missing it.
@@ -387,13 +387,13 @@ buffer ConvertSaveToV4(buffer *buff)
         {
             u32 diff = IF_IDX_COUNT_V4 - IF_IDX_COUNT_V3;
             for(u32 k = 0; k < diff; k++) 
-            { ls_bufferAddUnistring(out, {NULL, 0, 0}); }
+            { ls_bufferAddUTF32(out, {NULL, 0, 0}); }
             
         }
         
-        unistring maxLife = ls_bufferReadUnistring(buff);
-        ls_bufferAddUnistring(out, maxLife);
-        ls_unistrFree(&maxLife);
+        utf32 maxLife = ls_bufferReadUTF32(buff);
+        ls_bufferAddUTF32(out, maxLife);
+        ls_utf32Free(&maxLife);
         
         ls_bufferAddDWord(out, ls_bufferReadDWord(buff)); //f->ID
     }
@@ -405,17 +405,17 @@ buffer ConvertSaveToV4(buffer *buff)
     
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        unistring name  = ls_bufferReadUnistring(buff);
-        unistring bonus = ls_bufferReadUnistring(buff);
-        unistring final = ls_bufferReadUnistring(buff);
+        utf32 name  = ls_bufferReadUTF32(buff);
+        utf32 bonus = ls_bufferReadUTF32(buff);
+        utf32 final = ls_bufferReadUTF32(buff);
         
-        ls_bufferAddUnistring(out, name);
-        ls_bufferAddUnistring(out, bonus);
-        ls_bufferAddUnistring(out, final);
+        ls_bufferAddUTF32(out, name);
+        ls_bufferAddUTF32(out, bonus);
+        ls_bufferAddUTF32(out, final);
         
-        ls_unistrFree(&name);
-        ls_unistrFree(&bonus);
-        ls_unistrFree(&final);
+        ls_utf32Free(&name);
+        ls_utf32Free(&bonus);
+        ls_utf32Free(&final);
         
         ls_bufferAddDWord(out, ls_bufferReadDWord(buff)); //f->ID
     }
@@ -427,9 +427,9 @@ buffer ConvertSaveToV4(buffer *buff)
     for(u32 i = 0; i < visibleOrder; i++)
     {
         
-        unistring name = ls_bufferReadUnistring(buff);
-        ls_bufferAddUnistring(out, name);
-        ls_unistrFree(&name);
+        utf32 name = ls_bufferReadUTF32(buff);
+        ls_bufferAddUTF32(out, name);
+        ls_utf32Free(&name);
         
         ls_bufferAddDWord(out, ls_bufferReadDWord(buff)); //f->field.maxValue
         ls_bufferAddDWord(out, ls_bufferReadDWord(buff)); //f->field.minValue
@@ -449,9 +449,9 @@ buffer ConvertSaveToV4(buffer *buff)
     {
         ls_bufferAddDWord(out, ls_bufferReadDWord(buff)); //Page->currIdx
         
-        unistring current = ls_bufferReadUnistring(buff);
-        ls_bufferAddUnistring(out, current);
-        ls_unistrFree(&current);
+        utf32 current = ls_bufferReadUTF32(buff);
+        ls_bufferAddUTF32(out, current);
+        ls_utf32Free(&current);
     }
     
     
@@ -459,22 +459,22 @@ buffer ConvertSaveToV4(buffer *buff)
     {
         ls_bufferAddDWord(out, ls_bufferReadDWord(buff)); //Page->roundCount
         
-        unistring counter = ls_bufferReadUnistring(buff);
-        ls_bufferAddUnistring(out, counter);
-        ls_unistrFree(&counter);
+        utf32 counter = ls_bufferReadUTF32(buff);
+        ls_bufferAddUTF32(out, counter);
+        ls_utf32Free(&counter);
     }
     
     //NOTE: There's no difference between COUNTER_NUM_V3 and COUNTER_NUM_V4
     //NOTE: Counters
     for(u32 i = 0; i < COUNTER_NUM_V3; i++)
     {
-        unistring name = ls_bufferReadUnistring(buff);
-        ls_bufferAddUnistring(out, name);
-        ls_unistrFree(&name);
+        utf32 name = ls_bufferReadUTF32(buff);
+        ls_bufferAddUTF32(out, name);
+        ls_utf32Free(&name);
         
-        unistring rounds = ls_bufferReadUnistring(buff);
-        ls_bufferAddUnistring(out, rounds);
-        ls_unistrFree(&rounds);
+        utf32 rounds = ls_bufferReadUTF32(buff);
+        ls_bufferAddUTF32(out, rounds);
+        ls_utf32Free(&rounds);
         
         
         ls_bufferAddDWord(out, ls_bufferReadDWord(buff)); //C->roundsLeft
@@ -487,23 +487,23 @@ buffer ConvertSaveToV4(buffer *buff)
     //NOTE: Throwers
     for(u32 i = 0; i < THROWER_NUM_V3; i++)
     {
-        unistring name   = ls_bufferReadUnistring(buff);
-        unistring toHit  = ls_bufferReadUnistring(buff);
-        unistring hitRes = ls_bufferReadUnistring(buff);
-        unistring damage = ls_bufferReadUnistring(buff);
-        unistring dmgRes = ls_bufferReadUnistring(buff);
+        utf32 name   = ls_bufferReadUTF32(buff);
+        utf32 toHit  = ls_bufferReadUTF32(buff);
+        utf32 hitRes = ls_bufferReadUTF32(buff);
+        utf32 damage = ls_bufferReadUTF32(buff);
+        utf32 dmgRes = ls_bufferReadUTF32(buff);
         
-        ls_bufferAddUnistring(out, name);
-        ls_bufferAddUnistring(out, toHit);
-        ls_bufferAddUnistring(out, hitRes);
-        ls_bufferAddUnistring(out, damage);
-        ls_bufferAddUnistring(out, dmgRes);
+        ls_bufferAddUTF32(out, name);
+        ls_bufferAddUTF32(out, toHit);
+        ls_bufferAddUTF32(out, hitRes);
+        ls_bufferAddUTF32(out, damage);
+        ls_bufferAddUTF32(out, dmgRes);
         
-        ls_unistrFree(&name);
-        ls_unistrFree(&toHit);
-        ls_unistrFree(&hitRes);
-        ls_unistrFree(&damage);
-        ls_unistrFree(&dmgRes);
+        ls_utf32Free(&name);
+        ls_utf32Free(&toHit);
+        ls_utf32Free(&hitRes);
+        ls_utf32Free(&damage);
+        ls_utf32Free(&dmgRes);
     }
     
     ls_bufferDestroy(buff);
@@ -555,28 +555,28 @@ void SaveState(UIContext *c)
     {
         Encounter *curr = &State.encounters.Enc[i];
         
-        ls_bufferAddUnistring(buf, curr->name);
+        ls_bufferAddUTF32(buf, curr->name);
         ls_bufferAddDWord(buf, curr->numMobs);
         
         for(u32 j = 0; j < curr->numMobs; j++)
         {
             for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
-            { ls_bufferAddUnistring(buf, curr->mob[j][k]); }
+            { ls_bufferAddUTF32(buf, curr->mob[j][k]); }
         }
         
         ls_bufferAddDWord(buf, curr->numAllies);
         for(u32 j = 0; j < curr->numAllies; j++)
         {
-            ls_bufferAddUnistring(buf, curr->allyName[j]);
-            ls_bufferAddUnistring(buf, curr->allyBonus[j]);
-            ls_bufferAddUnistring(buf, curr->allyFinal[j]);
+            ls_bufferAddUTF32(buf, curr->allyName[j]);
+            ls_bufferAddUTF32(buf, curr->allyBonus[j]);
+            ls_bufferAddUTF32(buf, curr->allyFinal[j]);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
         {
-            ls_bufferAddUnistring(buf, curr->throwerName[j]);
-            ls_bufferAddUnistring(buf, curr->throwerHit[j]);
-            ls_bufferAddUnistring(buf, curr->throwerDamage[j]);
+            ls_bufferAddUTF32(buf, curr->throwerName[j]);
+            ls_bufferAddUTF32(buf, curr->throwerHit[j]);
+            ls_bufferAddUTF32(buf, curr->throwerDamage[j]);
         }
         
     }
@@ -603,7 +603,7 @@ void SaveState(UIContext *c)
     ls_bufferAddDWord(buf, PARTY_NUM);
     
     for(u32 i = 0; i < PARTY_NUM; i++)
-    { ls_bufferAddUnistring(buf, Page->PlayerInit[i].text); }
+    { ls_bufferAddUTF32(buf, Page->PlayerInit[i].text); }
     
     
     //NOTE: Serialize Mob Initiative
@@ -613,9 +613,9 @@ void SaveState(UIContext *c)
         InitField *f = Page->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_bufferAddUnistring(buf, f->editFields[j].text); }
+        { ls_bufferAddUTF32(buf, f->editFields[j].text); }
         
-        ls_bufferAddUnistring(buf, f->maxLife.text);
+        ls_bufferAddUTF32(buf, f->maxLife.text);
         
         ls_bufferAddDWord(buf, f->ID);
     }
@@ -627,9 +627,9 @@ void SaveState(UIContext *c)
     {
         InitField *f = Page->AllyFields + i;
         
-        ls_bufferAddUnistring(buf, f->editFields[IF_IDX_NAME].text);
-        ls_bufferAddUnistring(buf, f->editFields[IF_IDX_BONUS].text);
-        ls_bufferAddUnistring(buf, f->editFields[IF_IDX_FINAL].text);
+        ls_bufferAddUTF32(buf, f->editFields[IF_IDX_NAME].text);
+        ls_bufferAddUTF32(buf, f->editFields[IF_IDX_BONUS].text);
+        ls_bufferAddUTF32(buf, f->editFields[IF_IDX_FINAL].text);
         
         ls_bufferAddDWord(buf, f->ID);
     }
@@ -641,7 +641,7 @@ void SaveState(UIContext *c)
     {
         Order *f = Page->OrderFields + i;
         
-        ls_bufferAddUnistring(buf, f->field.text);
+        ls_bufferAddUTF32(buf, f->field.text);
         
         ls_bufferAddDWord(buf,  f->field.maxValue);
         ls_bufferAddDWord(buf,  f->field.minValue);
@@ -656,14 +656,14 @@ void SaveState(UIContext *c)
     //NOTE: Current In Battle
     {
         ls_bufferAddDWord(buf, Page->currIdx);
-        ls_bufferAddUnistring(buf, Page->Current.text);
+        ls_bufferAddUTF32(buf, Page->Current.text);
     }
     
     
     //NOTE: Round Counter
     {
         ls_bufferAddDWord(buf, Page->roundCount);
-        ls_bufferAddUnistring(buf, Page->RoundCounter.text);
+        ls_bufferAddUTF32(buf, Page->RoundCounter.text);
     }
     
     
@@ -672,8 +672,8 @@ void SaveState(UIContext *c)
     {
         Counter *C = Page->Counters + i;
         
-        ls_bufferAddUnistring(buf, C->name.text);
-        ls_bufferAddUnistring(buf, C->rounds.text);
+        ls_bufferAddUTF32(buf, C->name.text);
+        ls_bufferAddUTF32(buf, C->rounds.text);
         
         ls_bufferAddDWord(buf, C->roundsLeft);
         ls_bufferAddDWord(buf, C->isActive);
@@ -686,11 +686,11 @@ void SaveState(UIContext *c)
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
         DiceThrow *f = Page->Throwers + i;
-        ls_bufferAddUnistring(buf, f->name.text);
-        ls_bufferAddUnistring(buf, f->toHit.text);
-        ls_bufferAddUnistring(buf, f->hitRes.text);
-        ls_bufferAddUnistring(buf, f->damage.text);
-        ls_bufferAddUnistring(buf, f->dmgRes.text);
+        ls_bufferAddUTF32(buf, f->name.text);
+        ls_bufferAddUTF32(buf, f->toHit.text);
+        ls_bufferAddUTF32(buf, f->hitRes.text);
+        ls_bufferAddUTF32(buf, f->damage.text);
+        ls_bufferAddUTF32(buf, f->dmgRes.text);
     }
     
     //TODO: Actually use buf->cursor instead of buf->size??
@@ -741,28 +741,28 @@ b32 LoadState(UIContext *cxt)
     {
         Encounter *curr = State.encounters.Enc + i;
         
-        curr->name = ls_bufferReadUnistring(buf);
+        curr->name = ls_bufferReadUTF32(buf);
         
         curr->numMobs = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numMobs; j++)
         {
             for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
-            { curr->mob[j][k] = ls_bufferReadUnistring(buf); }
+            { curr->mob[j][k] = ls_bufferReadUTF32(buf); }
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numAllies; j++)
         {
-            curr->allyName[j]  = ls_bufferReadUnistring(buf);
-            curr->allyBonus[j] = ls_bufferReadUnistring(buf);
-            curr->allyFinal[j] = ls_bufferReadUnistring(buf);
+            curr->allyName[j]  = ls_bufferReadUTF32(buf);
+            curr->allyBonus[j] = ls_bufferReadUTF32(buf);
+            curr->allyFinal[j] = ls_bufferReadUTF32(buf);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
         {
-            curr->throwerName[j]   = ls_bufferReadUnistring(buf);
-            curr->throwerHit[j]    = ls_bufferReadUnistring(buf);
-            curr->throwerDamage[j] = ls_bufferReadUnistring(buf);
+            curr->throwerName[j]   = ls_bufferReadUTF32(buf);
+            curr->throwerHit[j]    = ls_bufferReadUTF32(buf);
+            curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
         }
         
         ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, curr->name);
@@ -799,7 +799,7 @@ b32 LoadState(UIContext *cxt)
     u32 unserializePartyNum = partyNum < PARTY_NUM ? partyNum : PARTY_NUM;
     for(u32 i = 0; i < unserializePartyNum; i++)
     {
-        ls_bufferReadIntoUnistring(buf, &Page->PlayerInit[i].text);
+        ls_bufferReadIntoUTF32(buf, &Page->PlayerInit[i].text);
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
         Page->PlayerInit[i].isReadonly = TRUE;
     }
@@ -814,12 +814,12 @@ b32 LoadState(UIContext *cxt)
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         {
-            ls_bufferReadIntoUnistring(buf, &f->editFields[j].text);
+            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
             f->editFields[j].viewEndIdx = f->editFields[j].text.len;
             f->editFields[j].isReadonly = TRUE;
         }
         
-        ls_bufferReadIntoUnistring(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
         f->maxLife.viewEndIdx = f->maxLife.text.len;
         
         f->ID = ls_bufferReadDWord(buf);
@@ -833,15 +833,15 @@ b32 LoadState(UIContext *cxt)
     {
         InitField *f = Page->AllyFields + i;
         
-        ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_NAME].text);
+        ls_bufferReadIntoUTF32(buf, &f->editFields[IF_IDX_NAME].text);
         f->editFields[IF_IDX_NAME].viewEndIdx = f->editFields[IF_IDX_NAME].text.len;
         f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
         
-        ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_BONUS].text);
+        ls_bufferReadIntoUTF32(buf, &f->editFields[IF_IDX_BONUS].text);
         f->editFields[IF_IDX_BONUS].viewEndIdx = f->editFields[IF_IDX_BONUS].text.len;
         f->editFields[IF_IDX_BONUS].isReadonly = TRUE;
         
-        ls_bufferReadIntoUnistring(buf, &f->editFields[IF_IDX_FINAL].text);
+        ls_bufferReadIntoUTF32(buf, &f->editFields[IF_IDX_FINAL].text);
         f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
         f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
         
@@ -856,7 +856,7 @@ b32 LoadState(UIContext *cxt)
     {
         Order *f = Page->OrderFields + i;
         
-        ls_bufferReadIntoUnistring(buf, &f->field.text);
+        ls_bufferReadIntoUTF32(buf, &f->field.text);
         
         f->pos.isReadonly = TRUE;
         
@@ -886,7 +886,7 @@ b32 LoadState(UIContext *cxt)
     {
         Page->currIdx = ls_bufferReadDWord(buf);
         
-        ls_bufferReadIntoUnistring(buf, &Page->Current.text);
+        ls_bufferReadIntoUTF32(buf, &Page->Current.text);
         Page->Current.viewEndIdx = Page->Current.text.len;
     }
     
@@ -894,7 +894,7 @@ b32 LoadState(UIContext *cxt)
     //NOTE: Round Counter
     {
         Page->roundCount = ls_bufferReadDWord(buf);
-        ls_bufferReadIntoUnistring(buf, &Page->RoundCounter.text);
+        ls_bufferReadIntoUTF32(buf, &Page->RoundCounter.text);
         Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     }
     
@@ -904,10 +904,10 @@ b32 LoadState(UIContext *cxt)
     {
         Counter *C = Page->Counters + i;
         
-        ls_bufferReadIntoUnistring(buf, &C->name.text);
+        ls_bufferReadIntoUTF32(buf, &C->name.text);
         C->name.viewEndIdx = C->name.text.len;
         
-        ls_bufferReadIntoUnistring(buf, &C->rounds.text);
+        ls_bufferReadIntoUTF32(buf, &C->rounds.text);
         C->rounds.viewEndIdx = C->rounds.text.len;
         
         C->roundsLeft      = ls_bufferReadDWord(buf);
@@ -922,11 +922,11 @@ b32 LoadState(UIContext *cxt)
     {
         DiceThrow *f = Page->Throwers + i;
         
-        ls_bufferReadIntoUnistring(buf, &f->name.text);   f->name.viewEndIdx   = f->name.text.len;
-        ls_bufferReadIntoUnistring(buf, &f->toHit.text);  f->toHit.viewEndIdx  = f->toHit.text.len;
-        ls_bufferReadIntoUnistring(buf, &f->hitRes.text); f->hitRes.viewEndIdx = f->hitRes.text.len;
-        ls_bufferReadIntoUnistring(buf, &f->damage.text); f->damage.viewEndIdx = f->damage.text.len;
-        ls_bufferReadIntoUnistring(buf, &f->dmgRes.text); f->dmgRes.viewEndIdx = f->dmgRes.text.len;
+        ls_bufferReadIntoUTF32(buf, &f->name.text);   f->name.viewEndIdx   = f->name.text.len;
+        ls_bufferReadIntoUTF32(buf, &f->toHit.text);  f->toHit.viewEndIdx  = f->toHit.text.len;
+        ls_bufferReadIntoUTF32(buf, &f->hitRes.text); f->hitRes.viewEndIdx = f->hitRes.text.len;
+        ls_bufferReadIntoUTF32(buf, &f->damage.text); f->damage.viewEndIdx = f->damage.text.len;
+        ls_bufferReadIntoUTF32(buf, &f->dmgRes.text); f->dmgRes.viewEndIdx = f->dmgRes.text.len;
     }
     
     ls_bufferDestroy(buf);

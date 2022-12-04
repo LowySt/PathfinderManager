@@ -29,19 +29,19 @@ const u32 MOB_INIT_ENC_FIELDS = IF_IDX_COUNT+1;
 
 struct Encounter
 {
-    unistring name;
+    utf32 name;
     
     u32 numMobs;
-    unistring mob[MOB_NUM][MOB_INIT_ENC_FIELDS];
+    utf32 mob[MOB_NUM][MOB_INIT_ENC_FIELDS];
     
     u32 numAllies;
-    unistring allyName[ALLY_NUM];
-    unistring allyBonus[ALLY_NUM];
-    unistring allyFinal[ALLY_NUM];
+    utf32 allyName[ALLY_NUM];
+    utf32 allyBonus[ALLY_NUM];
+    utf32 allyFinal[ALLY_NUM];
     
-    unistring throwerName[THROWER_NUM];
-    unistring throwerHit[THROWER_NUM];
-    unistring throwerDamage[THROWER_NUM];
+    utf32 throwerName[THROWER_NUM];
+    utf32 throwerHit[THROWER_NUM];
+    utf32 throwerDamage[THROWER_NUM];
 };
 
 struct EncList
