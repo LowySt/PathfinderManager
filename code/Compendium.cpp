@@ -1,5 +1,7 @@
 struct CachedPageEntry
 {
+    s32 pageIndex = -1;
+    
     utf32 origin;
     utf32 shortDesc;
     utf32 AC;
@@ -52,7 +54,7 @@ struct CachedPageEntry
     utf32 skills[24]; //TODO Separate type from value
     utf32 languages[24];
     utf32 specials[24];
-    utf32 enviroment;
+    utf32 environment;
 };
 
 struct PageEntry
@@ -112,7 +114,7 @@ struct PageEntry
     u16 skills[24]; //TODO Separate type from value
     u16 languages[24];
     u16 specials[24];
-    u16 enviroment;
+    u16 environment;
 };
 
 struct TableEntry
@@ -195,8 +197,8 @@ struct Compendium
     
     b32 isSettingNewEntry;
     
-    b32         isViewingPage;
-    u32         pageIndex;
+    b32             isViewingPage;
+    s32             pageIndex = -1;
 };
 
 //MonsterTable monsterTable = {};
@@ -240,30 +242,76 @@ u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
 }
 #endif
 
-utf32 GetEntryFromBuffer(buffer *buf, u32 index)
-{
-    buf->cursor = index;
-    
-    u32 byteLen   = (u32)ls_bufferPeekWord(buf);
-    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
-    
-    utf32 result = ls_utf32FromUTF8(utf8_data, byteLen);
-    
-    ls_bufferSeekBegin(buf);
-    
-    return result;
-}
-
-utf32 GetEntryFromBuffer(buffer *buf, u16 index)
-{
-    return GetEntryFromBuffer(buf, (u32)index);
-}
-
-
 void LoadCompendium(string path)
 {
     ls_arenaUse(compendiumArena);
     
+    //----------------------
+    //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
+    cachedPage.origin            = ls_utf32Alloc(16);
+    cachedPage.shortDesc         = ls_utf32Alloc(256);
+    cachedPage.AC                = ls_utf32Alloc(128);
+    cachedPage.HP                = ls_utf32Alloc(128);
+    cachedPage.ST                = ls_utf32Alloc(128);
+    cachedPage.RD                = ls_utf32Alloc(128);
+    cachedPage.RI                = ls_utf32Alloc(128);
+    cachedPage.defensiveCapacity = ls_utf32Alloc(128);
+    cachedPage.melee             = ls_utf32Alloc(256);
+    cachedPage.ranged            = ls_utf32Alloc(256);
+    cachedPage.specialAttacks    = ls_utf32Alloc(256);
+    cachedPage.psych             = ls_utf32Alloc(2048);
+    cachedPage.magics            = ls_utf32Alloc(2048);
+    cachedPage.spells            = ls_utf32Alloc(2048);
+    cachedPage.racialMods        = ls_utf32Alloc(128);
+    cachedPage.spec_qual         = ls_utf32Alloc(128);
+    cachedPage.org               = ls_utf32Alloc(128);
+    cachedPage.treasure          = ls_utf32Alloc(128);
+    cachedPage.desc              = ls_utf32Alloc(4096);
+    cachedPage.source            = ls_utf32Alloc(128);
+    
+    cachedPage.name              = ls_utf32Alloc(32);
+    cachedPage.gs                = ls_utf32Alloc(16);
+    cachedPage.pe                = ls_utf32Alloc(16);
+    cachedPage.alignment         = ls_utf32Alloc(32);
+    cachedPage.type              = ls_utf32Alloc(32);
+    
+    for(u32 i = 0; i < 8; i++) { cachedPage.subtype[i]   = ls_utf32Alloc(32); }
+    for(u32 i = 0; i < 4; i++) { cachedPage.archetype[i] = ls_utf32Alloc(32); }
+    
+    cachedPage.size       = ls_utf32Alloc(32);
+    cachedPage.initiative = ls_utf32Alloc(32);
+    
+    for(u32 i = 0; i < 8; i++) { cachedPage.senses[i] = ls_utf32Alloc(32); }
+    
+    cachedPage.perception = ls_utf32Alloc(32);
+    cachedPage.aura       = ls_utf32Alloc(128);
+    
+    for(u32 i = 0; i < 16; i++) { cachedPage.immunities[i]  = ls_utf32Alloc(32); }
+    for(u32 i = 0; i < 16; i++) { cachedPage.resistances[i] = ls_utf32Alloc(32); }
+    for(u32 i = 0; i < 16; i++) { cachedPage.weaknesses[i]  = ls_utf32Alloc(32); }
+    
+    cachedPage.speed = ls_utf32Alloc(32);
+    cachedPage.space = ls_utf32Alloc(32);
+    cachedPage.reach = ls_utf32Alloc(32);
+    cachedPage.STR   = ls_utf32Alloc(16);
+    cachedPage.DEX   = ls_utf32Alloc(16);
+    cachedPage.CON   = ls_utf32Alloc(16);
+    cachedPage.INT   = ls_utf32Alloc(16);
+    cachedPage.WIS   = ls_utf32Alloc(16);
+    cachedPage.CHA   = ls_utf32Alloc(16);
+    cachedPage.BAB   = ls_utf32Alloc(16);
+    cachedPage.BMC   = ls_utf32Alloc(32);
+    cachedPage.DMC   = ls_utf32Alloc(32);
+    
+    for(u32 i = 0; i < 24; i++) { cachedPage.talents[i]   = ls_utf32Alloc(64); }
+    for(u32 i = 0; i < 24; i++) { cachedPage.skills[i]    = ls_utf32Alloc(64); }
+    for(u32 i = 0; i < 24; i++) { cachedPage.languages[i] = ls_utf32Alloc(64); }
+    for(u32 i = 0; i < 24; i++) { cachedPage.specials[i]  = ls_utf32Alloc(4096); }
+    
+    cachedPage.environment = ls_utf32Alloc(32);
+    
+    //----------------------
+    //NOTE: Now load the Compendium from file
     buffer CompendiumBuff = ls_bufferInitFromFile(path);
     
     //NOTE: No valid file was found.
@@ -410,6 +458,56 @@ b32 AddEntryToCompendium(UIContext *c, void *userData)
     return FALSE;
 }
 
+void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
+{
+    if(index == 0) { return; } //NOTE: Index zero means no entry
+    
+    buf->cursor = index;
+    
+    u32 byteLen   = (u32)ls_bufferPeekWord(buf);
+    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
+    
+    u32 len = ls_utf8Len(utf8_data, byteLen);
+    
+    if(toSet->size < len) { ls_printf("Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", toSet->size, len, byteLen, index); }
+    
+    ls_utf32FromUTF8_t(toSet, utf8_data, len);
+    
+    ls_bufferSeekBegin(buf);
+}
+
+void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u16 index)
+{
+    GetEntryFromBuffer_t(buf, toSet, (u32)index);
+}
+
+//NOTE: We intentionally don't free the utf32 data because at the beginning
+//      Of each DrawCompendium() we clear the compTempArena
+utf32 GetEntryFromBuffer(buffer *buf, u32 index)
+{
+    ls_arenaUse(compTempArena);
+    
+    if(index == 0) { return {}; } //NOTE: Index zero means no entry
+    
+    buf->cursor = index;
+    
+    u32 byteLen   = (u32)ls_bufferPeekWord(buf);
+    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
+    
+    utf32 result = ls_utf32FromUTF8(utf8_data, byteLen);
+    
+    ls_bufferSeekBegin(buf);
+    
+    ls_arenaUse(globalArena);
+    
+    return result;
+}
+
+utf32 GetEntryFromBuffer(buffer *buf, u16 index)
+{
+    return GetEntryFromBuffer(buf, (u32)index);
+}
+
 b32 SetupNewEntry(UIContext *c, void *userData)
 {
     compendium.isSettingNewEntry = TRUE;
@@ -505,151 +603,239 @@ void DrawMonsterTable(UIContext *c)
     return;
 }
 
-void DrawPage(UIContext *c, PageEntry *page)
+void CachePage(PageEntry page)
 {
-    AssertMsg(FALSE, "Not implemented yet");
+    Codex *c = &compendium.codex;
+    
+    cachedPage.pageIndex = compendium.pageIndex;
+    
+    ls_printf("One\n");
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.origin, page.origin);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.shortDesc, page.shortDesc);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.AC, page.AC);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.HP, page.HP);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.ST, page.ST);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.RD, page.RD);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.RI, page.RI);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.defensiveCapacity, page.defensiveCapacity);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.melee, page.melee);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.ranged, page.ranged);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.specialAttacks, page.specialAttacks);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.psych, page.psych);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.magics, page.magics);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.spells, page.spells);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.racialMods, page.racialMods);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.spec_qual, page.spec_qual);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.org, page.org);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.treasure, page.treasure);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.desc, page.desc);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.source, page.source);
+    
+    ls_printf("Two\n");
+    
+    GetEntryFromBuffer_t(&c->names, &cachedPage.name, page.name);
+    GetEntryFromBuffer_t(&c->gs, &cachedPage.gs, page.gs);
+    GetEntryFromBuffer_t(&c->pe, &cachedPage.pe, page.pe);
+    GetEntryFromBuffer_t(&c->alignment, &cachedPage.alignment, page.alignment);
+    GetEntryFromBuffer_t(&c->types, &cachedPage.type, page.type);
+    
+    ls_printf("Three\n");
+    
+    for(u32 i = 0; i < 8; i++) { GetEntryFromBuffer_t(&c->subtypes, cachedPage.subtype + i, page.subtype[i]); }
+    for(u32 i = 0; i < 4; i++) { GetEntryFromBuffer_t(&c->archetypes, cachedPage.archetype + i, page.archetype[i]); }
+    
+    ls_printf("Four\n");
+    
+    GetEntryFromBuffer_t(&c->sizes, &cachedPage.size, page.size);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.initiative, page.initiative);
+    
+    ls_printf("Five\n");
+    
+    for(u32 i = 0; i < 8; i++) { GetEntryFromBuffer_t(&c->senses, cachedPage.senses + i, page.senses[i]); }
+    
+    ls_printf("Six\n");
+    
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.perception, page.perception);
+    GetEntryFromBuffer_t(&c->auras, &cachedPage.aura, page.aura);
+    
+    ls_printf("Seven\n");
+    
+    for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->immunities, cachedPage.immunities + i, page.immunities[i]);}
+    for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->resistances, cachedPage.resistances+i, page.resistances[i]);}
+    for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->weaknesses, cachedPage.weaknesses + i, page.weaknesses[i]);}
+    
+    ls_printf("Eight\n");
+    
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.speed, page.speed);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.space, page.space);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.reach, page.reach);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.STR, page.STR);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.DEX, page.DEX);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.CON, page.CON);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.INT, page.INT);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.WIS, page.WIS);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.CHA, page.CHA);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.BAB, page.BAB);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.BMC, page.BMC);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.DMC, page.DMC);
+    
+    ls_printf("Nine\n");
+    
+    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->talents, cachedPage.talents + i, page.talents[i]); }
+    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->skills, cachedPage.skills + i, page.skills[i]); }
+    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->languages, cachedPage.languages + i, page.languages[i]); }
+    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->specials, cachedPage.specials + i, page.specials[i]); }
+    
+    ls_printf("Ten\n");
+    
+    GetEntryFromBuffer_t(&c->environment, &cachedPage.environment, page.environment);
+    
+    ls_printf("Eleven\n");
+}
+
+void DrawPage(UIContext *c, CachedPageEntry *page)
+{
+    s32 baseY = 670;
+    s32 valueBaseX = 148;
+    
+    //NOTE: Draw an empty page template
+    
+    ls_uiSelectFontByFontSize(c, FS_LARGE);
+    ls_uiLabel(c, page->name, 10, baseY);
+    ls_uiLabel(c, U"GS", 440, baseY);
+    ls_uiLabel(c, page->gs, 480, baseY);
+    ls_uiLabel(c, U"PE", 545, baseY);
+    ls_uiLabel(c, page->pe, 580, baseY);
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY -= 30;
+    
+    ls_uiLabel(c, page->shortDesc, 10, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"Allineamento: ", 10, baseY);
+    ls_uiLabel(c, page->alignment, valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"Categoria: ", 10, baseY);
+    ls_uiLabel(c, page->type, valueBaseX, baseY);
+    baseY -= 20;
 #if 0
-    if(page)
-    {
-    }
-    else
-    {
-        s32 baseY = 670;
-        s32 valueBaseX = 148;
-        
-        //NOTE: Draw an empty page template
-        
-        ls_uiSelectFontByFontSize(c, FS_LARGE);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.names, entry->name), 10, baseY);
-        ls_uiLabel(c, U"GS", 440, baseY);
-        ls_uiLabel(c, GetEntryFromBuffer(&monsterTable.gs, entry->gs), 480, baseY);
-        ls_uiLabel(c, U"PE", 545, baseY);
-        ls_uiLabel(c, GetEntryFromBuffer(&compendium.codex.pe, page->pe), 580, baseY);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        
-        ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY -= 30;
-        
-        ls_uiLabel(c, U"Descrizione breve...", 10, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Allineamento: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Categoria: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Iniziativa: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Sensi: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 30;
-        
-        ls_uiSelectFontByFontSize(c, FS_LARGE);
-        ls_uiLabel(c, U"Difesa", 10, baseY);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        
-        ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY -= 30;
-        
-        ls_uiLabel(c, U"CA: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"PF: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Tiri Salvezza: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"RD: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Immunit\U000000E0: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 30;
-        
-        ls_uiSelectFontByFontSize(c, FS_LARGE);
-        ls_uiLabel(c, U"Attacco", 10, baseY);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        
-        ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY -= 30;
-        
-        ls_uiLabel(c, U"Velocit\U000000E0: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Mischia: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 30;
-        
-        ls_uiSelectFontByFontSize(c, FS_LARGE);
-        ls_uiLabel(c, U"Statistiche", 10, baseY);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        
-        ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY -= 30;
-        
-        ls_uiLabel(c, U"Caratteristiche: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"BAB: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"BMC: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"DMC: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Talenti: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 20;
-        
-        ls_uiLabel(c, U"Qualit\U000000E0 Speciali: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-        baseY -= 30;
-        
-        ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-        ls_uiLabel(c, U"Barcollante (Str)", 10, baseY);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        baseY -= 40;
-        
-        ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-        ls_uiLabel(c, U"Tratti dei Non Morti (Str)", 10, baseY);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        baseY -= 40;
-        
-        ls_uiSelectFontByFontSize(c, FS_LARGE);
-        ls_uiLabel(c, U"Descrizione", 10, baseY);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        baseY -= 30;
-        
-        ls_uiSelectFontByFontSize(c, FS_SMALL);
-        ls_uiLabel(c, U"---", 10, baseY);
-        baseY -= 30;
-        
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(30, 30, 30));
-        ls_uiLabel(c, U"Fonte: ", 10, baseY);
-        ls_uiLabel(c, U"---", valueBaseX, baseY);
-    }
+    ls_uiLabel(c, U"Iniziativa: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"Sensi: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 30;
+    
+    ls_uiSelectFontByFontSize(c, FS_LARGE);
+    ls_uiLabel(c, U"Difesa", 10, baseY);
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY -= 30;
+    
+    ls_uiLabel(c, U"CA: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"PF: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"Tiri Salvezza: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"RD: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"Immunit\U000000E0: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 30;
+    
+    ls_uiSelectFontByFontSize(c, FS_LARGE);
+    ls_uiLabel(c, U"Attacco", 10, baseY);
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY -= 30;
+    
+    ls_uiLabel(c, U"Velocit\U000000E0: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"Mischia: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 30;
+    
+    ls_uiSelectFontByFontSize(c, FS_LARGE);
+    ls_uiLabel(c, U"Statistiche", 10, baseY);
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY -= 30;
+    
+    ls_uiLabel(c, U"Caratteristiche: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"BAB: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"BMC: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"DMC: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"Talenti: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 20;
+    
+    ls_uiLabel(c, U"Qualit\U000000E0 Speciali: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    baseY -= 30;
+    
+    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiLabel(c, U"Barcollante (Str)", 10, baseY);
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    baseY -= 40;
+    
+    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiLabel(c, U"Tratti dei Non Morti (Str)", 10, baseY);
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    baseY -= 40;
+    
+    ls_uiSelectFontByFontSize(c, FS_LARGE);
+    ls_uiLabel(c, U"Descrizione", 10, baseY);
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    baseY -= 30;
+    
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiLabel(c, U"---", 10, baseY);
+    baseY -= 30;
+    
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(30, 30, 30));
+    ls_uiLabel(c, U"Fonte: ", 10, baseY);
+    ls_uiLabel(c, U"---", valueBaseX, baseY);
 #endif
 }
 
 void DrawCompendium(UIContext *c)
 {
+    //NOTE: This arena is cleared every frame,
+    //      Because here we store utf32 strings (currently only for the MonsterTable
+    //TODO: Maybe we can find a way to cache the MonsterTable and not allocate every frame?
+    ls_arenaClear(compTempArena);
+    
     Codex *codex = &compendium.codex;
     
     if(compendium.isSettingNewEntry)
@@ -666,11 +852,12 @@ void DrawCompendium(UIContext *c)
     }
     else if(compendium.isViewingPage)
     {
-        PageEntry *page = 0;
+        AssertMsg(compendium.pageIndex != -1, "Page Index was not set\n");
         
-        if(compendium.pageIndex != 0) page = compendium.codex.pages + compendium.pageIndex;
+        if(cachedPage.pageIndex != compendium.pageIndex)
+        { CachePage(compendium.codex.pages[compendium.pageIndex]); }
         
-        //DrawPage(c, compendium.tableEntry, page);
+        DrawPage(c, &cachedPage);
     }
     else
     {

@@ -185,5 +185,6 @@ static Arena stateArena;
 static Arena saveArena;
 static Arena renderArena;
 static Arena compendiumArena;
+static Arena compTempArena;
 
 #endif //_STATE_GLOBALS_H

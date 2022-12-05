@@ -264,13 +264,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     //TODO: Make this much smaller. It can be reduced to at least 8 MBytes, probably smaller
     compendiumArena = ls_arenaCreate(MBytes(32));
+    compTempArena   = ls_arenaCreate(KBytes(8));
     
     ls_arenaUse(globalArena);
     //------------
     
     
     //TODO: Hardcoded Compendium Window
-    const int compendiumWidth  = 640;
+    const int compendiumWidth  = 800;
     const int compendiumHeight = 720;
     UIContext *compendiumContext = ls_uiInitDefaultContext(CompendiumBackBuffer, compendiumWidth, compendiumHeight);
     CompendiumWindow = ls_uiCreateWindow(MainInstance, compendiumContext, "Compendium");
