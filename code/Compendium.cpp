@@ -696,6 +696,9 @@ void CachePage(PageEntry page)
 
 void DrawPage(UIContext *c, CachedPageEntry *page)
 {
+    //TODO: We are missing context aware positioning. Next elements should move down
+    //      based on the length of the previous element
+    //      Also, we need to be able to scroll everything.
     s32 baseY = 670;
     s32 valueBaseX = 148;
     
@@ -722,13 +725,14 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     ls_uiLabel(c, U"Categoria: ", 10, baseY);
     ls_uiLabel(c, page->type, valueBaseX, baseY);
     baseY -= 20;
-#if 0
+    
     ls_uiLabel(c, U"Iniziativa: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->initiative, valueBaseX, baseY);
     baseY -= 20;
     
+    //TODO: All of them
     ls_uiLabel(c, U"Sensi: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->senses[0], valueBaseX, baseY);
     baseY -= 30;
     
     ls_uiSelectFontByFontSize(c, FS_LARGE);
@@ -739,23 +743,28 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= 30;
     
     ls_uiLabel(c, U"CA: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->AC, valueBaseX, baseY);
     baseY -= 20;
     
     ls_uiLabel(c, U"PF: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->HP, valueBaseX, baseY);
     baseY -= 20;
     
     ls_uiLabel(c, U"Tiri Salvezza: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->ST, valueBaseX, baseY);
     baseY -= 20;
     
     ls_uiLabel(c, U"RD: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->RD, valueBaseX, baseY);
     baseY -= 20;
     
+    ls_uiLabel(c, U"RI: ", 10, baseY);
+    ls_uiLabel(c, page->RI, valueBaseX, baseY);
+    baseY -= 20;
+    
+    //TODO: All of them
     ls_uiLabel(c, U"Immunit\U000000E0: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->immunities[0], valueBaseX, baseY);
     baseY -= 30;
     
     ls_uiSelectFontByFontSize(c, FS_LARGE);
@@ -766,11 +775,11 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= 30;
     
     ls_uiLabel(c, U"Velocit\U000000E0: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->speed, valueBaseX, baseY);
     baseY -= 20;
     
     ls_uiLabel(c, U"Mischia: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->melee, valueBaseX, baseY);
     baseY -= 30;
     
     ls_uiSelectFontByFontSize(c, FS_LARGE);
@@ -780,39 +789,33 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     baseY -= 30;
     
+    //TODO: All of them
     ls_uiLabel(c, U"Caratteristiche: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->STR, valueBaseX, baseY);
     baseY -= 20;
     
     ls_uiLabel(c, U"BAB: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->BAB, valueBaseX, baseY);
     baseY -= 20;
     
     ls_uiLabel(c, U"BMC: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->BMC, valueBaseX, baseY);
     baseY -= 20;
     
     ls_uiLabel(c, U"DMC: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->DMC, valueBaseX, baseY);
     baseY -= 20;
     
+    //TODO: All of them
     ls_uiLabel(c, U"Talenti: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->talents[0], valueBaseX, baseY);
     baseY -= 20;
     
     ls_uiLabel(c, U"Qualit\U000000E0 Speciali: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
+    ls_uiLabel(c, page->spec_qual, valueBaseX, baseY);
     baseY -= 30;
     
-    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    ls_uiLabel(c, U"Barcollante (Str)", 10, baseY);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    baseY -= 40;
-    
-    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    ls_uiLabel(c, U"Tratti dei Non Morti (Str)", 10, baseY);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    baseY -= 40;
+    //TODO: Specials go Here
     
     ls_uiSelectFontByFontSize(c, FS_LARGE);
     ls_uiLabel(c, U"Descrizione", 10, baseY);
@@ -820,13 +823,13 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= 30;
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
-    ls_uiLabel(c, U"---", 10, baseY);
+    ls_uiLabel(c, page->desc, 10, baseY);
     baseY -= 30;
     
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(30, 30, 30));
     ls_uiLabel(c, U"Fonte: ", 10, baseY);
-    ls_uiLabel(c, U"---", valueBaseX, baseY);
-#endif
+    ls_uiLabel(c, page->source, valueBaseX, baseY);
+    
 }
 
 void DrawCompendium(UIContext *c)
