@@ -506,9 +506,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(showDebug)
         {
-            ls_uiFillRect(uiContext, 1248, 760, 20, 20, 0, uiContext->width, 0, uiContext->height, uiContext->backgroundColor);
+            ls_uiFillRect(uiContext, 1248, 760, 20, 20,
+                          {0, (s32)uiContext->width, 0, (s32)uiContext->height}, {}, uiContext->backgroundColor);
             ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
-            ls_uiGlyphString(uiContext, 1248, 760, 0, uiContext->width, 0, uiContext->height, frameTimeString, RGBg(0xEE));
+            ls_uiGlyphString(uiContext, uiContext->currFont, 1248, 760,
+                             {0, (s32)uiContext->width, 0, (s32)uiContext->height}, {},
+                             frameTimeString, RGBg(0xEE));
         }
         
         //-------------------------------

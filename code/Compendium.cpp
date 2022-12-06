@@ -699,10 +699,11 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //TODO: We are missing context aware positioning. Next elements should move down
     //      based on the length of the previous element
     //      Also, we need to be able to scroll everything.
+    
+    ls_uiStartScrollableRegion(c, 0, 10, c->windowWidth - 4, c->windowHeight - 36);
+    
     s32 baseY = 670;
     s32 valueBaseX = 148;
-    
-    //NOTE: Draw an empty page template
     
     ls_uiSelectFontByFontSize(c, FS_LARGE);
     ls_uiLabel(c, page->name, 10, baseY);
@@ -816,6 +817,12 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= 30;
     
     //TODO: Specials go Here
+    for(u32 i = 0; i < 24; i++)
+    {
+        if(page->specials[i].len == 0) { continue; }
+        ls_uiLabel(c, page->specials[i], 10, baseY);
+        baseY -= 120;
+    }
     
     ls_uiSelectFontByFontSize(c, FS_LARGE);
     ls_uiLabel(c, U"Descrizione", 10, baseY);
@@ -824,12 +831,13 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     ls_uiLabel(c, page->desc, 10, baseY);
-    baseY -= 30;
+    baseY -= 100;
     
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(30, 30, 30));
     ls_uiLabel(c, U"Fonte: ", 10, baseY);
     ls_uiLabel(c, page->source, valueBaseX, baseY);
     
+    //ls_uiEndScrollableRegion(c);
 }
 
 void DrawCompendium(UIContext *c)
