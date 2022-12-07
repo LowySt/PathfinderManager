@@ -204,6 +204,7 @@ struct Compendium
 //MonsterTable monsterTable = {};
 Compendium      compendium = {};
 CachedPageEntry cachedPage = {};
+ScrollableRegion scroll = {};
 
 #if 0 //TODO Re-implement correct
 u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
@@ -603,7 +604,7 @@ void DrawMonsterTable(UIContext *c)
     return;
 }
 
-void CachePage(PageEntry page)
+void CachePage(UIContext *ui, PageEntry page)
 {
     Codex *c = &compendium.codex;
     
@@ -692,152 +693,187 @@ void CachePage(PageEntry page)
     GetEntryFromBuffer_t(&c->environment, &cachedPage.environment, page.environment);
     
     ls_printf("Eleven\n");
+    
+    scroll = { 0, 10, ui->windowWidth - 4, ui->windowHeight - 36, 0, 0, ui->windowWidth - 32, 0};
 }
 
 void DrawPage(UIContext *c, CachedPageEntry *page)
 {
-    //TODO: We are missing context aware positioning. Next elements should move down
-    //      based on the length of the previous element
-    //      Also, we need to be able to scroll everything.
+    //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
+    //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
+    ls_uiStartScrollableRegion(c, &scroll);
     
-    ls_uiStartScrollableRegion(c, 0, 10, c->windowWidth - 4, c->windowHeight - 36);
+    //NOTE: Used to adjust the next line position when changing font size, because
+    //      a change in pixel height will make the next line too close / too far from the ideal position.
+    s32 prevPixelHeight = 0;
+    s32 currPixelHeight = 0;
     
+    s32 maxX = c->windowWidth - 32;
+    s32 minY = 0;
+    
+    s32 origY = 670;
     s32 baseY = 670;
     s32 valueBaseX = 148;
     
-    ls_uiSelectFontByFontSize(c, FS_LARGE);
-    ls_uiLabel(c, page->name, 10, baseY);
-    ls_uiLabel(c, U"GS", 440, baseY);
-    ls_uiLabel(c, page->gs, 480, baseY);
-    ls_uiLabel(c, U"PE", 545, baseY);
-    ls_uiLabel(c, page->pe, 580, baseY);
+    s32 yOff = 0;
+    prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    ls_uiLabelLayout(c, page->name, { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"GS", { 440, baseY, maxX, minY });
+    ls_uiLabelLayout(c, page->gs, { 480, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"PE", { 545, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->pe, { 580, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY -= 30;
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= yOff;
     
-    ls_uiLabel(c, page->shortDesc, 10, baseY);
-    baseY -= 20;
+    yOff = ls_uiLabelLayout(c, page->shortDesc, { 10, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"Allineamento: ", 10, baseY);
-    ls_uiLabel(c, page->alignment, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"Allineamento: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->alignment, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"Categoria: ", 10, baseY);
-    ls_uiLabel(c, page->type, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"Categoria: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->type, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"Iniziativa: ", 10, baseY);
-    ls_uiLabel(c, page->initiative, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"Iniziativa: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->initiative, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
     //TODO: All of them
-    ls_uiLabel(c, U"Sensi: ", 10, baseY);
-    ls_uiLabel(c, page->senses[0], valueBaseX, baseY);
-    baseY -= 30;
+    ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->senses[0], { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiSelectFontByFontSize(c, FS_LARGE);
-    ls_uiLabel(c, U"Difesa", 10, baseY);
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    
+    yOff = ls_uiLabelLayout(c, U"Difesa", { 10, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY -= 30;
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"CA: ", 10, baseY);
-    ls_uiLabel(c, page->AC, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"CA: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->AC, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"PF: ", 10, baseY);
-    ls_uiLabel(c, page->HP, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"PF: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->HP, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"Tiri Salvezza: ", 10, baseY);
-    ls_uiLabel(c, page->ST, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"Tiri Salvezza: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->ST, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"RD: ", 10, baseY);
-    ls_uiLabel(c, page->RD, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"RD: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->RD, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"RI: ", 10, baseY);
-    ls_uiLabel(c, page->RI, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"RI: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->RI, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
     //TODO: All of them
-    ls_uiLabel(c, U"Immunit\U000000E0: ", 10, baseY);
-    ls_uiLabel(c, page->immunities[0], valueBaseX, baseY);
-    baseY -= 30;
+    ls_uiLabelLayout(c, U"Immunit\U000000E0: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->immunities[0], { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiSelectFontByFontSize(c, FS_LARGE);
-    ls_uiLabel(c, U"Attacco", 10, baseY);
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    yOff = ls_uiLabelLayout(c, U"Attacco", { 10, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY -= 30;
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"Velocit\U000000E0: ", 10, baseY);
-    ls_uiLabel(c, page->speed, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"Velocit\U000000E0: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->speed, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"Mischia: ", 10, baseY);
-    ls_uiLabel(c, page->melee, valueBaseX, baseY);
-    baseY -= 30;
+    ls_uiLabelLayout(c, U"Mischia: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->melee, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiSelectFontByFontSize(c, FS_LARGE);
-    ls_uiLabel(c, U"Statistiche", 10, baseY);
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    yOff = ls_uiLabelLayout(c, U"Statistiche", { 10, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY -= 30;
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= yOff;
     
     //TODO: All of them
-    ls_uiLabel(c, U"Caratteristiche: ", 10, baseY);
-    ls_uiLabel(c, page->STR, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"Caratteristiche: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->STR, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"BAB: ", 10, baseY);
-    ls_uiLabel(c, page->BAB, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"BAB: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->BAB, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"BMC: ", 10, baseY);
-    ls_uiLabel(c, page->BMC, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"BMC: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->BMC, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
-    ls_uiLabel(c, U"DMC: ", 10, baseY);
-    ls_uiLabel(c, page->DMC, valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"DMC: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->DMC, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
     //TODO: All of them
-    ls_uiLabel(c, U"Talenti: ", 10, baseY);
-    ls_uiLabel(c, page->talents[0], valueBaseX, baseY);
-    baseY -= 20;
+    ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->talents[0], { valueBaseX, baseY, maxX, minY });
     
-    ls_uiLabel(c, U"Qualit\U000000E0 Speciali: ", 10, baseY);
-    ls_uiLabel(c, page->spec_qual, valueBaseX, baseY);
-    baseY -= 30;
+    if(page->spec_qual.len) {
+        baseY -= yOff;
+        ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->spec_qual, { valueBaseX, baseY, maxX, minY });
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        baseY -= (yOff + 2);
+    }
+    else 
+    {
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        baseY -= yOff;
+    }
     
     //TODO: Specials go Here
     for(u32 i = 0; i < 24; i++)
     {
         if(page->specials[i].len == 0) { continue; }
-        ls_uiLabel(c, page->specials[i], 10, baseY);
-        baseY -= 120;
+        yOff = ls_uiLabelLayout(c, page->specials[i], { 10, baseY, maxX, minY });
+        baseY -= (yOff + 8);
     }
     
-    ls_uiSelectFontByFontSize(c, FS_LARGE);
-    ls_uiLabel(c, U"Descrizione", 10, baseY);
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    
+    yOff = ls_uiLabelLayout(c, U"Descrizione", { 10, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    baseY -= 30;
+    baseY -= yOff;
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
-    ls_uiLabel(c, page->desc, 10, baseY);
-    baseY -= 100;
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(30, 30, 30));
-    ls_uiLabel(c, U"Fonte: ", 10, baseY);
-    ls_uiLabel(c, page->source, valueBaseX, baseY);
+    yOff = ls_uiLabelLayout(c, page->desc, { 10, baseY, maxX, minY });
+    baseY -= yOff;
     
-    //ls_uiEndScrollableRegion(c);
+    baseY += (currPixelHeight-1);
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    
+    baseY -= (currPixelHeight+8);
+    ls_uiLabelLayout(c, U"Fonte: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, page->source, { valueBaseX, baseY, maxX, minY });
+    
+    scroll.minY = baseY;
+    
+    ls_uiEndScrollableRegion(c);
 }
 
 void DrawCompendium(UIContext *c)
@@ -866,7 +902,7 @@ void DrawCompendium(UIContext *c)
         AssertMsg(compendium.pageIndex != -1, "Page Index was not set\n");
         
         if(cachedPage.pageIndex != compendium.pageIndex)
-        { CachePage(compendium.codex.pages[compendium.pageIndex]); }
+        { CachePage(c, compendium.codex.pages[compendium.pageIndex]); }
         
         DrawPage(c, &cachedPage);
     }
