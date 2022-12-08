@@ -311,7 +311,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     UIMenu CompendiumMenu = {};
     CompendiumMenu.closeWindow  = ls_uiMenuButton(CompendiumExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
-    CompendiumMenu.itemWidth    = 100;
+    CompendiumMenu.itemWidth    = 120;
+    
+    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Monster Table", CompendiumOpenMonsterTable, NULL);
     
     
     State.isInitialized = TRUE;
