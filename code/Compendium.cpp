@@ -18,6 +18,7 @@ struct CachedPageEntry
     utf32 spells;
     utf32 racialMods;
     utf32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
+    utf32 specials[24];
     utf32 org;
     utf32 treasure;
     utf32 desc;
@@ -53,7 +54,6 @@ struct CachedPageEntry
     utf32 talents[24];
     utf32 skills[24]; //TODO Separate type from value
     utf32 languages[24];
-    utf32 specials[24];
     utf32 environment;
 };
 
@@ -78,6 +78,7 @@ struct PageEntry
     u32 spells;
     u32 racialMods;
     u32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
+    u32 specials[24];
     u32 org;
     u32 treasure;
     u32 desc;
@@ -113,7 +114,6 @@ struct PageEntry
     u16 talents[24];
     u16 skills[24]; //TODO Separate type from value
     u16 languages[24];
-    u16 specials[24];
     u16 environment;
 };
 
@@ -127,24 +127,6 @@ struct TableEntry
     u16 source;
     
     u32 page;
-};
-
-struct MonsterTable
-{
-    //NOTE: These buffers are used by the table, 
-    //      but most informations will be used globally as well.
-    buffer names;
-    buffer gs;
-    //buffer terrains;
-    //buffer climates;
-    buffer types;
-    buffer subtypes;
-    //buffer sources;
-    
-    Array<TableEntry> entries;
-    
-    //TODO: We'll add this when adding sorting / searching
-    //Array<u16>        displayIndices;
 };
 
 struct Codex
@@ -186,9 +168,10 @@ struct Compendium
 };
 
 //MonsterTable monsterTable = {};
-Compendium      compendium = {};
-CachedPageEntry cachedPage = {};
-ScrollableRegion scroll = {};
+Compendium      compendium   = {};
+CachedPageEntry cachedPage   = {};
+ScrollableRegion pageScroll  = {};
+ScrollableRegion tableScroll = {};
 
 b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
 {
@@ -345,7 +328,7 @@ void LoadCompendium(string path)
 
 void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
 {
-    if(index == 0) { return; } //NOTE: Index zero means no entry
+    if(index == 0) { toSet->len = 0; return; } //NOTE: Index zero means no entry
     
     buf->cursor = index;
     
@@ -419,55 +402,10 @@ void SetMonsterTable(UIContext *c)
 {
     Codex *codex = &compendium.codex;
     
+    s32 monsterTableMinY = -(codex->pages.count * 20);
+    tableScroll = { 0, 10, c->windowWidth - 4, c->windowHeight - 36, 0, 0, c->windowWidth - 32, monsterTableMinY };
+    
     ls_uiSelectFontByFontSize(c, FS_SMALL);
-    
-    return;
-}
-
-void DrawMonsterTable(UIContext *c)
-{
-    Input *UserInput = &c->UserInput;
-    Codex *codex     = &compendium.codex;
-    
-    s32 baseX = 20;
-    s32 baseY = 540;
-    
-    s32 entryRenderCount = (codex->pages.count > 32) ? 32 : codex->pages.count;
-    
-    for(u32 i = 0; i < entryRenderCount; i++)
-    {
-        PageEntry entry = codex->pages[i];
-        
-        Color bkgColor = RGBg(0x40);
-        
-        //NOTETODO: MAYBE I don't like a lot how this works.
-        if(LeftClickIn(baseX, baseY, 300, 20)) 
-        { 
-            compendium.isViewingPage = TRUE; 
-            compendium.pageIndex     = i;
-        }
-        
-        ls_uiRect(c, baseX-4, baseY-4, 300, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY, 1);
-        baseX += 299;
-        
-        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY, 1);
-        baseX += 79;
-        
-        ls_uiRect(c, baseX-4, baseY-4, 180, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), baseX, baseY, 1);
-        baseX += 179;
-        
-        //TODO: Show all subtypes. Right now we only grab one.
-        //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
-        ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), baseX, baseY, 1);
-        baseX += 119;
-        
-        baseY -= 19;
-        baseX = 20;
-    }
     
     return;
 }
@@ -494,6 +432,9 @@ void CachePage(UIContext *ui, PageEntry page)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.spells, page.spells);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.racialMods, page.racialMods);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.spec_qual, page.spec_qual);
+    
+    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->specials, cachedPage.specials + i, page.specials[i]); }
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.org, page.org);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.treasure, page.treasure);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.desc, page.desc);
@@ -536,18 +477,17 @@ void CachePage(UIContext *ui, PageEntry page)
     for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->talents, cachedPage.talents + i, page.talents[i]); }
     for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->skills, cachedPage.skills + i, page.skills[i]); }
     for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->languages, cachedPage.languages + i, page.languages[i]); }
-    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->specials, cachedPage.specials + i, page.specials[i]); }
     
     GetEntryFromBuffer_t(&c->environment, &cachedPage.environment, page.environment);
     
-    scroll = { 0, 10, ui->windowWidth - 4, ui->windowHeight - 36, 0, 0, ui->windowWidth - 32, 0};
+    pageScroll = { 0, 10, ui->windowWidth - 4, ui->windowHeight - 36, 0, 0, ui->windowWidth - 32, 0};
 }
 
 void DrawPage(UIContext *c, CachedPageEntry *page)
 {
     //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
     //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
-    ls_uiStartScrollableRegion(c, &scroll);
+    ls_uiStartScrollableRegion(c, &pageScroll);
     
     //NOTE: Used to adjust the next line position when changing font size, because
     //      a change in pixel height will make the next line too close / too far from the ideal position.
@@ -864,9 +804,65 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     
     c->textColor = RGBg(0xCC);
     
-    scroll.minY = baseY;
+    pageScroll.minY = baseY;
     
     ls_uiEndScrollableRegion(c);
+}
+
+void DrawMonsterTable(UIContext *c)
+{
+    Input *UserInput = &c->UserInput;
+    Codex *codex     = &compendium.codex;
+    
+    s32 baseX = 20;
+    s32 baseY = 630;
+    
+    s32 entryRenderCount = (codex->pages.count > 36) ? 36 : codex->pages.count;
+    
+    ls_uiStartScrollableRegion(c, &tableScroll);
+    
+    for(u32 i = 0; i < entryRenderCount; i++)
+    {
+        PageEntry entry = codex->pages[i];
+        
+        Color bkgColor = RGBg(0x40);
+        
+        s32 interactY = baseY-tableScroll.deltaY;
+        if(interactY <= 630)
+        {
+            if(LeftClickIn(baseX, interactY, 300, 20) && interactY) //TODONOTE: I don't like it...
+            {
+                compendium.isViewingPage = TRUE; 
+                compendium.pageIndex     = i;
+            }
+            
+            ls_uiRect(c, baseX-4, baseY-4, 300, 20, bkgColor, c->borderColor);
+            ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY, 1);
+            baseX += 299;
+            
+            ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
+            ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY, 1);
+            baseX += 79;
+            
+            ls_uiRect(c, baseX-4, baseY-4, 180, 20, bkgColor, c->borderColor);
+            ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), baseX, baseY, 1);
+            baseX += 179;
+            
+            //TODO: Show all subtypes. Right now we only grab one.
+            //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
+            ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
+            ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), baseX, baseY, 1);
+            baseX += 119;
+        }
+        
+        
+        baseY -= 19;
+        baseX = 20;
+    }
+    
+    ls_uiEndScrollableRegion(c);
+    
+    return;
 }
 
 void DrawCompendium(UIContext *c)
