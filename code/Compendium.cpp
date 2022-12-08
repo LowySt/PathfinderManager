@@ -277,7 +277,7 @@ void LoadCompendium(string path)
     cachedPage.org               = ls_utf32Alloc(128);
     cachedPage.treasure          = ls_utf32Alloc(128);
     cachedPage.desc              = ls_utf32Alloc(4096);
-    cachedPage.source            = ls_utf32Alloc(128);
+    cachedPage.source            = ls_utf32Alloc(256);
     
     cachedPage.name              = ls_utf32Alloc(48);
     cachedPage.gs                = ls_utf32Alloc(16);
@@ -293,7 +293,7 @@ void LoadCompendium(string path)
     
     for(u32 i = 0; i < 8; i++) { cachedPage.senses[i] = ls_utf32Alloc(32); }
     
-    cachedPage.perception = ls_utf32Alloc(48);
+    cachedPage.perception = ls_utf32Alloc(64);
     cachedPage.aura       = ls_utf32Alloc(128);
     
     for(u32 i = 0; i < 16; i++) { cachedPage.immunities[i]  = ls_utf32Alloc(32); }
@@ -302,7 +302,7 @@ void LoadCompendium(string path)
     
     cachedPage.speed = ls_utf32Alloc(64);
     cachedPage.space = ls_utf32Alloc(32);
-    cachedPage.reach = ls_utf32Alloc(32);
+    cachedPage.reach = ls_utf32Alloc(64);
     cachedPage.STR   = ls_utf32Alloc(16);
     cachedPage.DEX   = ls_utf32Alloc(16);
     cachedPage.CON   = ls_utf32Alloc(16);
@@ -310,15 +310,15 @@ void LoadCompendium(string path)
     cachedPage.WIS   = ls_utf32Alloc(16);
     cachedPage.CHA   = ls_utf32Alloc(16);
     cachedPage.BAB   = ls_utf32Alloc(16);
-    cachedPage.BMC   = ls_utf32Alloc(32);
-    cachedPage.DMC   = ls_utf32Alloc(32);
+    cachedPage.BMC   = ls_utf32Alloc(64);
+    cachedPage.DMC   = ls_utf32Alloc(64);
     
     for(u32 i = 0; i < 24; i++) { cachedPage.talents[i]   = ls_utf32Alloc(64); }
     for(u32 i = 0; i < 24; i++) { cachedPage.skills[i]    = ls_utf32Alloc(64); }
     for(u32 i = 0; i < 24; i++) { cachedPage.languages[i] = ls_utf32Alloc(64); }
     for(u32 i = 0; i < 24; i++) { cachedPage.specials[i]  = ls_utf32Alloc(4096); }
     
-    cachedPage.environment = ls_utf32Alloc(32);
+    cachedPage.environment = ls_utf32Alloc(64);
     
     //----------------------
     //NOTE: Now load the Compendium from file
@@ -605,23 +605,23 @@ void DrawMonsterTable(UIContext *c)
         Color bkgColor = RGBg(0x40);
         
         //NOTETODO: MAYBE I don't like a lot how this works.
-        if(LeftClickIn(baseX, baseY, 80, 20)) 
+        if(LeftClickIn(baseX, baseY, 300, 20)) 
         { 
             compendium.isViewingPage = TRUE; 
             compendium.pageIndex     = i;
         }
         
-        ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
+        ls_uiRect(c, baseX-4, baseY-4, 300, 20, bkgColor, c->borderColor);
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY, 1);
-        baseX += 119;
+        baseX += 299;
         
-        ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
+        ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY, 1);
-        baseX += 119;
+        baseX += 79;
         
-        ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
+        ls_uiRect(c, baseX-4, baseY-4, 180, 20, bkgColor, c->borderColor);
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), baseX, baseY, 1);
-        baseX += 119;
+        baseX += 179;
         
         //TODO: Show all subtypes. Right now we only grab one.
         //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
@@ -726,12 +726,12 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     s32 valueBaseX = 148;
     
     s32 yOff = 0;
-    prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     ls_uiLabelLayout(c, page->name, { 10, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U"GS", { 440, baseY, maxX, minY });
-    ls_uiLabelLayout(c, page->gs, { 480, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U"PE", { 545, baseY, maxX, minY });
-    yOff = ls_uiLabelLayout(c, page->pe, { 580, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"GS", { 540, baseY, maxX, minY });
+    ls_uiLabelLayout(c, page->gs, { 570, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"PE", { 635, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->pe, { 670, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -754,12 +754,16 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= yOff;
     
     //TODO: All of them
-    ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxX, minY });
-    yOff = ls_uiLabelLayout(c, page->senses[0], { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
+    if(page->senses[0].len)
+    {
+        ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->senses[0], { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
     
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= 4;
     
     yOff = ls_uiLabelLayout(c, U"Difesa", { 10, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
@@ -802,8 +806,10 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
         baseY -= yOff;
     }
     
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= 4;
+    
     yOff = ls_uiLabelLayout(c, U"Attacco", { 10, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
@@ -858,7 +864,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     
     if(page->magics.len)
     {
-        ls_uiLabelLayout(c, U"Capacità Magiche: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Capacit\U000000E0 Magiche: ", { 10, baseY, maxX, minY });
         yOff = ls_uiLabelLayout(c, page->magics, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
@@ -870,8 +876,10 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
         baseY -= yOff;
     }
     
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= 4;
+    
     yOff = ls_uiLabelLayout(c, U"Statistiche", { 10, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
@@ -902,21 +910,27 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //TODO: All of them
     ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxX, minY });
     yOff = ls_uiLabelLayout(c, page->talents[0], { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
     
     if(page->spec_qual.len) {
-        baseY -= yOff;
         ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", { 10, baseY, maxX, minY });
         yOff = ls_uiLabelLayout(c, page->spec_qual, { valueBaseX, baseY, maxX, minY });
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        baseY -= (yOff + 2);
-    }
-    else 
-    {
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
         baseY -= yOff;
     }
     
-    //TODO: Specials go Here
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= 4;
+    
+    yOff = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", { 10, baseY, maxX, minY });
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= yOff;
+    
+    baseY -= 8; //NOTE: Random spacing because it feels cramped
+    
     for(u32 i = 0; i < 24; i++)
     {
         if(page->specials[i].len == 0) { continue; }
@@ -924,8 +938,32 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
         baseY -= (yOff + 8);
     }
     
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= 4;
+    
+    yOff = ls_uiLabelLayout(c, U"Ecologia", { 10, baseY, maxX, minY });
+    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    baseY -= yOff;
+    
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+    
+    ls_uiLabelLayout(c, U"Ambiente: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->environment, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
+    
+    ls_uiLabelLayout(c, U"Organizzazione: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->org, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
+    
+    ls_uiLabelLayout(c, U"Tesoro: ", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, page->treasure, { valueBaseX, baseY, maxX, minY });
+    baseY -= yOff;
+    
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= 4;
     
     yOff = ls_uiLabelLayout(c, U"Descrizione", { 10, baseY, maxX, minY });
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
@@ -939,6 +977,18 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     
     baseY += (currPixelHeight-1);
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+    
+    
+    //TODO: Make these links openable.
+    //      To do it we need to call this function
+    //      https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shellexecutea
+    //
+    //      Leaving the "verb" (second param) null and passing the http link should open the page in the
+    //      default browser.
+    //
+    //      If that doesn't work, windows in both CommandPrompt and Powershell has a "start" command
+    //      that opens whatever path you give it with the appropriate command. So an http link should get
+    //      opened in the default browser.
     
     baseY -= (currPixelHeight+8);
     ls_uiLabelLayout(c, U"Fonte: ", { 10, baseY, maxX, minY });
