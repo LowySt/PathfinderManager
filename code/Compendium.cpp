@@ -176,6 +176,7 @@ struct Codex
     //TODO: Change this to a FixedArray
     Array<PageEntry> pages;
     
+    //TODO: Remove these, not useful right now.
     UIButton  newEntry;
     
     UITextBox newEntryName;
@@ -205,6 +206,14 @@ struct Compendium
 Compendium      compendium = {};
 CachedPageEntry cachedPage = {};
 ScrollableRegion scroll = {};
+
+b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
+{
+    compendium.isViewingPage = FALSE;
+    compendium.pageIndex     = -1;
+    
+    return FALSE;
+}
 
 #if 0 //TODO Re-implement correct
 u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
@@ -270,7 +279,7 @@ void LoadCompendium(string path)
     cachedPage.desc              = ls_utf32Alloc(4096);
     cachedPage.source            = ls_utf32Alloc(128);
     
-    cachedPage.name              = ls_utf32Alloc(32);
+    cachedPage.name              = ls_utf32Alloc(48);
     cachedPage.gs                = ls_utf32Alloc(16);
     cachedPage.pe                = ls_utf32Alloc(16);
     cachedPage.alignment         = ls_utf32Alloc(32);
@@ -284,14 +293,14 @@ void LoadCompendium(string path)
     
     for(u32 i = 0; i < 8; i++) { cachedPage.senses[i] = ls_utf32Alloc(32); }
     
-    cachedPage.perception = ls_utf32Alloc(32);
+    cachedPage.perception = ls_utf32Alloc(48);
     cachedPage.aura       = ls_utf32Alloc(128);
     
     for(u32 i = 0; i < 16; i++) { cachedPage.immunities[i]  = ls_utf32Alloc(32); }
     for(u32 i = 0; i < 16; i++) { cachedPage.resistances[i] = ls_utf32Alloc(32); }
     for(u32 i = 0; i < 16; i++) { cachedPage.weaknesses[i]  = ls_utf32Alloc(32); }
     
-    cachedPage.speed = ls_utf32Alloc(32);
+    cachedPage.speed = ls_utf32Alloc(64);
     cachedPage.space = ls_utf32Alloc(32);
     cachedPage.reach = ls_utf32Alloc(32);
     cachedPage.STR   = ls_utf32Alloc(16);
@@ -470,7 +479,8 @@ void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
     
     u32 len = ls_utf8Len(utf8_data, byteLen);
     
-    if(toSet->size < len) { ls_printf("Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", toSet->size, len, byteLen, index); }
+    if(toSet->size < len)
+    { ls_printf("Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", toSet->size, len, byteLen, index); }
     
     ls_utf32FromUTF8_t(toSet, utf8_data, len);
     
@@ -507,6 +517,27 @@ utf32 GetEntryFromBuffer(buffer *buf, u32 index)
 utf32 GetEntryFromBuffer(buffer *buf, u16 index)
 {
     return GetEntryFromBuffer(buf, (u32)index);
+}
+
+utf8 GetEntryFromBuffer_8(buffer *buf, u32 index)
+{
+    if(index == 0) { return {}; } //NOTE: Index zero means no entry
+    
+    buf->cursor = index;
+    
+    u32 byteLen   = (u32)ls_bufferPeekWord(buf);
+    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
+    
+    utf8 result = ls_utf8Constant(utf8_data, (s32)byteLen);
+    
+    ls_bufferSeekBegin(buf);
+    
+    return result;
+}
+
+utf8 GetEntryFromBuffer_8(buffer *buf, u16 index)
+{
+    return GetEntryFromBuffer_8(buf, (u32)index);
 }
 
 b32 SetupNewEntry(UIContext *c, void *userData)
@@ -565,7 +596,9 @@ void DrawMonsterTable(UIContext *c)
     s32 baseX = 20;
     s32 baseY = 540;
     
-    for(u32 i = 0; i < codex->pages.count; i++)
+    s32 entryRenderCount = (codex->pages.count > 32) ? 32 : codex->pages.count;
+    
+    for(u32 i = 0; i < entryRenderCount; i++)
     {
         PageEntry entry = codex->pages[i];
         
@@ -579,22 +612,21 @@ void DrawMonsterTable(UIContext *c)
         }
         
         ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
-        
-        ls_uiLabel(c, GetEntryFromBuffer(&codex->names, entry.name), baseX, baseY, 1);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY, 1);
         baseX += 119;
         
         ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&codex->gs, entry.gs), baseX, baseY, 1);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY, 1);
         baseX += 119;
         
         ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&codex->types, entry.type), baseX, baseY, 1);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), baseX, baseY, 1);
         baseX += 119;
         
         //TODO: Show all subtypes. Right now we only grab one.
         //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
         ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer(&codex->subtypes, entry.subtype[0]), baseX, baseY, 1);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), baseX, baseY, 1);
         baseX += 119;
         
         baseY -= 19;
@@ -609,8 +641,6 @@ void CachePage(UIContext *ui, PageEntry page)
     Codex *c = &compendium.codex;
     
     cachedPage.pageIndex = compendium.pageIndex;
-    
-    ls_printf("One\n");
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.origin, page.origin);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.shortDesc, page.shortDesc);
@@ -633,40 +663,26 @@ void CachePage(UIContext *ui, PageEntry page)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.desc, page.desc);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.source, page.source);
     
-    ls_printf("Two\n");
-    
     GetEntryFromBuffer_t(&c->names, &cachedPage.name, page.name);
     GetEntryFromBuffer_t(&c->gs, &cachedPage.gs, page.gs);
     GetEntryFromBuffer_t(&c->pe, &cachedPage.pe, page.pe);
     GetEntryFromBuffer_t(&c->alignment, &cachedPage.alignment, page.alignment);
     GetEntryFromBuffer_t(&c->types, &cachedPage.type, page.type);
     
-    ls_printf("Three\n");
-    
     for(u32 i = 0; i < 8; i++) { GetEntryFromBuffer_t(&c->subtypes, cachedPage.subtype + i, page.subtype[i]); }
     for(u32 i = 0; i < 4; i++) { GetEntryFromBuffer_t(&c->archetypes, cachedPage.archetype + i, page.archetype[i]); }
-    
-    ls_printf("Four\n");
     
     GetEntryFromBuffer_t(&c->sizes, &cachedPage.size, page.size);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.initiative, page.initiative);
     
-    ls_printf("Five\n");
-    
     for(u32 i = 0; i < 8; i++) { GetEntryFromBuffer_t(&c->senses, cachedPage.senses + i, page.senses[i]); }
-    
-    ls_printf("Six\n");
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.perception, page.perception);
     GetEntryFromBuffer_t(&c->auras, &cachedPage.aura, page.aura);
     
-    ls_printf("Seven\n");
-    
     for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->immunities, cachedPage.immunities + i, page.immunities[i]);}
     for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->resistances, cachedPage.resistances+i, page.resistances[i]);}
     for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->weaknesses, cachedPage.weaknesses + i, page.weaknesses[i]);}
-    
-    ls_printf("Eight\n");
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.speed, page.speed);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.space, page.space);
@@ -681,18 +697,12 @@ void CachePage(UIContext *ui, PageEntry page)
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.BMC, page.BMC);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.DMC, page.DMC);
     
-    ls_printf("Nine\n");
-    
     for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->talents, cachedPage.talents + i, page.talents[i]); }
     for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->skills, cachedPage.skills + i, page.skills[i]); }
     for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->languages, cachedPage.languages + i, page.languages[i]); }
     for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->specials, cachedPage.specials + i, page.specials[i]); }
     
-    ls_printf("Ten\n");
-    
     GetEntryFromBuffer_t(&c->environment, &cachedPage.environment, page.environment);
-    
-    ls_printf("Eleven\n");
     
     scroll = { 0, 10, ui->windowWidth - 4, ui->windowHeight - 36, 0, 0, ui->windowWidth - 32, 0};
 }
@@ -770,18 +780,27 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     yOff = ls_uiLabelLayout(c, page->ST, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"RD: ", { 10, baseY, maxX, minY });
-    yOff = ls_uiLabelLayout(c, page->RD, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
+    if(page->RD.len)
+    {
+        ls_uiLabelLayout(c, U"RD: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->RD, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
     
-    ls_uiLabelLayout(c, U"RI: ", { 10, baseY, maxX, minY });
-    yOff = ls_uiLabelLayout(c, page->RI, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
+    if(page->RI.len)
+    {
+        ls_uiLabelLayout(c, U"RI: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->RI, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
     
     //TODO: All of them
-    ls_uiLabelLayout(c, U"Immunit\U000000E0: ", { 10, baseY, maxX, minY });
-    yOff = ls_uiLabelLayout(c, page->immunities[0], { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
+    if(page->immunities[0].len)
+    {
+        ls_uiLabelLayout(c, U"Immunit\U000000E0: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->immunities[0], { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
@@ -792,6 +811,8 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= yOff;
     
+    //TODO: Temporary
+    valueBaseX = 200;
     ls_uiLabelLayout(c, U"Velocit\U000000E0: ", { 10, baseY, maxX, minY });
     yOff = ls_uiLabelLayout(c, page->speed, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
@@ -799,6 +820,55 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     ls_uiLabelLayout(c, U"Mischia: ", { 10, baseY, maxX, minY });
     yOff = ls_uiLabelLayout(c, page->melee, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
+    
+    if(page->ranged.len)
+    {
+        ls_uiLabelLayout(c, U"Distanza: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->ranged, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
+    
+    if(page->specialAttacks.len)
+    {
+        ls_uiLabelLayout(c, U"Attacchi Speciali: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->specialAttacks, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
+    
+    if(page->space.len)
+    {
+        ls_uiLabelLayout(c, U"Spazio: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->space, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
+    
+    if(page->reach.len)
+    {
+        ls_uiLabelLayout(c, U"Portata: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->reach, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
+    
+    if(page->psych.len)
+    {
+        ls_uiLabelLayout(c, U"Magia Psichica: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->psych, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
+    
+    if(page->magics.len)
+    {
+        ls_uiLabelLayout(c, U"Capacità Magiche: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->magics, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
+    
+    if(page->spells.len)
+    {
+        ls_uiLabelLayout(c, U"Incantesimi Conosciuti: ", { 10, baseY, maxX, minY });
+        yOff = ls_uiLabelLayout(c, page->spells, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_LARGE);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
@@ -808,6 +878,9 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
     baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= yOff;
+    
+    //TODO: Temporary
+    valueBaseX = 148;
     
     //TODO: All of them
     ls_uiLabelLayout(c, U"Caratteristiche: ", { 10, baseY, maxX, minY });
@@ -869,7 +942,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     
     baseY -= (currPixelHeight+8);
     ls_uiLabelLayout(c, U"Fonte: ", { 10, baseY, maxX, minY });
-    ls_uiLabelLayout(c, page->source, { valueBaseX, baseY, maxX, minY });
+    baseY -= ls_uiLabelLayout(c, page->source, { 72, baseY, maxX, minY });
     
     scroll.minY = baseY;
     
