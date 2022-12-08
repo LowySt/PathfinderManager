@@ -222,12 +222,12 @@ void LoadCompendium(string path)
     
     for(u32 i = 0; i < 8; i++) { cachedPage.senses[i] = ls_utf32Alloc(32); }
     
-    cachedPage.perception = ls_utf32Alloc(64);
+    cachedPage.perception = ls_utf32Alloc(128);
     cachedPage.aura       = ls_utf32Alloc(128);
     
-    for(u32 i = 0; i < 16; i++) { cachedPage.immunities[i]  = ls_utf32Alloc(48); }
-    for(u32 i = 0; i < 16; i++) { cachedPage.resistances[i] = ls_utf32Alloc(48); }
-    for(u32 i = 0; i < 16; i++) { cachedPage.weaknesses[i]  = ls_utf32Alloc(48); }
+    for(u32 i = 0; i < 16; i++) { cachedPage.immunities[i]  = ls_utf32Alloc(64); }
+    for(u32 i = 0; i < 16; i++) { cachedPage.resistances[i] = ls_utf32Alloc(64); }
+    for(u32 i = 0; i < 16; i++) { cachedPage.weaknesses[i]  = ls_utf32Alloc(64); }
     
     cachedPage.speed = ls_utf32Alloc(64);
     cachedPage.space = ls_utf32Alloc(32);
@@ -402,7 +402,7 @@ void SetMonsterTable(UIContext *c)
 {
     Codex *codex = &compendium.codex;
     
-    s32 monsterTableMinY = -(codex->pages.count * 20);
+    s32 monsterTableMinY = -((codex->pages.count-30) * 19);
     tableScroll = { 0, 10, c->windowWidth - 4, c->windowHeight - 36, 0, 0, c->windowWidth - 32, monsterTableMinY };
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -517,6 +517,12 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= yOff;
     
+    if(page->origin.len)
+    {
+        yOff = ls_uiLabelLayout(c, page->origin, { 10, baseY, maxX, minY }, pureWhite);
+        baseY -= yOff;
+    }
+    
     yOff = ls_uiLabelLayout(c, page->shortDesc, { 10, baseY, maxX, minY });
     baseY -= yOff;
     
@@ -525,18 +531,68 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= yOff;
     
     ls_uiLabelLayout(c, U"Categoria: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->type, { valueBaseX, baseY, maxX, minY });
+    ls_uiLabelLayout(c, page->type, { valueBaseX, baseY, maxX, minY });
+    
+    if(page->subtype[0].len)
+    {
+        ls_uiLabelLayout(c, U" (", { valueBaseX, baseY, maxX, minY }, pureWhite);
+        for(u32 i = 0; i < 8; i++)
+        {
+            if(page->subtype[i].len == 0) { break; }
+            ls_uiLabelLayout(c, page->subtype[i], { valueBaseX, baseY, maxX, minY }, pureWhite);
+            ls_uiLabelLayout(c, U", ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+        }
+        
+        yOff = ls_uiLabelLayout(c, U")", { valueBaseX, baseY, maxX, minY }, pureWhite);
+    }
+    
+    if(page->archetype[0].len)
+    {
+        ls_uiLabelLayout(c, U" [", { valueBaseX, baseY, maxX, minY }, pureWhite);
+        for(u32 i = 0; i < 8; i++)
+        {
+            if(page->archetype[i].len == 0) { break; }
+            ls_uiLabelLayout(c, page->archetype[i], { valueBaseX, baseY, maxX, minY }, pureWhite);
+            ls_uiLabelLayout(c, U", ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+        }
+        
+        yOff = ls_uiLabelLayout(c, U"]", { valueBaseX, baseY, maxX, minY }, pureWhite);
+    }
+    
+    if(page->size.len)
+    {
+        yOff = ls_uiLabelLayout(c, page->size, { valueBaseX, baseY, maxX, minY });
+    }
+    
     baseY -= yOff;
     
     ls_uiLabelLayout(c, U"Iniziativa: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->initiative, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    //TODO: All of them
+    //TODO: Fix the X offset
     if(page->senses[0].len)
     {
         ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->senses[0], { valueBaseX, baseY, maxX, minY });
+        for(u32 i = 0; i < 8; i++)
+        {
+            if(page->senses[i].len == 0) { break; }
+            yOff = ls_uiLabelLayout(c, page->senses[i], { valueBaseX, baseY, maxX, minY });
+        }
+        
+        //TODO: Shouldn't Perception be outside the senses existance check?
+        //      https://golarion.altervista.org/wiki/Cetus
+        AssertMsg(FALSE, "Percezione Tellurica fotte il Parse che cerca Percezione in hyperGol");
+        ls_uiLabelLayout(c, U"Percezione ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+        ls_uiLabelLayout(c, page->perception, { valueBaseX, baseY, maxX, minY });
+        
+        baseY -= yOff;
+    }
+    
+    if(page->aura.len)
+    {
+        ls_uiLabelLayout(c, U"Aura: ", { 10, baseY, maxX, minY }, pureWhite);
+        yOff = ls_uiLabelLayout(c, page->aura, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
@@ -550,6 +606,9 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
     baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= yOff;
+    
+    //TODO: Temporary
+    valueBaseX = 164;
     
     ls_uiLabelLayout(c, U"CA: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->AC, { valueBaseX, baseY, maxX, minY });
@@ -598,6 +657,13 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
             if(page->resistances[i].len == 0) { break; }
             yOff = ls_uiLabelLayout(c, page->resistances[i], { valueBaseX, baseY, maxX, minY });
         }
+        baseY -= yOff;
+    }
+    
+    if(page->defensiveCapacity.len)
+    {
+        ls_uiLabelLayout(c, U"Capacit\U000000E0 Difensive: ", { 10, baseY, maxX, minY }, pureWhite);
+        yOff = ls_uiLabelLayout(c, page->defensiveCapacity, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
@@ -695,12 +761,20 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= yOff;
     
-    //TODO: Temporary
-    valueBaseX = 148;
-    
-    //TODO: All of them
+    //TODO: Fix the X Off
     ls_uiLabelLayout(c, U"Caratteristiche: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->STR, { valueBaseX, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Forza ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+    ls_uiLabelLayout(c, page->STR, { valueBaseX, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U", Destrezza ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+    ls_uiLabelLayout(c, page->DEX, { valueBaseX, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U", Costituzione ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+    ls_uiLabelLayout(c, page->CON, { valueBaseX, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U", Intelligenza ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+    ls_uiLabelLayout(c, page->INT, { valueBaseX, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U", Saggezza ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+    ls_uiLabelLayout(c, page->WIS, { valueBaseX, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U", Carisma ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+    yOff = ls_uiLabelLayout(c, page->CHA, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
     ls_uiLabelLayout(c, U"BAB: ", { 10, baseY, maxX, minY }, pureWhite);
@@ -715,16 +789,56 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     yOff = ls_uiLabelLayout(c, page->DMC, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    //TODO: All of them
-    ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->talents[0], { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
+    //TODO: X offset
+    if(page->talents[0].len)
+    {
+        ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxX, minY }, pureWhite);
+        for(u32 i = 0; i < 24; i++)
+        {
+            if(page->talents[i].len == 0) { break; }
+            yOff = ls_uiLabelLayout(c, page->talents[i], { valueBaseX, baseY, maxX, minY });
+        }
+        baseY -= yOff;
+    }
     
-    if(page->spec_qual.len) {
+    if(page->skills[0].len)
+    {
+        ls_uiLabelLayout(c, U"Abilit\U000000E0: ", { 10, baseY, maxX, minY }, pureWhite);
+        for(u32 i = 0; i < 24; i++)
+        {
+            if(page->skills[i].len == 0) { break; }
+            yOff = ls_uiLabelLayout(c, page->skills[i], { valueBaseX, baseY, maxX, minY });
+        }
+        baseY -= yOff;
+    }
+    
+    if(page->languages[0].len)
+    {
+        ls_uiLabelLayout(c, U"Linguaggi: ", { 10, baseY, maxX, minY }, pureWhite);
+        for(u32 i = 0; i < 24; i++)
+        {
+            if(page->languages[i].len == 0) { break; }
+            yOff = ls_uiLabelLayout(c, page->languages[i], { valueBaseX, baseY, maxX, minY });
+        }
+        baseY -= yOff;
+    }
+    
+    if(page->racialMods.len)
+    {
+        ls_uiLabelLayout(c, U"Modificatori Razziali: ", { 10, baseY, maxX, minY }, pureWhite);
+        yOff = ls_uiLabelLayout(c, page->racialMods, { valueBaseX, baseY, maxX, minY });
+        baseY -= yOff;
+    }
+    
+    if(page->spec_qual.len)
+    {
         ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->spec_qual, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
+    
+    //TODO: Temporary
+    valueBaseX = 148;
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
@@ -814,47 +928,46 @@ void DrawMonsterTable(UIContext *c)
     Input *UserInput = &c->UserInput;
     Codex *codex     = &compendium.codex;
     
+    Color bkgColor = RGBg(0x40);
+    
     s32 baseX = 20;
     s32 baseY = 630;
     
-    s32 entryRenderCount = (codex->pages.count > 36) ? 36 : codex->pages.count;
-    
     ls_uiStartScrollableRegion(c, &tableScroll);
     
-    for(u32 i = 0; i < entryRenderCount; i++)
+    s32 startI = -(tableScroll.deltaY / 19);
+    s32 endI   = startI+36 < codex->pages.count ? startI+36 : codex->pages.count;
+    
+    for(s32 i = startI; i < endI; i++)
     {
         PageEntry entry = codex->pages[i];
+        Color hoverColor = bkgColor;
         
-        Color bkgColor = RGBg(0x40);
-        
-        s32 interactY = baseY-tableScroll.deltaY;
-        if(interactY <= 630)
+        if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
         {
-            if(LeftClickIn(baseX, interactY, 300, 20) && interactY) //TODONOTE: I don't like it...
-            {
-                compendium.isViewingPage = TRUE; 
-                compendium.pageIndex     = i;
-            }
-            
-            ls_uiRect(c, baseX-4, baseY-4, 300, 20, bkgColor, c->borderColor);
-            ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY, 1);
-            baseX += 299;
-            
-            ls_uiRect(c, baseX-4, baseY-4, 80, 20, bkgColor, c->borderColor);
-            ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY, 1);
-            baseX += 79;
-            
-            ls_uiRect(c, baseX-4, baseY-4, 180, 20, bkgColor, c->borderColor);
-            ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), baseX, baseY, 1);
-            baseX += 179;
-            
-            //TODO: Show all subtypes. Right now we only grab one.
-            //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
-            ls_uiRect(c, baseX-4, baseY-4, 120, 20, bkgColor, c->borderColor);
-            ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), baseX, baseY, 1);
-            baseX += 119;
+            compendium.isViewingPage = TRUE; 
+            compendium.pageIndex     = i;
         }
         
+        if(MouseInRect(baseX-4, baseY-4, 300, 18)) { hoverColor = RGBg(0x66); }
+        
+        ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 300, 20, hoverColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY+tableScroll.deltaY, 1);
+        baseX += 299;
+        
+        ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 80, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY+tableScroll.deltaY, 1);
+        baseX += 79;
+        
+        ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 180, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), baseX, baseY+tableScroll.deltaY, 1);
+        baseX += 179;
+        
+        //TODO: Show all subtypes. Right now we only grab one.
+        //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
+        ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 188, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), baseX, baseY+tableScroll.deltaY, 1);
+        baseX += 187;
         
         baseY -= 19;
         baseX = 20;
