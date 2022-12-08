@@ -175,31 +175,14 @@ struct Codex
     
     //TODO: Change this to a FixedArray
     Array<PageEntry> pages;
-    
-    //TODO: Remove these, not useful right now.
-    UIButton  newEntry;
-    
-    UITextBox newEntryName;
-    UITextBox newEntryGS;
-    UITextBox newEntryTerrain;
-    UITextBox newEntryClimate;
-    UITextBox newEntryType;
-    UITextBox newEntrySubtype;
-    UITextBox newEntrySource;
-    
-    UIButton  confirmNewEntry;
-    
-    UIButton  saveCompendium;
 };
 
 struct Compendium
 {
     Codex codex;
     
-    b32 isSettingNewEntry;
-    
-    b32             isViewingPage;
-    s32             pageIndex = -1;
+    b32   isViewingPage;
+    s32   pageIndex = -1;
 };
 
 //MonsterTable monsterTable = {};
@@ -215,50 +198,13 @@ b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
     return FALSE;
 }
 
-#if 0 //TODO Re-implement correct
-u16 AddEntryToBufferIfMissing(buffer *buf, unistring element)
-{
-    //TODO: This HAS to change the data size. It MUST be 16 bit otherwise strings just won't fit.
-    buf->cursor = 4;
-    
-    //NOTE: The first 32bit integer of the reference tables are the size of the entire buffer 
-    //      (to simplify serialization)
-    u64 cursor = 4;
-    while(cursor < buf->size)
-    {
-        unistring tmp = {};
-        
-        u8 len   = ls_bufferPeekData8(buf, (void **)&tmp.data);
-        if(len == 0) { break; }
-        
-        tmp.len  = len/sizeof(u32);
-        tmp.size = len/sizeof(u32);
-        
-        if(ls_unistrAreEqual(tmp, element)) { return cursor; }
-        
-        cursor += (len + 1);
-        ls_bufferReadSkip(buf, len+1);
-    }
-    
-    //NOTE: Was not found
-    ls_bufferAddData8(buf, (void **)element.data, element.len*sizeof(u32));
-    
-    ls_bufferSeekBegin(buf);
-    u32 currentSize = ls_bufferPeekDWord(buf);
-    u32 newSize = currentSize + (element.len*sizeof(u32)) + 1;
-    ls_bufferChangeDWord(buf, newSize);
-    
-    return cursor;
-}
-#endif
-
 void LoadCompendium(string path)
 {
     ls_arenaUse(compendiumArena);
     
     //----------------------
     //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
-    cachedPage.origin            = ls_utf32Alloc(16);
+    cachedPage.origin            = ls_utf32Alloc(48);
     cachedPage.shortDesc         = ls_utf32Alloc(256);
     cachedPage.AC                = ls_utf32Alloc(128);
     cachedPage.HP                = ls_utf32Alloc(128);
@@ -273,9 +219,9 @@ void LoadCompendium(string path)
     cachedPage.magics            = ls_utf32Alloc(2048);
     cachedPage.spells            = ls_utf32Alloc(2048);
     cachedPage.racialMods        = ls_utf32Alloc(128);
-    cachedPage.spec_qual         = ls_utf32Alloc(128);
-    cachedPage.org               = ls_utf32Alloc(128);
-    cachedPage.treasure          = ls_utf32Alloc(128);
+    cachedPage.spec_qual         = ls_utf32Alloc(256);
+    cachedPage.org               = ls_utf32Alloc(448);
+    cachedPage.treasure          = ls_utf32Alloc(256);
     cachedPage.desc              = ls_utf32Alloc(4096);
     cachedPage.source            = ls_utf32Alloc(256);
     
@@ -296,9 +242,9 @@ void LoadCompendium(string path)
     cachedPage.perception = ls_utf32Alloc(64);
     cachedPage.aura       = ls_utf32Alloc(128);
     
-    for(u32 i = 0; i < 16; i++) { cachedPage.immunities[i]  = ls_utf32Alloc(32); }
-    for(u32 i = 0; i < 16; i++) { cachedPage.resistances[i] = ls_utf32Alloc(32); }
-    for(u32 i = 0; i < 16; i++) { cachedPage.weaknesses[i]  = ls_utf32Alloc(32); }
+    for(u32 i = 0; i < 16; i++) { cachedPage.immunities[i]  = ls_utf32Alloc(48); }
+    for(u32 i = 0; i < 16; i++) { cachedPage.resistances[i] = ls_utf32Alloc(48); }
+    for(u32 i = 0; i < 16; i++) { cachedPage.weaknesses[i]  = ls_utf32Alloc(48); }
     
     cachedPage.speed = ls_utf32Alloc(64);
     cachedPage.space = ls_utf32Alloc(32);
@@ -397,77 +343,6 @@ void LoadCompendium(string path)
     return;
 }
 
-void SaveCompendium(string path)
-{
-    AssertMsg(FALSE, "This is completely wrong and has to be re-implemented");
-#if 0
-    char cPath[128] = {};
-    ls_strToCStr_t(path, cPath, 128);
-    
-    ls_bufferSeekBegin(&monsterTable.names);
-    ls_bufferSeekBegin(&monsterTable.gs);
-    ls_bufferSeekBegin(&monsterTable.terrains);
-    ls_bufferSeekBegin(&monsterTable.climates);
-    ls_bufferSeekBegin(&monsterTable.types);
-    ls_bufferSeekBegin(&monsterTable.subtypes);
-    ls_bufferSeekBegin(&monsterTable.sources);
-    
-    u32 namesSize    = ls_bufferPeekDWord(&monsterTable.names);
-    u32 gsSize       = ls_bufferPeekDWord(&monsterTable.gs);
-    u32 terrainsSize = ls_bufferPeekDWord(&monsterTable.terrains);
-    u32 climatesSize = ls_bufferPeekDWord(&monsterTable.climates);
-    u32 typesSize    = ls_bufferPeekDWord(&monsterTable.types);
-    u32 subtypesSize = ls_bufferPeekDWord(&monsterTable.subtypes);
-    u32 sourcesSize  = ls_bufferPeekDWord(&monsterTable.sources);
-    
-    ls_writeFile(cPath, monsterTable.names.data,    namesSize + 4,    FALSE);
-    ls_writeFile(cPath, monsterTable.gs.data,       gsSize + 4,       TRUE);
-    ls_writeFile(cPath, monsterTable.terrains.data, terrainsSize + 4, TRUE);
-    ls_writeFile(cPath, monsterTable.climates.data, climatesSize + 4, TRUE);
-    ls_writeFile(cPath, monsterTable.types.data,    typesSize + 4,    TRUE);
-    ls_writeFile(cPath, monsterTable.subtypes.data, subtypesSize + 4, TRUE);
-    ls_writeFile(cPath, monsterTable.sources.data,  sourcesSize + 4,  TRUE);
-    
-    //NOTETODO We are not writing explicitly the size of this last array.
-    //         For now it's fine because being the last it can be implied from the total size of the file.
-    ls_writeFile(cPath, monsterTable.entries.data, monsterTable.entries.count*sizeof(TableEntry), TRUE);
-#endif
-    return;
-}
-
-b32 AddEntryToCompendium(UIContext *c, void *userData)
-{
-    AssertMsg(FALSE, "This is completely wrong and has to be re-implemented");
-#if 0
-    Codex *codex = &compendium.codex;
-    
-    compendium.isSettingNewEntry = FALSE;
-    
-    u16 nameIndex    = AddEntryToBufferIfMissing(&monsterTable.names,    codex->newEntryName.text);
-    u16 gsIndex      = AddEntryToBufferIfMissing(&monsterTable.gs,       codex->newEntryGS.text);
-    u16 terrainIndex = AddEntryToBufferIfMissing(&monsterTable.terrains, codex->newEntryTerrain.text);
-    u16 climateIndex = AddEntryToBufferIfMissing(&monsterTable.climates, codex->newEntryClimate.text);
-    u16 typeIndex    = AddEntryToBufferIfMissing(&monsterTable.types,    codex->newEntryType.text);
-    u16 subtypeIndex = AddEntryToBufferIfMissing(&monsterTable.subtypes, codex->newEntrySubtype.text);
-    u16 sourceIndex  = AddEntryToBufferIfMissing(&monsterTable.sources,  codex->newEntrySource.text);
-    
-    TableEntry newEntry = {nameIndex, gsIndex, terrainIndex, climateIndex, typeIndex, subtypeIndex, sourceIndex, 0};
-    u16 newEntryIdx = (u16)ls_arrayAppend(&monsterTable.entries, newEntry);
-    ls_arrayAppend(&monsterTable.displayIndices, newEntryIdx);
-    
-    ls_uiTextBoxClear(c, &codex->newEntryName);
-    ls_uiTextBoxClear(c, &codex->newEntryGS);
-    ls_uiTextBoxClear(c, &codex->newEntryTerrain);
-    ls_uiTextBoxClear(c, &codex->newEntryClimate);
-    ls_uiTextBoxClear(c, &codex->newEntryType);
-    ls_uiTextBoxClear(c, &codex->newEntrySubtype);
-    ls_uiTextBoxClear(c, &codex->newEntrySource);
-#endif
-    
-    //TODONOTE: Should this be undoable??
-    return FALSE;
-}
-
 void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
 {
     if(index == 0) { return; } //NOTE: Index zero means no entry
@@ -540,48 +415,9 @@ utf8 GetEntryFromBuffer_8(buffer *buf, u16 index)
     return GetEntryFromBuffer_8(buf, (u32)index);
 }
 
-b32 SetupNewEntry(UIContext *c, void *userData)
-{
-    compendium.isSettingNewEntry = TRUE;
-    
-    //TODONOTE: Should this be undoable??
-    return FALSE;
-}
-
-b32 SaveCompendiumOnClick(UIContext *c, void *userData)
-{
-    SaveCompendium(ls_strConstant("Compendium"));
-    return FALSE;
-}
-
 void SetMonsterTable(UIContext *c)
 {
     Codex *codex = &compendium.codex;
-    
-    codex->newEntry        = ls_uiButtonInit(UIBUTTON_TEXT, U"+", SetupNewEntry, NULL, NULL);
-    codex->confirmNewEntry = ls_uiButtonInit(UIBUTTON_TEXT, U"Add", AddEntryToCompendium, NULL, NULL);
-    codex->saveCompendium  = ls_uiButtonInit(UIBUTTON_TEXT, U"Save", SaveCompendiumOnClick, NULL, NULL);
-    
-    ls_uiTextBoxSet(c, &codex->newEntryName, U"");
-    codex->newEntryName.isSingleLine = TRUE;
-    
-    ls_uiTextBoxSet(c, &codex->newEntryGS, U"");
-    codex->newEntryGS.isSingleLine = TRUE;
-    
-    ls_uiTextBoxSet(c, &codex->newEntryTerrain, U"");
-    codex->newEntryTerrain.isSingleLine = TRUE;
-    
-    ls_uiTextBoxSet(c, &codex->newEntryClimate, U"");
-    codex->newEntryClimate.isSingleLine = TRUE;
-    
-    ls_uiTextBoxSet(c, &codex->newEntryType, U"");
-    codex->newEntryType.isSingleLine = TRUE;
-    
-    ls_uiTextBoxSet(c, &codex->newEntrySubtype, U"");
-    codex->newEntrySubtype.isSingleLine = TRUE;
-    
-    ls_uiTextBoxSet(c, &codex->newEntrySource, U"");
-    codex->newEntrySource.isSingleLine = TRUE;
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
@@ -724,14 +560,17 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     s32 origY = 670;
     s32 baseY = 670;
     s32 valueBaseX = 148;
-    
     s32 yOff = 0;
+    
+    Color pureWhite = RGBg(0xFF);
+    c->textColor = RGBg(0xAA);
+    
     prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    ls_uiLabelLayout(c, page->name, { 10, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U"GS", { 540, baseY, maxX, minY });
-    ls_uiLabelLayout(c, page->gs, { 570, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U"PE", { 635, baseY, maxX, minY });
-    yOff = ls_uiLabelLayout(c, page->pe, { 670, baseY, maxX, minY });
+    ls_uiLabelLayout(c, page->name, { 10, baseY, maxX, minY }, pureWhite);
+    ls_uiLabelLayout(c, U"GS", { 510, baseY, maxX, minY }, pureWhite);
+    ls_uiLabelLayout(c, page->gs, { 540, baseY, maxX, minY }, pureWhite);
+    ls_uiLabelLayout(c, U"PE", { 635, baseY, maxX, minY }, pureWhite);
+    yOff = ls_uiLabelLayout(c, page->pe, { 670, baseY, maxX, minY }, pureWhite);
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -741,22 +580,22 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     yOff = ls_uiLabelLayout(c, page->shortDesc, { 10, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"Allineamento: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Allineamento: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->alignment, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"Categoria: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Categoria: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->type, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"Iniziativa: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Iniziativa: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->initiative, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
     //TODO: All of them
     if(page->senses[0].len)
     {
-        ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->senses[0], { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
@@ -765,44 +604,73 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
     
-    yOff = ls_uiLabelLayout(c, U"Difesa", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, U"Difesa", { 10, baseY, maxX, minY }, pureWhite);
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
     baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"CA: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"CA: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->AC, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"PF: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"PF: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->HP, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"Tiri Salvezza: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Tiri Salvezza: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->ST, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
     if(page->RD.len)
     {
-        ls_uiLabelLayout(c, U"RD: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"RD: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->RD, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
     if(page->RI.len)
     {
-        ls_uiLabelLayout(c, U"RI: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"RI: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->RI, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
-    //TODO: All of them
+    //TODO: X offset
     if(page->immunities[0].len)
     {
-        ls_uiLabelLayout(c, U"Immunit\U000000E0: ", { 10, baseY, maxX, minY });
-        yOff = ls_uiLabelLayout(c, page->immunities[0], { valueBaseX, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Immunit\U000000E0: ", { 10, baseY, maxX, minY }, pureWhite);
+        for(u32 i = 0; i < 16; i++)
+        {
+            if(page->immunities[i].len == 0) { break; }
+            yOff = ls_uiLabelLayout(c, page->immunities[i], { valueBaseX, baseY, maxX, minY });
+        }
+        baseY -= yOff;
+    }
+    
+    //TODO: X offset
+    if(page->resistances[0].len)
+    {
+        ls_uiLabelLayout(c, U"Resistenze: ", { 10, baseY, maxX, minY }, pureWhite);
+        for(u32 i = 0; i < 16; i++)
+        {
+            if(page->resistances[i].len == 0) { break; }
+            yOff = ls_uiLabelLayout(c, page->resistances[i], { valueBaseX, baseY, maxX, minY });
+        }
+        baseY -= yOff;
+    }
+    
+    //TODO: X offset
+    if(page->weaknesses[0].len)
+    {
+        ls_uiLabelLayout(c, U"Debolezze: ", { 10, baseY, maxX, minY }, pureWhite);
+        for(u32 i = 0; i < 16; i++)
+        {
+            if(page->weaknesses[i].len == 0) { break; }
+            yOff = ls_uiLabelLayout(c, page->weaknesses[0], { valueBaseX, baseY, maxX, minY });
+        }
+        
         baseY -= yOff;
     }
     
@@ -810,7 +678,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
     
-    yOff = ls_uiLabelLayout(c, U"Attacco", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, U"Attacco", { 10, baseY, maxX, minY }, pureWhite);
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -819,59 +687,59 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     
     //TODO: Temporary
     valueBaseX = 200;
-    ls_uiLabelLayout(c, U"Velocit\U000000E0: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Velocit\U000000E0: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->speed, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"Mischia: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Mischia: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->melee, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
     if(page->ranged.len)
     {
-        ls_uiLabelLayout(c, U"Distanza: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Distanza: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->ranged, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
     if(page->specialAttacks.len)
     {
-        ls_uiLabelLayout(c, U"Attacchi Speciali: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Attacchi Speciali: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->specialAttacks, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
     if(page->space.len)
     {
-        ls_uiLabelLayout(c, U"Spazio: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Spazio: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->space, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
     if(page->reach.len)
     {
-        ls_uiLabelLayout(c, U"Portata: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Portata: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->reach, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
     if(page->psych.len)
     {
-        ls_uiLabelLayout(c, U"Magia Psichica: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Magia Psichica: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->psych, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
     if(page->magics.len)
     {
-        ls_uiLabelLayout(c, U"Capacit\U000000E0 Magiche: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Capacit\U000000E0 Magiche: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->magics, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
     
     if(page->spells.len)
     {
-        ls_uiLabelLayout(c, U"Incantesimi Conosciuti: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Incantesimi Conosciuti: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->spells, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
@@ -880,7 +748,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
     
-    yOff = ls_uiLabelLayout(c, U"Statistiche", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, U"Statistiche", { 10, baseY, maxX, minY }, pureWhite);
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -891,29 +759,29 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     valueBaseX = 148;
     
     //TODO: All of them
-    ls_uiLabelLayout(c, U"Caratteristiche: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Caratteristiche: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->STR, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"BAB: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"BAB: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->BAB, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"BMC: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"BMC: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->BMC, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"DMC: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"DMC: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->DMC, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
     //TODO: All of them
-    ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->talents[0], { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
     if(page->spec_qual.len) {
-        ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", { 10, baseY, maxX, minY });
+        ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", { 10, baseY, maxX, minY }, pureWhite);
         yOff = ls_uiLabelLayout(c, page->spec_qual, { valueBaseX, baseY, maxX, minY });
         baseY -= yOff;
     }
@@ -922,7 +790,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
     
-    yOff = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", { 10, baseY, maxX, minY }, pureWhite);
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -942,22 +810,22 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
     
-    yOff = ls_uiLabelLayout(c, U"Ecologia", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, U"Ecologia", { 10, baseY, maxX, minY }, pureWhite);
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     baseY -= yOff;
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
     baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     
-    ls_uiLabelLayout(c, U"Ambiente: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Ambiente: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->environment, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"Organizzazione: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Organizzazione: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->org, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
-    ls_uiLabelLayout(c, U"Tesoro: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Tesoro: ", { 10, baseY, maxX, minY }, pureWhite);
     yOff = ls_uiLabelLayout(c, page->treasure, { valueBaseX, baseY, maxX, minY });
     baseY -= yOff;
     
@@ -965,7 +833,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
     
-    yOff = ls_uiLabelLayout(c, U"Descrizione", { 10, baseY, maxX, minY });
+    yOff = ls_uiLabelLayout(c, U"Descrizione", { 10, baseY, maxX, minY }, pureWhite);
     ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
     baseY -= yOff;
     
@@ -991,8 +859,10 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //      opened in the default browser.
     
     baseY -= (currPixelHeight+8);
-    ls_uiLabelLayout(c, U"Fonte: ", { 10, baseY, maxX, minY });
+    ls_uiLabelLayout(c, U"Fonte: ", { 10, baseY, maxX, minY }, pureWhite);
     baseY -= ls_uiLabelLayout(c, page->source, { 72, baseY, maxX, minY });
+    
+    c->textColor = RGBg(0xCC);
     
     scroll.minY = baseY;
     
@@ -1008,19 +878,7 @@ void DrawCompendium(UIContext *c)
     
     Codex *codex = &compendium.codex;
     
-    if(compendium.isSettingNewEntry)
-    {
-        ls_uiTextBox(c, &codex->newEntryName,    20,  660, 80, 20);
-        ls_uiTextBox(c, &codex->newEntryGS,      100, 660, 80, 20);
-        ls_uiTextBox(c, &codex->newEntryTerrain, 180, 660, 80, 20);
-        ls_uiTextBox(c, &codex->newEntryClimate, 260, 660, 80, 20);
-        ls_uiTextBox(c, &codex->newEntryType,    340, 660, 80, 20);
-        ls_uiTextBox(c, &codex->newEntrySubtype, 420, 660, 80, 20);
-        ls_uiTextBox(c, &codex->newEntrySource,  500, 660, 80, 20);
-        
-        ls_uiButton(c, &codex->confirmNewEntry,  580, 660, 40, 20);
-    }
-    else if(compendium.isViewingPage)
+    if(compendium.isViewingPage)
     {
         AssertMsg(compendium.pageIndex != -1, "Page Index was not set\n");
         
@@ -1031,9 +889,6 @@ void DrawCompendium(UIContext *c)
     }
     else
     {
-        ls_uiButton(c, &codex->newEntry, 20, 670, 20, 20);
-        ls_uiButton(c, &codex->saveCompendium, 120, 670, 50, 20);
-        
         DrawMonsterTable(c);
     }
     
