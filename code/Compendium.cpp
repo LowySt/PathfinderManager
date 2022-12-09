@@ -244,7 +244,7 @@ void LoadCompendium(string path)
     
     for(u32 i = 0; i < 24; i++) { cachedPage.talents[i]   = ls_utf32Alloc(64); }
     for(u32 i = 0; i < 24; i++) { cachedPage.skills[i]    = ls_utf32Alloc(64); }
-    for(u32 i = 0; i < 24; i++) { cachedPage.languages[i] = ls_utf32Alloc(64); }
+    for(u32 i = 0; i < 24; i++) { cachedPage.languages[i] = ls_utf32Alloc(96); }
     for(u32 i = 0; i < 24; i++) { cachedPage.specials[i]  = ls_utf32Alloc(4096); }
     
     cachedPage.environment = ls_utf32Alloc(64);
@@ -494,427 +494,451 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     s32 prevPixelHeight = 0;
     s32 currPixelHeight = 0;
     
-    s32 maxX = c->windowWidth - 32;
+    s32 maxW = c->windowWidth - 36;
     s32 minY = 0;
     
-    s32 origY = 670;
     s32 baseY = 670;
-    s32 valueBaseX = 148;
-    s32 yOff = 0;
     
     Color pureWhite = RGBg(0xFF);
-    c->textColor = RGBg(0xAA);
+    c->textColor    = RGBg(0xAA);
     
+    s32 baseX = 148;
+    UIRect alignR = { baseX, baseY, maxW-110, minY };
+    UIRect offset = {};
+    
+    auto renderAndAlign = [&](utf32 s) {
+        offset = ls_uiLabelLayout(c, s, alignR);
+        alignR.x += offset.w;
+        if(alignR.x > alignR.w) { alignR.x = baseX; alignR.y -= offset.h; baseY -= offset.h; }
+    };
+    
+    auto renderAndAlignS = [&](const char32_t *s, Color clr = 0) {
+        if(clr == 0) { offset = ls_uiLabelLayout(c, s, alignR); }
+        else         { offset = ls_uiLabelLayout(c, s, alignR, clr); }
+        alignR.x += offset.w;
+        if(alignR.x > alignR.w) { alignR.x = baseX; alignR.y -= offset.h; baseY -= offset.h; }
+    };
+    
+    auto renderAndAlignArr = [&](utf32 *s, u32 size, const char32_t *b, const char32_t *m, const char32_t *e) {
+        if(b) { renderAndAlignS(b); }
+        for(u32 i = 0; i < size; i++)
+        {
+            renderAndAlign(s[i]);
+            if(s[i+1].len)
+            {
+                if(m) { renderAndAlignS(m); }
+                continue;
+            }
+            break;
+        }
+        if(e) { renderAndAlignS(e); }
+    };
+    
+    //---------------//
+    //    HEADER     //
+    //---------------//
     prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    ls_uiLabelLayout(c, page->name, { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, U"GS", { 510, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, page->gs, { 540, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, U"PE", { 635, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->pe, { 670, baseY, maxX, minY }, pureWhite);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= yOff;
-    
-    if(page->origin.len)
+    ls_uiLabelLayout(c, page->name, { 10, baseY, maxW, minY }, pureWhite);
     {
-        yOff = ls_uiLabelLayout(c, page->origin, { 10, baseY, maxX, minY }, pureWhite);
-        baseY -= yOff;
-    }
-    
-    yOff = ls_uiLabelLayout(c, page->shortDesc, { 10, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"Allineamento: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->alignment, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"Categoria: ", { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, page->type, { valueBaseX, baseY, maxX, minY });
-    
-    if(page->subtype[0].len)
-    {
-        ls_uiLabelLayout(c, U" (", { valueBaseX, baseY, maxX, minY }, pureWhite);
-        for(u32 i = 0; i < 8; i++)
+        ls_uiLabelLayout(c, U"GS", { 510, baseY, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, page->gs, { 540, baseY, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"PE", { 635, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->pe, { 670, baseY, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseY -= offset.h;
+        
+        if(page->origin.len)
         {
-            if(page->subtype[i].len == 0) { break; }
-            ls_uiLabelLayout(c, page->subtype[i], { valueBaseX, baseY, maxX, minY }, pureWhite);
-            ls_uiLabelLayout(c, U", ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->origin, { 10, baseY, maxW, minY }, pureWhite);
+            baseY -= offset.h;
         }
         
-        yOff = ls_uiLabelLayout(c, U")", { valueBaseX, baseY, maxX, minY }, pureWhite);
-    }
-    
-    if(page->archetype[0].len)
-    {
-        ls_uiLabelLayout(c, U" [", { valueBaseX, baseY, maxX, minY }, pureWhite);
-        for(u32 i = 0; i < 8; i++)
+        offset = ls_uiLabelLayout(c, page->shortDesc, { 10, baseY, maxW, minY });
+        baseY -= offset.h;
+        
+        ls_uiLabelLayout(c, U"Allineamento: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->alignment, { baseX, baseY, maxW, minY });
+        baseY -= offset.h;
+        
+        alignR = { baseX, baseY, maxW-110, minY };
+        ls_uiLabelLayout(c, U"Categoria: ", { 10, baseY, maxW, minY }, pureWhite);
+        renderAndAlign(page->type);
+        
+        if(page->subtype[0].len)   renderAndAlignArr(page->subtype, 8, U" (", U", ", U")");
+        if(page->archetype[0].len) renderAndAlignArr(page->archetype, 8, U" [", U", ", U"]");
+        
+        if(page->size.len)
         {
-            if(page->archetype[i].len == 0) { break; }
-            ls_uiLabelLayout(c, page->archetype[i], { valueBaseX, baseY, maxX, minY }, pureWhite);
-            ls_uiLabelLayout(c, U", ", { valueBaseX, baseY, maxX, minY }, pureWhite);
+            renderAndAlignS(U" ");
+            renderAndAlign(page->size);
+        }
+        baseY -= offset.h;
+        
+        
+        ls_uiLabelLayout(c, U"Iniziativa: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->initiative, { baseX, baseY, maxW, minY });
+        baseY -= offset.maxY;
+        
+        alignR = { baseX, baseY, maxW-110, minY };
+        if(page->senses[0].len)
+        {
+            //TODO: Lich has a strange trailing comma after the last Sense. More Parser Problems?
+            offset = ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxW, minY }, pureWhite);
+            renderAndAlignArr(page->senses, 8, NULL, U", ", NULL);
+            
+            //TODO: Shouldn't Perception be outside the senses existance check?
+            //      https://golarion.altervista.org/wiki/Cetus
+            //AssertMsg(FALSE, "Percezione Tellurica fotte il Parse che cerca Percezione in hyperGol");
+            renderAndAlignS(U"; Percezione ");
+            renderAndAlign(page->perception);
+            
+            baseY -= offset.h;
         }
         
-        yOff = ls_uiLabelLayout(c, U"]", { valueBaseX, baseY, maxX, minY }, pureWhite);
-    }
-    
-    if(page->size.len)
-    {
-        yOff = ls_uiLabelLayout(c, page->size, { valueBaseX, baseY, maxX, minY });
-    }
-    
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"Iniziativa: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->initiative, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    //TODO: Fix the X offset
-    if(page->senses[0].len)
-    {
-        ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxX, minY }, pureWhite);
-        for(u32 i = 0; i < 8; i++)
+        if(page->aura.len)
         {
-            if(page->senses[i].len == 0) { break; }
-            yOff = ls_uiLabelLayout(c, page->senses[i], { valueBaseX, baseY, maxX, minY });
+            ls_uiLabelLayout(c, U"Aura: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->aura, { baseX, baseY, maxW, minY });
+            baseY -= offset.h;
+        }
+    }
+    
+    
+    //---------------//
+    //    DEFENSE    //
+    //---------------//
+    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseY -= 4;
+    baseX  = 164;
+    {
+        offset = ls_uiLabelLayout(c, U"Difesa", { 10, baseY, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseY -= offset.h;
+        
+        ls_uiLabelLayout(c, U"CA: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->AC, { baseX, baseY, maxW, minY });
+        baseY -= offset.h;
+        
+        ls_uiLabelLayout(c, U"PF: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->HP, { baseX, baseY, maxW, minY });
+        baseY -= offset.h;
+        
+        ls_uiLabelLayout(c, U"Tiri Salvezza: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->ST, { baseX, baseY, maxW, minY });
+        baseY -= offset.h;
+        
+        if(page->RD.len)
+        {
+            ls_uiLabelLayout(c, U"RD: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->RD, { baseX, baseY, maxW, minY });
+            baseY -= offset.h;
         }
         
-        //TODO: Shouldn't Perception be outside the senses existance check?
-        //      https://golarion.altervista.org/wiki/Cetus
-        AssertMsg(FALSE, "Percezione Tellurica fotte il Parse che cerca Percezione in hyperGol");
-        ls_uiLabelLayout(c, U"Percezione ", { valueBaseX, baseY, maxX, minY }, pureWhite);
-        ls_uiLabelLayout(c, page->perception, { valueBaseX, baseY, maxX, minY });
+        if(page->RI.len)
+        {
+            ls_uiLabelLayout(c, U"RI: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->RI, { baseX, baseY, maxW, minY });
+            baseY -= offset.h;
+        }
         
-        baseY -= yOff;
+        alignR = { baseX, baseY, maxW-152, minY };
+        if(page->immunities[0].len)
+        {
+            ls_uiLabelLayout(c, U"Immunit\U000000E0: ", { 10, baseY, maxW, minY }, pureWhite);
+            renderAndAlignArr(page->immunities, 16, NULL, U", ", NULL);
+            baseY -= offset.h;
+        }
+        
+        alignR = { baseX, baseY, maxW-152, minY };
+        if(page->resistances[0].len)
+        {
+            ls_uiLabelLayout(c, U"Resistenze: ", { 10, baseY, maxW, minY }, pureWhite);
+            renderAndAlignArr(page->resistances, 16, NULL, U", ", NULL);
+            baseY -= offset.h;
+        }
+        
+        if(page->defensiveCapacity.len)
+        {
+            ls_uiLabelLayout(c, U"Capacit\U000000E0 Difensive: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->defensiveCapacity, { baseX, baseY, maxW, minY });
+            baseY -= offset.h;
+        }
+        
+        alignR = { baseX, baseY, maxW-152, minY };
+        if(page->weaknesses[0].len)
+        {
+            ls_uiLabelLayout(c, U"Debolezze: ", { 10, baseY, maxW, minY }, pureWhite);
+            renderAndAlignArr(page->weaknesses, 16, NULL, U", ", NULL);
+            baseY -= offset.h;
+        }
     }
     
-    if(page->aura.len)
-    {
-        ls_uiLabelLayout(c, U"Aura: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->aura, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
+    //---------------//
+    //    ATTACK     //
+    //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
-    
-    yOff = ls_uiLabelLayout(c, U"Difesa", { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= yOff;
-    
-    //TODO: Temporary
-    valueBaseX = 164;
-    
-    ls_uiLabelLayout(c, U"CA: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->AC, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"PF: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->HP, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"Tiri Salvezza: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->ST, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    if(page->RD.len)
+    baseX  = 200;
     {
-        ls_uiLabelLayout(c, U"RD: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->RD, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    if(page->RI.len)
-    {
-        ls_uiLabelLayout(c, U"RI: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->RI, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    //TODO: X offset
-    if(page->immunities[0].len)
-    {
-        ls_uiLabelLayout(c, U"Immunit\U000000E0: ", { 10, baseY, maxX, minY }, pureWhite);
-        for(u32 i = 0; i < 16; i++)
+        offset = ls_uiLabelLayout(c, U"Attacco", { 10, baseY, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseY -= offset.h;
+        
+        alignR = { baseX, baseY, maxW-192, minY };
+        ls_uiLabelLayout(c, U"Velocit\U000000E0: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->speed, alignR);
+        baseY -= offset.h;
+        
+        alignR = { baseX, baseY, maxW-192, minY };
+        ls_uiLabelLayout(c, U"Mischia: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->melee, alignR);
+        baseY -= offset.h;
+        
+        if(page->ranged.len)
         {
-            if(page->immunities[i].len == 0) { break; }
-            yOff = ls_uiLabelLayout(c, page->immunities[i], { valueBaseX, baseY, maxX, minY });
-        }
-        baseY -= yOff;
-    }
-    
-    //TODO: X offset
-    if(page->resistances[0].len)
-    {
-        ls_uiLabelLayout(c, U"Resistenze: ", { 10, baseY, maxX, minY }, pureWhite);
-        for(u32 i = 0; i < 16; i++)
-        {
-            if(page->resistances[i].len == 0) { break; }
-            yOff = ls_uiLabelLayout(c, page->resistances[i], { valueBaseX, baseY, maxX, minY });
-        }
-        baseY -= yOff;
-    }
-    
-    if(page->defensiveCapacity.len)
-    {
-        ls_uiLabelLayout(c, U"Capacit\U000000E0 Difensive: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->defensiveCapacity, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    //TODO: X offset
-    if(page->weaknesses[0].len)
-    {
-        ls_uiLabelLayout(c, U"Debolezze: ", { 10, baseY, maxX, minY }, pureWhite);
-        for(u32 i = 0; i < 16; i++)
-        {
-            if(page->weaknesses[i].len == 0) { break; }
-            yOff = ls_uiLabelLayout(c, page->weaknesses[0], { valueBaseX, baseY, maxX, minY });
+            alignR = { baseX, baseY, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Distanza: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->ranged, alignR);
+            baseY -= offset.maxY;
         }
         
-        baseY -= yOff;
+        if(page->specialAttacks.len)
+        {
+            alignR = { baseX, baseY, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Attacchi Speciali: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->specialAttacks, alignR);
+            baseY -= offset.maxY;
+        }
+        
+        if(page->space.len)
+        {
+            alignR = { baseX, baseY, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Spazio: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->space, alignR);
+            baseY -= offset.maxY;
+        }
+        
+        if(page->reach.len)
+        {
+            alignR = { baseX, baseY, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Portata: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->reach, alignR);
+            baseY -= offset.maxY;
+        }
+        
+        if(page->psych.len)
+        {
+            alignR = { baseX, baseY, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Magia Psichica: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->psych, alignR);
+            baseY -= offset.maxY;
+        }
+        
+        if(page->magics.len)
+        {
+            alignR = { baseX, baseY, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Capacit\U000000E0 Magiche: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->magics, alignR);
+            baseY -= offset.maxY;
+        }
+        
+        if(page->spells.len)
+        {
+            alignR = { baseX, baseY, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Incantesimi Conosciuti: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->spells, alignR);
+            baseY -= offset.maxY;
+        }
     }
+    
+    //---------------//
+    //     STATS     //
+    //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
-    
-    yOff = ls_uiLabelLayout(c, U"Attacco", { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= yOff;
-    
-    //TODO: Temporary
-    valueBaseX = 200;
-    ls_uiLabelLayout(c, U"Velocit\U000000E0: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->speed, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"Mischia: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->melee, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    if(page->ranged.len)
+    baseX  = 148;
     {
-        ls_uiLabelLayout(c, U"Distanza: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->ranged, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
+        offset = ls_uiLabelLayout(c, U"Statistiche", { 10, baseY, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseY -= offset.h;
+        
+        alignR = { baseX, baseY, maxW-40, minY };
+        ls_uiLabelLayout(c, U"Caratteristiche: ", { 10, baseY, maxW, minY }, pureWhite);
+        
+        renderAndAlignS(U"FOR ");
+        renderAndAlign(page->STR);
+        renderAndAlignS(U", DEX ");
+        renderAndAlign(page->DEX);
+        renderAndAlignS(U", COS ");
+        renderAndAlign(page->CON);
+        renderAndAlignS(U", INT ");
+        renderAndAlign(page->INT);
+        renderAndAlignS(U", SAG ");
+        renderAndAlign(page->WIS);
+        renderAndAlignS(U", CAR ");
+        renderAndAlign(page->CHA);
+        baseY -= offset.h;
+        
+        ls_uiLabelLayout(c, U"BAB: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->BAB, { baseX, baseY, maxW-40, minY });
+        baseY -= offset.h;
+        
+        ls_uiLabelLayout(c, U"BMC: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->BMC, { baseX, baseY, maxW-40, minY });
+        baseY -= offset.h;
+        
+        ls_uiLabelLayout(c, U"DMC: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->DMC, { baseX, baseY, maxW-40, minY });
+        baseY -= offset.h;
+        
+        alignR = { baseX, baseY, maxW-128, minY };
+        if(page->talents[0].len)
+        {
+            ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxW, minY }, pureWhite);
+            renderAndAlignArr(page->talents, 24, NULL, U", ", NULL);
+            baseY -= offset.h;
+        }
+        
+        alignR = { baseX, baseY, maxW-128, minY };
+        if(page->skills[0].len)
+        {
+            ls_uiLabelLayout(c, U"Abilit\U000000E0: ", { 10, baseY, maxW, minY }, pureWhite);
+            renderAndAlignArr(page->skills, 24, NULL, U", ", NULL);
+            baseY -= offset.h;
+        }
+        
+        alignR = { baseX, baseY, maxW-128, minY };
+        if(page->languages[0].len)
+        {
+            ls_uiLabelLayout(c, U"Linguaggi: ", { 10, baseY, maxW, minY }, pureWhite);
+            renderAndAlignArr(page->languages, 24, NULL, U", ", NULL);
+            baseY -= offset.h;
+        }
+        
+        if(page->racialMods.len)
+        {
+            ls_uiLabelLayout(c, U"Modificatori Razziali: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->racialMods, { baseX, baseY, maxW, minY });
+            baseY -= offset.h;
+        }
+        
+        if(page->spec_qual.len)
+        {
+            ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", { 10, baseY, maxW, minY }, pureWhite);
+            offset = ls_uiLabelLayout(c, page->spec_qual, { baseX, baseY, maxW, minY });
+            baseY -= offset.h;
+        }
+        
     }
     
-    if(page->specialAttacks.len)
-    {
-        ls_uiLabelLayout(c, U"Attacchi Speciali: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->specialAttacks, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    if(page->space.len)
-    {
-        ls_uiLabelLayout(c, U"Spazio: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->space, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    if(page->reach.len)
-    {
-        ls_uiLabelLayout(c, U"Portata: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->reach, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    if(page->psych.len)
-    {
-        ls_uiLabelLayout(c, U"Magia Psichica: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->psych, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    if(page->magics.len)
-    {
-        ls_uiLabelLayout(c, U"Capacit\U000000E0 Magiche: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->magics, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    if(page->spells.len)
-    {
-        ls_uiLabelLayout(c, U"Incantesimi Conosciuti: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->spells, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
+    //---------------//
+    //   SPECIALS    //
+    //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
-    
-    yOff = ls_uiLabelLayout(c, U"Statistiche", { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= yOff;
-    
-    //TODO: Fix the X Off
-    ls_uiLabelLayout(c, U"Caratteristiche: ", { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, U"Forza ", { valueBaseX, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, page->STR, { valueBaseX, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U", Destrezza ", { valueBaseX, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, page->DEX, { valueBaseX, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U", Costituzione ", { valueBaseX, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, page->CON, { valueBaseX, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U", Intelligenza ", { valueBaseX, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, page->INT, { valueBaseX, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U", Saggezza ", { valueBaseX, baseY, maxX, minY }, pureWhite);
-    ls_uiLabelLayout(c, page->WIS, { valueBaseX, baseY, maxX, minY });
-    ls_uiLabelLayout(c, U", Carisma ", { valueBaseX, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->CHA, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"BAB: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->BAB, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"BMC: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->BMC, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"DMC: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->DMC, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    //TODO: X offset
-    if(page->talents[0].len)
     {
-        ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxX, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", { 10, baseY, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseY -= offset.maxY;
+        
+        baseY -= 8; //NOTE: Random spacing because it feels cramped
+        
         for(u32 i = 0; i < 24; i++)
         {
-            if(page->talents[i].len == 0) { break; }
-            yOff = ls_uiLabelLayout(c, page->talents[i], { valueBaseX, baseY, maxX, minY });
+            if(page->specials[i].len == 0) { continue; }
+            offset = ls_uiLabelLayout(c, page->specials[i], { 10, baseY, maxW, minY });
+            baseY -= (offset.maxY + 8);
         }
-        baseY -= yOff;
     }
     
-    if(page->skills[0].len)
-    {
-        ls_uiLabelLayout(c, U"Abilit\U000000E0: ", { 10, baseY, maxX, minY }, pureWhite);
-        for(u32 i = 0; i < 24; i++)
-        {
-            if(page->skills[i].len == 0) { break; }
-            yOff = ls_uiLabelLayout(c, page->skills[i], { valueBaseX, baseY, maxX, minY });
-        }
-        baseY -= yOff;
-    }
-    
-    if(page->languages[0].len)
-    {
-        ls_uiLabelLayout(c, U"Linguaggi: ", { 10, baseY, maxX, minY }, pureWhite);
-        for(u32 i = 0; i < 24; i++)
-        {
-            if(page->languages[i].len == 0) { break; }
-            yOff = ls_uiLabelLayout(c, page->languages[i], { valueBaseX, baseY, maxX, minY });
-        }
-        baseY -= yOff;
-    }
-    
-    if(page->racialMods.len)
-    {
-        ls_uiLabelLayout(c, U"Modificatori Razziali: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->racialMods, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    if(page->spec_qual.len)
-    {
-        ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", { 10, baseY, maxX, minY }, pureWhite);
-        yOff = ls_uiLabelLayout(c, page->spec_qual, { valueBaseX, baseY, maxX, minY });
-        baseY -= yOff;
-    }
-    
-    //TODO: Temporary
-    valueBaseX = 148;
+    //---------------//
+    //      ORG      //
+    //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
-    
-    yOff = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= yOff;
-    
-    baseY -= 8; //NOTE: Random spacing because it feels cramped
-    
-    for(u32 i = 0; i < 24; i++)
+    baseX  = 148;
     {
-        if(page->specials[i].len == 0) { continue; }
-        yOff = ls_uiLabelLayout(c, page->specials[i], { 10, baseY, maxX, minY });
-        baseY -= (yOff + 8);
+        offset = ls_uiLabelLayout(c, U"Ecologia", { 10, baseY, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        baseY -= offset.maxY;
+        
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        
+        ls_uiLabelLayout(c, U"Ambiente: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->environment, { baseX, baseY, maxW, minY });
+        baseY -= offset.maxY;
+        
+        ls_uiLabelLayout(c, U"Organizzazione: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->org, { baseX, baseY, maxW, minY });
+        baseY -= offset.maxY;
+        
+        ls_uiLabelLayout(c, U"Tesoro: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->treasure, { baseX, baseY, maxW, minY });
+        baseY -= offset.maxY;
     }
     
+    //---------------//
+    //     FINAL     //
+    //---------------//
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseY -= 4;
-    
-    yOff = ls_uiLabelLayout(c, U"Ecologia", { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    baseY -= yOff;
-    
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-    
-    ls_uiLabelLayout(c, U"Ambiente: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->environment, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"Organizzazione: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->org, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    ls_uiLabelLayout(c, U"Tesoro: ", { 10, baseY, maxX, minY }, pureWhite);
-    yOff = ls_uiLabelLayout(c, page->treasure, { valueBaseX, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= 4;
-    
-    yOff = ls_uiLabelLayout(c, U"Descrizione", { 10, baseY, maxX, minY }, pureWhite);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    baseY -= yOff;
-    
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-    baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-    
-    yOff = ls_uiLabelLayout(c, page->desc, { 10, baseY, maxX, minY });
-    baseY -= yOff;
-    
-    baseY += (currPixelHeight-1);
-    ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-    
-    
-    //TODO: Make these links openable.
-    //      To do it we need to call this function
-    //      https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shellexecutea
-    //
-    //      Leaving the "verb" (second param) null and passing the http link should open the page in the
-    //      default browser.
-    //
-    //      If that doesn't work, windows in both CommandPrompt and Powershell has a "start" command
-    //      that opens whatever path you give it with the appropriate command. So an http link should get
-    //      opened in the default browser.
-    
-    baseY -= (currPixelHeight+8);
-    ls_uiLabelLayout(c, U"Fonte: ", { 10, baseY, maxX, minY }, pureWhite);
-    baseY -= ls_uiLabelLayout(c, page->source, { 72, baseY, maxX, minY });
+    {
+        offset = ls_uiLabelLayout(c, U"Descrizione", { 10, baseY, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        baseY -= offset.maxY;
+        
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        
+        offset = ls_uiLabelLayout(c, page->desc, { 10, baseY, maxW, minY });
+        baseY -= offset.maxY;
+        
+        baseY += (currPixelHeight-1);
+        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        
+        
+        //TODO: Make these links openable.
+        //      To do it we need to call this function
+        //      https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-shellexecutea
+        //
+        //      Leaving the "verb" (second param) null and passing the http link should open the page in the
+        //      default browser.
+        //
+        //      If that doesn't work, windows in both CommandPrompt and Powershell has a "start" command
+        //      that opens whatever path you give it with the appropriate command. So an http link should get
+        //      opened in the default browser.
+        
+        baseY -= (currPixelHeight+8);
+        ls_uiLabelLayout(c, U"Fonte: ", { 10, baseY, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->source, { 72, baseY, maxW, minY });
+        baseY -= offset.maxY;
+    }
     
     c->textColor = RGBg(0xCC);
     
