@@ -17,8 +17,8 @@ struct CachedPageEntry
     utf32 magics;
     utf32 spells;
     utf32 racialMods;
-    utf32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
-    utf32 specials[24];
+    utf32 spec_qual;
+    utf32 specials;
     utf32 org;
     utf32 treasure;
     utf32 desc;
@@ -29,16 +29,16 @@ struct CachedPageEntry
     utf32 pe;
     utf32 alignment;
     utf32 type;
-    utf32 subtype[8];
-    utf32 archetype[4];
+    utf32 subtype;
+    utf32 archetype;
     utf32 size;
     utf32 initiative;
-    utf32 senses[8];
+    utf32 senses;
     utf32 perception;
     utf32 aura;
-    utf32 immunities[16];
-    utf32 resistances[16];
-    utf32 weaknesses[16];
+    utf32 immunities;
+    utf32 resistances;
+    utf32 weaknesses;
     utf32 speed;
     utf32 space;
     utf32 reach;
@@ -51,9 +51,9 @@ struct CachedPageEntry
     utf32 BAB;
     utf32 BMC;
     utf32 DMC;
-    utf32 talents[24];
-    utf32 skills[24]; //TODO Separate type from value
-    utf32 languages[24];
+    utf32 talents;
+    utf32 skills; //TODO Separate type from value
+    utf32 languages;
     utf32 environment;
 };
 
@@ -185,6 +185,17 @@ void LoadCompendium(string path)
 {
     ls_arenaUse(compendiumArena);
     
+    const u32 maxSubtypes    = 8;
+    const u32 maxArchetypes  = 4;
+    const u32 maxSenses      = 8;
+    const u32 maxImmunities  = 16;
+    const u32 maxResistances = 16;
+    const u32 maxWeaknesses  = 16;
+    const u32 maxTalents     = 24;
+    const u32 maxSkills      = 24;
+    const u32 maxLanguages   = 24;
+    const u32 maxSpecials    = 24;
+    
     //----------------------
     //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
     cachedPage.origin            = ls_utf32Alloc(48);
@@ -203,9 +214,12 @@ void LoadCompendium(string path)
     cachedPage.spells            = ls_utf32Alloc(2048);
     cachedPage.racialMods        = ls_utf32Alloc(128);
     cachedPage.spec_qual         = ls_utf32Alloc(256);
+    
+    cachedPage.specials          = ls_utf32Alloc(maxTalents * 2048);
+    
     cachedPage.org               = ls_utf32Alloc(448);
     cachedPage.treasure          = ls_utf32Alloc(256);
-    cachedPage.desc              = ls_utf32Alloc(4096);
+    cachedPage.desc              = ls_utf32Alloc(5120);
     cachedPage.source            = ls_utf32Alloc(256);
     
     cachedPage.name              = ls_utf32Alloc(48);
@@ -213,41 +227,35 @@ void LoadCompendium(string path)
     cachedPage.pe                = ls_utf32Alloc(16);
     cachedPage.alignment         = ls_utf32Alloc(32);
     cachedPage.type              = ls_utf32Alloc(32);
+    cachedPage.subtype           = ls_utf32Alloc(maxSubtypes * 16);
+    cachedPage.archetype         = ls_utf32Alloc(maxArchetypes * 16);
+    cachedPage.size              = ls_utf32Alloc(32);
+    cachedPage.initiative        = ls_utf32Alloc(32);
+    cachedPage.senses            = ls_utf32Alloc(maxSenses * 16);
+    cachedPage.perception        = ls_utf32Alloc(128);
+    cachedPage.aura              = ls_utf32Alloc(128);
     
-    for(u32 i = 0; i < 8; i++) { cachedPage.subtype[i]   = ls_utf32Alloc(32); }
-    for(u32 i = 0; i < 4; i++) { cachedPage.archetype[i] = ls_utf32Alloc(32); }
+    cachedPage.immunities        = ls_utf32Alloc(maxImmunities * 32);
+    cachedPage.resistances       = ls_utf32Alloc(maxResistances * 32);;
+    cachedPage.weaknesses        = ls_utf32Alloc(maxWeaknesses * 32);;
     
-    cachedPage.size       = ls_utf32Alloc(32);
-    cachedPage.initiative = ls_utf32Alloc(32);
+    cachedPage.speed             = ls_utf32Alloc(64);
+    cachedPage.space             = ls_utf32Alloc(32);
+    cachedPage.reach             = ls_utf32Alloc(64);
+    cachedPage.STR               = ls_utf32Alloc(16);
+    cachedPage.DEX               = ls_utf32Alloc(16);
+    cachedPage.CON               = ls_utf32Alloc(16);
+    cachedPage.INT               = ls_utf32Alloc(16);
+    cachedPage.WIS               = ls_utf32Alloc(16);
+    cachedPage.CHA               = ls_utf32Alloc(16);
+    cachedPage.BAB               = ls_utf32Alloc(16);
+    cachedPage.BMC               = ls_utf32Alloc(64);
+    cachedPage.DMC               = ls_utf32Alloc(64);
     
-    for(u32 i = 0; i < 8; i++) { cachedPage.senses[i] = ls_utf32Alloc(32); }
-    
-    cachedPage.perception = ls_utf32Alloc(128);
-    cachedPage.aura       = ls_utf32Alloc(128);
-    
-    for(u32 i = 0; i < 16; i++) { cachedPage.immunities[i]  = ls_utf32Alloc(64); }
-    for(u32 i = 0; i < 16; i++) { cachedPage.resistances[i] = ls_utf32Alloc(64); }
-    for(u32 i = 0; i < 16; i++) { cachedPage.weaknesses[i]  = ls_utf32Alloc(64); }
-    
-    cachedPage.speed = ls_utf32Alloc(64);
-    cachedPage.space = ls_utf32Alloc(32);
-    cachedPage.reach = ls_utf32Alloc(64);
-    cachedPage.STR   = ls_utf32Alloc(16);
-    cachedPage.DEX   = ls_utf32Alloc(16);
-    cachedPage.CON   = ls_utf32Alloc(16);
-    cachedPage.INT   = ls_utf32Alloc(16);
-    cachedPage.WIS   = ls_utf32Alloc(16);
-    cachedPage.CHA   = ls_utf32Alloc(16);
-    cachedPage.BAB   = ls_utf32Alloc(16);
-    cachedPage.BMC   = ls_utf32Alloc(64);
-    cachedPage.DMC   = ls_utf32Alloc(64);
-    
-    for(u32 i = 0; i < 24; i++) { cachedPage.talents[i]   = ls_utf32Alloc(64); }
-    for(u32 i = 0; i < 24; i++) { cachedPage.skills[i]    = ls_utf32Alloc(64); }
-    for(u32 i = 0; i < 24; i++) { cachedPage.languages[i] = ls_utf32Alloc(96); }
-    for(u32 i = 0; i < 24; i++) { cachedPage.specials[i]  = ls_utf32Alloc(4096); }
-    
-    cachedPage.environment = ls_utf32Alloc(64);
+    cachedPage.talents           = ls_utf32Alloc(maxTalents * 32);
+    cachedPage.skills            = ls_utf32Alloc(maxTalents * 32);
+    cachedPage.languages         = ls_utf32Alloc(maxTalents * 64);
+    cachedPage.environment       = ls_utf32Alloc(64);
     
     //----------------------
     //NOTE: Now load the Compendium from file
@@ -324,6 +332,44 @@ void LoadCompendium(string path)
     ls_arenaUse(globalArena);
     
     return;
+}
+
+void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 index)
+{
+    if(index == 0) { AssertMsg(FALSE, "We shouldn't be here\n"); return; } //NOTE: Index zero means no entry
+    
+    buf->cursor = index;
+    
+    u32 byteLen   = (u32)ls_bufferPeekWord(buf);
+    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
+    utf8 toAppend = ls_utf8Constant(utf8_data, byteLen);
+    u32 sepLen    = 0;
+    
+    if(sep) { sepLen = ls_utf32Len(sep); }
+    
+    if(base->len + toAppend.len + sepLen > base->size)
+    { ls_printf("Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", base->size, toAppend.len, byteLen, index);
+        Assert(FALSE); }
+    
+    if(sep)
+    {
+        ls_memcpy((void *)sep, base->data + base->len, sepLen*4);
+        base->len += sepLen;
+    }
+    
+    for(u32 i = 0; i < toAppend.len; i++)
+    {
+        u32 c = ls_utf32CharFromUtf8(toAppend, i);
+        base->data[base->len + i] = c;
+    }
+    base->len += toAppend.len;
+    
+    ls_bufferSeekBegin(buf);
+}
+
+void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u16 index)
+{
+    AppendEntryFromBuffer(buf, base, sep, (u32)index);
 }
 
 void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
@@ -433,7 +479,18 @@ void CachePage(UIContext *ui, PageEntry page)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.racialMods, page.racialMods);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.spec_qual, page.spec_qual);
     
-    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->specials, cachedPage.specials + i, page.specials[i]); }
+    if(page.specials[0])
+    {
+        ls_utf32Clear(&cachedPage.specials);
+        
+        GetEntryFromBuffer_t(&c->specials, &cachedPage.specials, page.specials[0]);
+        u32 i = 1;
+        while(page.specials[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->specials, &cachedPage.specials, U"\n\n", page.specials[i]);
+            i += 1;
+        }
+    }
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.org, page.org);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.treasure, page.treasure);
@@ -446,20 +503,94 @@ void CachePage(UIContext *ui, PageEntry page)
     GetEntryFromBuffer_t(&c->alignment, &cachedPage.alignment, page.alignment);
     GetEntryFromBuffer_t(&c->types, &cachedPage.type, page.type);
     
-    for(u32 i = 0; i < 8; i++) { GetEntryFromBuffer_t(&c->subtypes, cachedPage.subtype + i, page.subtype[i]); }
-    for(u32 i = 0; i < 4; i++) { GetEntryFromBuffer_t(&c->archetypes, cachedPage.archetype + i, page.archetype[i]); }
+    if(page.subtype[0])
+    {
+        ls_utf32Clear(&cachedPage.subtype);
+        
+        ls_utf32Append(&cachedPage.subtype, ls_utf32Constant(U" ("));
+        AppendEntryFromBuffer(&c->subtypes, &cachedPage.subtype, NULL, page.subtype[0]);
+        u32 i = 1;
+        while(page.subtype[i] && i < 8)
+        {
+            AppendEntryFromBuffer(&c->subtypes, &cachedPage.subtype, U", ", page.subtype[i]);
+            i += 1;
+        }
+        ls_utf32Append(&cachedPage.subtype, ls_utf32Constant(U") "));
+    }
+    
+    if(page.archetype[0])
+    {
+        ls_utf32Clear(&cachedPage.archetype);
+        
+        ls_utf32Append(&cachedPage.archetype, ls_utf32Constant(U"["));
+        AppendEntryFromBuffer(&c->archetypes, &cachedPage.archetype, NULL, page.archetype[0]);
+        u32 i = 1;
+        while(page.archetype[i] && i < 4)
+        {
+            AppendEntryFromBuffer(&c->archetypes, &cachedPage.archetype, U", ", page.archetype[i]);
+            i += 1;
+        }
+        ls_utf32Append(&cachedPage.subtype, ls_utf32Constant(U"] "));
+    }
     
     GetEntryFromBuffer_t(&c->sizes, &cachedPage.size, page.size);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.initiative, page.initiative);
     
-    for(u32 i = 0; i < 8; i++) { GetEntryFromBuffer_t(&c->senses, cachedPage.senses + i, page.senses[i]); }
+    if(page.senses[0])
+    {
+        ls_utf32Clear(&cachedPage.senses);
+        
+        GetEntryFromBuffer_t(&c->senses, &cachedPage.senses, page.senses[0]);
+        u32 i = 1;
+        while(page.senses[i] && i < 8)
+        {
+            AppendEntryFromBuffer(&c->senses, &cachedPage.senses, U", ", page.senses[i]);
+            i += 1;
+        }
+        ls_utf32Append(&cachedPage.senses, ls_utf32Constant(U"; "));
+    }
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.perception, page.perception);
     GetEntryFromBuffer_t(&c->auras, &cachedPage.aura, page.aura);
     
-    for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->immunities, cachedPage.immunities + i, page.immunities[i]);}
-    for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->resistances, cachedPage.resistances+i, page.resistances[i]);}
-    for(u32 i = 0; i < 16; i++) {GetEntryFromBuffer_t(&c->weaknesses, cachedPage.weaknesses + i, page.weaknesses[i]);}
+    if(page.immunities[0])
+    {
+        ls_utf32Clear(&cachedPage.immunities);
+        
+        GetEntryFromBuffer_t(&c->immunities, &cachedPage.immunities, page.immunities[0]);
+        u32 i = 1;
+        while(page.immunities[i] && i < 16)
+        {
+            AppendEntryFromBuffer(&c->immunities, &cachedPage.immunities, U", ", page.immunities[i]);
+            i += 1;
+        }
+    }
+    
+    if(page.resistances[0])
+    {
+        ls_utf32Clear(&cachedPage.resistances);
+        
+        GetEntryFromBuffer_t(&c->resistances, &cachedPage.resistances, page.resistances[0]);
+        u32 i = 1;
+        while(page.resistances[i] && i < 16)
+        {
+            AppendEntryFromBuffer(&c->resistances, &cachedPage.resistances, U", ", page.resistances[i]);
+            i += 1;
+        }
+    }
+    
+    if(page.weaknesses[0])
+    {
+        ls_utf32Clear(&cachedPage.weaknesses);
+        
+        GetEntryFromBuffer_t(&c->weaknesses, &cachedPage.weaknesses, page.weaknesses[0]);
+        u32 i = 1;
+        while(page.weaknesses[i] && i < 16)
+        {
+            AppendEntryFromBuffer(&c->weaknesses, &cachedPage.weaknesses, U", ", page.weaknesses[i]);
+            i += 1;
+        }
+    }
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.speed, page.speed);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.space, page.space);
@@ -474,9 +605,44 @@ void CachePage(UIContext *ui, PageEntry page)
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.BMC, page.BMC);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.DMC, page.DMC);
     
-    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->talents, cachedPage.talents + i, page.talents[i]); }
-    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->skills, cachedPage.skills + i, page.skills[i]); }
-    for(u32 i = 0; i < 24; i++) { GetEntryFromBuffer_t(&c->languages, cachedPage.languages + i, page.languages[i]); }
+    if(page.talents[0])
+    {
+        ls_utf32Clear(&cachedPage.talents);
+        
+        GetEntryFromBuffer_t(&c->talents, &cachedPage.talents, page.talents[0]);
+        u32 i = 1;
+        while(page.talents[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->talents, &cachedPage.talents, U", ", page.talents[i]);
+            i += 1;
+        }
+    }
+    
+    if(page.skills[0])
+    {
+        ls_utf32Clear(&cachedPage.skills);
+        
+        GetEntryFromBuffer_t(&c->skills, &cachedPage.skills, page.skills[0]);
+        u32 i = 1;
+        while(page.skills[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->skills, &cachedPage.skills, U", ", page.skills[i]);
+            i += 1;
+        }
+    }
+    
+    if(page.languages[0])
+    {
+        ls_utf32Clear(&cachedPage.languages);
+        
+        GetEntryFromBuffer_t(&c->languages, &cachedPage.languages, page.languages[0]);
+        u32 i = 1;
+        while(page.languages[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->languages, &cachedPage.languages, U", ", page.languages[i]);
+            i += 1;
+        }
+    }
     
     GetEntryFromBuffer_t(&c->environment, &cachedPage.environment, page.environment);
     
@@ -485,8 +651,6 @@ void CachePage(UIContext *ui, PageEntry page)
 
 void DrawPage(UIContext *c, CachedPageEntry *page)
 {
-    AssertMsg(FALSE, "I hate this, try pre-merging the strings");
-    
     //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
     //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
     ls_uiStartScrollableRegion(c, &pageScroll);
@@ -496,7 +660,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     s32 prevPixelHeight = 0;
     s32 currPixelHeight = 0;
     
-    s32 maxW = c->windowWidth - 36;
+    s32 maxW = c->windowWidth - 46;
     s32 minY = 0;
     
     s32 baseY = 670;
@@ -505,106 +669,80 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     c->textColor    = RGBg(0xAA);
     
     s32 baseX = 148;
-    UIRect alignR = { baseX, baseY, maxW-110, minY };
+    UIRect baseR  = { 10, baseY, maxW, minY };
+    UIRect alignR = { baseX, baseY, maxW-100, minY };
     UIRect offset = {};
     
     auto renderAndAlign = [&](utf32 s) {
-        offset = ls_uiLabelLayout(c, s, alignR);
+        offset    = ls_uiLabelLayout(c, s, alignR);
         alignR.x += offset.w;
-        if(alignR.x > alignR.w) { alignR.x = baseX; alignR.y -= offset.h; baseY -= offset.h; }
-    };
-    
-    auto renderAndAlignS = [&](const char32_t *s, Color clr = 0) {
-        if(clr == 0) { offset = ls_uiLabelLayout(c, s, alignR); }
-        else         { offset = ls_uiLabelLayout(c, s, alignR, clr); }
-        alignR.x += offset.w;
-        if(alignR.x > alignR.w) { alignR.x = baseX; alignR.y -= offset.h; baseY -= offset.h; }
-    };
-    
-    auto renderAndAlignArr = [&](utf32 *s, u32 size, const char32_t *b, const char32_t *m, const char32_t *e) {
-        if(b) { renderAndAlignS(b); }
-        for(u32 i = 0; i < size; i++)
-        {
-            renderAndAlign(s[i]);
-            if(s[i+1].len)
-            {
-                if(m) { renderAndAlignS(m); }
-                continue;
-            }
-            break;
-        }
-        if(e) { renderAndAlignS(e); }
+        baseR.y  -= offset.h;
     };
     
     //---------------//
     //    HEADER     //
     //---------------//
     prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    ls_uiLabelLayout(c, page->name, { 10, baseY, maxW, minY }, pureWhite);
+    ls_uiLabelLayout(c, page->name, baseR, pureWhite);
     {
-        ls_uiLabelLayout(c, U"GS", { 510, baseY, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, page->gs, { 540, baseY, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, U"PE", { 635, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->pe, { 670, baseY, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        ls_uiLabelLayout(c, U"GS", { 510, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, page->gs, { 540, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"PE", { 635, baseR.y, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->pe, { 670, baseR.y, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseY -= offset.h;
+        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y -= offset.h;
         
         if(page->origin.len)
         {
-            offset = ls_uiLabelLayout(c, page->origin, { 10, baseY, maxW, minY }, pureWhite);
-            baseY -= offset.h;
+            offset = ls_uiLabelLayout(c, page->origin, baseR, pureWhite);
+            baseR.y -= offset.h;
         }
         
-        offset = ls_uiLabelLayout(c, page->shortDesc, { 10, baseY, maxW, minY });
-        baseY -= offset.h;
+        offset = ls_uiLabelLayout(c, page->shortDesc, baseR);
+        baseR.y -= offset.h;
         
-        ls_uiLabelLayout(c, U"Allineamento: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->alignment, { baseX, baseY, maxW, minY });
-        baseY -= offset.h;
+        ls_uiLabelLayout(c, U"Allineamento: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->alignment, { baseX, baseR.y, maxW, minY });
+        baseR.y -= offset.h;
         
-        alignR = { baseX, baseY, maxW-110, minY };
-        ls_uiLabelLayout(c, U"Categoria: ", { 10, baseY, maxW, minY }, pureWhite);
-        renderAndAlign(page->type);
+        alignR = { baseX, baseR.y, maxW-110, minY };
+        ls_uiLabelLayout(c, U"Categoria: ", baseR, pureWhite);
         
-        if(page->subtype[0].len)   renderAndAlignArr(page->subtype, 8, U" (", U", ", U")");
-        if(page->archetype[0].len) renderAndAlignArr(page->archetype, 8, U" [", U", ", U"]");
+        offset = ls_uiLabelLayout(c, page->type, alignR);
+        alignR.x += offset.w;
         
-        if(page->size.len)
-        {
-            renderAndAlignS(U" ");
-            renderAndAlign(page->size);
-        }
-        baseY -= offset.h;
+        if(page->subtype.len)   { offset = ls_uiLabelLayout(c, page->subtype, alignR); alignR.x += offset.w; }
+        if(page->archetype.len) { offset = ls_uiLabelLayout(c, page->archetype, alignR); alignR.x += offset.w; }
+        if(page->size.len)      { offset = ls_uiLabelLayout(c, page->size, alignR); alignR.x += offset.w; }
+        baseR.y -= offset.h;
         
+        ls_uiLabelLayout(c, U"Iniziativa: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->initiative, { baseX, baseR.y, maxW, minY });
+        baseR.y -= offset.maxY;
         
-        ls_uiLabelLayout(c, U"Iniziativa: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->initiative, { baseX, baseY, maxW, minY });
-        baseY -= offset.maxY;
-        
-        alignR = { baseX, baseY, maxW-110, minY };
-        if(page->senses[0].len)
+        alignR = { baseX, baseR.y, maxW-110, minY };
+        if(page->senses.len)
         {
             //TODO: Lich has a strange trailing comma after the last Sense. More Parser Problems?
-            offset = ls_uiLabelLayout(c, U"Sensi: ", { 10, baseY, maxW, minY }, pureWhite);
-            renderAndAlignArr(page->senses, 8, NULL, U", ", NULL);
-            
-            //TODO: Shouldn't Perception be outside the senses existance check?
-            //      https://golarion.altervista.org/wiki/Cetus
-            AssertMsg(FALSE, "Percezione Tellurica fotte il Parser che cerca Percezione in hyperGol");
-            renderAndAlignS(U"; Percezione ");
-            renderAndAlign(page->perception);
-            
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Sensi: ", baseR, pureWhite);
+            renderAndAlign(page->senses);
         }
+        
+        //TODO: Shouldn't Perception be outside the senses existance check?
+        //      https://golarion.altervista.org/wiki/Cetus
+        //TODO: Are there creatures with NO perception???
+        //AssertMsg(FALSE, "Percezione Tellurica fotte il Parser che cerca Percezione in hyperGol");
+        offset = ls_uiLabelLayout(c, U"Percezione ", alignR); alignR.x += offset.w;
+        ls_uiLabelLayout(c, page->perception, alignR);
         
         if(page->aura.len)
         {
-            ls_uiLabelLayout(c, U"Aura: ", { 10, baseY, maxW, minY }, pureWhite);
-            offset = ls_uiLabelLayout(c, page->aura, { baseX, baseY, maxW, minY });
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Aura: ", baseR, pureWhite);
+            offset = ls_uiLabelLayout(c, page->aura, { baseX, baseR.y, maxW, minY });
+            baseR.y -= offset.h;
         }
     }
     
@@ -613,72 +751,69 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //    DEFENSE    //
     //---------------//
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= 4;
+    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.y -= 4;
     baseX  = 164;
     {
-        offset = ls_uiLabelLayout(c, U"Difesa", { 10, baseY, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        offset = ls_uiLabelLayout(c, U"Difesa", baseR, pureWhite);
+        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseY -= offset.h;
+        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y -= offset.h;
         
-        ls_uiLabelLayout(c, U"CA: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->AC, { baseX, baseY, maxW, minY });
-        baseY -= offset.h;
+        ls_uiLabelLayout(c, U"CA: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->AC, { baseX, baseR.y, maxW, minY });
+        baseR.y -= offset.h;
         
-        ls_uiLabelLayout(c, U"PF: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->HP, { baseX, baseY, maxW, minY });
-        baseY -= offset.h;
+        ls_uiLabelLayout(c, U"PF: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->HP, { baseX, baseR.y, maxW, minY });
+        baseR.y -= offset.h;
         
-        ls_uiLabelLayout(c, U"Tiri Salvezza: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->ST, { baseX, baseY, maxW, minY });
-        baseY -= offset.h;
+        ls_uiLabelLayout(c, U"Tiri Salvezza: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->ST, { baseX, baseR.y, maxW, minY });
+        baseR.y -= offset.h;
         
         if(page->RD.len)
         {
-            ls_uiLabelLayout(c, U"RD: ", { 10, baseY, maxW, minY }, pureWhite);
-            offset = ls_uiLabelLayout(c, page->RD, { baseX, baseY, maxW, minY });
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"RD: ", baseR, pureWhite);
+            offset = ls_uiLabelLayout(c, page->RD, { baseX, baseR.y, maxW, minY });
+            baseR.y -= offset.h;
         }
         
         if(page->RI.len)
         {
-            ls_uiLabelLayout(c, U"RI: ", { 10, baseY, maxW, minY }, pureWhite);
-            offset = ls_uiLabelLayout(c, page->RI, { baseX, baseY, maxW, minY });
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"RI: ", baseR, pureWhite);
+            offset = ls_uiLabelLayout(c, page->RI, { baseX, baseR.y, maxW, minY });
+            baseR.y -= offset.h;
         }
         
-        alignR = { baseX, baseY, maxW-152, minY };
-        if(page->immunities[0].len)
+        alignR = { baseX, baseR.y, maxW-152, minY };
+        if(page->immunities.len)
         {
-            ls_uiLabelLayout(c, U"Immunit\U000000E0: ", { 10, baseY, maxW, minY }, pureWhite);
-            renderAndAlignArr(page->immunities, 16, NULL, U", ", NULL);
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Immunit\U000000E0: ", baseR, pureWhite);
+            renderAndAlign(page->immunities);
         }
         
-        alignR = { baseX, baseY, maxW-152, minY };
-        if(page->resistances[0].len)
+        alignR = { baseX, baseR.y, maxW-152, minY };
+        if(page->resistances.len)
         {
-            ls_uiLabelLayout(c, U"Resistenze: ", { 10, baseY, maxW, minY }, pureWhite);
-            renderAndAlignArr(page->resistances, 16, NULL, U", ", NULL);
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Resistenze: ", baseR, pureWhite);
+            renderAndAlign(page->resistances);
         }
         
         if(page->defensiveCapacity.len)
         {
-            ls_uiLabelLayout(c, U"Capacit\U000000E0 Difensive: ", { 10, baseY, maxW, minY }, pureWhite);
-            offset = ls_uiLabelLayout(c, page->defensiveCapacity, { baseX, baseY, maxW, minY });
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Capacit\U000000E0 Difensive: ", baseR, pureWhite);
+            offset = ls_uiLabelLayout(c, page->defensiveCapacity, { baseX, baseR.y, maxW, minY });
+            baseR.y -= offset.h;
         }
         
-        alignR = { baseX, baseY, maxW-152, minY };
-        if(page->weaknesses[0].len)
+        alignR = { baseX, baseR.y, maxW-152, minY };
+        if(page->weaknesses.len)
         {
-            ls_uiLabelLayout(c, U"Debolezze: ", { 10, baseY, maxW, minY }, pureWhite);
-            renderAndAlignArr(page->weaknesses, 16, NULL, U", ", NULL);
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Debolezze: ", baseR, pureWhite);
+            renderAndAlign(page->weaknesses);
         }
     }
     
@@ -687,81 +822,81 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= 4;
+    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.y -= 4;
     baseX  = 200;
     {
-        offset = ls_uiLabelLayout(c, U"Attacco", { 10, baseY, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        offset = ls_uiLabelLayout(c, U"Attacco", baseR, pureWhite);
+        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseY -= offset.h;
+        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y -= offset.h;
         
-        alignR = { baseX, baseY, maxW-192, minY };
-        ls_uiLabelLayout(c, U"Velocit\U000000E0: ", { 10, baseY, maxW, minY }, pureWhite);
+        alignR = { baseX, baseR.y, maxW-192, minY };
+        ls_uiLabelLayout(c, U"Velocit\U000000E0: ", baseR, pureWhite);
         offset = ls_uiLabelLayout(c, page->speed, alignR);
-        baseY -= offset.h;
+        baseR.y -= offset.h;
         
-        alignR = { baseX, baseY, maxW-192, minY };
-        ls_uiLabelLayout(c, U"Mischia: ", { 10, baseY, maxW, minY }, pureWhite);
+        alignR = { baseX, baseR.y, maxW-192, minY };
+        ls_uiLabelLayout(c, U"Mischia: ", baseR, pureWhite);
         offset = ls_uiLabelLayout(c, page->melee, alignR);
-        baseY -= offset.h;
+        baseR.y -= offset.h;
         
         if(page->ranged.len)
         {
-            alignR = { baseX, baseY, maxW-192, minY };
-            ls_uiLabelLayout(c, U"Distanza: ", { 10, baseY, maxW, minY }, pureWhite);
+            alignR = { baseX, baseR.y, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Distanza: ", baseR, pureWhite);
             offset = ls_uiLabelLayout(c, page->ranged, alignR);
-            baseY -= offset.maxY;
+            baseR.y -= offset.maxY;
         }
         
         if(page->specialAttacks.len)
         {
-            alignR = { baseX, baseY, maxW-192, minY };
-            ls_uiLabelLayout(c, U"Attacchi Speciali: ", { 10, baseY, maxW, minY }, pureWhite);
+            alignR = { baseX, baseR.y, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Attacchi Speciali: ", baseR, pureWhite);
             offset = ls_uiLabelLayout(c, page->specialAttacks, alignR);
-            baseY -= offset.maxY;
+            baseR.y -= offset.maxY;
         }
         
         if(page->space.len)
         {
-            alignR = { baseX, baseY, maxW-192, minY };
-            ls_uiLabelLayout(c, U"Spazio: ", { 10, baseY, maxW, minY }, pureWhite);
+            alignR = { baseX, baseR.y, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Spazio: ", baseR, pureWhite);
             offset = ls_uiLabelLayout(c, page->space, alignR);
-            baseY -= offset.maxY;
+            baseR.y -= offset.maxY;
         }
         
         if(page->reach.len)
         {
-            alignR = { baseX, baseY, maxW-192, minY };
-            ls_uiLabelLayout(c, U"Portata: ", { 10, baseY, maxW, minY }, pureWhite);
+            alignR = { baseX, baseR.y, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Portata: ", baseR, pureWhite);
             offset = ls_uiLabelLayout(c, page->reach, alignR);
-            baseY -= offset.maxY;
+            baseR.y -= offset.maxY;
         }
         
         if(page->psych.len)
         {
-            alignR = { baseX, baseY, maxW-192, minY };
-            ls_uiLabelLayout(c, U"Magia Psichica: ", { 10, baseY, maxW, minY }, pureWhite);
+            alignR = { baseX, baseR.y, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Magia Psichica: ", baseR, pureWhite);
             offset = ls_uiLabelLayout(c, page->psych, alignR);
-            baseY -= offset.maxY;
+            baseR.y -= offset.maxY;
         }
         
         if(page->magics.len)
         {
-            alignR = { baseX, baseY, maxW-192, minY };
-            ls_uiLabelLayout(c, U"Capacit\U000000E0 Magiche: ", { 10, baseY, maxW, minY }, pureWhite);
+            alignR = { baseX, baseR.y, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Capacit\U000000E0 Magiche: ", baseR, pureWhite);
             offset = ls_uiLabelLayout(c, page->magics, alignR);
-            baseY -= offset.maxY;
+            baseR.y -= offset.maxY;
         }
         
         if(page->spells.len)
         {
-            alignR = { baseX, baseY, maxW-192, minY };
-            ls_uiLabelLayout(c, U"Incantesimi Conosciuti: ", { 10, baseY, maxW, minY }, pureWhite);
+            alignR = { baseX, baseR.y, maxW-192, minY };
+            ls_uiLabelLayout(c, U"Incantesimi Conosciuti: ", baseR, pureWhite);
             offset = ls_uiLabelLayout(c, page->spells, alignR);
-            baseY -= offset.maxY;
+            baseR.y -= offset.maxY;
         }
     }
     
@@ -770,82 +905,79 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= 4;
+    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.y -= 4;
     baseX  = 148;
     {
-        offset = ls_uiLabelLayout(c, U"Statistiche", { 10, baseY, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        offset = ls_uiLabelLayout(c, U"Statistiche", baseR, pureWhite);
+        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseY -= offset.h;
+        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y -= offset.h;
         
-        alignR = { baseX, baseY, maxW-40, minY };
-        ls_uiLabelLayout(c, U"Caratteristiche: ", { 10, baseY, maxW, minY }, pureWhite);
+        alignR = { baseX, baseR.y, maxW-40, minY };
+        ls_uiLabelLayout(c, U"Caratteristiche: ", baseR, pureWhite);
         
-        renderAndAlignS(U"FOR ");
-        renderAndAlign(page->STR);
-        renderAndAlignS(U", DEX ");
-        renderAndAlign(page->DEX);
-        renderAndAlignS(U", COS ");
-        renderAndAlign(page->CON);
-        renderAndAlignS(U", INT ");
-        renderAndAlign(page->INT);
-        renderAndAlignS(U", SAG ");
-        renderAndAlign(page->WIS);
-        renderAndAlignS(U", CAR ");
-        renderAndAlign(page->CHA);
-        baseY -= offset.h;
+        offset = ls_uiLabelLayout(c, U"FOR ", alignR);   alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, page->STR, alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, U", DEX ", alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, page->DEX, alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, U", COS ", alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, page->CON, alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, U", INT ", alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, page->INT, alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, U", SAG ", alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, page->WIS, alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, U", CAR ", alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, page->CHA, alignR);
+        baseR.y -= offset.h;
         
-        ls_uiLabelLayout(c, U"BAB: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->BAB, { baseX, baseY, maxW-40, minY });
-        baseY -= offset.h;
+        ls_uiLabelLayout(c, U"BAB: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->BAB, { baseX, baseR.y, maxW-40, minY });
+        baseR.y -= offset.h;
         
-        ls_uiLabelLayout(c, U"BMC: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->BMC, { baseX, baseY, maxW-40, minY });
-        baseY -= offset.h;
+        ls_uiLabelLayout(c, U"BMC: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->BMC, { baseX, baseR.y, maxW-40, minY });
+        baseR.y -= offset.h;
         
-        ls_uiLabelLayout(c, U"DMC: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->DMC, { baseX, baseY, maxW-40, minY });
-        baseY -= offset.h;
+        ls_uiLabelLayout(c, U"DMC: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->DMC, { baseX, baseR.y, maxW-40, minY });
+        baseR.y -= offset.h;
         
-        alignR = { baseX, baseY, maxW-128, minY };
-        if(page->talents[0].len)
+        alignR = { baseX, baseR.y, maxW-baseX, minY };
+        if(page->talents.len)
         {
-            ls_uiLabelLayout(c, U"Talenti: ", { 10, baseY, maxW, minY }, pureWhite);
-            renderAndAlignArr(page->talents, 24, NULL, U", ", NULL);
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Talenti: ", baseR, pureWhite);
+            renderAndAlign(page->talents);
         }
         
-        alignR = { baseX, baseY, maxW-128, minY };
-        if(page->skills[0].len)
+        alignR = { baseX, baseR.y, maxW-baseX, minY };
+        if(page->skills.len)
         {
-            ls_uiLabelLayout(c, U"Abilit\U000000E0: ", { 10, baseY, maxW, minY }, pureWhite);
-            renderAndAlignArr(page->skills, 24, NULL, U", ", NULL);
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Abilit\U000000E0: ", baseR, pureWhite);
+            renderAndAlign(page->skills);
         }
         
-        alignR = { baseX, baseY, maxW-128, minY };
-        if(page->languages[0].len)
+        alignR = { baseX, baseR.y, maxW-baseX, minY };
+        if(page->languages.len)
         {
-            ls_uiLabelLayout(c, U"Linguaggi: ", { 10, baseY, maxW, minY }, pureWhite);
-            renderAndAlignArr(page->languages, 24, NULL, U", ", NULL);
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Linguaggi: ", baseR, pureWhite);
+            renderAndAlign(page->languages);
         }
         
         if(page->racialMods.len)
         {
-            ls_uiLabelLayout(c, U"Modificatori Razziali: ", { 10, baseY, maxW, minY }, pureWhite);
-            offset = ls_uiLabelLayout(c, page->racialMods, { baseX, baseY, maxW, minY });
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Modificatori Razziali: ", baseR, pureWhite);
+            offset = ls_uiLabelLayout(c, page->racialMods, { baseX, baseR.y, maxW, minY });
+            baseR.y -= offset.h;
         }
         
         if(page->spec_qual.len)
         {
-            ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", { 10, baseY, maxW, minY }, pureWhite);
-            offset = ls_uiLabelLayout(c, page->spec_qual, { baseX, baseY, maxW, minY });
-            baseY -= offset.h;
+            ls_uiLabelLayout(c, U"Qualit\U000000E0 Speciali: ", baseR, pureWhite);
+            offset = ls_uiLabelLayout(c, page->spec_qual, { baseX, baseR.y, maxW, minY });
+            baseR.y -= offset.h;
         }
         
     }
@@ -855,24 +987,19 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= 4;
+    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.y -= 4;
     {
-        offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", { 10, baseY, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", baseR, pureWhite);
+        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseY -= offset.maxY;
+        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y -= offset.maxY;
+        baseR.y -= 8; //NOTE: Random spacing because it feels cramped
         
-        baseY -= 8; //NOTE: Random spacing because it feels cramped
-        
-        for(u32 i = 0; i < 24; i++)
-        {
-            if(page->specials[i].len == 0) { continue; }
-            offset = ls_uiLabelLayout(c, page->specials[i], { 10, baseY, maxW, minY });
-            baseY -= (offset.maxY + 8);
-        }
+        offset = ls_uiLabelLayout(c, page->specials, baseR);
+        baseR.y -= (offset.h + 8);
     }
     
     //---------------//
@@ -880,49 +1007,49 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= 4;
+    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.y -= 4;
     baseX  = 148;
     {
-        offset = ls_uiLabelLayout(c, U"Ecologia", { 10, baseY, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        baseY -= offset.maxY;
+        offset = ls_uiLabelLayout(c, U"Ecologia", baseR, pureWhite);
+        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        baseR.y -= offset.maxY;
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         
-        ls_uiLabelLayout(c, U"Ambiente: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->environment, { baseX, baseY, maxW, minY });
-        baseY -= offset.maxY;
+        ls_uiLabelLayout(c, U"Ambiente: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->environment, { baseX, baseR.y, maxW, minY });
+        baseR.y -= offset.maxY;
         
-        ls_uiLabelLayout(c, U"Organizzazione: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->org, { baseX, baseY, maxW, minY });
-        baseY -= offset.maxY;
+        ls_uiLabelLayout(c, U"Organizzazione: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->org, { baseX, baseR.y, maxW, minY });
+        baseR.y -= offset.maxY;
         
-        ls_uiLabelLayout(c, U"Tesoro: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->treasure, { baseX, baseY, maxW, minY });
-        baseY -= offset.maxY;
+        ls_uiLabelLayout(c, U"Tesoro: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->treasure, { baseX, baseR.y, maxW, minY });
+        baseR.y -= offset.maxY;
     }
     
     //---------------//
     //     FINAL     //
     //---------------//
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseY -= 4;
+    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.y -= 4;
     {
-        offset = ls_uiLabelLayout(c, U"Descrizione", { 10, baseY, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
-        baseY -= offset.maxY;
+        offset = ls_uiLabelLayout(c, U"Descrizione", baseR, pureWhite);
+        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        baseR.y -= offset.maxY;
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         
-        offset = ls_uiLabelLayout(c, page->desc, { 10, baseY, maxW, minY });
-        baseY -= offset.maxY;
+        offset = ls_uiLabelLayout(c, page->desc, baseR);
+        baseR.y -= offset.maxY;
         
-        baseY += (currPixelHeight-1);
-        ls_uiHSeparator(c, baseY-4, 10, 1, RGB(0, 0, 0));
+        baseR.y += (currPixelHeight-1);
+        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
         
         
         //TODO: Make these links openable.
@@ -936,15 +1063,15 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
         //      that opens whatever path you give it with the appropriate command. So an http link should get
         //      opened in the default browser.
         
-        baseY -= (currPixelHeight+8);
-        ls_uiLabelLayout(c, U"Fonte: ", { 10, baseY, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->source, { 72, baseY, maxW, minY });
-        baseY -= offset.maxY;
+        baseR.y -= (currPixelHeight+8);
+        ls_uiLabelLayout(c, U"Fonte: ", baseR, pureWhite);
+        offset = ls_uiLabelLayout(c, page->source, { 72, baseR.y, maxW-64, minY });
+        baseR.y -= offset.maxY;
     }
     
     c->textColor = RGBg(0xCC);
     
-    pageScroll.minY = baseY;
+    pageScroll.minY = baseR.y;
     
     ls_uiEndScrollableRegion(c);
 }
