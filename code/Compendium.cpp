@@ -198,7 +198,7 @@ void LoadCompendium(string path)
     
     //----------------------
     //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
-    cachedPage.origin            = ls_utf32Alloc(48);
+    cachedPage.origin            = ls_utf32Alloc(72);
     cachedPage.shortDesc         = ls_utf32Alloc(256);
     cachedPage.AC                = ls_utf32Alloc(128);
     cachedPage.HP                = ls_utf32Alloc(128);
@@ -218,8 +218,8 @@ void LoadCompendium(string path)
     cachedPage.specials          = ls_utf32Alloc(maxTalents * 2048);
     
     cachedPage.org               = ls_utf32Alloc(448);
-    cachedPage.treasure          = ls_utf32Alloc(256);
-    cachedPage.desc              = ls_utf32Alloc(5120);
+    cachedPage.treasure          = ls_utf32Alloc(320);
+    cachedPage.desc              = ls_utf32Alloc(8192);
     cachedPage.source            = ls_utf32Alloc(256);
     
     cachedPage.name              = ls_utf32Alloc(48);
@@ -231,7 +231,7 @@ void LoadCompendium(string path)
     cachedPage.archetype         = ls_utf32Alloc(maxArchetypes * 16);
     cachedPage.size              = ls_utf32Alloc(32);
     cachedPage.initiative        = ls_utf32Alloc(32);
-    cachedPage.senses            = ls_utf32Alloc(maxSenses * 16);
+    cachedPage.senses            = ls_utf32Alloc(maxSenses * 24);
     cachedPage.perception        = ls_utf32Alloc(128);
     cachedPage.aura              = ls_utf32Alloc(128);
     
@@ -349,7 +349,7 @@ void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 in
     
     if(base->len + toAppend.len + sepLen > base->size)
     { ls_printf("Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", base->size, toAppend.len, byteLen, index);
-        Assert(FALSE); }
+        AssertMsg(FALSE, ""); }
     
     if(sep)
     {
@@ -1106,10 +1106,17 @@ void DrawCompendium(UIContext *c)
     ls_arenaClear(compTempArena);
     
     Codex *codex = &compendium.codex;
+    Input *UserInput = &c->UserInput;
     
     if(compendium.isViewingPage)
     {
         AssertMsg(compendium.pageIndex != -1, "Page Index was not set\n");
+        
+        if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.pageIndex < (codex->pages.count-1))
+        { compendium.pageIndex += 1; }
+        
+        if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && compendium.pageIndex > 0)
+        { compendium.pageIndex -= 1; }
         
         if(cachedPage.pageIndex != compendium.pageIndex)
         { CachePage(c, compendium.codex.pages[compendium.pageIndex]); }
