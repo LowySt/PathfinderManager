@@ -485,6 +485,8 @@ void CachePage(UIContext *ui, PageEntry page)
 
 void DrawPage(UIContext *c, CachedPageEntry *page)
 {
+    AssertMsg(FALSE, "I hate this, try pre-merging the strings");
+    
     //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
     //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
     ls_uiStartScrollableRegion(c, &pageScroll);
@@ -591,7 +593,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
             
             //TODO: Shouldn't Perception be outside the senses existance check?
             //      https://golarion.altervista.org/wiki/Cetus
-            //AssertMsg(FALSE, "Percezione Tellurica fotte il Parse che cerca Percezione in hyperGol");
+            AssertMsg(FALSE, "Percezione Tellurica fotte il Parser che cerca Percezione in hyperGol");
             renderAndAlignS(U"; Percezione ");
             renderAndAlign(page->perception);
             
