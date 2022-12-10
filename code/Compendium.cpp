@@ -530,7 +530,7 @@ void CachePage(UIContext *ui, PageEntry page)
             AppendEntryFromBuffer(&c->archetypes, &cachedPage.archetype, U", ", page.archetype[i]);
             i += 1;
         }
-        ls_utf32Append(&cachedPage.subtype, ls_utf32Constant(U"] "));
+        ls_utf32Append(&cachedPage.archetype, ls_utf32Constant(U"] "));
     }
     
     GetEntryFromBuffer_t(&c->sizes, &cachedPage.size, page.size);
@@ -547,7 +547,6 @@ void CachePage(UIContext *ui, PageEntry page)
             AppendEntryFromBuffer(&c->senses, &cachedPage.senses, U", ", page.senses[i]);
             i += 1;
         }
-        ls_utf32Append(&cachedPage.senses, ls_utf32Constant(U"; "));
     }
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage.perception, page.perception);
@@ -669,33 +668,36 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     c->textColor    = RGBg(0xAA);
     
     s32 baseX = 148;
+    s32 afterTagX = 0;
+    s32 afterTagW = 0;
     UIRect baseR  = { 10, baseY, maxW, minY };
-    UIRect alignR = { baseX, baseY, maxW-100, minY };
+    UIRect alignR = { baseX, baseY, maxW, minY };
     UIRect offset = {};
     
     auto renderAndAlignWS = [&](const char32_t *s) {
-        offset    = ls_uiLabelLayout(c, s, alignR);
-        alignR.x += offset.w;
-        alignR.w -= offset.w;
+        offset   = ls_uiLabelLayout(c, s, alignR);
+        alignR.x = offset.x;
+        alignR.y = offset.y;
+        baseR.y  = offset.y;
     };
     
     auto renderAndAlignW = [&](utf32 s) {
-        offset    = ls_uiLabelLayout(c, s, alignR);
-        alignR.x += offset.w;
-        alignR.w -= offset.w;
+        offset   = ls_uiLabelLayout(c, s, alignR);
+        alignR.x = offset.x;
+        alignR.y = offset.y;
+        baseR.y  = offset.y;
     };
     
     auto renderAndAlignS = [&](const char32_t *s) {
-        alignR    = baseR;
-        offset    = ls_uiLabelLayout(c, s, alignR, pureWhite);
-        alignR.x += offset.w;
-        alignR.w -= offset.w;
+        alignR   = baseR;
+        offset   = ls_uiLabelLayout(c, s, alignR, pureWhite);
+        alignR.x = offset.x;
+        alignR.y = offset.y;
     };
     
     auto renderAndAlign = [&](utf32 s) {
-        offset    = ls_uiLabelLayout(c, s, alignR);
-        alignR.x += offset.w;
-        baseR.y  -= offset.h;
+        offset   = ls_uiLabelLayout(c, s, alignR);
+        baseR.y -= offset.h;
     };
     
     //---------------//
@@ -739,18 +741,10 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
         renderAndAlign(page->initiative);
         
         alignR = baseR;
-        if(page->senses.len)
-        {
-            //TODO: Lich has a strange trailing comma after the last Sense. More Parser Problems?
-            renderAndAlignS(U"Sensi: ");
-            renderAndAlignW(page->senses);
-        }
+        renderAndAlignS(U"Sensi: ");
+        if(page->senses.len) renderAndAlignW(page->senses);
         
-        //TODO: https://golarion.altervista.org/wiki/Cetus
-        //AssertMsg(FALSE, "Percezione Tellurica fotte il Parser che cerca Percezione in hyperGol");
-        //      
-        //TODO: Are there creatures with NO perception???
-        offset = ls_uiLabelLayout(c, U"Percezione ", alignR); alignR.x += offset.w;
+        offset = ls_uiLabelLayout(c, U"Percezione ", alignR); alignR.x = offset.x;
         renderAndAlign(page->perception);
         
         if(page->aura.len)
