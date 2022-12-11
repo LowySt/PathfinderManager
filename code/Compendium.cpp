@@ -199,25 +199,25 @@ void LoadCompendium(string path)
     //----------------------
     //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
     cachedPage.origin            = ls_utf32Alloc(72);
-    cachedPage.shortDesc         = ls_utf32Alloc(256);
-    cachedPage.AC                = ls_utf32Alloc(128);
+    cachedPage.shortDesc         = ls_utf32Alloc(512);
+    cachedPage.AC                = ls_utf32Alloc(192);
     cachedPage.HP                = ls_utf32Alloc(128);
     cachedPage.ST                = ls_utf32Alloc(128);
     cachedPage.RD                = ls_utf32Alloc(128);
     cachedPage.RI                = ls_utf32Alloc(128);
     cachedPage.defensiveCapacity = ls_utf32Alloc(128);
-    cachedPage.melee             = ls_utf32Alloc(256);
+    cachedPage.melee             = ls_utf32Alloc(320);
     cachedPage.ranged            = ls_utf32Alloc(256);
-    cachedPage.specialAttacks    = ls_utf32Alloc(256);
+    cachedPage.specialAttacks    = ls_utf32Alloc(448);
     cachedPage.psych             = ls_utf32Alloc(2048);
     cachedPage.magics            = ls_utf32Alloc(2048);
     cachedPage.spells            = ls_utf32Alloc(2048);
     cachedPage.racialMods        = ls_utf32Alloc(128);
-    cachedPage.spec_qual         = ls_utf32Alloc(256);
+    cachedPage.spec_qual         = ls_utf32Alloc(320);
     
     cachedPage.specials          = ls_utf32Alloc(maxTalents * 2048);
     
-    cachedPage.org               = ls_utf32Alloc(448);
+    cachedPage.org               = ls_utf32Alloc(512);
     cachedPage.treasure          = ls_utf32Alloc(320);
     cachedPage.desc              = ls_utf32Alloc(8192);
     cachedPage.source            = ls_utf32Alloc(256);
@@ -231,7 +231,7 @@ void LoadCompendium(string path)
     cachedPage.archetype         = ls_utf32Alloc(maxArchetypes * 16);
     cachedPage.size              = ls_utf32Alloc(32);
     cachedPage.initiative        = ls_utf32Alloc(32);
-    cachedPage.senses            = ls_utf32Alloc(maxSenses * 24);
+    cachedPage.senses            = ls_utf32Alloc(maxSenses * 32);
     cachedPage.perception        = ls_utf32Alloc(128);
     cachedPage.aura              = ls_utf32Alloc(128);
     
@@ -239,23 +239,25 @@ void LoadCompendium(string path)
     cachedPage.resistances       = ls_utf32Alloc(maxResistances * 32);;
     cachedPage.weaknesses        = ls_utf32Alloc(maxWeaknesses * 32);;
     
-    cachedPage.speed             = ls_utf32Alloc(64);
+    cachedPage.speed             = ls_utf32Alloc(96);
     cachedPage.space             = ls_utf32Alloc(32);
     cachedPage.reach             = ls_utf32Alloc(64);
-    cachedPage.STR               = ls_utf32Alloc(16);
-    cachedPage.DEX               = ls_utf32Alloc(16);
-    cachedPage.CON               = ls_utf32Alloc(16);
-    cachedPage.INT               = ls_utf32Alloc(16);
-    cachedPage.WIS               = ls_utf32Alloc(16);
-    cachedPage.CHA               = ls_utf32Alloc(16);
-    cachedPage.BAB               = ls_utf32Alloc(16);
+    
+    //TODO: Pre-merge all these, doens't make sense not to.
+    cachedPage.STR               = ls_utf32Alloc(32);
+    cachedPage.DEX               = ls_utf32Alloc(32);
+    cachedPage.CON               = ls_utf32Alloc(32);
+    cachedPage.INT               = ls_utf32Alloc(32);
+    cachedPage.WIS               = ls_utf32Alloc(32);
+    cachedPage.CHA               = ls_utf32Alloc(32);
+    cachedPage.BAB               = ls_utf32Alloc(32);
     cachedPage.BMC               = ls_utf32Alloc(64);
-    cachedPage.DMC               = ls_utf32Alloc(64);
+    cachedPage.DMC               = ls_utf32Alloc(96);
     
     cachedPage.talents           = ls_utf32Alloc(maxTalents * 32);
     cachedPage.skills            = ls_utf32Alloc(maxTalents * 32);
     cachedPage.languages         = ls_utf32Alloc(maxTalents * 64);
-    cachedPage.environment       = ls_utf32Alloc(64);
+    cachedPage.environment       = ls_utf32Alloc(96);
     
     //----------------------
     //NOTE: Now load the Compendium from file
@@ -378,7 +380,7 @@ void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
     
     buf->cursor = index;
     
-    u32 byteLen   = (u32)ls_bufferPeekWord(buf);
+    s32 byteLen   = ls_bufferPeekWord(buf);
     u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
     
     u32 len = ls_utf8Len(utf8_data, byteLen);
@@ -659,7 +661,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     s32 prevPixelHeight = 0;
     s32 currPixelHeight = 0;
     
-    s32 maxW = c->windowWidth - 46;
+    s32 maxW = c->windowWidth - 42;
     s32 minY = 0;
     
     s32 baseY = 670;
@@ -706,10 +708,10 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     ls_uiLabelLayout(c, page->name, baseR, pureWhite);
     {
-        ls_uiLabelLayout(c, U"GS", { 510, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, page->gs, { 540, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, U"PE", { 635, baseR.y, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->pe, { 670, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"GS", { 505, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, page->gs, { 535, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"PE", { 630, baseR.y, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->pe, { 665, baseR.y, maxW, minY }, pureWhite);
         ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -722,8 +724,11 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
             baseR.y -= offset.h;
         }
         
-        offset = ls_uiLabelLayout(c, page->shortDesc, baseR);
-        baseR.y -= (offset.h + 4);
+        if(page->shortDesc.len)
+        {
+            offset = ls_uiLabelLayout(c, page->shortDesc, baseR);
+            baseR.y -= (offset.h + 4);
+        }
         
         renderAndAlignS(U"Allineamento: ");
         renderAndAlign(page->alignment);
@@ -1065,6 +1070,7 @@ void DrawMonsterTable(UIContext *c)
         
         if(MouseInRect(baseX-4, baseY-4, 300, 18)) { hoverColor = RGBg(0x66); }
         
+        //TODO: Matriarca delle Scimmie Cappuccine Corallo è troppo lungo...
         ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 300, 20, hoverColor, c->borderColor);
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY+tableScroll.deltaY, 1);
         baseX += 299;
