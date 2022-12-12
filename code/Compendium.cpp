@@ -117,18 +117,6 @@ struct PageEntry
     u16 environment;
 };
 
-struct TableEntry
-{
-    u16 name;
-    u16 gs;
-    u16 environment;
-    u16 type;
-    u16 subtype;
-    u16 source;
-    
-    u32 page;
-};
-
 struct Codex
 {
     buffer names;
@@ -163,8 +151,11 @@ struct Compendium
 {
     Codex codex;
     
+    UITextBox searchBar;
+    
     b32   isViewingPage;
     s32   pageIndex = -1;
+    Array<u16> viewIndices;
 };
 
 //MonsterTable monsterTable = {};
@@ -177,6 +168,74 @@ b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
 {
     compendium.isViewingPage = FALSE;
     compendium.pageIndex     = -1;
+    
+    return FALSE;
+}
+
+b32 CompendiumSearchFunction(UIContext *c, void *userData)
+{
+    //NOTE: Reset the scrollbar when searching
+    tableScroll.deltaY = 0;
+    
+    if(compendium.searchBar.text.len < 2)
+    { 
+        tableScroll.minY = -((compendium.codex.pages.count-30) * 19);
+        ls_arrayClear(&compendium.viewIndices);
+        for(u16 i = 0; i < compendium.viewIndices.cap; i++)
+        { ls_arrayAppend(&compendium.viewIndices, i); }
+        
+        return FALSE;
+    }
+    
+    //NOTE:Iterate over the name buffer to find all names which exactly contain the substring needle
+    utf8 needle = ls_utf8FromUTF32(compendium.searchBar.text);
+    
+    buffer *names = &compendium.codex.names;
+    names->cursor = 4;
+    
+    u16 namesIndexBuffer[2048] = {};
+    u16 nibCount = 0;
+    while(names->cursor < names->size)
+    {
+        s32 strByteLen = ls_bufferPeekWord(names);
+        u8 *data       = (u8 *)names->data + names->cursor + 2;
+        
+        utf8 toMatch   = ls_utf8Constant(data, strByteLen);
+        
+        if(ls_utf8Contains(toMatch, needle))
+        {
+            namesIndexBuffer[nibCount] = names->cursor;
+            nibCount += 1;
+        }
+        
+        ls_bufferReadSkip(names, strByteLen + 2);
+    }
+    
+    //NOTE: Adjust scrollbar height to new monster table count.
+    tableScroll.minY = -((nibCount-30) * 19);
+    
+    if(nibCount > 0)
+    {
+        ls_arrayClear(&compendium.viewIndices);
+        
+        //NOTE: Now that we have a buffer of all matching name indices, let's search through the actual pages
+        for(u16 i = 0; i < compendium.codex.pages.count; i++)
+        {
+            u16 indexToMatch = compendium.codex.pages[i].name;
+            for(u32 j = 0; j < nibCount; j++)
+            {
+                if(namesIndexBuffer[j] == indexToMatch)
+                {
+                    //NOTE: Remove from the namesIndexBuffer and add to the viewIndices array
+                    ls_arrayAppend(&compendium.viewIndices, i);
+                    
+                    namesIndexBuffer[j] = namesIndexBuffer[nibCount-1];
+                    nibCount -= 1;
+                    break;
+                }
+            }
+        }
+    }
     
     return FALSE;
 }
@@ -331,6 +390,11 @@ void LoadCompendium(string path)
         ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
     }
     
+    const u32 currentViewIndicesCount = 2496;
+    compendium.viewIndices = ls_arrayAlloc<u16>(currentViewIndicesCount);
+    for(u16 i = 0; i < currentViewIndicesCount; i++)
+    { ls_arrayAppend(&compendium.viewIndices, i); }
+    
     ls_arenaUse(globalArena);
     
     return;
@@ -452,6 +516,10 @@ void SetMonsterTable(UIContext *c)
     
     s32 monsterTableMinY = -((codex->pages.count-30) * 19);
     tableScroll = { 0, 10, c->windowWidth - 4, c->windowHeight - 36, 0, 0, c->windowWidth - 32, monsterTableMinY };
+    
+    compendium.searchBar.text = ls_utf32Alloc(64);
+    compendium.searchBar.postInput = CompendiumSearchFunction;
+    compendium.searchBar.isSingleLine = TRUE;
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
@@ -1052,14 +1120,17 @@ void DrawMonsterTable(UIContext *c)
     s32 baseX = 20;
     s32 baseY = 630;
     
+    ls_uiTextBox(c, &compendium.searchBar, baseX, baseY + 40, 200, 20);
+    
     ls_uiStartScrollableRegion(c, &tableScroll);
     
     s32 startI = -(tableScroll.deltaY / 19);
-    s32 endI   = startI+36 < codex->pages.count ? startI+36 : codex->pages.count;
+    s32 endI   = startI+36 < compendium.viewIndices.count ? startI+36 : compendium.viewIndices.count;
+    endI       = endI < codex->pages.count ? endI : codex->pages.count;
     
     for(s32 i = startI; i < endI; i++)
     {
-        PageEntry entry = codex->pages[i];
+        PageEntry entry = codex->pages[compendium.viewIndices[i]];
         Color hoverColor = bkgColor;
         
         if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
@@ -1070,7 +1141,7 @@ void DrawMonsterTable(UIContext *c)
         
         if(MouseInRect(baseX-4, baseY-4, 300, 18)) { hoverColor = RGBg(0x66); }
         
-        //TODO: Matriarca delle Scimmie Cappuccine Corallo è troppo lungo...
+        //TODO: Matriarca delle Scimmie Cappuccine Corallo is too long...
         ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 300, 20, hoverColor, c->borderColor);
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY+tableScroll.deltaY, 1);
         baseX += 299;
@@ -1119,7 +1190,10 @@ void DrawCompendium(UIContext *c)
         { compendium.pageIndex -= 1; }
         
         if(cachedPage.pageIndex != compendium.pageIndex)
-        { CachePage(c, compendium.codex.pages[compendium.pageIndex]); }
+        { 
+            PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[compendium.pageIndex]];
+            CachePage(c, pEntry);
+        }
         
         DrawPage(c, &cachedPage);
     }
