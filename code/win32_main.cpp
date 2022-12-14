@@ -314,13 +314,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     CompendiumMenu.itemWidth    = 120;
     
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Monster Table", CompendiumOpenMonsterTable, NULL);
-    
+    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add to Init", CompendiumAddPageToInit, NULL);
     
     State.isInitialized = TRUE;
     
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
-    
     
     ls_arenaUse(stateArena);
     
@@ -359,10 +358,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     RegionTimer frameTime = {};
     
-    b32 Running = TRUE;
-    utf32 frameTimeString = ls_utf32Alloc(8);
-    b32 showDebug = FALSE;
-    b32 userInputConsumed = FALSE;
+    b32 Running               = TRUE;
+    utf32 frameTimeString     = ls_utf32Alloc(8);
+    b32 showDebug             = FALSE;
+    b32 userInputConsumed     = FALSE;
+    b32 externalInputReceived = FALSE;
     
     while(Running)
     {
@@ -389,12 +389,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
         //NOTE: Render The Window Menu
-        ls_uiMenu(uiContext, &WindowMenu, -1, uiContext->windowHeight-20, uiContext->windowWidth+1, 21);
+        userInputConsumed = ls_uiMenu(uiContext, &WindowMenu, -1, 
+                                      uiContext->windowHeight-20, uiContext->windowWidth+1, 21);
         
-        userInputConsumed = DrawInitTab(uiContext);
+        userInputConsumed |= DrawInitTab(uiContext);
         
-        if(!uiContext->hasReceivedInput && !uiContext->isDragging)
+        if(!uiContext->hasReceivedInput && !uiContext->isDragging && !externalInputReceived)
         {
+            externalInputReceived = FALSE;
+            
             for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
             {
                 ls_stackClear(&uiContext->renderGroups[i].RenderCommands[0]);
@@ -406,6 +409,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
         else
         {
+            externalInputReceived = FALSE;
+            
             //NOTETODO: annoying non-global user input
             Input *UserInput = &uiContext->UserInput;
             
@@ -521,7 +526,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiFrameBeginChild(compendiumContext);
         
-        ls_uiMenu(compendiumContext, &CompendiumMenu, -1, compendiumContext->windowHeight-20, compendiumContext->windowWidth+1, 21);
+        b32 compendiumInput = ls_uiMenu(compendiumContext, &CompendiumMenu, -1,
+                                        compendiumContext->windowHeight-20, compendiumContext->windowWidth+1, 21);
+        
+        if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
         
         DrawCompendium(compendiumContext);
         

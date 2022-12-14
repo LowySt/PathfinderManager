@@ -1091,7 +1091,7 @@ b32 AddNewInitOnClick(UIContext *cxt, void *data)
 //TODO: Right now we are not allowing to give an Initiative Value and put the new 
 //      Field in the right place in Order.
 //      If we allow it, the counter checker WILL HAVE to probably fix C->startIdxInOrder to work.
-b32 AddConfirmOnClick(UIContext *cxt, void *data)
+b32 AddConfirmOnClick(UIContext *c, void *data)
 {
     InitField *f = (InitField *)data;
     
@@ -1126,7 +1126,7 @@ b32 AddConfirmOnClick(UIContext *cxt, void *data)
     Order *o = State.Init->OrderFields + visibleOrder;
     
     ls_utf32Set(&o->field.text, f->addName.text);
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], f->addName.text);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], f->addName.text);
     
     f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
     f->editFields[IF_IDX_BONUS].isReadonly = TRUE;

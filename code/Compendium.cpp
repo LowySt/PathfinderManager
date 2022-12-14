@@ -174,6 +174,8 @@ b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
 
 b32 CompendiumSearchFunction(UIContext *c, void *userData)
 {
+    ls_arenaUse(compTempArena);
+    
     //NOTE: Reset the scrollbar when searching
     tableScroll.deltaY = 0;
     
@@ -237,7 +239,67 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
         }
     }
     
+    ls_arenaUse(globalArena);
+    
     return FALSE;
+}
+
+b32 CompendiumAddPageToInit(UIContext *c, void *userData)
+{
+    //TODO: Allow to add Allies
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    
+    InitField *f = State.Init->MobFields + visibleMobs;
+    
+    State.Init->Mobs.selectedIndex += 1;
+    State.Init->turnsInRound       += 1;
+    
+    //TODO: I don't like this shit, and I never liked it (look at code in Init.cpp and fix that as well)
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *C = State.Init->Counters + i;
+        if(C->isActive)
+        { 
+            AssertMsg(State.Init->turnsInRound >= C->startIdxInOrder, "startIdxInOrder is not realiable anymore\n");
+            
+            //NOTE: This counter missed counting the new addition this round,
+            //      So we manually count up by one.
+            if(State.Init->currIdx < C->startIdxInOrder)
+            { C->turnCounter += 1; }
+        }
+    }
+    
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
+    
+    f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
+    f->editFields[IF_IDX_BONUS].isReadonly = TRUE;
+    f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
+    
+    //NOTE: We are skipping Name, Bonus and Final, by starting at 2 and ending 1 earlier.
+    for(u32 i = 2; i < IF_IDX_COUNT-1; i++)
+    { f->editFields[i].isReadonly = TRUE; }
+    
+    f->ID  = addID;
+    
+    if(State.inBattle)
+    {
+        Order *o = State.Init->OrderFields + visibleOrder;
+        
+        //TODO: Don't like re-allocing, We can't fit long names anyway. Let's just choose a maximum length
+        //      And smartly truncate names?
+        ls_utf32Set(&o->field.text, cachedPage.name);
+        
+        //AssertMsg(FALSE, "Finish implementing this");
+        
+        //TODO:
+        //o->field.maxValue = ls_utf32ToInt(f->maxLife.text);
+        o->ID  = addID;
+    }
+    addID += 1;
+    
+    return TRUE;
 }
 
 void LoadCompendium(string path)
@@ -1023,22 +1085,24 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     //   SPECIALS    //
     //---------------//
     
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseR.y -= 4;
+    if(page->specials.len)
     {
-        offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
-        
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseR.y -= offset.maxY;
-        baseR.y -= 8; //NOTE: Random spacing because it feels cramped
-        
-        offset = ls_uiLabelLayout(c, page->specials, baseR);
-        baseR.y -= (offset.h + 8);
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+        baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y -= 4;
+        {
+            offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", baseR, pureWhite);
+            ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+            
+            currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+            baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+            baseR.y -= offset.maxY;
+            baseR.y -= 8; //NOTE: Random spacing because it feels cramped
+            
+            offset = ls_uiLabelLayout(c, page->specials, baseR);
+            baseR.y -= (offset.h + 8);
+        }
     }
-    
     //---------------//
     //      ORG      //
     //---------------//
