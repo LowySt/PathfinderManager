@@ -702,8 +702,9 @@ b32 SetOnClick(UIContext *cxt, void *data)
     { Page->OrderFields[i].pos.isReadonly = FALSE; }
     
     Page->turnsInRound = visibleOrder;
+    Page->currIdx      = 0;
+    State.inBattle     = TRUE;
     
-    State.inBattle = TRUE;
     return TRUE;
 }
 
