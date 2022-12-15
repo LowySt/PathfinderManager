@@ -13,43 +13,43 @@ Order *GetOrderByID(s32 ID)
     return NULL;
 }
 
-b32 selectStyleDefault(UIContext *cxt, void *data)
+b32 selectStyleDefault(UIContext *c, void *data)
 {
     currentStyle = INIT_STYLE_DEFAULT;
     return FALSE;
 }
 
-b32 selectStylePrana(UIContext *cxt, void *data)
+b32 selectStylePrana(UIContext *c, void *data)
 {
     currentStyle = INIT_STYLE_PRANA;
     return FALSE;
 }
 
 
-b32 selectThemeDefault(UIContext *cxt, void *data)
+b32 selectThemeDefault(UIContext *c, void *data)
 {
-    cxt->backgroundColor = RGBg(0x38);
-    cxt->highliteColor   = RGBg(0x65);
-    cxt->pressedColor    = RGBg(0x75);
-    cxt->widgetColor     = RGBg(0x45);
-    cxt->borderColor     = RGBg(0x22);
-    cxt->textColor       = RGBg(0xCC);
-    cxt->invWidgetColor  = RGBg(0xBA);
-    cxt->invTextColor    = RGBg(0x33);
+    c->backgroundColor = RGBg(0x38);
+    c->highliteColor   = RGBg(0x65);
+    c->pressedColor    = RGBg(0x75);
+    c->widgetColor     = RGBg(0x45);
+    c->borderColor     = RGBg(0x22);
+    c->textColor       = RGBg(0xCC);
+    c->invWidgetColor  = RGBg(0xBA);
+    c->invTextColor    = RGBg(0x33);
     
     return FALSE;
 }
 
-b32 selectThemeDarkNight(UIContext *cxt, void *data)
+b32 selectThemeDarkNight(UIContext *c, void *data)
 {
-    cxt->backgroundColor = RGB(0x0C, 0x08, 0x0B);
-    cxt->highliteColor   = RGB(0x14, 0x15, 0x13);
-    cxt->pressedColor    = RGB(0x18, 0x20, 0x19);
-    cxt->widgetColor     = RGB(0x1C, 0x18, 0x1B);
-    cxt->borderColor     = RGB(0x60, 0x7B, 0x7D);
-    cxt->textColor       = RGBg(0xCC); //cxt->textColor       = RGB(0x82, 0x8E, 0x82);
-    cxt->invWidgetColor  = RGB(0xE3, 0xE7, 0xE4);
-    cxt->invTextColor    = RGB(0x7D, 0x71, 0x7D);
+    c->backgroundColor = RGB(0x0C, 0x08, 0x0B);
+    c->highliteColor   = RGB(0x14, 0x15, 0x13);
+    c->pressedColor    = RGB(0x18, 0x20, 0x19);
+    c->widgetColor     = RGB(0x1C, 0x18, 0x1B);
+    c->borderColor     = RGB(0x60, 0x7B, 0x7D);
+    c->textColor       = RGBg(0xCC);
+    c->invWidgetColor  = RGB(0xE3, 0xE7, 0xE4);
+    c->invTextColor    = RGB(0x7D, 0x71, 0x7D);
     
     return FALSE;
 }
@@ -413,13 +413,13 @@ void OnEncounterSelect(UIContext *c, void *data)
     return;
 }
 
-b32 RequestUndoOnClick(UIContext *cxt, void *data)
+b32 RequestUndoOnClick(UIContext *c, void *data)
 {
     undoRequest = TRUE;
     return FALSE;
 }
 
-b32 RequestRedoOnClick(UIContext *cxt, void *data)
+b32 RequestRedoOnClick(UIContext *c, void *data)
 {
     redoRequest = TRUE;
     return FALSE;
@@ -427,7 +427,7 @@ b32 RequestRedoOnClick(UIContext *cxt, void *data)
 
 //TODO: Adding a new one while selecting an old one displays an incorrect name in the list box,
 //      But it's only visual. On program restart the names are correct... wtf???
-b32 SaveEncounterOnClick(UIContext *cxt, void *data)
+b32 SaveEncounterOnClick(UIContext *c, void *data)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
     s32 visibleAllies = State.Init->Allies.selectedIndex;
@@ -466,12 +466,12 @@ b32 SaveEncounterOnClick(UIContext *cxt, void *data)
     State.encounters.numEncounters += 1;
     
     State.Init->EncounterSel.selectedIndex =
-        ls_uiListBoxAddEntry(cxt, &State.Init->EncounterSel, State.Init->EncounterName.text);
+        ls_uiListBoxAddEntry(c, &State.Init->EncounterSel, State.Init->EncounterName.text);
     
     return FALSE;
 }
 
-b32 RemoveEncounterOnClick(UIContext *cxt, void *data)
+b32 RemoveEncounterOnClick(UIContext *c, void *data)
 {
     b32 inputUse = FALSE;
     
@@ -519,13 +519,13 @@ b32 RemoveEncounterOnClick(UIContext *cxt, void *data)
     }
     
     State.encounters.numEncounters -= 1;
-    ls_uiListBoxRemoveEntry(cxt, &State.Init->EncounterSel, idx);
-    inputUse |= ResetOnClick(cxt, NULL);
+    ls_uiListBoxRemoveEntry(c, &State.Init->EncounterSel, idx);
+    inputUse |= ResetOnClick(c, NULL);
     
     return inputUse;
 }
 
-b32 ThrowDiceOnClick(UIContext *cxt, void *data)
+b32 ThrowDiceOnClick(UIContext *c, void *data)
 {
     UIButton *f = (UIButton *)data;
     
@@ -576,7 +576,7 @@ s32 sortTmpOrder(void *a, void *b)
     else { return 1; }
 }
 
-b32 RollOnClick(UIContext *cxt, void *data)
+b32 RollOnClick(UIContext *c, void *data)
 {
     InitPage *Page = State.Init;
     
@@ -616,7 +616,7 @@ b32 RollOnClick(UIContext *cxt, void *data)
     return TRUE;
 }
 
-b32 SetOnClick(UIContext *cxt, void *data)
+b32 SetOnClick(UIContext *c, void *data)
 {
     AssertMsg(!State.inBattle, "Clicking this should be impossible while in Battle\n");
     
@@ -708,7 +708,7 @@ b32 SetOnClick(UIContext *cxt, void *data)
     return TRUE;
 }
 
-b32 ResetOnClick(UIContext *cxt, void *data)
+b32 ResetOnClick(UIContext *c, void *data)
 {
     InitPage *Page = State.Init;
     
@@ -720,7 +720,7 @@ b32 ResetOnClick(UIContext *cxt, void *data)
     
     for(u32 i = 0; i < PARTY_NUM; i++) 
     { 
-        ls_uiTextBoxClear(cxt, Page->PlayerInit + i);
+        ls_uiTextBoxClear(c, Page->PlayerInit + i);
         ls_utf32Set(&Page->PlayerInit[i].text, zeroUTF32);
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
     }
@@ -730,19 +730,19 @@ b32 ResetOnClick(UIContext *cxt, void *data)
     { 
         InitField *f = Page->MobFields + i;
         
-        ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_NAME]);
-        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_utf32Constant(MobName[i]));
+        ls_uiTextBoxClear(c, &f->editFields[IF_IDX_NAME]);
+        ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], ls_utf32Constant(MobName[i]));
         
         for(u32 j = 1; j < IF_IDX_COUNT; j++)
         {
-            if(j == IF_IDX_EXTRA) { ls_uiTextBoxClear(cxt, &f->editFields[j]); continue; }
+            if(j == IF_IDX_EXTRA) { ls_uiTextBoxClear(c, &f->editFields[j]); continue; }
             
-            ls_uiTextBoxClear(cxt, &f->editFields[j]);
-            ls_uiTextBoxSet(cxt, &f->editFields[j], zeroUTF32);
+            ls_uiTextBoxClear(c, &f->editFields[j]);
+            ls_uiTextBoxSet(c, &f->editFields[j], zeroUTF32);
         }
         
-        ls_uiTextBoxClear(cxt, &f->maxLife);
-        ls_uiTextBoxSet(cxt, &f->maxLife, zeroUTF32);
+        ls_uiTextBoxClear(c, &f->maxLife);
+        ls_uiTextBoxSet(c, &f->maxLife, zeroUTF32);
         
         f->ID = currID;
         currID += 1;
@@ -752,14 +752,14 @@ b32 ResetOnClick(UIContext *cxt, void *data)
     { 
         InitField *f = Page->AllyFields + i;
         
-        ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_NAME]);
-        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_utf32Constant(AllyName[i]));
+        ls_uiTextBoxClear(c, &f->editFields[IF_IDX_NAME]);
+        ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], ls_utf32Constant(AllyName[i]));
         
-        ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_BONUS]);
-        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_BONUS], zeroUTF32);
+        ls_uiTextBoxClear(c, &f->editFields[IF_IDX_BONUS]);
+        ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], zeroUTF32);
         
-        ls_uiTextBoxClear(cxt, &f->editFields[IF_IDX_FINAL]);
-        ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FINAL], zeroUTF32);
+        ls_uiTextBoxClear(c, &f->editFields[IF_IDX_FINAL]);
+        ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FINAL], zeroUTF32);
         
         f->ID = currID;
         currID += 1;
@@ -782,8 +782,8 @@ b32 ResetOnClick(UIContext *cxt, void *data)
     {
         Counter *f = Page->Counters + i;
         
-        ls_uiTextBoxClear(cxt, &f->name);
-        ls_uiTextBoxClear(cxt, &f->rounds);
+        ls_uiTextBoxClear(c, &f->name);
+        ls_uiTextBoxClear(c, &f->rounds);
         f->roundsLeft      = 0;
         f->startIdxInOrder = 0;
         f->turnCounter     = 0;
@@ -794,17 +794,17 @@ b32 ResetOnClick(UIContext *cxt, void *data)
     {
         DiceThrow *f = Page->Throwers + i;
         
-        ls_uiTextBoxClear(cxt, &f->name);
-        ls_uiTextBoxClear(cxt, &f->toHit);
-        ls_uiTextBoxClear(cxt, &f->hitRes);
-        ls_uiTextBoxClear(cxt, &f->damage);
-        ls_uiTextBoxClear(cxt, &f->dmgRes);
+        ls_uiTextBoxClear(c, &f->name);
+        ls_uiTextBoxClear(c, &f->toHit);
+        ls_uiTextBoxClear(c, &f->hitRes);
+        ls_uiTextBoxClear(c, &f->damage);
+        ls_uiTextBoxClear(c, &f->dmgRes);
     }
     
     // General Thrower
     {
-        ls_uiTextBoxClear(cxt, &Page->GeneralThrower.toHit);
-        ls_uiTextBoxClear(cxt, &Page->GeneralThrower.hitRes);
+        ls_uiTextBoxClear(c, &Page->GeneralThrower.toHit);
+        ls_uiTextBoxClear(c, &Page->GeneralThrower.hitRes);
     }
     
     Page->EncounterSel.selectedIndex = 0;
@@ -822,7 +822,7 @@ b32 ResetOnClick(UIContext *cxt, void *data)
     return TRUE;
 }
 
-b32 NextOnClick(UIContext *cxt, void *data)
+b32 NextOnClick(UIContext *c, void *data)
 {
     InitPage *Page = State.Init;
     
@@ -862,8 +862,8 @@ b32 NextOnClick(UIContext *cxt, void *data)
                 
                 if(C->roundsLeft == 0)
                 {
-                    ls_uiTextBoxClear(cxt, &C->name);
-                    ls_uiTextBoxClear(cxt, &C->rounds);
+                    ls_uiTextBoxClear(c, &C->name);
+                    ls_uiTextBoxClear(c, &C->rounds);
                     
                     C->turnCounter = 0;
                     C->isActive     = FALSE;
@@ -908,17 +908,17 @@ void CopyOrder(Order *From, Order *To)
     To->ID = From->ID;
 }
 
-void CopyInitField(UIContext *cxt, InitField *From, InitField *To)
+void CopyInitField(UIContext *c, InitField *From, InitField *To)
 {
     for(u32 i = 0; i < IF_IDX_COUNT; i++)
-    { ls_uiTextBoxSet(cxt, &To->editFields[i], From->editFields[i].text); }
+    { ls_uiTextBoxSet(c, &To->editFields[i], From->editFields[i].text); }
     
-    ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
+    ls_uiTextBoxSet(c, &To->maxLife, From->maxLife.text);
     
     To->ID = From->ID;
 }
 
-b32 RemoveOrderOnClick(UIContext *cxt, void *data)
+b32 RemoveOrderOnClick(UIContext *c, void *data)
 {
     if(State.inBattle == FALSE) { return FALSE; }
     
@@ -956,11 +956,11 @@ b32 RemoveOrderOnClick(UIContext *cxt, void *data)
             {
                 //NOTE: We remove the ally from the allies list by moving the last one in its place
                 InitField *B = Page->AllyFields + (visibleAllies - 1);
-                CopyInitField(cxt, B, ally);
+                CopyInitField(c, B, ally);
                 
-                ls_uiTextBoxClear(cxt, &B->editFields[IF_IDX_NAME]);
-                ls_uiTextBoxClear(cxt, &B->editFields[IF_IDX_BONUS]);
-                ls_uiTextBoxClear(cxt, &B->editFields[IF_IDX_FINAL]);
+                ls_uiTextBoxClear(c, &B->editFields[IF_IDX_NAME]);
+                ls_uiTextBoxClear(c, &B->editFields[IF_IDX_BONUS]);
+                ls_uiTextBoxClear(c, &B->editFields[IF_IDX_FINAL]);
                 B->ID = 0;
                 
                 Page->Allies.selectedIndex -= 1;
@@ -984,12 +984,12 @@ b32 RemoveOrderOnClick(UIContext *cxt, void *data)
             {
                 //NOTE: We remove the Mob from the mobs list by moving the last one in its place
                 InitField *B = Page->MobFields + (visibleMobs - 1);
-                CopyInitField(cxt, B, mob);
+                CopyInitField(c, B, mob);
                 
                 for(u32 j = 0; j < IF_IDX_COUNT; j++)
-                { ls_uiTextBoxClear(cxt, &B->editFields[j]); }
+                { ls_uiTextBoxClear(c, &B->editFields[j]); }
                 
-                ls_uiTextBoxClear(cxt, &B->maxLife);
+                ls_uiTextBoxClear(c, &B->maxLife);
                 
                 B->ID = 0;
                 
@@ -1033,7 +1033,7 @@ b32 RemoveOrderOnClick(UIContext *cxt, void *data)
     return TRUE;
 }
 
-b32 StartCounterOnClick(UIContext *cxt, void *data)
+b32 StartCounterOnClick(UIContext *c, void *data)
 {
     Counter *C = (Counter *)data;
     
@@ -1053,7 +1053,7 @@ b32 StartCounterOnClick(UIContext *cxt, void *data)
     return TRUE;
 }
 
-b32 PlusOneCounterOnClick(UIContext *cxt, void *data)
+b32 PlusOneCounterOnClick(UIContext *c, void *data)
 {
     Counter *C = (Counter *)data;
     
@@ -1063,12 +1063,12 @@ b32 PlusOneCounterOnClick(UIContext *cxt, void *data)
     return TRUE;
 }
 
-b32 StopCounterOnClick(UIContext *cxt, void *data)
+b32 StopCounterOnClick(UIContext *c, void *data)
 {
     Counter *C = (Counter *)data;
     
-    ls_uiTextBoxClear(cxt, &C->name);
-    ls_uiTextBoxClear(cxt, &C->rounds);
+    ls_uiTextBoxClear(c, &C->name);
+    ls_uiTextBoxClear(c, &C->rounds);
     
     C->name.isReadonly   = FALSE;
     C->rounds.isReadonly = FALSE;
@@ -1081,7 +1081,7 @@ b32 StopCounterOnClick(UIContext *cxt, void *data)
     return TRUE;
 }
 
-b32 AddNewInitOnClick(UIContext *cxt, void *data)
+b32 AddNewInitOnClick(UIContext *c, void *data)
 {
     InitField *f = (InitField *)data;
     f->isAdding = TRUE;
@@ -1154,7 +1154,7 @@ b32 AddConfirmOnClick(UIContext *c, void *data)
     return TRUE;
 }
 
-void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *name)
+void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name)
 {
     CustomFieldTextHandler *textHandler = 
         (CustomFieldTextHandler *)ls_alloc(sizeof(CustomFieldTextHandler)*INIT_FIELD_EDITFIELDS_NUM);
@@ -1167,12 +1167,12 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     
     utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_NAME], ls_utf32Constant(name));
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], ls_utf32Constant(name));
     f->editFields[IF_IDX_NAME].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_NAME].data         = &textHandler[0];
     f->editFields[IF_IDX_NAME].isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_BONUS], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], zeroUTF32);
     f->editFields[IF_IDX_BONUS].maxLen       = 2;
     f->editFields[IF_IDX_BONUS].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_BONUS].data         = &textHandler[1];
@@ -1189,55 +1189,55 @@ void InitFieldInit(UIContext *cxt, InitField *f, s32 *currID, const char32_t *na
     handler->mob      = f;
     handler->previous = ls_utf32Alloc(16);
     
-    ls_uiTextBoxSet(cxt, &f->maxLife, zeroUTF32);
+    ls_uiTextBoxSet(c, &f->maxLife, zeroUTF32);
     f->maxLife.maxLen       = 4;
     f->maxLife.preInput     = CustomMobLifeField;
     f->maxLife.data         = handler;
     f->maxLife.isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_TOTALAC], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_TOTALAC], zeroUTF32);
     f->editFields[IF_IDX_TOTALAC].maxLen       = 2;
     f->editFields[IF_IDX_TOTALAC].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_TOTALAC].data         = &textHandler[3];
     f->editFields[IF_IDX_TOTALAC].isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_TOUCHAC], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_TOUCHAC], zeroUTF32);
     f->editFields[IF_IDX_TOUCHAC].maxLen       = 2;
     f->editFields[IF_IDX_TOUCHAC].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_TOUCHAC].data         = &textHandler[4];
     f->editFields[IF_IDX_TOUCHAC].isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FLATAC], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FLATAC], zeroUTF32);
     f->editFields[IF_IDX_FLATAC].maxLen       = 2;
     f->editFields[IF_IDX_FLATAC].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_FLATAC].data         = &textHandler[5];
     f->editFields[IF_IDX_FLATAC].isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_LOWAC], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_LOWAC], zeroUTF32);
     f->editFields[IF_IDX_LOWAC].maxLen       = 2;
     f->editFields[IF_IDX_LOWAC].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_LOWAC].data         = &textHandler[6];
     f->editFields[IF_IDX_LOWAC].isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_CONSAVE], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_CONSAVE], zeroUTF32);
     f->editFields[IF_IDX_CONSAVE].maxLen       = 2;
     f->editFields[IF_IDX_CONSAVE].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_CONSAVE].data         = &textHandler[7];
     f->editFields[IF_IDX_CONSAVE].isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_DEXSAVE], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_DEXSAVE], zeroUTF32);
     f->editFields[IF_IDX_DEXSAVE].maxLen       = 2;
     f->editFields[IF_IDX_DEXSAVE].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_DEXSAVE].data         = &textHandler[8];
     f->editFields[IF_IDX_DEXSAVE].isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_WISSAVE], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_WISSAVE], zeroUTF32);
     f->editFields[IF_IDX_WISSAVE].maxLen       = 2;
     f->editFields[IF_IDX_WISSAVE].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_WISSAVE].data         = &textHandler[9];
     f->editFields[IF_IDX_WISSAVE].isSingleLine = TRUE;
     
-    ls_uiTextBoxSet(cxt, &f->editFields[IF_IDX_FINAL], zeroUTF32);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FINAL], zeroUTF32);
     f->editFields[IF_IDX_FINAL].maxLen       = 2;
     f->editFields[IF_IDX_FINAL].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_FINAL].data         = &textHandler[10];
@@ -1475,45 +1475,45 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     Page->Redo.onHold   = 0x0;
 }
 
-b32 DrawInitExtra(UIContext *cxt, InitField *F, s32 baseX, s32 y)
+b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
 {
     b32 inputUse = FALSE;
     
-    Color base = cxt->widgetColor;
+    Color base = c->widgetColor;
     s32 x = baseX - 372;
     
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_EXTRA], x, y, 82, 20);   x += 96;
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_EXTRA], x, y, 82, 20);   x += 96;
     
-    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
-    inputUse |= ls_uiTextBox(cxt, &F->maxLife, x, y, 42, 20); x += 56;
+    c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
+    inputUse |= ls_uiTextBox(c, &F->maxLife, x, y, 42, 20); x += 56;
     
-    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_TOTALAC], x, y, 26, 20); x += 30;
+    c->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_TOTALAC], x, y, 26, 20); x += 30;
     
-    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_TOUCHAC], x, y, 26, 20); x += 30;
+    c->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_TOUCHAC], x, y, 26, 20); x += 30;
     
-    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_FLATAC],  x, y, 26, 20); x += 30;
+    c->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_FLATAC],  x, y, 26, 20); x += 30;
     
-    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_LOWAC],   x, y, 26, 20); x += 40;
+    c->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_LOWAC],   x, y, 26, 20); x += 40;
     
-    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 150), base);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_CONSAVE], x, y, 26, 20); x += 30;
+    c->widgetColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 150), base);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_CONSAVE], x, y, 26, 20); x += 30;
     
-    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x2C, 0x80, 0x34, 150), base);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_DEXSAVE], x, y, 26, 20); x += 30;
+    c->widgetColor = ls_uiAlphaBlend(RGBA(0x2C, 0x80, 0x34, 150), base);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_DEXSAVE], x, y, 26, 20); x += 30;
     
-    cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x2C, 0x3D, 0x80, 150), base);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_WISSAVE], x, y, 26, 20); x += 30;
+    c->widgetColor = ls_uiAlphaBlend(RGBA(0x2C, 0x3D, 0x80, 150), base);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_WISSAVE], x, y, 26, 20); x += 30;
     
-    cxt->widgetColor = base;
+    c->widgetColor = base;
     
     return inputUse;
 }
 
-b32 DrawInitField(UIContext *cxt, InitField *F, s32 baseX, s32 y)
+b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y)
 {
     b32 inputUse = FALSE;
     
@@ -1522,39 +1522,39 @@ b32 DrawInitField(UIContext *cxt, InitField *F, s32 baseX, s32 y)
     InitPage *Page = State.Init;
     
     s32 x = baseX;
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_NAME],  x         , y, w, 20);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_BONUS], x + w     , y, 26, 20);
-    inputUse |= ls_uiTextBox(cxt, &F->editFields[IF_IDX_FINAL], x + w + 26, y, 26, 20);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME],  x         , y, w, 20);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_BONUS], x + w     , y, 26, 20);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_FINAL], x + w + 26, y, 26, 20);
     
     return inputUse;
 }
 
-b32 DrawOrderField(UIContext *cxt, Order *f, s32 xPos, s32 yPos)
+b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos)
 {
     b32 inputUse = FALSE;
     
-    inputUse |= ls_uiSlider(cxt, &f->field, xPos + 50, yPos, 120, 20);
+    inputUse |= ls_uiSlider(c, &f->field, xPos + 50, yPos, 120, 20);
     if(inputUse)
     {
-        s32 currVal = ls_uiSliderGetValue(cxt, &f->field);
+        s32 currVal = ls_uiSliderGetValue(c, &f->field);
         
         if(currVal == 0)
-        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), cxt->widgetColor); }
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
         
         else if(currVal < 0)
-        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor); }
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
         
         else if(currVal > 0)
-        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), cxt->widgetColor); }
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
     }
     
-    inputUse |= ls_uiTextBox(cxt, &f->pos, xPos + 25, yPos, 25, 20);
-    inputUse |= ls_uiButton(cxt, &f->remove, xPos, yPos, 20, 20);
+    inputUse |= ls_uiTextBox(c, &f->pos, xPos + 25, yPos, 25, 20);
+    inputUse |= ls_uiButton(c, &f->remove, xPos, yPos, 20, 20);
     
     return inputUse;
 }
 
-b32 DrawDefaultStyle(UIContext *cxt)
+b32 DrawDefaultStyle(UIContext *c)
 {
     InitPage *Page = State.Init;
     
@@ -1568,17 +1568,17 @@ b32 DrawDefaultStyle(UIContext *cxt)
     {
         if(!State.inBattle)
         {
-            inputUse |= ls_uiListBox(cxt, &Page->EncounterSel,  480, 718, 120, 20);
-            inputUse |= ls_uiTextBox(cxt, &Page->EncounterName, 624, 718, 100, 20);
+            inputUse |= ls_uiListBox(c, &Page->EncounterSel,  480, 718, 120, 20);
+            inputUse |= ls_uiTextBox(c, &Page->EncounterName, 624, 718, 100, 20);
             
-            inputUse |= ls_uiButton(cxt, &Page->SaveEnc, 601, 740, 44, 20);
-            inputUse |= ls_uiButton(cxt, &Page->RemoveEnc, 455, 718, 24, 20);
+            inputUse |= ls_uiButton(c, &Page->SaveEnc, 601, 740, 44, 20);
+            inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, 718, 24, 20);
             
-            inputUse |= ls_uiListBox(cxt, &Page->Mobs,   406, 678, 100, 20);
-            inputUse |= ls_uiListBox(cxt, &Page->Allies, 641, 498, 100, 20);
+            inputUse |= ls_uiListBox(c, &Page->Mobs,   406, 678, 100, 20);
+            inputUse |= ls_uiListBox(c, &Page->Allies, 641, 498, 100, 20);
             
-            inputUse |= ls_uiButton(cxt, &Page->Roll, 556, 678, 48, 20);
-            inputUse |= ls_uiButton(cxt, &Page->Set,  780, 678, 48, 20);
+            inputUse |= ls_uiButton(c, &Page->Roll, 556, 678, 48, 20);
+            inputUse |= ls_uiButton(c, &Page->Set,  780, 678, 48, 20);
         }
     }
     
@@ -1588,8 +1588,8 @@ b32 DrawDefaultStyle(UIContext *cxt)
     s32 yPos = 638;
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        ls_uiLabel(cxt, PartyName[i], 650, yPos+6);
-        inputUse |= ls_uiTextBox(cxt, Page->PlayerInit + i, 732, yPos, 32, 20);
+        ls_uiLabel(c, PartyName[i], 650, yPos+6);
+        inputUse |= ls_uiTextBox(c, Page->PlayerInit + i, 732, yPos, 32, 20);
         yPos -= 20;
     }
     
@@ -1597,7 +1597,7 @@ b32 DrawDefaultStyle(UIContext *cxt)
     yPos = 458;
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        inputUse |= DrawInitField(cxt, Page->AllyFields + i, 616, yPos);
+        inputUse |= DrawInitField(c, Page->AllyFields + i, 616, yPos);
         yPos -= 20;
     }
     
@@ -1607,7 +1607,7 @@ b32 DrawDefaultStyle(UIContext *cxt)
     {
         InitField *f = Page->MobFields + i;
         
-        inputUse |= DrawInitField(cxt, Page->MobFields + i, 378, yPos);
+        inputUse |= DrawInitField(c, Page->MobFields + i, 378, yPos);
         yPos -= 20;
     }
     
@@ -1615,10 +1615,10 @@ b32 DrawDefaultStyle(UIContext *cxt)
     yPos = 638;
     for(u32 i = 0; i < visibleOrder; i += 2)
     {
-        inputUse |= DrawOrderField(cxt, Page->OrderFields + i, 870, yPos);
+        inputUse |= DrawOrderField(c, Page->OrderFields + i, 870, yPos);
         
         if((i+1) < visibleOrder)
-        { inputUse |= DrawOrderField(cxt, Page->OrderFields + (i+1), 1056, yPos); }
+        { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1056, yPos); }
         
         yPos -= 20;
     }
@@ -1631,16 +1631,16 @@ b32 DrawDefaultStyle(UIContext *cxt)
         {
             Counter *f = Page->Counters + i;
             
-            ls_uiLabel(cxt, ls_utf32Constant(CounterNames[i]), 20, yPos+24);
+            ls_uiLabel(c, ls_utf32Constant(CounterNames[i]), 20, yPos+24);
             
-            inputUse |= ls_uiTextBox(cxt, &f->name, 20, yPos, 100, 20);
-            inputUse |= ls_uiTextBox(cxt, &f->rounds, 125, yPos, 36, 20);
+            inputUse |= ls_uiTextBox(c, &f->name, 20, yPos, 100, 20);
+            inputUse |= ls_uiTextBox(c, &f->rounds, 125, yPos, 36, 20);
             
-            if(!f->isActive) { ls_uiButton(cxt, &f->start, 166, yPos, 48, 20); }
+            if(!f->isActive) { ls_uiButton(c, &f->start, 166, yPos, 48, 20); }
             else
             {
-                inputUse |= ls_uiButton(cxt, &f->plusOne, 166, yPos, 48, 20);
-                inputUse |= ls_uiButton(cxt, &f->stop, 113, yPos+22, 48, 20);
+                inputUse |= ls_uiButton(c, &f->plusOne, 166, yPos, 48, 20);
+                inputUse |= ls_uiButton(c, &f->stop, 113, yPos+22, 48, 20);
             }
             
             yPos -= 44;
@@ -1660,26 +1660,26 @@ b32 DrawDefaultStyle(UIContext *cxt)
         {
             InitField *f = Page->MobFields + i;
             
-            ls_uiLabel(cxt, f->editFields[IF_IDX_NAME].text, infoX, infoY);
+            ls_uiLabel(c, f->editFields[IF_IDX_NAME].text, infoX, infoY);
             
-            Color base = cxt->widgetColor;
+            Color base = c->widgetColor;
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
-            inputUse |= ls_uiTextBox(cxt, &f->editFields[IF_IDX_TOTALAC], infoX + 88, infoY-6, 26, 20);
+            c->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
+            inputUse |= ls_uiTextBox(c, &f->editFields[IF_IDX_TOTALAC], infoX + 88, infoY-6, 26, 20);
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
-            inputUse |= ls_uiTextBox(cxt, &f->editFields[IF_IDX_TOUCHAC], infoX + 116, infoY-6, 26, 20);
+            c->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
+            inputUse |= ls_uiTextBox(c, &f->editFields[IF_IDX_TOUCHAC], infoX + 116, infoY-6, 26, 20);
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
-            inputUse |= ls_uiTextBox(cxt, &f->editFields[IF_IDX_FLATAC], infoX + 144, infoY-6, 26, 20);
+            c->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
+            inputUse |= ls_uiTextBox(c, &f->editFields[IF_IDX_FLATAC], infoX + 144, infoY-6, 26, 20);
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
-            inputUse |= ls_uiTextBox(cxt, &f->editFields[IF_IDX_LOWAC], infoX + 144, infoY-6, 26, 20);
+            c->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
+            inputUse |= ls_uiTextBox(c, &f->editFields[IF_IDX_LOWAC], infoX + 144, infoY-6, 26, 20);
             
-            cxt->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
-            inputUse |= ls_uiTextBox(cxt, &f->maxLife, infoX + 182, infoY-6, 42, 20);
+            c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
+            inputUse |= ls_uiTextBox(c, &f->maxLife, infoX + 182, infoY-6, 42, 20);
             
-            cxt->widgetColor = base;
+            c->widgetColor = base;
             
             infoY -= 24;
         }
@@ -1692,13 +1692,13 @@ b32 DrawDefaultStyle(UIContext *cxt)
     {
         DiceThrow *f = Page->Throwers + i;
         
-        inputUse |= ls_uiTextBox(cxt, &f->name,   xPos,       yPos,      120, 20);
-        inputUse |= ls_uiTextBox(cxt, &f->toHit,  xPos,       yPos + 24, 138, 20);
-        inputUse |= ls_uiTextBox(cxt, &f->hitRes, xPos + 138, yPos + 24, 36,  20);
-        inputUse |= ls_uiTextBox(cxt, &f->damage, xPos,       yPos + 48, 138, 20);
-        inputUse |= ls_uiTextBox(cxt, &f->dmgRes, xPos + 138, yPos + 48, 36,  20);
+        inputUse |= ls_uiTextBox(c, &f->name,   xPos,       yPos,      120, 20);
+        inputUse |= ls_uiTextBox(c, &f->toHit,  xPos,       yPos + 24, 138, 20);
+        inputUse |= ls_uiTextBox(c, &f->hitRes, xPos + 138, yPos + 24, 36,  20);
+        inputUse |= ls_uiTextBox(c, &f->damage, xPos,       yPos + 48, 138, 20);
+        inputUse |= ls_uiTextBox(c, &f->dmgRes, xPos + 138, yPos + 48, 36,  20);
         
-        inputUse |= ls_uiButton(cxt, &f->throwDie, xPos + 126, yPos, 48, 20);
+        inputUse |= ls_uiButton(c, &f->throwDie, xPos + 126, yPos, 48, 20);
         
         xPos += 212;
     }
@@ -1707,23 +1707,20 @@ b32 DrawDefaultStyle(UIContext *cxt)
     yPos = 42;
     // General Thrower
     {
-        inputUse |= ls_uiTextBox(cxt, &Page->GeneralThrower.toHit,  xPos,       yPos, 168, 20);
-        inputUse |= ls_uiTextBox(cxt, &Page->GeneralThrower.hitRes, xPos + 168, yPos, 36,  20);
+        inputUse |= ls_uiTextBox(c, &Page->GeneralThrower.toHit,  xPos,       yPos, 168, 20);
+        inputUse |= ls_uiTextBox(c, &Page->GeneralThrower.hitRes, xPos + 168, yPos, 36,  20);
         
-        inputUse |= ls_uiButton(cxt, &Page->GeneralThrower.throwDie, xPos + 210, yPos, 48, 20);
+        inputUse |= ls_uiButton(c, &Page->GeneralThrower.throwDie, xPos + 210, yPos, 48, 20);
     }
     
-    
-    
-    inputUse |= ls_uiButton(cxt, &Page->Reset, 670, 678, 48, 20);
-    
+    inputUse |= ls_uiButton(c, &Page->Reset, 670, 678, 48, 20);
     
     if(State.inBattle)
     {
-        inputUse |= ls_uiTextBox(cxt, &Page->Current,      1010, 668, 100, 20);
-        inputUse |= ls_uiTextBox(cxt, &Page->RoundCounter, 1230, 720, 30, 20);
+        inputUse |= ls_uiTextBox(c, &Page->Current,      1010, 668, 100, 20);
+        inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1230, 720, 30, 20);
         
-        inputUse |= ls_uiButton(cxt, &Page->Next, 1036, 698, 48, 20);
+        inputUse |= ls_uiButton(c, &Page->Next, 1036, 698, 48, 20);
         
         if(visibleAllies < ALLY_NUM)
         {
@@ -1732,14 +1729,14 @@ b32 DrawDefaultStyle(UIContext *cxt)
             u32 addY = 454 - (20*visibleAllies);
             if(!f->isAdding)
             {
-                inputUse |= ls_uiButton(cxt, &f->addNew, 678, addY, 36, 20);
+                inputUse |= ls_uiButton(c, &f->addNew, 678, addY, 36, 20);
             }
             else
             {
-                inputUse |= ls_uiTextBox(cxt, &f->addName, 616, addY+4, 120, 20);
-                inputUse |= ls_uiTextBox(cxt, &f->addInit, 736, addY+4, 26, 20);
+                inputUse |= ls_uiTextBox(c, &f->addName, 616, addY+4, 120, 20);
+                inputUse |= ls_uiTextBox(c, &f->addInit, 736, addY+4, 26, 20);
                 
-                inputUse |= ls_uiButton(cxt, &f->addConfirm, 762, addY+4, 26, 20);
+                inputUse |= ls_uiButton(c, &f->addConfirm, 762, addY+4, 26, 20);
             }
         }
         
@@ -1750,14 +1747,14 @@ b32 DrawDefaultStyle(UIContext *cxt)
             u32 addY = 634 - (20*visibleMobs);
             if(!f->isAdding)
             {
-                inputUse |= ls_uiButton(cxt, &f->addNew, 428, addY, 36, 20);
+                inputUse |= ls_uiButton(c, &f->addNew, 428, addY, 36, 20);
             }
             else
             {
-                inputUse |= ls_uiTextBox(cxt, &f->addName, 378, addY+4, 120, 20);
-                inputUse |= ls_uiTextBox(cxt, &f->addInit, 498, addY+4, 26, 20);
+                inputUse |= ls_uiTextBox(c, &f->addName, 378, addY+4, 120, 20);
+                inputUse |= ls_uiTextBox(c, &f->addInit, 498, addY+4, 26, 20);
                 
-                inputUse |= ls_uiButton(cxt, &f->addConfirm, 524, addY+4, 26, 20);
+                inputUse |= ls_uiButton(c, &f->addConfirm, 524, addY+4, 26, 20);
             }
         }
     }
