@@ -78,6 +78,10 @@
 
 #include "diceRoller.cpp"
 
+#include "Compendium.cpp"
+
+CachedPageEntry mainCachedPage = {};
+
 #include "Class.cpp"
 #include "Skills.cpp"
 #include "Feats.cpp"
@@ -89,10 +93,8 @@
 
 #include "AssetLoader.cpp"
 
-#include "Compendium.cpp"
-
 b32 ProgramExitOnButton(UIContext *c, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
-b32 CompendiumExitOnButton(UIContext *c, void *data) { ShowWindow(CompendiumWindow, SW_HIDE); return FALSE; }
+b32 CompendiumExitOnButton(UIContext *c, void *data){ ShowWindow(CompendiumWindow, SW_HIDE); return FALSE; }
 
 
 b32 ProgramMinimizeOnButton(UIContext *c, void *data) { 
@@ -218,7 +220,7 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     ls_uiTextBoxSet(cxt, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
     
     dest->EncounterSel.selectedIndex = curr->EncounterSel.selectedIndex;
-    
+    dest->selectedMobIndex           = curr->selectedMobIndex;
     
     //NOTE: Copy General Info
     ToState->inBattle = FromState->inBattle;
@@ -327,6 +329,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     SetInitTab(uiContext, &State);
     
+    //NOTE: Initialize the mainCachedPage to display the mob page inside init.
+    initCachedPage(&mainCachedPage);
+    
     SetMonsterTable(compendiumContext);
     
     //NOTE: Single block allocation for all Init Pages.
@@ -354,7 +359,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     //TODO: But if I've loaded an undo chain it means it makes sense to load the State with the "current" Undo state
     CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
-    
     
     RegionTimer frameTime = {};
     
@@ -513,12 +517,25 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(showDebug)
         {
-            ls_uiFillRect(uiContext, 1248, 760, 20, 20,
-                          {0, (s32)uiContext->width, 0, (s32)uiContext->height}, {}, uiContext->backgroundColor);
+            ls_uiFillRect(uiContext, 1248, 760, 20, 20, {0, (s32)uiContext->width, 0, (s32)uiContext->height},
+                          uiContext->scissor, {}, uiContext->backgroundColor);
             ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
             ls_uiGlyphString(uiContext, uiContext->currFont, 1248, 760,
-                             {0, (s32)uiContext->width, 0, (s32)uiContext->height}, {},
-                             frameTimeString, RGBg(0xEE));
+                             {(s32)uiContext->width/2, 0, (s32)uiContext->width, (s32)uiContext->height},
+                             uiContext->scissor, {}, frameTimeString, RGBg(0xEE));
+            
+            ls_uiFillRect(uiContext, windowWidth/2, 0, 2, windowHeight, {0,0,windowWidth,windowHeight},
+                          uiContext->scissor, {},RGB(0xFF, 0xFF, 0));
+            
+            ls_uiFillRect(uiContext, 260, 0, 2, windowHeight, {0,0,windowWidth,windowHeight},
+                          uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+            ls_uiFillRect(uiContext, 1040, 0, 2, windowHeight, {0,0,windowWidth,windowHeight},
+                          uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+            ls_uiFillRect(uiContext, 0, 218, windowWidth, 2, {0,0,windowWidth,windowHeight},
+                          uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+            ls_uiFillRect(uiContext, 0, 696, windowWidth, 2, {0,0,windowWidth,windowHeight},
+                          uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+            
         }
         
         //-------------------------------
@@ -526,6 +543,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         ls_uiFrameBeginChild(compendiumContext);
         
+        //TODO: Skip drawing the compendium if the window is closed
+        //      But also update the window on first entry. For some reason, putting the entire
+        //      Block between the Child Frame inside an if doesn't paint the window on first open.
         b32 compendiumInput = ls_uiMenu(compendiumContext, &CompendiumMenu, -1,
                                         compendiumContext->windowHeight-20, compendiumContext->windowWidth+1, 21);
         
