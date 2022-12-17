@@ -159,10 +159,10 @@ struct Compendium
 };
 
 //MonsterTable monsterTable = {};
-Compendium      compendium   = {};
-CachedPageEntry cachedPage   = {};
-ScrollableRegion pageScroll  = {};
-ScrollableRegion tableScroll = {};
+Compendium      compendium     = {};
+CachedPageEntry cachedPage     = {};
+UIScrollableRegion pageScroll  = {};
+UIScrollableRegion tableScroll = {};
 
 b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
 {
@@ -251,8 +251,6 @@ b32 CompendiumAddPageToInit(UIContext *c, void *userData)
     s32 visibleAllies = State.Init->Allies.selectedIndex;
     s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
     
-    InitField *f = State.Init->MobFields + visibleMobs;
-    
     State.Init->Mobs.selectedIndex += 1;
     State.Init->turnsInRound       += 1;
     
@@ -271,6 +269,8 @@ b32 CompendiumAddPageToInit(UIContext *c, void *userData)
         }
     }
     
+    InitField *f = State.Init->MobFields + visibleMobs;
+    
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     
     f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
@@ -281,7 +281,8 @@ b32 CompendiumAddPageToInit(UIContext *c, void *userData)
     for(u32 i = 2; i < IF_IDX_COUNT-1; i++)
     { f->editFields[i].isReadonly = TRUE; }
     
-    f->ID  = addID;
+    f->compendiumIdx = compendium.pageIndex;
+    f->ID            = addID;
     
     if(State.inBattle)
     {
@@ -302,10 +303,8 @@ b32 CompendiumAddPageToInit(UIContext *c, void *userData)
     return TRUE;
 }
 
-void LoadCompendium(string path)
+void initCachedPage(CachedPageEntry *cachedPage)
 {
-    ls_arenaUse(compendiumArena);
-    
     const u32 maxSubtypes    = 8;
     const u32 maxArchetypes  = 4;
     const u32 maxSenses      = 8;
@@ -317,70 +316,75 @@ void LoadCompendium(string path)
     const u32 maxLanguages   = 24;
     const u32 maxSpecials    = 24;
     
-    //----------------------
-    //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
-    cachedPage.origin            = ls_utf32Alloc(72);
-    cachedPage.shortDesc         = ls_utf32Alloc(512);
-    cachedPage.AC                = ls_utf32Alloc(192);
-    cachedPage.HP                = ls_utf32Alloc(128);
-    cachedPage.ST                = ls_utf32Alloc(128);
-    cachedPage.RD                = ls_utf32Alloc(128);
-    cachedPage.RI                = ls_utf32Alloc(128);
-    cachedPage.defensiveCapacity = ls_utf32Alloc(128);
-    cachedPage.melee             = ls_utf32Alloc(320);
-    cachedPage.ranged            = ls_utf32Alloc(256);
-    cachedPage.specialAttacks    = ls_utf32Alloc(448);
-    cachedPage.psych             = ls_utf32Alloc(2048);
-    cachedPage.magics            = ls_utf32Alloc(2048);
-    cachedPage.spells            = ls_utf32Alloc(2048);
-    cachedPage.racialMods        = ls_utf32Alloc(128);
-    cachedPage.spec_qual         = ls_utf32Alloc(320);
+    cachedPage->origin            = ls_utf32Alloc(72);
+    cachedPage->shortDesc         = ls_utf32Alloc(512);
+    cachedPage->AC                = ls_utf32Alloc(192);
+    cachedPage->HP                = ls_utf32Alloc(128);
+    cachedPage->ST                = ls_utf32Alloc(128);
+    cachedPage->RD                = ls_utf32Alloc(128);
+    cachedPage->RI                = ls_utf32Alloc(128);
+    cachedPage->defensiveCapacity = ls_utf32Alloc(128);
+    cachedPage->melee             = ls_utf32Alloc(320);
+    cachedPage->ranged            = ls_utf32Alloc(256);
+    cachedPage->specialAttacks    = ls_utf32Alloc(448);
+    cachedPage->psych             = ls_utf32Alloc(2048);
+    cachedPage->magics            = ls_utf32Alloc(2048);
+    cachedPage->spells            = ls_utf32Alloc(2048);
+    cachedPage->racialMods        = ls_utf32Alloc(128);
+    cachedPage->spec_qual         = ls_utf32Alloc(320);
     
-    cachedPage.specials          = ls_utf32Alloc(maxTalents * 2048);
+    cachedPage->specials          = ls_utf32Alloc(maxTalents * 2048);
     
-    cachedPage.org               = ls_utf32Alloc(512);
-    cachedPage.treasure          = ls_utf32Alloc(320);
-    cachedPage.desc              = ls_utf32Alloc(8192);
-    cachedPage.source            = ls_utf32Alloc(256);
+    cachedPage->org               = ls_utf32Alloc(512);
+    cachedPage->treasure          = ls_utf32Alloc(320);
+    cachedPage->desc              = ls_utf32Alloc(8192);
+    cachedPage->source            = ls_utf32Alloc(256);
     
-    cachedPage.name              = ls_utf32Alloc(48);
-    cachedPage.gs                = ls_utf32Alloc(16);
-    cachedPage.pe                = ls_utf32Alloc(16);
-    cachedPage.alignment         = ls_utf32Alloc(32);
-    cachedPage.type              = ls_utf32Alloc(32);
-    cachedPage.subtype           = ls_utf32Alloc(maxSubtypes * 16);
-    cachedPage.archetype         = ls_utf32Alloc(maxArchetypes * 16);
-    cachedPage.size              = ls_utf32Alloc(32);
-    cachedPage.initiative        = ls_utf32Alloc(32);
-    cachedPage.senses            = ls_utf32Alloc(maxSenses * 32);
-    cachedPage.perception        = ls_utf32Alloc(128);
-    cachedPage.aura              = ls_utf32Alloc(128);
+    cachedPage->name              = ls_utf32Alloc(48);
+    cachedPage->gs                = ls_utf32Alloc(16);
+    cachedPage->pe                = ls_utf32Alloc(16);
+    cachedPage->alignment         = ls_utf32Alloc(32);
+    cachedPage->type              = ls_utf32Alloc(32);
+    cachedPage->subtype           = ls_utf32Alloc(maxSubtypes * 16);
+    cachedPage->archetype         = ls_utf32Alloc(maxArchetypes * 16);
+    cachedPage->size              = ls_utf32Alloc(32);
+    cachedPage->initiative        = ls_utf32Alloc(32);
+    cachedPage->senses            = ls_utf32Alloc(maxSenses * 32);
+    cachedPage->perception        = ls_utf32Alloc(128);
+    cachedPage->aura              = ls_utf32Alloc(128);
     
-    cachedPage.immunities        = ls_utf32Alloc(maxImmunities * 32);
-    cachedPage.resistances       = ls_utf32Alloc(maxResistances * 32);;
-    cachedPage.weaknesses        = ls_utf32Alloc(maxWeaknesses * 32);;
+    cachedPage->immunities        = ls_utf32Alloc(maxImmunities * 32);
+    cachedPage->resistances       = ls_utf32Alloc(maxResistances * 32);;
+    cachedPage->weaknesses        = ls_utf32Alloc(maxWeaknesses * 32);;
     
-    cachedPage.speed             = ls_utf32Alloc(96);
-    cachedPage.space             = ls_utf32Alloc(32);
-    cachedPage.reach             = ls_utf32Alloc(64);
+    cachedPage->speed             = ls_utf32Alloc(96);
+    cachedPage->space             = ls_utf32Alloc(32);
+    cachedPage->reach             = ls_utf32Alloc(64);
     
     //TODO: Pre-merge all these, doens't make sense not to.
-    cachedPage.STR               = ls_utf32Alloc(32);
-    cachedPage.DEX               = ls_utf32Alloc(32);
-    cachedPage.CON               = ls_utf32Alloc(32);
-    cachedPage.INT               = ls_utf32Alloc(32);
-    cachedPage.WIS               = ls_utf32Alloc(32);
-    cachedPage.CHA               = ls_utf32Alloc(32);
-    cachedPage.BAB               = ls_utf32Alloc(32);
-    cachedPage.BMC               = ls_utf32Alloc(64);
-    cachedPage.DMC               = ls_utf32Alloc(96);
+    cachedPage->STR               = ls_utf32Alloc(32);
+    cachedPage->DEX               = ls_utf32Alloc(32);
+    cachedPage->CON               = ls_utf32Alloc(32);
+    cachedPage->INT               = ls_utf32Alloc(32);
+    cachedPage->WIS               = ls_utf32Alloc(32);
+    cachedPage->CHA               = ls_utf32Alloc(32);
+    cachedPage->BAB               = ls_utf32Alloc(32);
+    cachedPage->BMC               = ls_utf32Alloc(64);
+    cachedPage->DMC               = ls_utf32Alloc(96);
     
-    cachedPage.talents           = ls_utf32Alloc(maxTalents * 32);
-    cachedPage.skills            = ls_utf32Alloc(maxTalents * 32);
-    cachedPage.languages         = ls_utf32Alloc(maxTalents * 64);
-    cachedPage.environment       = ls_utf32Alloc(96);
+    cachedPage->talents           = ls_utf32Alloc(maxTalents * 32);
+    cachedPage->skills            = ls_utf32Alloc(maxTalents * 32);
+    cachedPage->languages         = ls_utf32Alloc(maxTalents * 64);
+    cachedPage->environment       = ls_utf32Alloc(96);
+}
+
+void LoadCompendium(string path)
+{
+    ls_arenaUse(compendiumArena);
     
-    //----------------------
+    //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
+    initCachedPage(&cachedPage);
+    
     //NOTE: Now load the Compendium from file
     buffer CompendiumBuff = ls_bufferInitFromFile(path);
     
@@ -588,223 +592,211 @@ void SetMonsterTable(UIContext *c)
     return;
 }
 
-void CachePage(UIContext *ui, PageEntry page)
+void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
 {
     Codex *c = &compendium.codex;
     
-    cachedPage.pageIndex = compendium.pageIndex;
+    cachedPage->pageIndex = viewIndex;
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.origin, page.origin);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.shortDesc, page.shortDesc);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.AC, page.AC);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.HP, page.HP);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.ST, page.ST);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.RD, page.RD);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.RI, page.RI);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.defensiveCapacity, page.defensiveCapacity);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.melee, page.melee);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.ranged, page.ranged);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.specialAttacks, page.specialAttacks);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.psych, page.psych);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.magics, page.magics);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.spells, page.spells);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.racialMods, page.racialMods);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.spec_qual, page.spec_qual);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->AC, page.AC);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->HP, page.HP);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ST, page.ST);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->melee, page.melee);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ranged, page.ranged);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
     
     if(page.specials[0])
     {
-        ls_utf32Clear(&cachedPage.specials);
+        ls_utf32Clear(&cachedPage->specials);
         
-        GetEntryFromBuffer_t(&c->specials, &cachedPage.specials, page.specials[0]);
+        GetEntryFromBuffer_t(&c->specials, &cachedPage->specials, page.specials[0]);
         u32 i = 1;
         while(page.specials[i] && i < 24)
         {
-            AppendEntryFromBuffer(&c->specials, &cachedPage.specials, U"\n\n", page.specials[i]);
+            AppendEntryFromBuffer(&c->specials, &cachedPage->specials, U"\n\n", page.specials[i]);
             i += 1;
         }
     }
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.org, page.org);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.treasure, page.treasure);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.desc, page.desc);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage.source, page.source);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->org, page.org);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source);
     
-    GetEntryFromBuffer_t(&c->names, &cachedPage.name, page.name);
-    GetEntryFromBuffer_t(&c->gs, &cachedPage.gs, page.gs);
-    GetEntryFromBuffer_t(&c->pe, &cachedPage.pe, page.pe);
-    GetEntryFromBuffer_t(&c->alignment, &cachedPage.alignment, page.alignment);
-    GetEntryFromBuffer_t(&c->types, &cachedPage.type, page.type);
+    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name);
+    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs);
+    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe);
+    GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment);
+    GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type);
     
     if(page.subtype[0])
     {
-        ls_utf32Clear(&cachedPage.subtype);
+        ls_utf32Clear(&cachedPage->subtype);
         
-        ls_utf32Append(&cachedPage.subtype, ls_utf32Constant(U" ("));
-        AppendEntryFromBuffer(&c->subtypes, &cachedPage.subtype, NULL, page.subtype[0]);
+        ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U" ("));
+        AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, NULL, page.subtype[0]);
         u32 i = 1;
         while(page.subtype[i] && i < 8)
         {
-            AppendEntryFromBuffer(&c->subtypes, &cachedPage.subtype, U", ", page.subtype[i]);
+            AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, U", ", page.subtype[i]);
             i += 1;
         }
-        ls_utf32Append(&cachedPage.subtype, ls_utf32Constant(U") "));
+        ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
     }
     
     if(page.archetype[0])
     {
-        ls_utf32Clear(&cachedPage.archetype);
+        ls_utf32Clear(&cachedPage->archetype);
         
-        ls_utf32Append(&cachedPage.archetype, ls_utf32Constant(U"["));
-        AppendEntryFromBuffer(&c->archetypes, &cachedPage.archetype, NULL, page.archetype[0]);
+        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
+        AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
         u32 i = 1;
         while(page.archetype[i] && i < 4)
         {
-            AppendEntryFromBuffer(&c->archetypes, &cachedPage.archetype, U", ", page.archetype[i]);
+            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i]);
             i += 1;
         }
-        ls_utf32Append(&cachedPage.archetype, ls_utf32Constant(U"] "));
+        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
     }
     
-    GetEntryFromBuffer_t(&c->sizes, &cachedPage.size, page.size);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.initiative, page.initiative);
+    GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->initiative, page.initiative);
     
     if(page.senses[0])
     {
-        ls_utf32Clear(&cachedPage.senses);
+        ls_utf32Clear(&cachedPage->senses);
         
-        GetEntryFromBuffer_t(&c->senses, &cachedPage.senses, page.senses[0]);
+        GetEntryFromBuffer_t(&c->senses, &cachedPage->senses, page.senses[0]);
         u32 i = 1;
         while(page.senses[i] && i < 8)
         {
-            AppendEntryFromBuffer(&c->senses, &cachedPage.senses, U", ", page.senses[i]);
+            AppendEntryFromBuffer(&c->senses, &cachedPage->senses, U", ", page.senses[i]);
             i += 1;
         }
     }
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.perception, page.perception);
-    GetEntryFromBuffer_t(&c->auras, &cachedPage.aura, page.aura);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception);
+    GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura);
     
     if(page.immunities[0])
     {
-        ls_utf32Clear(&cachedPage.immunities);
+        ls_utf32Clear(&cachedPage->immunities);
         
-        GetEntryFromBuffer_t(&c->immunities, &cachedPage.immunities, page.immunities[0]);
+        GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0]);
         u32 i = 1;
         while(page.immunities[i] && i < 16)
         {
-            AppendEntryFromBuffer(&c->immunities, &cachedPage.immunities, U", ", page.immunities[i]);
+            AppendEntryFromBuffer(&c->immunities, &cachedPage->immunities, U", ", page.immunities[i]);
             i += 1;
         }
     }
     
     if(page.resistances[0])
     {
-        ls_utf32Clear(&cachedPage.resistances);
+        ls_utf32Clear(&cachedPage->resistances);
         
-        GetEntryFromBuffer_t(&c->resistances, &cachedPage.resistances, page.resistances[0]);
+        GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0]);
         u32 i = 1;
         while(page.resistances[i] && i < 16)
         {
-            AppendEntryFromBuffer(&c->resistances, &cachedPage.resistances, U", ", page.resistances[i]);
+            AppendEntryFromBuffer(&c->resistances, &cachedPage->resistances, U", ", page.resistances[i]);
             i += 1;
         }
     }
     
     if(page.weaknesses[0])
     {
-        ls_utf32Clear(&cachedPage.weaknesses);
+        ls_utf32Clear(&cachedPage->weaknesses);
         
-        GetEntryFromBuffer_t(&c->weaknesses, &cachedPage.weaknesses, page.weaknesses[0]);
+        GetEntryFromBuffer_t(&c->weaknesses, &cachedPage->weaknesses, page.weaknesses[0]);
         u32 i = 1;
         while(page.weaknesses[i] && i < 16)
         {
-            AppendEntryFromBuffer(&c->weaknesses, &cachedPage.weaknesses, U", ", page.weaknesses[i]);
+            AppendEntryFromBuffer(&c->weaknesses, &cachedPage->weaknesses, U", ", page.weaknesses[i]);
             i += 1;
         }
     }
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.speed, page.speed);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.space, page.space);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.reach, page.reach);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.STR, page.STR);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.DEX, page.DEX);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.CON, page.CON);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.INT, page.INT);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.WIS, page.WIS);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.CHA, page.CHA);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.BAB, page.BAB);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.BMC, page.BMC);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage.DMC, page.DMC);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->speed, page.speed);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->INT, page.INT);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BMC, page.BMC);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DMC, page.DMC);
     
     if(page.talents[0])
     {
-        ls_utf32Clear(&cachedPage.talents);
+        ls_utf32Clear(&cachedPage->talents);
         
-        GetEntryFromBuffer_t(&c->talents, &cachedPage.talents, page.talents[0]);
+        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0]);
         u32 i = 1;
         while(page.talents[i] && i < 24)
         {
-            AppendEntryFromBuffer(&c->talents, &cachedPage.talents, U", ", page.talents[i]);
+            AppendEntryFromBuffer(&c->talents, &cachedPage->talents, U", ", page.talents[i]);
             i += 1;
         }
     }
     
     if(page.skills[0])
     {
-        ls_utf32Clear(&cachedPage.skills);
+        ls_utf32Clear(&cachedPage->skills);
         
-        GetEntryFromBuffer_t(&c->skills, &cachedPage.skills, page.skills[0]);
+        GetEntryFromBuffer_t(&c->skills, &cachedPage->skills, page.skills[0]);
         u32 i = 1;
         while(page.skills[i] && i < 24)
         {
-            AppendEntryFromBuffer(&c->skills, &cachedPage.skills, U", ", page.skills[i]);
+            AppendEntryFromBuffer(&c->skills, &cachedPage->skills, U", ", page.skills[i]);
             i += 1;
         }
     }
     
     if(page.languages[0])
     {
-        ls_utf32Clear(&cachedPage.languages);
+        ls_utf32Clear(&cachedPage->languages);
         
-        GetEntryFromBuffer_t(&c->languages, &cachedPage.languages, page.languages[0]);
+        GetEntryFromBuffer_t(&c->languages, &cachedPage->languages, page.languages[0]);
         u32 i = 1;
         while(page.languages[i] && i < 24)
         {
-            AppendEntryFromBuffer(&c->languages, &cachedPage.languages, U", ", page.languages[i]);
+            AppendEntryFromBuffer(&c->languages, &cachedPage->languages, U", ", page.languages[i]);
             i += 1;
         }
     }
     
-    GetEntryFromBuffer_t(&c->environment, &cachedPage.environment, page.environment);
-    
-    pageScroll = { 0, 10, ui->windowWidth - 4, ui->windowHeight - 36, 0, 0, ui->windowWidth - 32, 0};
+    GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment);
 }
 
-void DrawPage(UIContext *c, CachedPageEntry *page)
+s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW, s32 minY)
 {
-    //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
-    //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
-    ls_uiStartScrollableRegion(c, &pageScroll);
-    
     //NOTE: Used to adjust the next line position when changing font size, because
     //      a change in pixel height will make the next line too close / too far from the ideal position.
     s32 prevPixelHeight = 0;
     s32 currPixelHeight = 0;
     
-    s32 maxW = c->windowWidth - 42;
-    s32 minY = 0;
-    
-    s32 baseY = 670;
-    
     Color pureWhite = RGBg(0xFF);
     c->textColor    = RGBg(0xAA);
     
-    s32 baseX = 148;
-    s32 afterTagX = 0;
-    s32 afterTagW = 0;
-    UIRect baseR  = { 10, baseY, maxW, minY };
+    UIRect baseR  = { c->scroll.x + 10, baseY, maxW, minY };
     UIRect alignR = { baseX, baseY, maxW, minY };
     UIRect offset = {};
+    
+    s32 hMargin = ((c->windowWidth - maxW) / 2);
     
     auto renderAndAlignWS = [&](const char32_t *s) {
         offset   = ls_uiLabelLayout(c, s, alignR);
@@ -838,11 +830,11 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     ls_uiLabelLayout(c, page->name, baseR, pureWhite);
     {
-        ls_uiLabelLayout(c, U"GS", { 505, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, page->gs, { 535, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, U"PE", { 630, baseR.y, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->pe, { 665, baseR.y, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        ls_uiLabelLayout(c, U"GS", { baseR.x + 495, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, page->gs, { baseR.x + 525, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"PE", { baseR.x + 620, baseR.y, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->pe, { baseR.x + 655, baseR.y, maxW, minY }, pureWhite);
+        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -899,7 +891,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseX  = 164;
     {
         offset = ls_uiLabelLayout(c, U"Difesa", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -961,7 +953,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseX  = 200;
     {
         offset = ls_uiLabelLayout(c, U"Attacco", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -1026,7 +1018,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseX  = 148;
     {
         offset = ls_uiLabelLayout(c, U"Statistiche", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -1092,7 +1084,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
         baseR.y -= 4;
         {
             offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", baseR, pureWhite);
-            ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+            ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
             
             currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
             baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -1113,7 +1105,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseX  = 148;
     {
         offset = ls_uiLabelLayout(c, U"Ecologia", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
         baseR.y -= offset.h;
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -1137,7 +1129,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
     baseR.y -= 4;
     {
         offset = ls_uiLabelLayout(c, U"Descrizione", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
         baseR.y -= offset.maxY;
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -1147,7 +1139,7 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
         baseR.y -= offset.maxY;
         
         baseR.y += (currPixelHeight-1);
-        ls_uiHSeparator(c, baseR.y-4, 10, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
         
         
         //TODO: Make these links openable.
@@ -1163,15 +1155,13 @@ void DrawPage(UIContext *c, CachedPageEntry *page)
         
         baseR.y -= (currPixelHeight+8);
         ls_uiLabelLayout(c, U"Fonte: ", baseR, pureWhite);
-        offset = ls_uiLabelLayout(c, page->source, { 72, baseR.y, maxW-64, minY });
+        offset = ls_uiLabelLayout(c, page->source, { baseR.x + 58, baseR.y, maxW, minY });
         baseR.y -= offset.maxY;
     }
     
     c->textColor = RGBg(0xCC);
     
-    pageScroll.minY = baseR.y;
-    
-    ls_uiEndScrollableRegion(c);
+    return baseR.y;
 }
 
 void DrawMonsterTable(UIContext *c)
@@ -1256,10 +1246,18 @@ void DrawCompendium(UIContext *c)
         if(cachedPage.pageIndex != compendium.pageIndex)
         { 
             PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[compendium.pageIndex]];
-            CachePage(c, pEntry);
+            CachePage(pEntry, compendium.pageIndex, &cachedPage);
+            
+            //NOTE: Reset the page scroll for the new page
+            pageScroll = { 0, 10, c->windowWidth - 4, c->windowHeight - 36, 0, 0, c->windowWidth - 32, 0};
         }
         
-        DrawPage(c, &cachedPage);
+        //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
+        //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
+        //      The minY is set by the DrawPage call itself
+        ls_uiStartScrollableRegion(c, &pageScroll);
+        pageScroll.minY = DrawPage(c, &cachedPage, 148, 670, c->windowWidth-42, 0);
+        ls_uiEndScrollableRegion(c);
     }
     else
     {
