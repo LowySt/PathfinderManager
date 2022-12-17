@@ -24,8 +24,7 @@ HWND MainWindow        = 0;
 HWND CompendiumWindow  = 0;
 
 u8 *BackBuffer;
-u8 *CompendiumBackBuffer
-;
+u8 *CompendiumBackBuffer;
 PlayerChar pc = {};
 ProgramState State = {};
 
