@@ -56,9 +56,9 @@ struct tmp_order {
     utf32 *name;
     s32    maxLife;
     
+    s32    compendiumIdx; //TODO: Serialize
     s32    ID;
 };
-
 
 const u32 INIT_FIELD_EDITFIELDS_NUM = 11;
 
@@ -87,7 +87,7 @@ struct CustomFieldTextHandler
     InitField *parent;
     UITextBox *field;
     
-    u32 idx;
+    u32 if_idx;
 };
 
 static s32 addID = 1000;
@@ -161,6 +161,7 @@ struct InitField
     UIButton  addConfirm;
     b32 isAdding;
     
+    s32 compendiumIdx; //TODO: Serialize
     s32 ID;
 };
 
@@ -186,6 +187,7 @@ struct Order
     
     UIButton  remove;
     
+    s32 compendiumIdx; //TODO: Serialize
     s32 ID;
 };
 
@@ -209,6 +211,7 @@ struct InitPage
     
     InitField  AllyFields[ALLY_NUM];
     InitField  MobFields[MOB_NUM];
+    s32        selectedMobIndex;
     
     UILPane    InfoPane;
     
@@ -231,7 +234,6 @@ struct InitPage
     
     DiceThrow  Throwers[THROWER_NUM];
     DiceThrow  GeneralThrower;
-    
     
     UIListBox  EncounterSel;
     UITextBox  EncounterName;
