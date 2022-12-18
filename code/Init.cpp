@@ -13,6 +13,26 @@ Order *GetOrderByID(s32 ID)
     return NULL;
 }
 
+InitField *GetInitFieldByID(s32 ID)
+{
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        InitField *m = State.Init->MobFields + i;
+        if(m->ID == ID) { return m; }
+    }
+    
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        InitField *a = State.Init->AllyFields + i;
+        if(a->ID == ID) { return a; }
+    }
+    
+    return NULL;
+}
+
 b32 selectStyleDefault(UIContext *c, void *data)
 {
     currentStyle = INIT_STYLE_DEFAULT;
@@ -1495,6 +1515,8 @@ b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
     Color base = c->widgetColor;
     s32 x = baseX;
     
+    ls_uiLabel(c, F->editFields[IF_IDX_NAME].text, x-30, y+45);
+    
     c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
     ls_uiLabel(c, U"PF", x-30, y+5);
     inputUse |= ls_uiTextBox(c, &F->maxLife, x, y, 62, 20);
@@ -1559,7 +1581,7 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx)
     return inputUse;
 }
 
-b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos)
+b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
 {
     b32 inputUse = FALSE;
     
@@ -1580,6 +1602,9 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos)
     
     inputUse |= ls_uiTextBox(c, &f->pos, xPos + 25, yPos, 25, 20);
     inputUse |= ls_uiButton(c, &f->remove, xPos, yPos, 20, 20);
+    
+    Input *UserInput = &c->UserInput;
+    if(RightClickIn(xPos + 50, yPos, 120, 20)) { State.Init->selectedMobIndex = (s32)posIdx; }
     
     return inputUse;
 }
@@ -1645,10 +1670,10 @@ b32 DrawDefaultStyle(UIContext *c)
     yPos = 638;
     for(u32 i = 0; i < visibleOrder; i += 2)
     {
-        inputUse |= DrawOrderField(c, Page->OrderFields + i, 870, yPos);
+        inputUse |= DrawOrderField(c, Page->OrderFields + i, 870, yPos, i);
         
         if((i+1) < visibleOrder)
-        { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1056, yPos); }
+        { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1056, yPos, i); }
         
         yPos -= 20;
     }
@@ -1885,24 +1910,51 @@ b32 DrawPranaStyle(UIContext *c)
     
     if(State.inBattle)
     {
-        inputUse |= ls_uiTextBox(c, &Page->Current,      592, 668, 100, 20);
-        inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 750, 698, 30, 20);
-        
-        inputUse |= ls_uiButton(c, &Page->Next, 616, 698, 48, 20);
+        inputUse |= ls_uiTextBox(c, &Page->Current,      892, 668, 100, 20);
+        inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1050, 698, 30, 20);
+        inputUse |= ls_uiButton(c, &Page->Next, 916, 698, 48, 20);
         
         // Order
         yPos = 638;
         for(u32 i = 0; i < visibleOrder; i += 2)
         {
-            inputUse |= DrawOrderField(c, Page->OrderFields + i, 462, yPos);
+            inputUse |= DrawOrderField(c, Page->OrderFields + i, 762, yPos, i);
             
             if((i+1) < visibleOrder)
-            { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 648, yPos); }
+            { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 948, yPos, i+1); }
             
             yPos -= 20;
         }
         
-        
+        yPos = 678;
+        if(Page->selectedMobIndex >= 0)
+        {
+            AssertMsg(Page->selectedMobIndex < visibleOrder, "Selected Order Index is out of bounds\n");
+            Order *ord = Page->OrderFields + Page->selectedMobIndex;
+            InitField *mob = GetInitFieldByID(ord->ID);
+            
+            if(mob)
+            {
+                if(mob->compendiumIdx == -1) { inputUse |= DrawInitExtra(c, mob, 66, yPos); }
+                else
+                { 
+                    static UIScrollableRegion viewScroll = { 60, 218, 580, 478, 0, 0, 798, 218};
+                    
+                    if(mainCachedPage.pageIndex != mob->compendiumIdx)
+                    { 
+                        PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[mob->compendiumIdx]];
+                        CachePage(pEntry, mob->compendiumIdx, &mainCachedPage);
+                        viewScroll = { 60, 218, 580, 478, 0, 0, 798, 218};
+                    }
+                    
+                    ls_uiStartScrollableRegion(c, &viewScroll);
+                    viewScroll.minY = DrawPage(c , &mainCachedPage, 60, 676, 798, 218);
+                    ls_uiEndScrollableRegion(c);
+                    
+                    ls_uiRect(c, 60, 218, 580, 478, RGBg(0x33), RGBg(0x11));
+                }
+            }
+        }
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718, 48, 20);
     }
     
