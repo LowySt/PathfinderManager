@@ -297,6 +297,7 @@ b32 CompendiumAddPageToInit(UIContext *c, void *userData)
         //TODO:
         //o->field.maxValue = ls_utf32ToInt(f->maxLife.text);
         o->ID  = addID;
+        o->compendiumIdx = compendium.pageIndex;
     }
     addID += 1;
     
@@ -796,7 +797,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     UIRect alignR = { baseX, baseY, maxW, minY };
     UIRect offset = {};
     
-    s32 hMargin = ((c->windowWidth - maxW) / 2);
+    s32 hSepWidth = maxW - baseX;
     
     auto renderAndAlignWS = [&](const char32_t *s) {
         offset   = ls_uiLabelLayout(c, s, alignR);
@@ -834,7 +835,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         ls_uiLabelLayout(c, page->gs, { baseR.x + 525, baseR.y, maxW, minY }, pureWhite);
         ls_uiLabelLayout(c, U"PE", { baseR.x + 620, baseR.y, maxW, minY }, pureWhite);
         offset = ls_uiLabelLayout(c, page->pe, { baseR.x + 655, baseR.y, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -891,7 +892,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     baseX  = 164;
     {
         offset = ls_uiLabelLayout(c, U"Difesa", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -953,7 +954,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     baseX  = 200;
     {
         offset = ls_uiLabelLayout(c, U"Attacco", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -1018,7 +1019,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     baseX  = 148;
     {
         offset = ls_uiLabelLayout(c, U"Statistiche", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -1084,7 +1085,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         baseR.y -= 4;
         {
             offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", baseR, pureWhite);
-            ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
+            ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
             
             currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
             baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
@@ -1105,7 +1106,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     baseX  = 148;
     {
         offset = ls_uiLabelLayout(c, U"Ecologia", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         baseR.y -= offset.h;
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -1129,7 +1130,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     baseR.y -= 4;
     {
         offset = ls_uiLabelLayout(c, U"Descrizione", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         baseR.y -= offset.maxY;
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -1139,7 +1140,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         baseR.y -= offset.maxY;
         
         baseR.y += (currPixelHeight-1);
-        ls_uiHSeparator(c, baseR.y-4, baseR.x, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         
         
         //TODO: Make these links openable.
@@ -1256,7 +1257,7 @@ void DrawCompendium(UIContext *c)
         //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
         //      The minY is set by the DrawPage call itself
         ls_uiStartScrollableRegion(c, &pageScroll);
-        pageScroll.minY = DrawPage(c, &cachedPage, 148, 670, c->windowWidth-42, 0);
+        pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
         ls_uiEndScrollableRegion(c);
     }
     else
