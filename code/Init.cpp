@@ -1170,6 +1170,8 @@ b32 AddConfirmOnClick(UIContext *c, void *data)
         o->field.maxValue = ls_utf32ToInt(f->maxLife.text);
     }
     
+    o->compendiumIdx = f->compendiumIdx;
+    
     //NOTE: Because IDs in the InitFields get overwritten when removing from order 
     //      we can't reliably re-use them, unless we create a system to dispense Unique IDs.
     //      So for simplicy we are just starting from 1000 and every single Added Init will just the next one.
@@ -1604,7 +1606,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     inputUse |= ls_uiButton(c, &f->remove, xPos, yPos, 20, 20);
     
     Input *UserInput = &c->UserInput;
-    if(RightClickIn(xPos + 50, yPos, 120, 20)) { State.Init->selectedMobIndex = (s32)posIdx; }
+    if(RightClickIn(xPos + 50, yPos, 120, 20)) State.Init->selectedMobIndex = (s32)posIdx;
     
     return inputUse;
 }
@@ -1890,17 +1892,17 @@ b32 DrawPranaStyle(UIContext *c)
             if(mob->compendiumIdx == -1) { inputUse |= DrawInitExtra(c, mob, 436, yPos); }
             else
             { 
-                static UIScrollableRegion viewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
+                static UIScrollableRegion mobViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
                 
                 if(mainCachedPage.pageIndex != mob->compendiumIdx)
                 { 
                     PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[mob->compendiumIdx]];
                     CachePage(pEntry, mob->compendiumIdx, &mainCachedPage);
-                    viewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
+                    mobViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
                 }
                 
-                ls_uiStartScrollableRegion(c, &viewScroll);
-                viewScroll.minY = DrawPage(c , &mainCachedPage, 260, 676, 998, 218);
+                ls_uiStartScrollableRegion(c, &mobViewScroll);
+                mobViewScroll.minY = DrawPage(c , &mainCachedPage, 260, 676, 998, 218);
                 ls_uiEndScrollableRegion(c);
                 
                 ls_uiRect(c, 260, 218, 780, 478, RGBg(0x33), RGBg(0x11));
@@ -1910,18 +1912,18 @@ b32 DrawPranaStyle(UIContext *c)
     
     if(State.inBattle)
     {
-        inputUse |= ls_uiTextBox(c, &Page->Current,      892, 668, 100, 20);
-        inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1050, 698, 30, 20);
-        inputUse |= ls_uiButton(c, &Page->Next, 916, 698, 48, 20);
+        inputUse |= ls_uiTextBox(c, &Page->Current,      992, 668, 100, 20);
+        inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1150, 698, 30, 20);
+        inputUse |= ls_uiButton(c, &Page->Next, 1016, 698, 48, 20);
         
         // Order
         yPos = 638;
         for(u32 i = 0; i < visibleOrder; i += 2)
         {
-            inputUse |= DrawOrderField(c, Page->OrderFields + i, 762, yPos, i);
+            inputUse |= DrawOrderField(c, Page->OrderFields + i, 862, yPos, i);
             
             if((i+1) < visibleOrder)
-            { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 948, yPos, i+1); }
+            { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1048, yPos, i+1); }
             
             yPos -= 20;
         }
@@ -1933,26 +1935,23 @@ b32 DrawPranaStyle(UIContext *c)
             Order *ord = Page->OrderFields + Page->selectedMobIndex;
             InitField *mob = GetInitFieldByID(ord->ID);
             
-            if(mob)
-            {
-                if(mob->compendiumIdx == -1) { inputUse |= DrawInitExtra(c, mob, 66, yPos); }
-                else
+            if(mob && ord->compendiumIdx == -1) { inputUse |= DrawInitExtra(c, mob, 66, yPos); }
+            else
+            { 
+                static UIScrollableRegion viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
+                
+                if(mainCachedPage.pageIndex != ord->compendiumIdx)
                 { 
-                    static UIScrollableRegion viewScroll = { 60, 218, 580, 478, 0, 0, 798, 218};
-                    
-                    if(mainCachedPage.pageIndex != mob->compendiumIdx)
-                    { 
-                        PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[mob->compendiumIdx]];
-                        CachePage(pEntry, mob->compendiumIdx, &mainCachedPage);
-                        viewScroll = { 60, 218, 580, 478, 0, 0, 798, 218};
-                    }
-                    
-                    ls_uiStartScrollableRegion(c, &viewScroll);
-                    viewScroll.minY = DrawPage(c , &mainCachedPage, 60, 676, 798, 218);
-                    ls_uiEndScrollableRegion(c);
-                    
-                    ls_uiRect(c, 60, 218, 580, 478, RGBg(0x33), RGBg(0x11));
+                    PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[ord->compendiumIdx]];
+                    CachePage(pEntry, ord->compendiumIdx, &mainCachedPage);
+                    viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
                 }
+                
+                ls_uiStartScrollableRegion(c, &viewScroll);
+                viewScroll.minY = DrawPage(c , &mainCachedPage, 40, 676, 758, 218);
+                ls_uiEndScrollableRegion(c);
+                
+                ls_uiRect(c, 40, 218, 760, 478, RGBg(0x33), RGBg(0x11));
             }
         }
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718, 48, 20);
