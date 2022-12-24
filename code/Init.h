@@ -211,7 +211,7 @@ struct InitPage
     
     InitField  AllyFields[ALLY_NUM];
     InitField  MobFields[MOB_NUM];
-    s32        selectedMobIndex;
+    s32        selectedIndex;
     
     UILPane    InfoPane;
     

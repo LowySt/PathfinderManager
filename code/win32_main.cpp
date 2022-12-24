@@ -220,7 +220,7 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     ls_uiTextBoxSet(cxt, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
     
     dest->EncounterSel.selectedIndex = curr->EncounterSel.selectedIndex;
-    dest->selectedMobIndex           = curr->selectedMobIndex;
+    dest->selectedIndex              = curr->selectedIndex;
     
     //NOTE: Copy General Info
     ToState->inBattle = FromState->inBattle;

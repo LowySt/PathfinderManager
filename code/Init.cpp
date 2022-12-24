@@ -677,10 +677,12 @@ b32 SetOnClick(UIContext *c, void *data)
     
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
-        ord[idx].init    = ls_utf32ToInt(Page->PlayerInit[i].text);
-        ord[idx].name    = (utf32 *)(PartyNameUTF32 + i);
-        ord[idx].maxLife = 0;
-        ord[idx].ID      = i;
+        ord[idx].init          = ls_utf32ToInt(Page->PlayerInit[i].text);
+        ord[idx].name          = (utf32 *)(PartyNameUTF32 + i);
+        ord[idx].maxLife       = 0;
+        ord[idx].compendiumIdx = -1;
+        ord[idx].ID            = i;
+        
         
         idx += 1;
     }
@@ -737,7 +739,7 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     Page->Mobs.selectedIndex   = 0;
     Page->Allies.selectedIndex = 0;
-    Page->selectedMobIndex     = -1;
+    Page->selectedIndex        = -1;
     
     State.inBattle = FALSE;
     
@@ -1304,7 +1306,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
 {
     InitPage *Page = PState->Init;
     
-    Page->selectedMobIndex = -1;
+    Page->selectedIndex = -1;
     
     for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Mobs, (char *)Enemies[i]); }
     for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Allies, (char *)Allies[i]); }
@@ -1577,7 +1579,7 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx)
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_FINAL], x + w + 26, y, 26, 20);
     
     Input *UserInput = &c->UserInput;
-    if(RightClickIn(x, y, w+26, 19)) { Page->selectedMobIndex = (s32)posIdx; }
+    if(RightClickIn(x, y, w+26, 19)) { Page->selectedIndex = (s32)posIdx; }
     
     
     return inputUse;
@@ -1606,7 +1608,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     inputUse |= ls_uiButton(c, &f->remove, xPos, yPos, 20, 20);
     
     Input *UserInput = &c->UserInput;
-    if(RightClickIn(xPos + 50, yPos, 120, 20)) State.Init->selectedMobIndex = (s32)posIdx;
+    if(RightClickIn(xPos + 50, yPos, 120, 20)) State.Init->selectedIndex = (s32)posIdx;
     
     return inputUse;
 }
@@ -1884,11 +1886,11 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         yPos = 678;
-        if(Page->selectedMobIndex >= 0)
+        if(Page->selectedIndex >= 0)
         {
-            AssertMsg(Page->selectedMobIndex < MOB_NUM, "Selected Mob Index is out of bounds\n");
+            AssertMsg(Page->selectedIndex < MOB_NUM, "Selected Mob Index is out of bounds\n");
             
-            InitField *mob = Page->MobFields + Page->selectedMobIndex;
+            InitField *mob = Page->MobFields + Page->selectedIndex;
             if(mob->compendiumIdx == -1) { inputUse |= DrawInitExtra(c, mob, 436, yPos); }
             else
             { 
@@ -1929,13 +1931,15 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         yPos = 678;
-        if(Page->selectedMobIndex >= 0)
+        if(Page->selectedIndex >= 0)
         {
-            AssertMsg(Page->selectedMobIndex < visibleOrder, "Selected Order Index is out of bounds\n");
-            Order *ord = Page->OrderFields + Page->selectedMobIndex;
+            AssertMsg(Page->selectedIndex < visibleOrder, "Selected Order Index is out of bounds\n");
+            Order *ord = Page->OrderFields + Page->selectedIndex;
             InitField *mob = GetInitFieldByID(ord->ID);
             
-            if(mob && ord->compendiumIdx == -1) { inputUse |= DrawInitExtra(c, mob, 66, yPos); }
+            if(ord->compendiumIdx == -1) {
+                if(mob) inputUse |= DrawInitExtra(c, mob, 66, yPos);
+            }
             else
             { 
                 static UIScrollableRegion viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
