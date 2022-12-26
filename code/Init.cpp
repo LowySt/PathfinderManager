@@ -1571,7 +1571,7 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx)
 {
     b32 inputUse = FALSE;
     
-    s32 w = 120;
+    s32 w = 136;
     
     InitPage *Page = State.Init;
     
@@ -1587,7 +1587,8 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx)
     return inputUse;
 }
 
-b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
+b32 
+DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
 {
     b32 inputUse = FALSE;
     
@@ -1595,7 +1596,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     if(posIdx == State.Init->currIdx)                                   c->borderColor = RGB(0xBB, 0, 0);
     //else if(posIdx == (State.Init->currIdx+1)%State.Init->turnsInRound) c->borderColor = RGB(0x99, 0, 0);
     
-    inputUse |= ls_uiSlider(c, &f->field, xPos + 50, yPos, 120, 20);
+    inputUse |= ls_uiSlider(c, &f->field, xPos + 50, yPos, 136, 20);
     
     c->borderColor = original;
     
@@ -1854,7 +1855,7 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, yPos, 24, 20);
             
             inputUse |= ls_uiListBox(c, &Page->Mobs,   76, yPos-65, 100, 20, 1);
-            inputUse |= ls_uiListBox(c, &Page->Allies, 1080, yPos-225, 100, 20, 1);
+            inputUse |= ls_uiListBox(c, &Page->Allies, 1104, yPos-225, 100, 20, 1);
             
             inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40, 48, 20);
             inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40, 48, 20);
@@ -1874,15 +1875,15 @@ b32 DrawPranaStyle(UIContext *c)
         // Party
         for(u32 i = 0; i < PARTY_NUM; i++)
         {
-            ls_uiLabel(c, PartyName[i], 1085, yPos+6);
-            inputUse |= ls_uiTextBox(c, Page->PlayerInit + i, 1170, yPos, 32, 20);
+            ls_uiLabel(c, PartyName[i], 1109, yPos+6);
+            inputUse |= ls_uiTextBox(c, Page->PlayerInit + i, 1194, yPos, 32, 20);
             yPos -= 20;
         }
         
         yPos = 678;
         for(u32 i = 0; i < visibleAllies; i++)
         {
-            inputUse |= DrawInitField(c, Page->AllyFields + i, 1056, yPos-160, i);
+            inputUse |= DrawInitField(c, Page->AllyFields + i, 1072, yPos-160, i);
             yPos -= 20;
         }
         
@@ -1890,7 +1891,7 @@ b32 DrawPranaStyle(UIContext *c)
         yPos = 678;
         for(u32 i = 0; i < visibleMobs; i++)
         {
-            inputUse |= DrawInitField(c, Page->MobFields + i, 52, yPos, i);
+            inputUse |= DrawInitField(c, Page->MobFields + i, 44, yPos, i);
             yPos -= 20;
         }
         
@@ -1934,7 +1935,7 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= DrawOrderField(c, Page->OrderFields + i, 862, yPos, i);
             
             if((i+1) < visibleOrder)
-            { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1048, yPos, i+1); }
+            { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1064, yPos, i+1); }
             
             yPos -= 20;
         }
