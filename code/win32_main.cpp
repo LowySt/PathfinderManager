@@ -316,7 +316,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     CompendiumMenu.itemWidth    = 120;
     
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Monster Table", CompendiumOpenMonsterTable, NULL);
-    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add to Init", CompendiumAddPageToInit, NULL);
+    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add Enemy", CompendiumAddPageToInitMob, NULL);
+    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add Ally", CompendiumAddPageToInitAlly, NULL);
     
     State.isInitialized = TRUE;
     
