@@ -1362,6 +1362,8 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->remove.onClick = RemoveOrderOnClick;
         f->remove.data    = (void *)((u64)i);
         f->remove.onHold  = 0x0;
+        
+        f->compendiumIdx  = -1;
     }
     
     //TODO: Many of these strings should be constant, rather than allocated.
@@ -1589,7 +1591,14 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
 {
     b32 inputUse = FALSE;
     
+    Color original = c->borderColor;
+    if(posIdx == State.Init->currIdx)                                   c->borderColor = RGB(0xBB, 0, 0);
+    //else if(posIdx == (State.Init->currIdx+1)%State.Init->turnsInRound) c->borderColor = RGB(0x99, 0, 0);
+    
     inputUse |= ls_uiSlider(c, &f->field, xPos + 50, yPos, 120, 20);
+    
+    c->borderColor = original;
+    
     if(inputUse)
     {
         s32 currVal = ls_uiSliderGetValue(c, &f->field);
