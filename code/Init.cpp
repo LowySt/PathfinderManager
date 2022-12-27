@@ -740,7 +740,9 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     Page->Mobs.selectedIndex   = 0;
     Page->Allies.selectedIndex = 0;
+    Page->isAdding             = FALSE;
     globalSelectedIndex        = -1;
+    
     
     State.inBattle = FALSE;
     
@@ -1133,6 +1135,12 @@ b32 AddNewInitOnClick(UIContext *c, void *data)
 {
     State.Init->isAdding = TRUE;
     globalSelectedIndex  = State.Init->Mobs.selectedIndex;
+    
+    //Clear The Extra
+    InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
+    for(u32 i = 0; i < IF_IDX_COUNT; i++) { ls_uiTextBoxClear(c, &f->editFields[i]); }
+    ls_uiTextBoxClear(c, &f->maxLife);
+    
     return TRUE;
 }
 
@@ -1145,12 +1153,14 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
     
     ls_utf32Set(&o->field.text, name);
     o->field.maxValue = maxLife;
-    o->compendiumIdx = compendiumIdx;
+    o->compendiumIdx  = compendiumIdx;
     
     //NOTE: Because IDs in the InitFields get overwritten when removing from order 
     //      we can't reliably re-use them, unless we create a system to dispense Unique IDs.
     //      So for simplicy we are just starting from 1000 and every single Added Init will just the next one.
     //      AddID is reset during ResetOnClick
+    //TODO:IMPORTANT!!
+    //     SERIALIZE ADDID!!
     o->ID = newID;
 }
 
@@ -1159,13 +1169,11 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
 //      If we allow it, the counter checker WILL HAVE to probably fix C->startIdxInOrder to work.
 b32 AddMobOnClick(UIContext *c, void *data)
 {
-    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleMobs = State.Init->Mobs.selectedIndex;
     
     if(visibleMobs == MOB_NUM) { return FALSE; }
     
-    State.Init->Mobs.selectedIndex += 1;
     State.Init->turnsInRound += 1;
-    
     CheckAndFixCounterTurns();
     
     InitField *f = State.Init->MobFields + visibleMobs;
@@ -1176,7 +1184,11 @@ b32 AddMobOnClick(UIContext *c, void *data)
     f->ID = addID;
     
     AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
-    addID += 1;
+    
+    State.Init->Mobs.selectedIndex += 1;
+    addID                          += 1;
+    State.Init->isAdding            = FALSE;
+    globalSelectedIndex             = -1;
     
     return TRUE;
 }
@@ -1188,7 +1200,7 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     if(visibleAllies == ALLY_NUM) { return FALSE; }
     
     State.Init->Allies.selectedIndex += 1;
-    State.Init->turnsInRound += 1;
+    State.Init->turnsInRound         += 1;
     
     CheckAndFixCounterTurns();
     
@@ -1201,6 +1213,9 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     
     AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
     addID += 1;
+    
+    State.Init->isAdding = FALSE;
+    globalSelectedIndex  = -1;
     
     return TRUE;
 }
@@ -1535,11 +1550,12 @@ b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
     Color base = c->widgetColor;
     s32 x = baseX;
     
-    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME], x-30, y, 120, 20);
+    ls_uiLabel(c, U"Nome", x-45, y+5);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME], x, y, 156, 20);
     
     c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
-    ls_uiLabel(c, U"PF", x+105, y+5);
-    inputUse |= ls_uiTextBox(c, &F->maxLife, x+130, y, 42, 20);
+    ls_uiLabel(c, U"PF", x+257, y+5);
+    inputUse |= ls_uiTextBox(c, &F->maxLife, x+282, y, 42, 20);
     
     y -= 40;
     c->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
@@ -1605,8 +1621,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     b32 inputUse = FALSE;
     
     Color original = c->borderColor;
-    if(posIdx == State.Init->currIdx)                                   c->borderColor = RGB(0xBB, 0, 0);
-    //else if(posIdx == (State.Init->currIdx+1)%State.Init->turnsInRound) c->borderColor = RGB(0x99, 0, 0);
+    if(posIdx == State.Init->currIdx) c->borderColor = RGB(0xBB, 0, 0);
     
     inputUse |= ls_uiSlider(c, &f->field, xPos + 50, yPos, 136, 20);
     
@@ -1812,6 +1827,7 @@ b32 DrawPranaStyle(UIContext *c)
         yPos = 678;
         if(Page->isAdding)
         {
+            AssertMsg(globalSelectedIndex >= 0, "Selected Index is not set\n");
             AssertMsg(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
             
             InitField *f = 0;
@@ -1850,6 +1866,10 @@ b32 DrawPranaStyle(UIContext *c)
                 ls_uiRect(c, 260, 218, 780, 478, RGBg(0x33), RGBg(0x11));
             }
         }
+        
+        //Add New
+        if(!Page->isAdding && visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNew, 206, 715, 25, 20);
+        else                                          ls_uiButton(c, &Page->addConfirm, 206, 715, 25, 20);
     }
     else
     {
@@ -1870,7 +1890,18 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         yPos = 678;
-        if(globalSelectedIndex >= 0)
+        if(Page->isAdding)
+        {
+            AssertMsg(globalSelectedIndex >= 0, "Selected Index is not set\n");
+            AssertMsg(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
+            
+            InitField *f = 0;
+            if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
+            else                               { f = Page->MobFields + globalSelectedIndex; }
+            
+            inputUse |= DrawInitExtra(c, f, 66, yPos);
+        }
+        else if(globalSelectedIndex >= 0)
         {
             AssertMsg(globalSelectedIndex < visibleOrder, "Selected Order Index is out of bounds\n");
             Order *ord = Page->OrderFields + globalSelectedIndex;
@@ -1898,11 +1929,22 @@ b32 DrawPranaStyle(UIContext *c)
             }
         }
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718, 48, 20);
+        
+        //Add New
+        if(visibleMobs <= MOB_NUM)
+        {
+            if(!Page->isAdding)
+            {
+                ls_uiLabel(c, U"Add Enemy", 30, 720);
+                ls_uiButton(c, &Page->addNew, 116, 715, 25, 20);
+            }
+            else
+            {
+                ls_uiLabel(c, U"Add Enemy", 30, 720);
+                ls_uiButton(c, &Page->addConfirm, 116, 715, 25, 20);
+            }
+        }
     }
-    
-    //Add New
-    if(!Page->isAdding && visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNew, 206, 715, 25, 20);
-    else                                          ls_uiButton(c, &Page->addConfirm, 206, 715, 25, 20);
     
     // Counters
     yPos = 124;

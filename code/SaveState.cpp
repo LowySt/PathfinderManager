@@ -49,6 +49,8 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         ls_bufferAddData32(buf, &order->field.lColor, sizeof(Color));
         ls_bufferAddData32(buf, &order->field.rColor, sizeof(Color));
         
+        //TODO:IMPORTANT!!
+        //     SERIALIZE ADDID!!
         ls_bufferAddDWord(buf, order->ID);
     }
     
@@ -147,6 +149,8 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         ls_bufferReadData32(buf, &order->field.lColor);
         ls_bufferReadData32(buf, &order->field.rColor);
         
+        //TODO:IMPORTANT!!
+        //     SERIALIZE ADDID!!
         order->ID = ls_bufferReadDWord(buf);
     }
     
