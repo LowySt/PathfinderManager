@@ -743,7 +743,6 @@ b32 ResetOnClick(UIContext *c, void *data)
     Page->isAdding             = FALSE;
     globalSelectedIndex        = -1;
     
-    
     State.inBattle = FALSE;
     
     utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
@@ -839,6 +838,14 @@ b32 ResetOnClick(UIContext *c, void *data)
         ls_uiTextBoxClear(c, &Page->GeneralThrower.toHit);
         ls_uiTextBoxClear(c, &Page->GeneralThrower.hitRes);
     }
+    
+    b32 StartAddingMob(UIContext *, void *);
+    b32 StartAddingAlly(UIContext *, void *);
+    ls_utf32Set(&Page->addNewMob.name, ls_utf32Constant(U"+"));
+    Page->addNewMob.onClick = StartAddingMob;
+    
+    ls_utf32Set(&Page->addNewAlly.name, ls_utf32Constant(U"+"));
+    Page->addNewAlly.onClick = StartAddingAlly;
     
     Page->EncounterSel.selectedIndex = 0;
     
@@ -1131,7 +1138,7 @@ void CheckAndFixCounterTurns()
     }
 }
 
-b32 AddNewInitOnClick(UIContext *c, void *data)
+b32 StartAddingMob(UIContext *c, void *data)
 {
     State.Init->isAdding = TRUE;
     globalSelectedIndex  = State.Init->Mobs.selectedIndex;
@@ -1141,7 +1148,30 @@ b32 AddNewInitOnClick(UIContext *c, void *data)
     for(u32 i = 0; i < IF_IDX_COUNT; i++) { ls_uiTextBoxClear(c, &f->editFields[i]); }
     ls_uiTextBoxClear(c, &f->maxLife);
     
-    return TRUE;
+    //Update the button!
+    ls_utf32Set(&State.Init->addNewMob.name, ls_utf32Constant(U"Ok"));
+    State.Init->addNewMob.onClick = AddMobOnClick;
+    
+    return FALSE;
+}
+
+b32 StartAddingAlly(UIContext *c, void *data)
+{
+    State.Init->isAdding = TRUE;
+    globalSelectedIndex  = State.Init->Allies.selectedIndex;
+    
+    //Clear The Extra
+    InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
+    for(u32 i = 0; i < IF_IDX_COUNT; i++) { ls_uiTextBoxClear(c, &f->editFields[i]); }
+    ls_uiTextBoxClear(c, &f->maxLife);
+    
+    AssertMsg(FALSE, "It's broken\n");
+    
+    //Update the button!
+    ls_utf32Set(&State.Init->addNewAlly.name, ls_utf32Constant(U"Ok"));
+    State.Init->addNewAlly.onClick = AddAllyOnClick;
+    
+    return FALSE;
 }
 
 void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
@@ -1169,6 +1199,7 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
 //      If we allow it, the counter checker WILL HAVE to probably fix C->startIdxInOrder to work.
 b32 AddMobOnClick(UIContext *c, void *data)
 {
+    ls_printf("what\n");
     s32 visibleMobs = State.Init->Mobs.selectedIndex;
     
     if(visibleMobs == MOB_NUM) { return FALSE; }
@@ -1190,18 +1221,21 @@ b32 AddMobOnClick(UIContext *c, void *data)
     State.Init->isAdding            = FALSE;
     globalSelectedIndex             = -1;
     
+    //Update the button!
+    ls_utf32Set(&State.Init->addNewMob.name, ls_utf32Constant(U"+"));
+    State.Init->addNewMob.onClick = StartAddingMob;
+    
     return TRUE;
 }
 
 b32 AddAllyOnClick(UIContext *c, void *data)
 {
+    ls_printf("yea\n");
     s32 visibleAllies = State.Init->Allies.selectedIndex;
     
     if(visibleAllies == ALLY_NUM) { return FALSE; }
     
-    State.Init->Allies.selectedIndex += 1;
     State.Init->turnsInRound         += 1;
-    
     CheckAndFixCounterTurns();
     
     InitField *f = State.Init->AllyFields + visibleAllies;
@@ -1212,10 +1246,15 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     f->ID = addID;
     
     AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
-    addID += 1;
     
-    State.Init->isAdding = FALSE;
-    globalSelectedIndex  = -1;
+    State.Init->Allies.selectedIndex += 1;
+    addID                            += 1;
+    State.Init->isAdding              = FALSE;
+    globalSelectedIndex               = -1;
+    
+    //Update the button!
+    ls_utf32Set(&State.Init->addNewAlly.name, ls_utf32Constant(U"+"));
+    State.Init->addNewAlly.onClick = StartAddingAlly;
     
     return TRUE;
 }
@@ -1351,19 +1390,17 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         InitFieldInit(c, f, &currID, AllyName[i]);
     }
     
-    //TODO: Make these into one.
-    Page->addNew.style       = UIBUTTON_TEXT;
-    Page->addNew.name        = ls_utf32FromUTF32(U"+");
-    Page->addNew.onClick     = AddNewInitOnClick;
-    Page->addNew.data        = 0x0;
-    Page->addNew.onHold      = 0x0;
+    Page->addNewMob.style   = UIBUTTON_TEXT;
+    Page->addNewMob.name    = ls_utf32FromUTF32(U"+");
+    Page->addNewMob.onClick = StartAddingMob;
+    Page->addNewMob.data    = 0x0;
+    Page->addNewMob.onHold  = 0x0;
     
-    Page->addConfirm.style   = UIBUTTON_TEXT;
-    Page->addConfirm.name    = ls_utf32FromUTF32(U"Ok");
-    Page->addConfirm.onClick = AddMobOnClick;
-    Page->addConfirm.data    = 0x0;
-    Page->addConfirm.onHold  = 0x0;
-    
+    Page->addNewAlly.style   = UIBUTTON_TEXT;
+    Page->addNewAlly.name    = ls_utf32FromUTF32(U"+");
+    Page->addNewAlly.onClick = StartAddingAlly;
+    Page->addNewAlly.data    = 0x0;
+    Page->addNewAlly.onHold  = 0x0;
     
     for(u32 i = 0; i < ORDER_NUM; i++)
     {
@@ -1868,8 +1905,7 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         //Add New
-        if(!Page->isAdding && visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNew, 206, 715, 25, 20);
-        else                                          ls_uiButton(c, &Page->addConfirm, 206, 715, 25, 20);
+        if(visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNewMob, 206, 715, 25, 20);
     }
     else
     {
@@ -1933,16 +1969,14 @@ b32 DrawPranaStyle(UIContext *c)
         //Add New
         if(visibleMobs <= MOB_NUM)
         {
-            if(!Page->isAdding)
-            {
-                ls_uiLabel(c, U"Add Enemy", 30, 720);
-                ls_uiButton(c, &Page->addNew, 116, 715, 25, 20);
-            }
-            else
-            {
-                ls_uiLabel(c, U"Add Enemy", 30, 720);
-                ls_uiButton(c, &Page->addConfirm, 116, 715, 25, 20);
-            }
+            ls_uiLabel(c, U"Add Enemy", 30, 720);
+            ls_uiButton(c, &Page->addNewMob, 116, 715, 25, 20);
+        }
+        
+        if(visibleAllies <= ALLY_NUM)
+        {
+            ls_uiLabel(c, U"Add Ally", 157, 720);
+            ls_uiButton(c, &Page->addNewAlly, 235, 715, 25, 20);
         }
     }
     

@@ -208,8 +208,8 @@ struct InitPage
     InitField  AllyFields[ALLY_NUM];
     InitField  MobFields[MOB_NUM];
     
-    UIButton   addNew;
-    UIButton   addConfirm;
+    UIButton   addNewMob;
+    UIButton   addNewAlly;
     b32        isAdding;
     
     UIButton   Roll;
