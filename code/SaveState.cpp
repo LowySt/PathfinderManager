@@ -21,10 +21,6 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         { ls_bufferAddUTF32(buf, ally->editFields[j].text); }
         
         ls_bufferAddUTF32(buf, ally->maxLife.text);
-        ls_bufferAddUTF32(buf, ally->addName.text);
-        ls_bufferAddUTF32(buf, ally->addInit.text);
-        
-        ls_bufferAddDWord(buf, ally->isAdding);
         ls_bufferAddDWord(buf, ally->ID);
     }
     
@@ -37,10 +33,6 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         { ls_bufferAddUTF32(buf, mob->editFields[j].text); }
         
         ls_bufferAddUTF32(buf, mob->maxLife.text);
-        ls_bufferAddUTF32(buf, mob->addName.text);
-        ls_bufferAddUTF32(buf, mob->addInit.text);
-        
-        ls_bufferAddDWord(buf, mob->isAdding);
         ls_bufferAddDWord(buf, mob->ID);
     }
     
@@ -128,10 +120,6 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         { ls_bufferReadIntoUTF32(buf, &ally->editFields[j].text); }
         
         ls_bufferReadIntoUTF32(buf, &ally->maxLife.text);
-        ls_bufferReadIntoUTF32(buf, &ally->addName.text);
-        ls_bufferReadIntoUTF32(buf, &ally->addInit.text);
-        
-        ally->isAdding = ls_bufferReadDWord(buf);
         ally->ID       = ls_bufferReadDWord(buf);
     }
     
@@ -143,10 +131,6 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         { ls_bufferReadIntoUTF32(buf, &mob->editFields[j].text); }
         
         ls_bufferReadIntoUTF32(buf, &mob->maxLife.text);
-        ls_bufferReadIntoUTF32(buf, &mob->addName.text);
-        ls_bufferReadIntoUTF32(buf, &mob->addInit.text);
-        
-        mob->isAdding = ls_bufferReadDWord(buf);
         mob->ID       = ls_bufferReadDWord(buf);
     }
     

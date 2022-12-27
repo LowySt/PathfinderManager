@@ -51,7 +51,8 @@ const u32 PRANA_THROWER_NUM = 8;
 
 const char32_t *NoEncounterStr = U"No Selection";
 
-struct tmp_order {
+struct tmp_order
+{
     s32    init;
     utf32 *name;
     s32    maxLife;
@@ -154,13 +155,6 @@ struct InitField
     
     UITextBox maxLife;
     
-    UITextBox addName;
-    UITextBox addInit;
-    
-    UIButton  addNew;
-    UIButton  addConfirm;
-    b32 isAdding;
-    
     s32 compendiumIdx; //TODO: Serialize
     s32 ID;
 };
@@ -202,6 +196,8 @@ struct DiceThrow
     UIButton  throwDie;
 };
 
+s32 globalSelectedIndex = -1;
+
 struct InitPage
 {
     UIListBox  Mobs;
@@ -211,9 +207,10 @@ struct InitPage
     
     InitField  AllyFields[ALLY_NUM];
     InitField  MobFields[MOB_NUM];
-    s32        selectedIndex;
     
-    UILPane    InfoPane;
+    UIButton   addNew;
+    UIButton   addConfirm;
+    b32        isAdding;
     
     UIButton   Roll;
     UIButton   Set;

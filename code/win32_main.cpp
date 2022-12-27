@@ -139,10 +139,6 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         { ls_uiTextBoxSet(cxt, To->editFields + j, From->editFields[j].text); }
         
         ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
-        ls_uiTextBoxSet(cxt, &To->addName, From->addName.text);
-        ls_uiTextBoxSet(cxt, &To->addInit, From->addInit.text);
-        
-        To->isAdding = From->isAdding;
         To->ID       = From->ID;
     }
     
@@ -155,10 +151,6 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         { ls_uiTextBoxSet(cxt, To->editFields + j, From->editFields[j].text); }
         
         ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
-        ls_uiTextBoxSet(cxt, &To->addName, From->addName.text);
-        ls_uiTextBoxSet(cxt, &To->addInit, From->addInit.text);
-        
-        To->isAdding = From->isAdding;
         To->ID = From->ID;
     }
     
@@ -220,7 +212,6 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     ls_uiTextBoxSet(cxt, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
     
     dest->EncounterSel.selectedIndex = curr->EncounterSel.selectedIndex;
-    dest->selectedIndex              = curr->selectedIndex;
     
     //NOTE: Copy General Info
     ToState->inBattle = FromState->inBattle;

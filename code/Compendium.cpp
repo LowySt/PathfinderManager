@@ -244,124 +244,31 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
     return FALSE;
 }
 
+b32 AddMobOnClick(UIContext *, void *);
+b32 AddAllyOnClick(UIContext *, void *);
+
 b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
 {
-    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
-    s32 visibleAllies = State.Init->Allies.selectedIndex;
-    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
     
-    if(visibleMobs == MOB_NUM) { return FALSE; }
-    
-    State.Init->Mobs.selectedIndex += 1;
-    State.Init->turnsInRound       += 1;
-    
-    //TODO: I don't like this shit, and I never liked it (look at code in Init.cpp and fix that as well)
-    for(u32 i = 0; i < COUNTER_NUM; i++)
-    {
-        Counter *C = State.Init->Counters + i;
-        if(C->isActive)
-        { 
-            AssertMsg(State.Init->turnsInRound >= C->startIdxInOrder, "startIdxInOrder is not realiable anymore\n");
-            
-            //NOTE: This counter missed counting the new addition this round,
-            //      So we manually count up by one.
-            if(State.Init->currIdx < C->startIdxInOrder)
-            { C->turnCounter += 1; }
-        }
-    }
-    
-    InitField *f = State.Init->MobFields + visibleMobs;
-    
+    //TODO: MaxLife is not set!!
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
-    
-    f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
-    f->editFields[IF_IDX_BONUS].isReadonly = TRUE;
-    f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
-    
-    //NOTE: We are skipping Name, Bonus and Final, by starting at 2 and ending 1 earlier.
-    for(u32 i = 2; i < IF_IDX_COUNT-1; i++)
-    { f->editFields[i].isReadonly = TRUE; }
-    
     f->compendiumIdx = compendium.pageIndex;
-    f->ID            = addID;
     
-    if(State.inBattle)
-    {
-        Order *o = State.Init->OrderFields + visibleOrder;
-        
-        //TODO: Don't like re-allocing, We can't fit long names anyway. Let's just choose a maximum length
-        //      And smartly truncate names?
-        ls_utf32Set(&o->field.text, cachedPage.name);
-        
-        //AssertMsg(FALSE, "Finish implementing this");
-        
-        //TODO:
-        //o->field.maxValue = ls_utf32ToInt(f->maxLife.text);
-        o->ID  = addID;
-        o->compendiumIdx = compendium.pageIndex;
-    }
-    addID += 1;
+    AddMobOnClick(NULL, NULL);
     
     return TRUE;
 }
 
 b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
 {
-    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
-    s32 visibleAllies = State.Init->Allies.selectedIndex;
-    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     
-    if(visibleAllies == ALLY_NUM) { return FALSE; }
-    
-    State.Init->Allies.selectedIndex += 1;
-    State.Init->turnsInRound         += 1;
-    
-    //TODO: I don't like this shit, and I never liked it (look at code in Init.cpp and fix that as well)
-    for(u32 i = 0; i < COUNTER_NUM; i++)
-    {
-        Counter *C = State.Init->Counters + i;
-        if(C->isActive)
-        { 
-            AssertMsg(State.Init->turnsInRound >= C->startIdxInOrder, "startIdxInOrder is not realiable anymore\n");
-            
-            //NOTE: This counter missed counting the new addition this round,
-            //      So we manually count up by one.
-            if(State.Init->currIdx < C->startIdxInOrder)
-            { C->turnCounter += 1; }
-        }
-    }
-    
-    InitField *f = State.Init->AllyFields + visibleAllies;
-    
+    //TODO: MaxLife is not set!!
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
-    
-    f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
-    f->editFields[IF_IDX_BONUS].isReadonly = TRUE;
-    f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
-    
-    //NOTE: We are skipping Name, Bonus and Final, by starting at 2 and ending 1 earlier.
-    for(u32 i = 2; i < IF_IDX_COUNT-1; i++)
-    { f->editFields[i].isReadonly = TRUE; }
-    
     f->compendiumIdx = compendium.pageIndex;
-    f->ID            = addID;
     
-    if(State.inBattle)
-    {
-        Order *o = State.Init->OrderFields + visibleOrder;
-        
-        //TODO: Don't like re-allocing, We can't fit long names anyway. Let's just choose a maximum length
-        //      And smartly truncate names?
-        ls_utf32Set(&o->field.text, cachedPage.name);
-        
-        //AssertMsg(FALSE, "Finish implementing this");
-        
-        //TODO:
-        //o->field.maxValue = ls_utf32ToInt(f->maxLife.text);
-        o->ID  = addID;
-        o->compendiumIdx = compendium.pageIndex;
-    }
-    addID += 1;
+    AddAllyOnClick(NULL, NULL);
     
     return TRUE;
 }

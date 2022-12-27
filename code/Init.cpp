@@ -726,9 +726,10 @@ b32 SetOnClick(UIContext *c, void *data)
     for(u32 i = 0; i < ORDER_NUM; i++)
     { Page->OrderFields[i].pos.isReadonly = FALSE; }
     
-    Page->turnsInRound = visibleOrder;
-    Page->currIdx      = 0;
-    State.inBattle     = TRUE;
+    Page->turnsInRound  = visibleOrder;
+    Page->currIdx       = 0;
+    State.inBattle      = TRUE;
+    globalSelectedIndex = 0;
     
     return TRUE;
 }
@@ -739,7 +740,7 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     Page->Mobs.selectedIndex   = 0;
     Page->Allies.selectedIndex = 0;
-    Page->selectedIndex        = -1;
+    globalSelectedIndex        = -1;
     
     State.inBattle = FALSE;
     
@@ -1111,35 +1112,8 @@ b32 StopCounterOnClick(UIContext *c, void *data)
     return TRUE;
 }
 
-b32 AddNewInitOnClick(UIContext *c, void *data)
+void CheckAndFixCounterTurns()
 {
-    InitField *f = (InitField *)data;
-    f->isAdding = TRUE;
-    
-    return TRUE;
-}
-
-//TODO: Right now we are not allowing to give an Initiative Value and put the new 
-//      Field in the right place in Order.
-//      If we allow it, the counter checker WILL HAVE to probably fix C->startIdxInOrder to work.
-b32 AddConfirmOnClick(UIContext *c, void *data)
-{
-    InitField *f = (InitField *)data;
-    
-    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
-    s32 visibleAllies = State.Init->Allies.selectedIndex;
-    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
-    
-    //NOTETODO: This is a really dumb way to determine if it's an ally or a mob...
-    //          I should pass as user data to the hook a special struct which contains all relevant info.
-    b32 isMob = FALSE;
-    if(State.Init->AllyFields <= f && f <= (State.Init->AllyFields + visibleAllies))
-    { State.Init->Allies.selectedIndex += 1; }
-    else
-    { State.Init->Mobs.selectedIndex += 1; isMob = TRUE; }
-    
-    State.Init->turnsInRound += 1;
-    
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
         Counter *C = State.Init->Counters + i;
@@ -1153,36 +1127,81 @@ b32 AddConfirmOnClick(UIContext *c, void *data)
             { C->turnCounter += 1; }
         }
     }
-    
+}
+
+b32 AddNewInitOnClick(UIContext *c, void *data)
+{
+    State.Init->isAdding = TRUE;
+    globalSelectedIndex  = State.Init->Mobs.selectedIndex;
+    return TRUE;
+}
+
+void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
+{
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
     Order *o = State.Init->OrderFields + visibleOrder;
     
-    ls_utf32Set(&o->field.text, f->addName.text);
-    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], f->addName.text);
-    
-    f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
-    f->editFields[IF_IDX_BONUS].isReadonly = TRUE;
-    f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
-    
-    if(isMob)
-    {
-        //NOTE: We are skipping Name, Bonus and Final, by starting at 2 and ending 1 earlier.
-        for(u32 i = 2; i < IF_IDX_COUNT-1; i++)
-        { f->editFields[i].isReadonly = TRUE; }
-        
-        o->field.maxValue = ls_utf32ToInt(f->maxLife.text);
-    }
-    
-    o->compendiumIdx = f->compendiumIdx;
+    ls_utf32Set(&o->field.text, name);
+    o->field.maxValue = maxLife;
+    o->compendiumIdx = compendiumIdx;
     
     //NOTE: Because IDs in the InitFields get overwritten when removing from order 
     //      we can't reliably re-use them, unless we create a system to dispense Unique IDs.
     //      So for simplicy we are just starting from 1000 and every single Added Init will just the next one.
     //      AddID is reset during ResetOnClick
+    o->ID = newID;
+}
+
+//TODO: Right now we are not allowing to give an Initiative Value and put the new 
+//      Field in the right place in Order.
+//      If we allow it, the counter checker WILL HAVE to probably fix C->startIdxInOrder to work.
+b32 AddMobOnClick(UIContext *c, void *data)
+{
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    
+    if(visibleMobs == MOB_NUM) { return FALSE; }
+    
+    State.Init->Mobs.selectedIndex += 1;
+    State.Init->turnsInRound += 1;
+    
+    CheckAndFixCounterTurns();
+    
+    InitField *f = State.Init->MobFields + visibleMobs;
+    for(u32 i = 0; i < IF_IDX_COUNT; i++)
+    { 
+        f->editFields[i].isReadonly  = TRUE;
+    }
     f->ID = addID;
-    o->ID = addID;
+    
+    AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
     addID += 1;
     
-    f->isAdding = FALSE;
+    return TRUE;
+}
+
+b32 AddAllyOnClick(UIContext *c, void *data)
+{
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    
+    if(visibleAllies == ALLY_NUM) { return FALSE; }
+    
+    State.Init->Allies.selectedIndex += 1;
+    State.Init->turnsInRound += 1;
+    
+    CheckAndFixCounterTurns();
+    
+    InitField *f = State.Init->AllyFields + visibleAllies;
+    for(u32 i = 0; i < IF_IDX_COUNT; i++)
+    { 
+        f->editFields[i].isReadonly  = TRUE;
+    }
+    f->ID = addID;
+    
+    AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
+    addID += 1;
+    
     return TRUE;
 }
 
@@ -1277,25 +1296,6 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     f->editFields[IF_IDX_FINAL].data         = &textHandler[10];
     f->editFields[IF_IDX_FINAL].isSingleLine = TRUE;
     
-    
-    f->addName.text         = ls_utf32Alloc(16);
-    f->addName.isSingleLine = TRUE;
-    f->addInit.text         = ls_utf32Alloc(16);
-    f->addInit.maxLen       = 2;
-    f->addInit.isSingleLine = TRUE;
-    
-    f->addNew.style       = UIBUTTON_TEXT;
-    f->addNew.name        = ls_utf32FromUTF32(U"+");
-    f->addNew.onClick     = AddNewInitOnClick;
-    f->addNew.data        = f;
-    f->addNew.onHold      = 0x0;
-    
-    f->addConfirm.style   = UIBUTTON_TEXT;
-    f->addConfirm.name    = ls_utf32FromUTF32(U"Ok");
-    f->addConfirm.onClick = AddConfirmOnClick;
-    f->addConfirm.data    = f;
-    f->addConfirm.onHold  = 0x0;
-    
     f->compendiumIdx      = -1;
     
     f->ID = *currID;
@@ -1306,7 +1306,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
 {
     InitPage *Page = PState->Init;
     
-    Page->selectedIndex = -1;
+    globalSelectedIndex = -1;
     
     for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Mobs, (char *)Enemies[i]); }
     for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Allies, (char *)Allies[i]); }
@@ -1335,6 +1335,20 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         
         InitFieldInit(c, f, &currID, AllyName[i]);
     }
+    
+    //TODO: Make these into one.
+    Page->addNew.style       = UIBUTTON_TEXT;
+    Page->addNew.name        = ls_utf32FromUTF32(U"+");
+    Page->addNew.onClick     = AddNewInitOnClick;
+    Page->addNew.data        = 0x0;
+    Page->addNew.onHold      = 0x0;
+    
+    Page->addConfirm.style   = UIBUTTON_TEXT;
+    Page->addConfirm.name    = ls_utf32FromUTF32(U"Ok");
+    Page->addConfirm.onClick = AddMobOnClick;
+    Page->addConfirm.data    = 0x0;
+    Page->addConfirm.onHold  = 0x0;
+    
     
     for(u32 i = 0; i < ORDER_NUM; i++)
     {
@@ -1521,11 +1535,11 @@ b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
     Color base = c->widgetColor;
     s32 x = baseX;
     
-    ls_uiLabel(c, F->editFields[IF_IDX_NAME].text, x-30, y+45);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME], x-30, y, 120, 20);
     
     c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
-    ls_uiLabel(c, U"PF", x-30, y+5);
-    inputUse |= ls_uiTextBox(c, &F->maxLife, x, y, 62, 20);
+    ls_uiLabel(c, U"PF", x+105, y+5);
+    inputUse |= ls_uiTextBox(c, &F->maxLife, x+130, y, 42, 20);
     
     y -= 40;
     c->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
@@ -1581,14 +1595,12 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx)
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_FINAL], x + w + 26, y, 26, 20);
     
     Input *UserInput = &c->UserInput;
-    if(RightClickIn(x, y, w+26, 19)) { Page->selectedIndex = (s32)posIdx; }
-    
+    if(RightClickIn(x, y, w+26, 19)) { globalSelectedIndex = (s32)posIdx; }
     
     return inputUse;
 }
 
-b32 
-DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
+b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
 {
     b32 inputUse = FALSE;
     
@@ -1618,7 +1630,7 @@ DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     inputUse |= ls_uiButton(c, &f->remove, xPos, yPos, 20, 20);
     
     Input *UserInput = &c->UserInput;
-    if(RightClickIn(xPos + 50, yPos, 120, 20)) State.Init->selectedIndex = (s32)posIdx;
+    if(RightClickIn(xPos + 50, yPos, 120, 20)) globalSelectedIndex = (s32)posIdx;
     
     return inputUse;
 }
@@ -1692,68 +1704,6 @@ b32 DrawDefaultStyle(UIContext *c)
         yPos -= 20;
     }
     
-    // Counters
-    if(!Page->InfoPane.isOpen)
-    {
-        yPos = 638;
-        for(u32 i = 0; i < DEF_COUNTER_NUM; i++)
-        {
-            Counter *f = Page->Counters + i;
-            
-            ls_uiLabel(c, ls_utf32Constant(CounterNames[i]), 20, yPos+24);
-            
-            inputUse |= ls_uiTextBox(c, &f->name, 20, yPos, 100, 20);
-            inputUse |= ls_uiTextBox(c, &f->rounds, 125, yPos, 36, 20);
-            
-            if(!f->isActive) { ls_uiButton(c, &f->start, 166, yPos, 48, 20); }
-            else
-            {
-                inputUse |= ls_uiButton(c, &f->plusOne, 166, yPos, 48, 20);
-                inputUse |= ls_uiButton(c, &f->stop, 113, yPos+22, 48, 20);
-            }
-            
-            yPos -= 44;
-        }
-    }
-    
-    // Mob Info Left Pane
-    //TODO:RECOVER nocheckin
-    //_ls_uiLPane(cxt, &Page->InfoPane, 0, 180, 360, 580);
-    
-    //Mob Info
-    if(Page->InfoPane.isOpen)
-    {
-        u32 infoX = 2;
-        u32 infoY = 742;
-        for(u32 i = 0; i < visibleMobs; i++)
-        {
-            InitField *f = Page->MobFields + i;
-            
-            ls_uiLabel(c, f->editFields[IF_IDX_NAME].text, infoX, infoY);
-            
-            Color base = c->widgetColor;
-            
-            c->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
-            inputUse |= ls_uiTextBox(c, &f->editFields[IF_IDX_TOTALAC], infoX + 88, infoY-6, 26, 20);
-            
-            c->widgetColor = ls_uiAlphaBlend(RGBA(0x9C, 0x43, 0x8B, 150), base);
-            inputUse |= ls_uiTextBox(c, &f->editFields[IF_IDX_TOUCHAC], infoX + 116, infoY-6, 26, 20);
-            
-            c->widgetColor = ls_uiAlphaBlend(RGBA(0xD5, 0xCB, 0x35, 150), base);
-            inputUse |= ls_uiTextBox(c, &f->editFields[IF_IDX_FLATAC], infoX + 144, infoY-6, 26, 20);
-            
-            c->widgetColor = ls_uiAlphaBlend(RGBA(0x75, 0x46, 0x46, 150), base);
-            inputUse |= ls_uiTextBox(c, &f->editFields[IF_IDX_LOWAC], infoX + 144, infoY-6, 26, 20);
-            
-            c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
-            inputUse |= ls_uiTextBox(c, &f->maxLife, infoX + 182, infoY-6, 42, 20);
-            
-            c->widgetColor = base;
-            
-            infoY -= 24;
-        }
-    }
-    
     // Dice Throwers
     s32 xPos = 20;
     yPos = 90;
@@ -1790,42 +1740,6 @@ b32 DrawDefaultStyle(UIContext *c)
         inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1230, 720, 30, 20);
         
         inputUse |= ls_uiButton(c, &Page->Next, 1036, 698, 48, 20);
-        
-        if(visibleAllies < ALLY_NUM)
-        {
-            InitField *f = Page->AllyFields + visibleAllies;
-            
-            u32 addY = 454 - (20*visibleAllies);
-            if(!f->isAdding)
-            {
-                inputUse |= ls_uiButton(c, &f->addNew, 678, addY, 36, 20);
-            }
-            else
-            {
-                inputUse |= ls_uiTextBox(c, &f->addName, 616, addY+4, 120, 20);
-                inputUse |= ls_uiTextBox(c, &f->addInit, 736, addY+4, 26, 20);
-                
-                inputUse |= ls_uiButton(c, &f->addConfirm, 762, addY+4, 26, 20);
-            }
-        }
-        
-        if(visibleMobs < MOB_NUM)
-        {
-            InitField *f = Page->MobFields + visibleMobs;
-            
-            u32 addY = 634 - (20*visibleMobs);
-            if(!f->isAdding)
-            {
-                inputUse |= ls_uiButton(c, &f->addNew, 428, addY, 36, 20);
-            }
-            else
-            {
-                inputUse |= ls_uiTextBox(c, &f->addName, 378, addY+4, 120, 20);
-                inputUse |= ls_uiTextBox(c, &f->addInit, 498, addY+4, 26, 20);
-                
-                inputUse |= ls_uiButton(c, &f->addConfirm, 524, addY+4, 26, 20);
-            }
-        }
     }
     
     return inputUse;
@@ -1880,13 +1794,6 @@ b32 DrawPranaStyle(UIContext *c)
             yPos -= 20;
         }
         
-        yPos = 678;
-        for(u32 i = 0; i < visibleAllies; i++)
-        {
-            inputUse |= DrawInitField(c, Page->AllyFields + i, 1072, yPos-160, i);
-            yPos -= 20;
-        }
-        
         // Enemies
         yPos = 678;
         for(u32 i = 0; i < visibleMobs; i++)
@@ -1896,33 +1803,55 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         yPos = 678;
-        if(Page->selectedIndex >= 0)
+        for(u32 i = 0; i < visibleAllies; i++)
         {
-            AssertMsg(Page->selectedIndex < MOB_NUM, "Selected Mob Index is out of bounds\n");
+            inputUse |= DrawInitField(c, Page->AllyFields + i, 1072, yPos-160, i+MOB_NUM);
+            yPos -= 20;
+        }
+        
+        yPos = 678;
+        if(Page->isAdding)
+        {
+            AssertMsg(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
             
-            InitField *mob = Page->MobFields + Page->selectedIndex;
-            if(mob->compendiumIdx == -1) { inputUse |= DrawInitExtra(c, mob, 436, yPos); }
+            InitField *f = 0;
+            if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
+            else                               { f = Page->MobFields + globalSelectedIndex; }
+            
+            inputUse |= DrawInitExtra(c, f, 436, yPos);
+        }
+        else if(globalSelectedIndex >= 0)
+        {
+            AssertMsg(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
+            
+            InitField *f = 0;
+            if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
+            else                               { f = Page->MobFields + globalSelectedIndex; }
+            
+            if(f->compendiumIdx == -1)
+            {
+                inputUse |= DrawInitExtra(c, f, 436, yPos);
+            }
             else
             { 
-                static UIScrollableRegion mobViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
+                static UIScrollableRegion initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
                 
-                if(mainCachedPage.pageIndex != mob->compendiumIdx)
+                if(mainCachedPage.pageIndex != f->compendiumIdx)
                 { 
-                    PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[mob->compendiumIdx]];
-                    CachePage(pEntry, mob->compendiumIdx, &mainCachedPage);
-                    mobViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
+                    PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[f->compendiumIdx]];
+                    CachePage(pEntry, f->compendiumIdx, &mainCachedPage);
+                    initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
                 }
                 
-                ls_uiStartScrollableRegion(c, &mobViewScroll);
-                mobViewScroll.minY = DrawPage(c , &mainCachedPage, 260, 676, 998, 218);
+                ls_uiStartScrollableRegion(c, &initViewScroll);
+                initViewScroll.minY = DrawPage(c , &mainCachedPage, 260, 676, 998, 218);
                 ls_uiEndScrollableRegion(c);
                 
                 ls_uiRect(c, 260, 218, 780, 478, RGBg(0x33), RGBg(0x11));
             }
         }
     }
-    
-    if(State.inBattle)
+    else
     {
         inputUse |= ls_uiTextBox(c, &Page->Current,      992, 668, 100, 20);
         inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1150, 698, 30, 20);
@@ -1941,14 +1870,14 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         yPos = 678;
-        if(Page->selectedIndex >= 0)
+        if(globalSelectedIndex >= 0)
         {
-            AssertMsg(Page->selectedIndex < visibleOrder, "Selected Order Index is out of bounds\n");
-            Order *ord = Page->OrderFields + Page->selectedIndex;
-            InitField *mob = GetInitFieldByID(ord->ID);
+            AssertMsg(globalSelectedIndex < visibleOrder, "Selected Order Index is out of bounds\n");
+            Order *ord = Page->OrderFields + globalSelectedIndex;
+            InitField *f = GetInitFieldByID(ord->ID);
             
             if(ord->compendiumIdx == -1) {
-                if(mob) inputUse |= DrawInitExtra(c, mob, 66, yPos);
+                if(f) inputUse |= DrawInitExtra(c, f, 66, yPos);
             }
             else
             { 
@@ -1970,6 +1899,10 @@ b32 DrawPranaStyle(UIContext *c)
         }
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718, 48, 20);
     }
+    
+    //Add New
+    if(!Page->isAdding && visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNew, 206, 715, 25, 20);
+    else                                          ls_uiButton(c, &Page->addConfirm, 206, 715, 25, 20);
     
     // Counters
     yPos = 124;
