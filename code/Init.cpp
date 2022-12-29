@@ -1158,14 +1158,12 @@ b32 StartAddingMob(UIContext *c, void *data)
 b32 StartAddingAlly(UIContext *c, void *data)
 {
     State.Init->isAdding = TRUE;
-    globalSelectedIndex  = State.Init->Allies.selectedIndex;
+    globalSelectedIndex  = State.Init->Allies.selectedIndex + MOB_NUM;
     
     //Clear The Extra
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     for(u32 i = 0; i < IF_IDX_COUNT; i++) { ls_uiTextBoxClear(c, &f->editFields[i]); }
     ls_uiTextBoxClear(c, &f->maxLife);
-    
-    AssertMsg(FALSE, "It's broken\n");
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewAlly.name, ls_utf32Constant(U"Ok"));
@@ -1820,8 +1818,8 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22, 44, 20);
             inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, yPos, 24, 20);
             
-            inputUse |= ls_uiListBox(c, &Page->Mobs,   76, yPos-65, 100, 20, 1);
-            inputUse |= ls_uiListBox(c, &Page->Allies, 1104, yPos-225, 100, 20, 1);
+            inputUse |= ls_uiListBox(c, &Page->Mobs,   66, yPos-65, 100, 20, 1);
+            inputUse |= ls_uiListBox(c, &Page->Allies, 1094, yPos-225, 100, 20, 1);
             
             inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40, 48, 20);
             inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40, 48, 20);
@@ -1865,7 +1863,7 @@ b32 DrawPranaStyle(UIContext *c)
         if(Page->isAdding)
         {
             AssertMsg(globalSelectedIndex >= 0, "Selected Index is not set\n");
-            AssertMsg(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
+            AssertMsg(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
             
             InitField *f = 0;
             if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
@@ -1905,7 +1903,8 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         //Add New
-        if(visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNewMob, 206, 715, 25, 20);
+        if(visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNewMob, 196, 715, 25, 20);
+        if(visibleAllies <= ALLY_NUM) ls_uiButton(c, &Page->addNewAlly, 1224, 780-225, 25, 20);
     }
     else
     {
@@ -1929,7 +1928,7 @@ b32 DrawPranaStyle(UIContext *c)
         if(Page->isAdding)
         {
             AssertMsg(globalSelectedIndex >= 0, "Selected Index is not set\n");
-            AssertMsg(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
+            AssertMsg(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
             
             InitField *f = 0;
             if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
@@ -1969,14 +1968,26 @@ b32 DrawPranaStyle(UIContext *c)
         //Add New
         if(visibleMobs <= MOB_NUM)
         {
-            ls_uiLabel(c, U"Add Enemy", 30, 720);
-            ls_uiButton(c, &Page->addNewMob, 116, 715, 25, 20);
+            if(Page->isAdding && globalSelectedIndex >= MOB_NUM)
+            {
+            }
+            else
+            {
+                ls_uiLabel(c, U"Add Enemy", 30, 720);
+                ls_uiButton(c, &Page->addNewMob, 116, 715, 25, 20);
+            }
         }
         
         if(visibleAllies <= ALLY_NUM)
         {
-            ls_uiLabel(c, U"Add Ally", 157, 720);
-            ls_uiButton(c, &Page->addNewAlly, 235, 715, 25, 20);
+            if(Page->isAdding && globalSelectedIndex < MOB_NUM)
+            {
+            }
+            else
+            {
+                ls_uiLabel(c, U"Add Ally", 157, 720);
+                ls_uiButton(c, &Page->addNewAlly, 235, 715, 25, 20);
+            }
         }
     }
     
