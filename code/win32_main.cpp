@@ -114,7 +114,7 @@ b32 ProgramOpenCompendium(UIContext *c, void *data) {
         return FALSE;
     }
     
-    ls_printf("No Compendium Window yet.!");
+    LogMsg(TRUE, "No Compendium Window yet!\n");
     return FALSE;
 }
 
@@ -357,7 +357,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
         //      The first frame is always registered, so the first Undo State is always valid.
-        if(userInputConsumed == TRUE)
+        if(userInputConsumed == TRUE && !suppressingUndoRecord)
         {
             matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
             CopyState(uiContext, &State, UndoStates + matchingUndoIdx);

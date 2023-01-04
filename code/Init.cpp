@@ -1140,6 +1140,10 @@ void CheckAndFixCounterTurns()
 
 b32 StartAddingMob(UIContext *c, void *data)
 {
+    //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
+    //      The entire new mob to be undone/redone in a single action.
+    suppressingUndoRecord = TRUE;
+    
     State.Init->isAdding = TRUE;
     globalSelectedIndex  = State.Init->Mobs.selectedIndex;
     
@@ -1157,6 +1161,10 @@ b32 StartAddingMob(UIContext *c, void *data)
 
 b32 StartAddingAlly(UIContext *c, void *data)
 {
+    //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
+    //      The entire new mob to be undone/redone in a single action.
+    suppressingUndoRecord = TRUE;
+    
     State.Init->isAdding = TRUE;
     globalSelectedIndex  = State.Init->Allies.selectedIndex + MOB_NUM;
     
@@ -1222,6 +1230,10 @@ b32 AddMobOnClick(UIContext *c, void *data)
     ls_utf32Set(&State.Init->addNewMob.name, ls_utf32Constant(U"+"));
     State.Init->addNewMob.onClick = StartAddingMob;
     
+    //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
+    //      The entire new mob to be undone/redone in a single action.
+    suppressingUndoRecord = FALSE;
+    
     return TRUE;
 }
 
@@ -1251,6 +1263,10 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     //Update the button!
     ls_utf32Set(&State.Init->addNewAlly.name, ls_utf32Constant(U"+"));
     State.Init->addNewAlly.onClick = StartAddingAlly;
+    
+    //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
+    //      The entire new mob to be undone/redone in a single action.
+    suppressingUndoRecord = FALSE;
     
     return TRUE;
 }
@@ -1825,8 +1841,8 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         //NOTE: We hijack the globals to know when to show the buttons.
-        if(distanceFromOld != 0) { ls_uiButton(c, &Page->Undo, 1180, yPos+22, 24, 20); }
-        if(distanceFromNow != 0) { ls_uiButton(c, &Page->Redo, 1220, yPos+22, 24, 20); }
+        if(distanceFromOld != 0) { inputUse |= ls_uiButton(c, &Page->Undo, 1180, yPos+22, 24, 20); }
+        if(distanceFromNow != 0) { inputUse |= ls_uiButton(c, &Page->Redo, 1220, yPos+22, 24, 20); }
     }
     
     
@@ -1903,8 +1919,8 @@ b32 DrawPranaStyle(UIContext *c)
         //Add New
         //TODO: The undo system is recording the adding of info in the textboxes, which
         // Doesn't make sense. We just want to record the complete adding/removing of an entity
-        if(visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNewMob, 196, 715, 25, 20);
-        if(visibleAllies <= ALLY_NUM) ls_uiButton(c, &Page->addNewAlly, 1224, 780-225, 25, 20);
+        if(visibleMobs <= MOB_NUM)    inputUse |= ls_uiButton(c, &Page->addNewMob, 196, 715, 25, 20);
+        if(visibleAllies <= ALLY_NUM) inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, 780-225, 25, 20);
     }
     else
     {
@@ -1973,7 +1989,7 @@ b32 DrawPranaStyle(UIContext *c)
             if(!(Page->isAdding && globalSelectedIndex >= MOB_NUM))
             {
                 ls_uiLabel(c, U"Add Enemy", 30, 720);
-                ls_uiButton(c, &Page->addNewMob, 116, 715, 25, 20);
+                inputUse |= ls_uiButton(c, &Page->addNewMob, 116, 715, 25, 20);
             }
         }
         
@@ -1982,7 +1998,7 @@ b32 DrawPranaStyle(UIContext *c)
             if(!(Page->isAdding && globalSelectedIndex < MOB_NUM))
             {
                 ls_uiLabel(c, U"Add Ally", 157, 720);
-                ls_uiButton(c, &Page->addNewAlly, 235, 715, 25, 20);
+                inputUse |= ls_uiButton(c, &Page->addNewAlly, 235, 715, 25, 20);
             }
         }
     }

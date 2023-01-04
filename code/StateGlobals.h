@@ -37,6 +37,8 @@ static u32 distanceFromNow = 0;
 static b32 undoRequest = FALSE;
 static b32 redoRequest = FALSE;
 
+static b32 suppressingUndoRecord = FALSE;
+
 static Arena globalArena;
 static Arena fileArena;
 static Arena stateArena;
