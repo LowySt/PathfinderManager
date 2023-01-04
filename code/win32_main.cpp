@@ -329,7 +329,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Single block allocation for all Init Pages.
     InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);
     
-    
     //TODO: I had to nerf frame-by-frame initialization because LoadState needs to load the entire
     //      undo chain, even if it was unused. And all at once. Want to try and fix it with multithreading.
     for(u32 i = 0; i < MAX_UNDO_STATES; i++)
@@ -343,14 +342,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
     b32 result = LoadState(uiContext);
-    
-    //NOTE: We initialize the first Undo State to a valid setting
-    //TODO: I've now added serialization of undo-chains, also all undo states are initialized by default,
-    //      So there's no point in trying to Copy the state???
-    //CopyState(uiContext, &State, UndoStates);
-    
-    //TODO: But if I've loaded an undo chain it means it makes sense to load the State with the "current" Undo state
-    CopyState(uiContext, UndoStates + matchingUndoIdx, &State);
     
     RegionTimer frameTime = {};
     

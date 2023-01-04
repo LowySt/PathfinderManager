@@ -181,7 +181,7 @@ struct Order
     
     UIButton  remove;
     
-    s32 compendiumIdx; //TODO: Serialize
+    s32 compendiumIdx;
     s32 ID;
 };
 

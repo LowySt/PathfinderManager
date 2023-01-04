@@ -1901,6 +1901,8 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         //Add New
+        //TODO: The undo system is recording the adding of info in the textboxes, which
+        // Doesn't make sense. We just want to record the complete adding/removing of an entity
         if(visibleMobs <= MOB_NUM) ls_uiButton(c, &Page->addNewMob, 196, 715, 25, 20);
         if(visibleAllies <= ALLY_NUM) ls_uiButton(c, &Page->addNewAlly, 1224, 780-225, 25, 20);
     }
@@ -1964,12 +1966,11 @@ b32 DrawPranaStyle(UIContext *c)
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718, 48, 20);
         
         //Add New
+        //TODO: The undo system is recording the adding of info in the textboxes, which
+        // Doesn't make sense. We just want to record the complete adding/removing of an entity
         if(visibleMobs <= MOB_NUM)
         {
-            if(Page->isAdding && globalSelectedIndex >= MOB_NUM)
-            {
-            }
-            else
+            if(!(Page->isAdding && globalSelectedIndex >= MOB_NUM))
             {
                 ls_uiLabel(c, U"Add Enemy", 30, 720);
                 ls_uiButton(c, &Page->addNewMob, 116, 715, 25, 20);
@@ -1978,10 +1979,7 @@ b32 DrawPranaStyle(UIContext *c)
         
         if(visibleAllies <= ALLY_NUM)
         {
-            if(Page->isAdding && globalSelectedIndex < MOB_NUM)
-            {
-            }
-            else
+            if(!(Page->isAdding && globalSelectedIndex < MOB_NUM))
             {
                 ls_uiLabel(c, U"Add Ally", 157, 720);
                 ls_uiButton(c, &Page->addNewAlly, 235, 715, 25, 20);

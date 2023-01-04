@@ -619,9 +619,10 @@ void SaveState(UIContext *c)
     {
         InitField *f = Page->AllyFields + i;
         
-        ls_bufferAddUTF32(buf, f->editFields[IF_IDX_NAME].text);
-        ls_bufferAddUTF32(buf, f->editFields[IF_IDX_BONUS].text);
-        ls_bufferAddUTF32(buf, f->editFields[IF_IDX_FINAL].text);
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_bufferAddUTF32(buf, f->editFields[j].text); }
+        
+        ls_bufferAddUTF32(buf, f->maxLife.text);
         
         ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
@@ -629,6 +630,8 @@ void SaveState(UIContext *c)
     
     
     //NOTE: Serialize Order
+    //      visibleOrder is calculated from visibleMobs + visibleAllies + PARTY_NUM - orderAdjust,
+    //      instead orderAdjust is not calculatable, so we store that instead
     ls_bufferAddDWord(buf, Page->orderAdjust);
     for(u32 i = 0; i < visibleOrder; i++)
     {
@@ -828,17 +831,15 @@ b32 LoadState(UIContext *cxt)
     {
         InitField *f = Page->AllyFields + i;
         
-        ls_bufferReadIntoUTF32(buf, &f->editFields[IF_IDX_NAME].text);
-        f->editFields[IF_IDX_NAME].viewEndIdx = f->editFields[IF_IDX_NAME].text.len;
-        f->editFields[IF_IDX_NAME].isReadonly  = TRUE;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        {
+            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
+            f->editFields[j].viewEndIdx = f->editFields[j].text.len;
+            f->editFields[j].isReadonly = TRUE;
+        }
         
-        ls_bufferReadIntoUTF32(buf, &f->editFields[IF_IDX_BONUS].text);
-        f->editFields[IF_IDX_BONUS].viewEndIdx = f->editFields[IF_IDX_BONUS].text.len;
-        f->editFields[IF_IDX_BONUS].isReadonly = TRUE;
-        
-        ls_bufferReadIntoUTF32(buf, &f->editFields[IF_IDX_FINAL].text);
-        f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
-        f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
+        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        f->maxLife.viewEndIdx = f->maxLife.text.len;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
