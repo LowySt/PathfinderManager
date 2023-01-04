@@ -21,6 +21,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         { ls_bufferAddUTF32(buf, ally->editFields[j].text); }
         
         ls_bufferAddUTF32(buf, ally->maxLife.text);
+        ls_bufferAddDWord(buf, ally->compendiumIdx);
         ls_bufferAddDWord(buf, ally->ID);
     }
     
@@ -33,6 +34,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         { ls_bufferAddUTF32(buf, mob->editFields[j].text); }
         
         ls_bufferAddUTF32(buf, mob->maxLife.text);
+        ls_bufferAddDWord(buf, mob->compendiumIdx);
         ls_bufferAddDWord(buf, mob->ID);
     }
     
@@ -49,8 +51,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         ls_bufferAddData32(buf, &order->field.lColor, sizeof(Color));
         ls_bufferAddData32(buf, &order->field.rColor, sizeof(Color));
         
-        //TODO:IMPORTANT!!
-        //     SERIALIZE ADDID!!
+        ls_bufferAddDWord(buf, order->compendiumIdx);
         ls_bufferAddDWord(buf, order->ID);
     }
     
@@ -101,6 +102,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
     
     //NOTE: Copy General Info
     ls_bufferAddDWord(buf, curr->inBattle);
+    ls_bufferAddDWord(buf, addID);
 }
 
 void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveVersion)
@@ -122,7 +124,8 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         { ls_bufferReadIntoUTF32(buf, &ally->editFields[j].text); }
         
         ls_bufferReadIntoUTF32(buf, &ally->maxLife.text);
-        ally->ID       = ls_bufferReadDWord(buf);
+        ally->compendiumIdx = ls_bufferReadDWord(buf);
+        ally->ID            = ls_bufferReadDWord(buf);
     }
     
     for(u32 i = 0; i < MOB_NUM; i++)
@@ -133,7 +136,8 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         { ls_bufferReadIntoUTF32(buf, &mob->editFields[j].text); }
         
         ls_bufferReadIntoUTF32(buf, &mob->maxLife.text);
-        mob->ID       = ls_bufferReadDWord(buf);
+        mob->compendiumIdx = ls_bufferReadDWord(buf);
+        mob->ID            = ls_bufferReadDWord(buf);
     }
     
     for(u32 i = 0; i < ORDER_NUM; i++)
@@ -149,9 +153,8 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         ls_bufferReadData32(buf, &order->field.lColor);
         ls_bufferReadData32(buf, &order->field.rColor);
         
-        //TODO:IMPORTANT!!
-        //     SERIALIZE ADDID!!
-        order->ID = ls_bufferReadDWord(buf);
+        order->compendiumIdx = ls_bufferReadDWord(buf);
+        order->ID            = ls_bufferReadDWord(buf);
     }
     
     init->turnsInRound = ls_bufferReadDWord(buf);
@@ -198,6 +201,7 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
     
     //NOTE: Copy General Info
     curr->inBattle = ls_bufferReadDWord(buf);
+    addID          = ls_bufferReadDWord(buf);
 }
 
 //NOTETODO: Easier to add ls_buffer utilities to reserve/remove blocks of data inside the buffer
@@ -211,7 +215,6 @@ buffer ConvertSaveToV4(buffer *buff)
     AssertMsg(fileVersion == 3, "How did we get here? Only v3 saves should arrive here.\n");
     
     ls_bufferAddDWord(out, 4); //NOTE: New fileVersion is 4!!
-    
     
     //NOTE: Setup Constants!
     const u32 MOB_INIT_ENC_FIELDS_V3 = 12;
@@ -320,7 +323,6 @@ buffer ConvertSaveToV4(buffer *buff)
             
         }
     }
-    
     
     // ------------------ //
     //   V4 UNIQUE DATA   //
@@ -533,6 +535,7 @@ void SaveState(UIContext *c)
     buffer *buf = &state;
     
     ls_bufferAddDWord(buf, global_saveVersion);
+    ls_bufferAddDWord(buf, addID);
     ls_bufferAddDWord(buf, State.inBattle);
     ls_bufferAddDWord(buf, State.encounters.numEncounters);
     
@@ -605,6 +608,7 @@ void SaveState(UIContext *c)
         
         ls_bufferAddUTF32(buf, f->maxLife.text);
         
+        ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
     }
     
@@ -619,6 +623,7 @@ void SaveState(UIContext *c)
         ls_bufferAddUTF32(buf, f->editFields[IF_IDX_BONUS].text);
         ls_bufferAddUTF32(buf, f->editFields[IF_IDX_FINAL].text);
         
+        ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
     }
     
@@ -635,11 +640,11 @@ void SaveState(UIContext *c)
         ls_bufferAddDWord(buf,  f->field.minValue);
         ls_bufferAddDouble(buf, f->field.currPos);
         
+        ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
     }
     
     ls_bufferAddDWord(buf, Page->turnsInRound);
-    
     
     //NOTE: Current In Battle
     {
@@ -720,6 +725,7 @@ b32 LoadState(UIContext *cxt)
     u32 fileVersion = ls_bufferReadDWord(buf);
     if(fileVersion != global_saveVersion) { ls_bufferDestroy(buf); return FALSE; }
     
+    addID                          = ls_bufferReadDWord(buf);
     State.inBattle                 = ls_bufferReadDWord(buf);
     State.encounters.numEncounters = ls_bufferReadDWord(buf);
     
@@ -810,7 +816,8 @@ b32 LoadState(UIContext *cxt)
         ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
         f->maxLife.viewEndIdx = f->maxLife.text.len;
         
-        f->ID = ls_bufferReadDWord(buf);
+        f->compendiumIdx = ls_bufferReadDWord(buf);
+        f->ID            = ls_bufferReadDWord(buf);
     }
     
     
@@ -833,7 +840,8 @@ b32 LoadState(UIContext *cxt)
         f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
         f->editFields[IF_IDX_FINAL].isReadonly = TRUE;
         
-        f->ID = ls_bufferReadDWord(buf);
+        f->compendiumIdx = ls_bufferReadDWord(buf);
+        f->ID            = ls_bufferReadDWord(buf);
     }
     
     
@@ -852,8 +860,8 @@ b32 LoadState(UIContext *cxt)
         f->field.minValue = ls_bufferReadDWord(buf);
         f->field.currPos  = ls_bufferReadDouble(buf);
         
+        f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
-        
         
         s32 currVal = ls_uiSliderGetValue(cxt, &f->field);
         
@@ -868,7 +876,6 @@ b32 LoadState(UIContext *cxt)
     }
     
     Page->turnsInRound = ls_bufferReadDWord(buf);
-    
     
     //NOTE: Current In Battle
     {
@@ -885,7 +892,6 @@ b32 LoadState(UIContext *cxt)
         ls_bufferReadIntoUTF32(buf, &Page->RoundCounter.text);
         Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     }
-    
     
     //NOTE: Counters
     for(u32 i = 0; i < COUNTER_NUM; i++)

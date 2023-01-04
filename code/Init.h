@@ -57,7 +57,7 @@ struct tmp_order
     utf32 *name;
     s32    maxLife;
     
-    s32    compendiumIdx; //TODO: Serialize
+    s32    compendiumIdx;
     s32    ID;
 };
 

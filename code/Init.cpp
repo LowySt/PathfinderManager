@@ -1197,7 +1197,6 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
 //      If we allow it, the counter checker WILL HAVE to probably fix C->startIdxInOrder to work.
 b32 AddMobOnClick(UIContext *c, void *data)
 {
-    ls_printf("what\n");
     s32 visibleMobs = State.Init->Mobs.selectedIndex;
     
     if(visibleMobs == MOB_NUM) { return FALSE; }
@@ -1228,7 +1227,6 @@ b32 AddMobOnClick(UIContext *c, void *data)
 
 b32 AddAllyOnClick(UIContext *c, void *data)
 {
-    ls_printf("yea\n");
     s32 visibleAllies = State.Init->Allies.selectedIndex;
     
     if(visibleAllies == ALLY_NUM) { return FALSE; }
@@ -1862,8 +1860,8 @@ b32 DrawPranaStyle(UIContext *c)
         yPos = 678;
         if(Page->isAdding)
         {
-            AssertMsg(globalSelectedIndex >= 0, "Selected Index is not set\n");
-            AssertMsg(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
+            AssertMsgF(globalSelectedIndex >= 0, "Selected Index %d is not set\n", globalSelectedIndex);
+            AssertMsgF(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index %d is out of bounds\n", globalSelectedIndex);
             
             InitField *f = 0;
             if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
@@ -1873,7 +1871,7 @@ b32 DrawPranaStyle(UIContext *c)
         }
         else if(globalSelectedIndex >= 0)
         {
-            AssertMsg(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
+            AssertMsgF(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index %d is out of bounds\n", globalSelectedIndex);
             
             InitField *f = 0;
             if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
