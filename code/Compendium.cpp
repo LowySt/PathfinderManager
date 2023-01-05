@@ -929,11 +929,17 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.y -= offset.h;
         
-        renderAndAlignS(U"Velocit\U000000E0: ");
-        renderAndAlign(page->speed);
+        if(page->speed.len)
+        {
+            renderAndAlignS(U"Velocit\U000000E0: ");
+            renderAndAlign(page->speed);
+        }
         
-        renderAndAlignS(U"Mischia: ");
-        renderAndAlign(page->melee);
+        if(page->melee.len)
+        {
+            renderAndAlignS(U"Mischia: ");
+            renderAndAlign(page->melee);
+        }
         
         if(page->ranged.len)
         {
