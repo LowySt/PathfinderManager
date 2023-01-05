@@ -485,8 +485,7 @@ void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
     
     u32 len = ls_utf8Len(utf8_data, byteLen);
     
-    if(toSet->size < len)
-    { ls_printf("Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", toSet->size, len, byteLen, index); }
+    LogMsgF(toSet->size >= len, "Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", toSet->size, len, byteLen, index);
     
     ls_utf32FromUTF8_t(toSet, utf8_data, len);
     
@@ -560,6 +559,30 @@ void SetMonsterTable(UIContext *c)
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
     return;
+}
+
+void GetEntryAndConvertAC(buffer *buf, utf32 *toSet, u32 index)
+{
+    if(index == 0) { toSet->len = 0; return; } //NOTE: Index zero means no entry
+    
+    buf->cursor = index;
+    
+    s32 byteLen   = ls_bufferPeekWord(buf);
+    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
+    
+    u32 len = ls_utf8Len(utf8_data, byteLen);
+    
+    LogMsgF(toSet->size >= len, "Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", toSet->size, len, byteLen, index);
+    
+    //NOTE: Parse the AC line, and convert every element to the Prana Ruleset
+    
+    utf8 s = ls_utf8Constant((u8 *)utf8_data, byteLen);
+    
+    AssertMsg(FALSE, "Not Implemented Yet\n");
+    
+    //ls_utf32FromUTF8_t(toSet, utf8_data, len);
+    
+    ls_bufferSeekBegin(buf);
 }
 
 void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)

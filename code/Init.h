@@ -101,6 +101,13 @@ enum InitStyle
 
 static InitStyle currentStyle = INIT_STYLE_PRANA;
 
+enum Ruleset
+{
+    RULESET_DEFAULT,
+    RULESET_PRANA
+};
+
+static Ruleset currentRuleset = RULESET_PRANA;
 
 enum InitFieldIndex
 {
