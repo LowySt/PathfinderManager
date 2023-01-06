@@ -131,17 +131,21 @@ enum InitFieldIndex
 
 const u32 MOB_INIT_ENC_FIELDS = IF_IDX_COUNT+1;
 
+struct EncounterInitEntry
+{
+    utf32 fields[MOB_INIT_ENC_FIELDS];
+    s32 compendiumIdx;
+};
+
 struct Encounter
 {
     utf32 name;
     
     u32 numMobs;
-    utf32 mob[MOB_NUM][MOB_INIT_ENC_FIELDS];
+    EncounterInitEntry mob[MOB_NUM];
     
     u32 numAllies;
-    utf32 allyName[ALLY_NUM];
-    utf32 allyBonus[ALLY_NUM];
-    utf32 allyFinal[ALLY_NUM];
+    EncounterInitEntry ally[ALLY_NUM];
     
     utf32 throwerName[THROWER_NUM];
     utf32 throwerHit[THROWER_NUM];

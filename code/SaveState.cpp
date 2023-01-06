@@ -547,20 +547,27 @@ void SaveState(UIContext *c)
         Encounter *curr = &State.encounters.Enc[i];
         
         ls_bufferAddUTF32(buf, curr->name);
-        ls_bufferAddDWord(buf, curr->numMobs);
         
+        ls_bufferAddDWord(buf, curr->numMobs);
         for(u32 j = 0; j < curr->numMobs; j++)
         {
+            EncounterInitEntry *e = curr->mob + j;
+            
             for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
-            { ls_bufferAddUTF32(buf, curr->mob[j][k]); }
+            { ls_bufferAddUTF32(buf, e->fields[k]); }
+            
+            ls_bufferAddDWord(buf, e->compendiumIdx);
         }
         
         ls_bufferAddDWord(buf, curr->numAllies);
         for(u32 j = 0; j < curr->numAllies; j++)
         {
-            ls_bufferAddUTF32(buf, curr->allyName[j]);
-            ls_bufferAddUTF32(buf, curr->allyBonus[j]);
-            ls_bufferAddUTF32(buf, curr->allyFinal[j]);
+            EncounterInitEntry *e = curr->ally + j;
+            
+            for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
+            { ls_bufferAddUTF32(buf, e->fields[k]); }
+            
+            ls_bufferAddDWord(buf, e->compendiumIdx);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
@@ -734,6 +741,9 @@ b32 LoadState(UIContext *cxt)
     
     InitPage *Page = State.Init;
     
+    //TODO: Make Encounter's memory management better.
+    //      They are currently allocated here during loading.
+    //Unserialize Encounters
     for(u32 i = 0; i < State.encounters.numEncounters; i++)
     {
         Encounter *curr = State.encounters.Enc + i;
@@ -743,16 +753,23 @@ b32 LoadState(UIContext *cxt)
         curr->numMobs = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numMobs; j++)
         {
+            EncounterInitEntry *e = curr->mob + j;
+            
             for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
-            { curr->mob[j][k] = ls_bufferReadUTF32(buf); }
+            { e->fields[k] = ls_bufferReadUTF32(buf); }
+            
+            e->compendiumIdx = ls_bufferReadDWord(buf);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
         for(u32 j = 0; j < curr->numAllies; j++)
         {
-            curr->allyName[j]  = ls_bufferReadUTF32(buf);
-            curr->allyBonus[j] = ls_bufferReadUTF32(buf);
-            curr->allyFinal[j] = ls_bufferReadUTF32(buf);
+            EncounterInitEntry *e = curr->ally + j;
+            
+            for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
+            { e->fields[k] = ls_bufferReadUTF32(buf); }
+            
+            e->compendiumIdx = ls_bufferReadDWord(buf);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)

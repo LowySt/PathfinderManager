@@ -1,3 +1,15 @@
+b32 RequestUndoOnClick(UIContext *c, void *data)
+{
+    undoRequest = TRUE;
+    return FALSE;
+}
+
+b32 RequestRedoOnClick(UIContext *c, void *data)
+{
+    redoRequest = TRUE;
+    return FALSE;
+}
+
 Order *GetOrderByID(s32 ID)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
@@ -387,27 +399,31 @@ void OnEncounterSelect(UIContext *c, void *data)
     
     Encounter *e = &State.encounters.Enc[idx-1];
     
-    State.Init->Mobs.selectedIndex = e->numMobs;
+    State.Init->Mobs.selectedIndex   = e->numMobs;
     State.Init->Allies.selectedIndex = e->numAllies;
     
     for(u32 i = 0; i < e->numMobs; i++)
     {
         InitField *m = State.Init->MobFields + i;
+        EncounterInitEntry *entry = e->mob + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_uiTextBoxSet(c, &m->editFields[j], e->mob[i][j]); }
+        { ls_uiTextBoxSet(c, &m->editFields[j], entry->fields[j]); }
         
-        ls_uiTextBoxSet(c, &m->maxLife, e->mob[i][MOB_INIT_ENC_FIELDS-1]);
-        
+        ls_uiTextBoxSet(c, &m->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        m->compendiumIdx = entry->compendiumIdx;
     }
     
     for(u32 i = 0; i < e->numAllies; i++)
     {
         InitField *a = State.Init->AllyFields + i;
+        EncounterInitEntry *entry = e->ally + i;
         
-        ls_uiTextBoxSet(c, &a->editFields[IF_IDX_NAME],  e->allyName[i]);
-        ls_uiTextBoxSet(c, &a->editFields[IF_IDX_BONUS], e->allyBonus[i]);
-        ls_uiTextBoxSet(c, &a->editFields[IF_IDX_FINAL], e->allyFinal[i]);
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_uiTextBoxSet(c, &a->editFields[j], entry->fields[j]); }
+        
+        ls_uiTextBoxSet(c, &a->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        a->compendiumIdx = entry->compendiumIdx;
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -420,8 +436,7 @@ void OnEncounterSelect(UIContext *c, void *data)
         ls_uiTextBoxClear(c, &t->damage);
         ls_uiTextBoxClear(c, &t->dmgRes);
         
-        ls_utf32Set(&t->name.text, e->throwerName[i]);     t->name.viewEndIdx   = t->name.text.len;
-        
+        ls_utf32Set(&t->name.text,   e->throwerName[i]);   t->name.viewEndIdx   = t->name.text.len;
         ls_utf32Set(&t->toHit.text,  e->throwerHit[i]);    t->toHit.viewEndIdx  = t->toHit.text.len;
         ls_utf32Set(&t->damage.text, e->throwerDamage[i]); t->damage.viewEndIdx = t->damage.text.len;
     }
@@ -433,20 +448,8 @@ void OnEncounterSelect(UIContext *c, void *data)
     return;
 }
 
-b32 RequestUndoOnClick(UIContext *c, void *data)
-{
-    undoRequest = TRUE;
-    return FALSE;
-}
-
-b32 RequestRedoOnClick(UIContext *c, void *data)
-{
-    redoRequest = TRUE;
-    return FALSE;
-}
-
-//TODO: Adding a new one while selecting an old one displays an incorrect name in the list box,
-//      But it's only visual. On program restart the names are correct... wtf???
+//TODO: When saving a new encounter, and no encounter is selected (Maybe only after a reset) the names get fucked.
+//      It is only a display bug, and on program startup it is working
 b32 SaveEncounterOnClick(UIContext *c, void *data)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
@@ -463,17 +466,26 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
     
     for(u32 i = 0; i < visibleMobs; i++)
     {
-        for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
-        { ls_utf32Set(&curr->mob[i][j], State.Init->MobFields[i].editFields[j].text); }
+        InitField *currMob = State.Init->MobFields + i;
+        EncounterInitEntry *e = curr->mob + i;
         
-        ls_utf32Set(&curr->mob[i][MOB_INIT_ENC_FIELDS-1], State.Init->MobFields[i].maxLife.text);
+        for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+        { ls_utf32Set(&e->fields[j], currMob->editFields[j].text); }
+        
+        ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currMob->maxLife.text);
+        e->compendiumIdx = currMob->compendiumIdx;
     }
     
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        ls_utf32Set(&curr->allyName[i],  State.Init->AllyFields[i].editFields[IF_IDX_NAME].text);
-        ls_utf32Set(&curr->allyBonus[i], State.Init->AllyFields[i].editFields[IF_IDX_BONUS].text);
-        ls_utf32Set(&curr->allyFinal[i], State.Init->AllyFields[i].editFields[IF_IDX_FINAL].text);
+        InitField *currAlly = State.Init->AllyFields + i;
+        EncounterInitEntry *e = curr->ally + i;
+        
+        for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+        { ls_utf32Set(&e->fields[j], currAlly->editFields[j].text); }
+        
+        ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currAlly->maxLife.text);
+        e->compendiumIdx = currAlly->compendiumIdx;
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -518,14 +530,15 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
         for(u32 i = 0; i < MOB_NUM; i++)
         {
             for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
-            { ls_utf32Free(&selected->mob[i][j]); }
+            { ls_utf32Free(&selected->mob[i].fields[j]); }
+            selected->mob[i].compendiumIdx = -1;
         }
         
         for(u32 i = 0; i < ALLY_NUM; i++)
         {
-            ls_utf32Free(&selected->allyName[i]);
-            ls_utf32Free(&selected->allyBonus[i]);
-            ls_utf32Free(&selected->allyFinal[i]);
+            for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+            { ls_utf32Free(&selected->ally[i].fields[j]); }
+            selected->ally[i].compendiumIdx = -1;
         }
         
         for(u32 i = 0; i < THROWER_NUM; i++)
@@ -1542,7 +1555,6 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         Page->EncounterName.isSingleLine = TRUE;
     }
     
-    
     Page->SaveEnc.style     = UIBUTTON_TEXT;
     Page->SaveEnc.name      = ls_utf32FromUTF32(U"Save");
     Page->SaveEnc.onClick   = SaveEncounterOnClick;
@@ -1811,6 +1823,8 @@ b32 DrawDefaultStyle(UIContext *c)
 
 b32 DrawPranaStyle(UIContext *c)
 {
+    AssertMsg(FALSE, "Fix bug when changing encounters/undos (basically entire program state) and the compendiumIdx is momentarily out of bounds.\n");
+    
     InitPage *Page = State.Init;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
