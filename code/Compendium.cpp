@@ -509,33 +509,6 @@ void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u16 index)
     GetEntryFromBuffer_t(buf, toSet, (u32)index);
 }
 
-//NOTE: We intentionally don't free the utf32 data because at the beginning
-//      Of each DrawCompendium() we clear the compTempArena
-utf32 GetEntryFromBuffer(buffer *buf, u32 index)
-{
-    ls_arenaUse(compTempArena);
-    
-    if(index == 0) { return {}; } //NOTE: Index zero means no entry
-    
-    buf->cursor = index;
-    
-    u32 byteLen   = (u32)ls_bufferPeekWord(buf);
-    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
-    
-    utf32 result = ls_utf32FromUTF8(utf8_data, byteLen);
-    
-    ls_bufferSeekBegin(buf);
-    
-    ls_arenaUse(globalArena);
-    
-    return result;
-}
-
-utf32 GetEntryFromBuffer(buffer *buf, u16 index)
-{
-    return GetEntryFromBuffer(buf, (u32)index);
-}
-
 utf8 GetEntryFromBuffer_8(buffer *buf, u32 index)
 {
     if(index == 0) { return {}; } //NOTE: Index zero means no entry
@@ -1237,8 +1210,7 @@ void DrawMonsterTable(UIContext *c)
 void DrawCompendium(UIContext *c)
 {
     //NOTE: This arena is cleared every frame,
-    //      Because here we store utf32 strings (currently only for the MonsterTable
-    //TODO: Maybe we can find a way to cache the MonsterTable and not allocate every frame?
+    //      Because here we store utf32 strings (currently only for the Search Function)
     ls_arenaClear(compTempArena);
     
     Codex *codex = &compendium.codex;
