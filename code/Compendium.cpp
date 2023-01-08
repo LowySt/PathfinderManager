@@ -254,7 +254,10 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
     
-    //TODO: MaxLife is not set!!
+    s32 hpEndIndex = ls_utf32LeftFind(cachedPage.HP, (u32)' ');
+    AssertMsg(hpEndIndex >= 0, "HP index can't be found\n");
+    
+    ls_uiTextBoxSet(c, &f->maxLife, {cachedPage.HP.data, (u32)hpEndIndex, (u32)hpEndIndex } );
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     f->compendiumIdx = compendium.pageIndex;
     
@@ -270,7 +273,10 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     
-    //TODO: MaxLife is not set!!
+    s32 hpEndIndex = ls_utf32LeftFind(cachedPage.HP, (u32)' ');
+    AssertMsg(hpEndIndex >= 0, "HP index can't be found\n");
+    
+    ls_uiTextBoxSet(c, &f->maxLife, {cachedPage.HP.data, (u32)hpEndIndex, (u32)hpEndIndex } );
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     f->compendiumIdx = compendium.pageIndex;
     

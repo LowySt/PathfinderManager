@@ -215,12 +215,8 @@ b32 CustomMobLifeField(UIContext *c, void *data)
         inputUse |= CustomInitFieldText(c, &dummy);
     };
     
-    if((c->lastFocus != (u64 *)f) && h->isEditing) {
-        //NOTE: We lost focus, let's reset the box
-        //TODO: Should we also reset what was being written?
-        
-        h->isEditing = FALSE;
-    }
+    //NOTE: We lost focus, let's reset the box
+    if((c->lastFocus != (u64 *)f) && h->isEditing) { h->isEditing = FALSE; }
     
     if(LeftClick && !h->isEditing && State.inBattle)
     { 
@@ -527,10 +523,8 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
     
     if(idx != lastIdx)
     {
-        //NOTE: In this case I have to free memory, else I will leak
+        //TODO: In this case I have to free memory, else I will leak
         //TODO: Should I change how Encounters are stored to avoid this annoyance?
-        
-        //TODO: Why don't I clear instead of free??????
         for(u32 i = 0; i < MOB_NUM; i++)
         {
             for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
@@ -776,7 +770,6 @@ b32 SetOnClick(UIContext *c, void *data)
         f->compendiumIdx  = ord[j].compendiumIdx;
         f->ID             = ord[j].ID;
         
-        //TODO: Make this just a reference to Order[i].field.text ??
         if(i == 0) 
         { 
             ls_utf32Set(&Page->Current.text, *ord[j].name); 
@@ -1940,8 +1933,6 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         //Add New
-        //TODO: The undo system is recording the adding of info in the textboxes, which
-        // Doesn't make sense. We just want to record the complete adding/removing of an entity
         if(visibleMobs <= MOB_NUM)    inputUse |= ls_uiButton(c, &Page->addNewMob, 196, 715, 25, 20);
         if(visibleAllies <= ALLY_NUM) inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, 780-225, 25, 20);
     }
@@ -2005,8 +1996,6 @@ b32 DrawPranaStyle(UIContext *c)
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718, 48, 20);
         
         //Add New
-        //TODO: The undo system is recording the adding of info in the textboxes, which
-        // Doesn't make sense. We just want to record the complete adding/removing of an entity
         if(visibleMobs <= MOB_NUM)
         {
             if(!(Page->isAdding && globalSelectedIndex >= MOB_NUM))

@@ -172,7 +172,7 @@ struct InitField
     
     UITextBox maxLife;
     
-    s32 compendiumIdx; //TODO: Serialize
+    s32 compendiumIdx;
     s32 ID;
 };
 
