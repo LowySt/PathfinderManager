@@ -249,6 +249,9 @@ b32 AddAllyOnClick(UIContext *, void *);
 
 b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
 {
+    if(!compendium.isViewingPage)  return FALSE;
+    if(compendium.pageIndex == -1) return FALSE;
+    
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
     
     //TODO: MaxLife is not set!!
@@ -262,6 +265,9 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
 
 b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
 {
+    if(!compendium.isViewingPage)  return FALSE;
+    if(compendium.pageIndex == -1) return FALSE;
+    
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     
     //TODO: MaxLife is not set!!

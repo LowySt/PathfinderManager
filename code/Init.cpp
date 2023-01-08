@@ -1497,12 +1497,11 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->pos.isReadonly   = TRUE;
         f->pos.isSingleLine = TRUE;
         
-        ls_uiButtonInit(&f->remove, UIBUTTON_TEXT, U"X", RemoveOrderOnClick, NULL, (void *)((u64)i));
+        ls_uiButtonInit(&f->remove, UIBUTTON_TEXT, ls_utf32Constant(U"X"), RemoveOrderOnClick, NULL, (void *)((u64)i));
         
         f->compendiumIdx  = -1;
     }
     
-    //TODO: Many of these strings should be constant, rather than allocated.
     for(u32 i = 0; i < COUNTER_NUM; i++)
     {
         Counter *f = Page->Counters + i;
@@ -1514,9 +1513,9 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->rounds.maxLen       = 2;
         f->rounds.isSingleLine = TRUE;
         
-        ls_uiButtonInit(&f->start, UIBUTTON_TEXT, U"Start", StartCounterOnClick, NULL, (void *)f);
-        ls_uiButtonInit(&f->plusOne, UIBUTTON_TEXT, U"+1", PlusOneCounterOnClick, NULL, (void *)f);
-        ls_uiButtonInit(&f->stop, UIBUTTON_TEXT, U"Stop", StopCounterOnClick, NULL, (void *)f);
+        ls_uiButtonInit(&f->start, UIBUTTON_TEXT, ls_utf32Constant(U"Start"), StartCounterOnClick, NULL, (void *)f);
+        ls_uiButtonInit(&f->plusOne, UIBUTTON_TEXT, ls_utf32Constant(U"+1"), PlusOneCounterOnClick, NULL, (void *)f);
+        ls_uiButtonInit(&f->stop, UIBUTTON_TEXT, ls_utf32Constant(U"Stop"), StopCounterOnClick, NULL, (void *)f);
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -1541,7 +1540,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->dmgRes.isReadonly   = TRUE;
         f->dmgRes.isSingleLine = TRUE;
         
-        ls_uiButtonInit(&f->throwDie, UIBUTTON_TEXT, U"Go", ThrowDiceOnClick, NULL, &f->throwDie);
+        ls_uiButtonInit(&f->throwDie, UIBUTTON_TEXT, ls_utf32Constant(U"Go"), ThrowDiceOnClick, NULL, &f->throwDie);
     }
     
     {
@@ -1563,7 +1562,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         Page->GeneralThrower.dmgRes.isReadonly   = TRUE;
         Page->GeneralThrower.dmgRes.isSingleLine = TRUE;
         
-        ls_uiButtonInit(&Page->GeneralThrower.throwDie, UIBUTTON_TEXT, U"Go", ThrowDiceOnClick,
+        ls_uiButtonInit(&Page->GeneralThrower.throwDie, UIBUTTON_TEXT, ls_utf32Constant(U"Go"), ThrowDiceOnClick,
                         NULL, &Page->GeneralThrower.throwDie);
     }
     
@@ -1579,9 +1578,9 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         Page->EncounterName.isSingleLine = TRUE;
     }
     
-    ls_uiButtonInit(&Page->SaveEnc, UIBUTTON_TEXT, U"Save", SaveEncounterOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->RemoveEnc, UIBUTTON_TEXT, U"X", RemoveEncounterOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->AddEnc, UIBUTTON_TEXT, U"<-", AddEncounterOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->SaveEnc, UIBUTTON_TEXT, ls_utf32Constant(U"Save"), SaveEncounterOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->RemoveEnc, UIBUTTON_TEXT, ls_utf32Constant(U"X"), RemoveEncounterOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->AddEnc, UIBUTTON_TEXT, ls_utf32Constant(U"<-"), AddEncounterOnClick, NULL, NULL);
     
     Page->Current.text         = ls_utf32Alloc(16);
     Page->Current.isReadonly   = TRUE;
@@ -1592,12 +1591,12 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     Page->RoundCounter.isReadonly   = TRUE;
     Page->RoundCounter.isSingleLine = TRUE;
     
-    ls_uiButtonInit(&Page->Roll, UIBUTTON_TEXT, U"Roll", RollOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Set, UIBUTTON_TEXT, U"Set", SetOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Reset, UIBUTTON_TEXT, U"Reset", ResetOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Next, UIBUTTON_TEXT, U"Next", NextOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Undo, UIBUTTON_TEXT, U"<-", RequestUndoOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Redo, UIBUTTON_TEXT, U"->", RequestRedoOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Roll, UIBUTTON_TEXT, ls_utf32Constant(U"Roll"), RollOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Set, UIBUTTON_TEXT, ls_utf32Constant(U"Set"), SetOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Reset, UIBUTTON_TEXT, ls_utf32Constant(U"Reset"), ResetOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Next, UIBUTTON_TEXT, ls_utf32Constant(U"Next"), NextOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Undo, UIBUTTON_TEXT, ls_utf32Constant(U"<-"), RequestUndoOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Redo, UIBUTTON_TEXT, ls_utf32Constant(U"->"), RequestRedoOnClick, NULL, NULL);
 }
 
 b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
