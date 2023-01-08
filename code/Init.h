@@ -247,6 +247,7 @@ struct InitPage
     UITextBox  EncounterName;
     UIButton   SaveEnc;
     UIButton   RemoveEnc;
+    UIButton   AddEnc;
     
     UIButton   Undo;
     UIButton   Redo;

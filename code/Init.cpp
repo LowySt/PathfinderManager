@@ -558,6 +558,64 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
     return inputUse;
 }
 
+b32 AddEncounterOnClick(UIContext *c, void *data)
+{
+    AssertMsg(FALSE, "Not implemented yet\n");
+    /*
+    b32 inputUse = FALSE;
+    
+    u32 idx = State.Init->EncounterSel.selectedIndex;
+    if(idx == 0) { return FALSE; }
+    
+    u32 lastIdx = State.Init->EncounterSel.list.count-1;
+    
+    Encounter *selected = State.encounters.Enc + (idx-1);
+    Encounter *last = State.encounters.Enc + (lastIdx-1);
+    
+    //NOTE:      When idx == lastIdx we just decrease the numEncounters
+    //
+    //TODO:      Is it fine to keep the old stuff allocated? ls_unistrSet only allocates if data is null
+    //           So adding new things on it shouldn't leak memory (and it gets reset on program startup anyway)
+    //           Also everything gets overwritten, so there should be no problem of old data hanging.
+    
+    if(idx != lastIdx)
+    {
+        //NOTE: In this case I have to free memory, else I will leak
+        //TODO: Should I change how Encounters are stored to avoid this annoyance?
+        
+        //TODO: Why don't I clear instead of free??????
+        for(u32 i = 0; i < MOB_NUM; i++)
+        {
+            for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+            { ls_utf32Free(&selected->mob[i].fields[j]); }
+            selected->mob[i].compendiumIdx = -1;
+        }
+        
+        for(u32 i = 0; i < ALLY_NUM; i++)
+        {
+            for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+            { ls_utf32Free(&selected->ally[i].fields[j]); }
+            selected->ally[i].compendiumIdx = -1;
+        }
+        
+        for(u32 i = 0; i < THROWER_NUM; i++)
+        {
+            ls_utf32Free(&selected->throwerName[i]);
+            ls_utf32Free(&selected->throwerHit[i]);
+            ls_utf32Free(&selected->throwerDamage[i]);
+        }
+        
+        ls_memcpy(last, selected, sizeof(Encounter));
+    }
+    
+    State.encounters.numEncounters -= 1;
+    ls_uiListBoxRemoveEntry(c, &State.Init->EncounterSel, idx);
+    inputUse |= ResetOnClick(c, NULL);
+return inputUse;
+    */
+    return FALSE;
+}
+
 b32 ThrowDiceOnClick(UIContext *c, void *data)
 {
     UIButton *f = (UIButton *)data;
@@ -1415,31 +1473,22 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         InitFieldInit(c, f, &currID, AllyName[i]);
     }
     
-    Page->addNewMob.style   = UIBUTTON_TEXT;
-    Page->addNewMob.name    = ls_utf32FromUTF32(U"+");
-    Page->addNewMob.onClick = StartAddingMob;
-    Page->addNewMob.data    = 0x0;
-    Page->addNewMob.onHold  = 0x0;
-    
-    Page->addNewAlly.style   = UIBUTTON_TEXT;
-    Page->addNewAlly.name    = ls_utf32FromUTF32(U"+");
-    Page->addNewAlly.onClick = StartAddingAlly;
-    Page->addNewAlly.data    = 0x0;
-    Page->addNewAlly.onHold  = 0x0;
+    ls_uiButtonInit(&Page->addNewMob, UIBUTTON_TEXT, U"+", StartAddingMob, NULL, NULL);
+    ls_uiButtonInit(&Page->addNewAlly, UIBUTTON_TEXT, U"+", StartAddingAlly, NULL, NULL);
     
     for(u32 i = 0; i < ORDER_NUM; i++)
     {
         Order *f = Page->OrderFields + i;
         
-        Color lColor      = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), c->widgetColor);
-        Color rColor      = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor);
-        f->field          = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
+        Color lColor = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), c->widgetColor);
+        Color rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor);
+        f->field     = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
         
         OrderHandler *orderHandler = (OrderHandler *)ls_alloc(sizeof(OrderHandler));
         orderHandler->parent = &f->pos;
         orderHandler->order  = f;
         
-        //TODO: Use a constant increasing number table. No point int allocating data for numbers in the [0-24] range
+        //TODO: Use a constant increasing number table. No point in allocating data for numbers in the [0-24] range
         f->pos.text         = ls_utf32FromInt(i);
         f->pos.viewEndIdx   = f->pos.text.len;
         f->pos.maxLen       = 2;
@@ -1448,11 +1497,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->pos.isReadonly   = TRUE;
         f->pos.isSingleLine = TRUE;
         
-        f->remove.style   = UIBUTTON_TEXT;
-        f->remove.name    = ls_utf32FromUTF32(U"X");
-        f->remove.onClick = RemoveOrderOnClick;
-        f->remove.data    = (void *)((u64)i);
-        f->remove.onHold  = 0x0;
+        ls_uiButtonInit(&f->remove, UIBUTTON_TEXT, U"X", RemoveOrderOnClick, NULL, (void *)((u64)i));
         
         f->compendiumIdx  = -1;
     }
@@ -1469,23 +1514,9 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->rounds.maxLen       = 2;
         f->rounds.isSingleLine = TRUE;
         
-        f->start.style   = UIBUTTON_TEXT;
-        f->start.name    = ls_utf32FromUTF32(U"Start");
-        f->start.onClick = StartCounterOnClick;
-        f->start.data    = (void *)f;
-        f->start.onHold  = 0x0;
-        
-        f->plusOne.style   = UIBUTTON_TEXT;
-        f->plusOne.name    = ls_utf32FromUTF32(U"+1");
-        f->plusOne.onClick = PlusOneCounterOnClick;
-        f->plusOne.data    = (void *)f;
-        f->plusOne.onHold  = 0x0;
-        
-        f->stop.style   = UIBUTTON_TEXT;
-        f->stop.name    = ls_utf32FromUTF32(U"Stop");
-        f->stop.onClick = StopCounterOnClick;
-        f->stop.data    = (void *)f;
-        f->stop.onHold  = 0x0;
+        ls_uiButtonInit(&f->start, UIBUTTON_TEXT, U"Start", StartCounterOnClick, NULL, (void *)f);
+        ls_uiButtonInit(&f->plusOne, UIBUTTON_TEXT, U"+1", PlusOneCounterOnClick, NULL, (void *)f);
+        ls_uiButtonInit(&f->stop, UIBUTTON_TEXT, U"Stop", StopCounterOnClick, NULL, (void *)f);
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -1510,11 +1541,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->dmgRes.isReadonly   = TRUE;
         f->dmgRes.isSingleLine = TRUE;
         
-        f->throwDie.style   = UIBUTTON_TEXT;
-        f->throwDie.name    = ls_utf32FromUTF32(U"Go");
-        f->throwDie.onClick = ThrowDiceOnClick;
-        f->throwDie.data    = &f->throwDie;
-        f->throwDie.onHold  = 0x0;
+        ls_uiButtonInit(&f->throwDie, UIBUTTON_TEXT, U"Go", ThrowDiceOnClick, NULL, &f->throwDie);
     }
     
     {
@@ -1536,17 +1563,14 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         Page->GeneralThrower.dmgRes.isReadonly   = TRUE;
         Page->GeneralThrower.dmgRes.isSingleLine = TRUE;
         
-        Page->GeneralThrower.throwDie.style   = UIBUTTON_TEXT;
-        Page->GeneralThrower.throwDie.name    = ls_utf32FromUTF32(U"Go");
-        Page->GeneralThrower.throwDie.onClick = ThrowDiceOnClick;
-        Page->GeneralThrower.throwDie.data    = &Page->GeneralThrower.throwDie;
-        Page->GeneralThrower.throwDie.onHold  = 0x0;
+        ls_uiButtonInit(&Page->GeneralThrower.throwDie, UIBUTTON_TEXT, U"Go", ThrowDiceOnClick,
+                        NULL, &Page->GeneralThrower.throwDie);
     }
     
     //Encounter Selector
     {
         Page->EncounterSel.onSelect = OnEncounterSelect;
-        Page->EncounterSel.data = &Page->EncounterSel;
+        Page->EncounterSel.data     = &Page->EncounterSel;
         ls_uiListBoxAddEntry(c, &Page->EncounterSel, ls_utf32Constant(NoEncounterStr));
         for(u32 i = 0; i < PState->encounters.numEncounters; i++)
         { ls_uiListBoxAddEntry(c, &Page->EncounterSel, PState->encounters.Enc[i].name); }
@@ -1555,14 +1579,9 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         Page->EncounterName.isSingleLine = TRUE;
     }
     
-    Page->SaveEnc.style     = UIBUTTON_TEXT;
-    Page->SaveEnc.name      = ls_utf32FromUTF32(U"Save");
-    Page->SaveEnc.onClick   = SaveEncounterOnClick;
-    Page->SaveEnc.data      = 0x0;
-    
-    Page->RemoveEnc.style   = UIBUTTON_TEXT;
-    Page->RemoveEnc.name    = ls_utf32FromUTF32(U"X");
-    Page->RemoveEnc.onClick = RemoveEncounterOnClick;
+    ls_uiButtonInit(&Page->SaveEnc, UIBUTTON_TEXT, U"Save", SaveEncounterOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->RemoveEnc, UIBUTTON_TEXT, U"X", RemoveEncounterOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->AddEnc, UIBUTTON_TEXT, U"<-", AddEncounterOnClick, NULL, NULL);
     
     Page->Current.text         = ls_utf32Alloc(16);
     Page->Current.isReadonly   = TRUE;
@@ -1573,35 +1592,12 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     Page->RoundCounter.isReadonly   = TRUE;
     Page->RoundCounter.isSingleLine = TRUE;
     
-    Page->Roll.style    = UIBUTTON_TEXT;
-    Page->Roll.name     = ls_utf32FromUTF32(U"Roll");
-    Page->Roll.onClick  = RollOnClick;
-    Page->Roll.onHold   = 0x0;
-    
-    Page->Set.style     = UIBUTTON_TEXT;
-    Page->Set.name      = ls_utf32FromUTF32(U"Set");
-    Page->Set.onClick   = SetOnClick;
-    Page->Set.onHold    = 0x0;
-    
-    Page->Reset.style   = UIBUTTON_TEXT;
-    Page->Reset.name    = ls_utf32FromUTF32(U"Reset");
-    Page->Reset.onClick = ResetOnClick;
-    Page->Reset.onHold  = 0x0;
-    
-    Page->Next.style    = UIBUTTON_TEXT;
-    Page->Next.name     = ls_utf32FromUTF32(U"Next");
-    Page->Next.onClick  = NextOnClick;
-    Page->Next.onHold   = 0x0;
-    
-    Page->Undo.style    = UIBUTTON_TEXT;
-    Page->Undo.name     = ls_utf32FromUTF32(U"<-");
-    Page->Undo.onClick  = RequestUndoOnClick;
-    Page->Undo.onHold   = 0x0;
-    
-    Page->Redo.style    = UIBUTTON_TEXT;
-    Page->Redo.name     = ls_utf32FromUTF32(U"->");
-    Page->Redo.onClick  = RequestRedoOnClick;
-    Page->Redo.onHold   = 0x0;
+    ls_uiButtonInit(&Page->Roll, UIBUTTON_TEXT, U"Roll", RollOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Set, UIBUTTON_TEXT, U"Set", SetOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Reset, UIBUTTON_TEXT, U"Reset", ResetOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Next, UIBUTTON_TEXT, U"Next", NextOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Undo, UIBUTTON_TEXT, U"<-", RequestUndoOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->Redo, UIBUTTON_TEXT, U"->", RequestRedoOnClick, NULL, NULL);
 }
 
 b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
@@ -1823,7 +1819,7 @@ b32 DrawDefaultStyle(UIContext *c)
 
 b32 DrawPranaStyle(UIContext *c)
 {
-    AssertMsg(FALSE, "Fix bug when changing encounters/undos (basically entire program state) and the compendiumIdx is momentarily out of bounds.\n");
+    //AssertMsg(FALSE, "Fix bug when changing encounters/undos (basically entire program state) and the compendiumIdx is momentarily out of bounds.\n");
     
     InitPage *Page = State.Init;
     
