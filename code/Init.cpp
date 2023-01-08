@@ -391,6 +391,8 @@ b32 ChangeOrder(UIContext *c, void *data)
 b32 ResetOnClick(UIContext *, void *);
 void OnEncounterSelect(UIContext *c, void *data)
 {
+    if(State.inBattle) return;
+    
     UIListBox *b = (UIListBox *)data;
     
     u32 idx = b->selectedIndex;
@@ -505,6 +507,8 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
 
 b32 RemoveEncounterOnClick(UIContext *c, void *data)
 {
+    if(State.inBattle) return FALSE;
+    
     b32 inputUse = FALSE;
     
     u32 idx = State.Init->EncounterSel.selectedIndex;
@@ -558,62 +562,65 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
     return inputUse;
 }
 
+void CheckAndFixCounterTurns();
+void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx);
 b32 AddEncounterOnClick(UIContext *c, void *data)
 {
-    AssertMsg(FALSE, "Not implemented yet\n");
-    /*
-    b32 inputUse = FALSE;
+    UIListBox *b = (UIListBox *)data;
+    u32 idx      = b->selectedIndex;
+    Encounter *e = &State.encounters.Enc[idx-1];
     
-    u32 idx = State.Init->EncounterSel.selectedIndex;
-    if(idx == 0) { return FALSE; }
+    s32 currMobs       = State.Init->Mobs.selectedIndex;
+    s32 currAllies     = State.Init->Allies.selectedIndex;
     
-    u32 lastIdx = State.Init->EncounterSel.list.count-1;
+    s32 newMobsCount   = State.Init->Mobs.selectedIndex + e->numMobs;
+    s32 newAlliesCount = State.Init->Allies.selectedIndex + e->numAllies;
     
-    Encounter *selected = State.encounters.Enc + (idx-1);
-    Encounter *last = State.encounters.Enc + (lastIdx-1);
-    
-    //NOTE:      When idx == lastIdx we just decrease the numEncounters
-    //
-    //TODO:      Is it fine to keep the old stuff allocated? ls_unistrSet only allocates if data is null
-    //           So adding new things on it shouldn't leak memory (and it gets reset on program startup anyway)
-    //           Also everything gets overwritten, so there should be no problem of old data hanging.
-    
-    if(idx != lastIdx)
+    for(u32 i = currMobs, j = 0; i < newMobsCount; i++, j++)
     {
-        //NOTE: In this case I have to free memory, else I will leak
-        //TODO: Should I change how Encounters are stored to avoid this annoyance?
+        InitField *m = State.Init->MobFields + i;
+        EncounterInitEntry *entry = e->mob + j;
         
-        //TODO: Why don't I clear instead of free??????
-        for(u32 i = 0; i < MOB_NUM; i++)
-        {
-            for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
-            { ls_utf32Free(&selected->mob[i].fields[j]); }
-            selected->mob[i].compendiumIdx = -1;
-        }
+        for(u32 k = 0; k < IF_IDX_COUNT; k++)
+        { ls_uiTextBoxSet(c, &m->editFields[k], entry->fields[k]); }
         
-        for(u32 i = 0; i < ALLY_NUM; i++)
-        {
-            for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
-            { ls_utf32Free(&selected->ally[i].fields[j]); }
-            selected->ally[i].compendiumIdx = -1;
-        }
+        ls_uiTextBoxSet(c, &m->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        m->compendiumIdx = entry->compendiumIdx;
+        m->ID            = addID;
         
-        for(u32 i = 0; i < THROWER_NUM; i++)
-        {
-            ls_utf32Free(&selected->throwerName[i]);
-            ls_utf32Free(&selected->throwerHit[i]);
-            ls_utf32Free(&selected->throwerDamage[i]);
-        }
+        State.Init->turnsInRound       += 1;
+        CheckAndFixCounterTurns();
         
-        ls_memcpy(last, selected, sizeof(Encounter));
+        AddToOrder(ls_utf32ToInt(m->maxLife.text), m->editFields[IF_IDX_NAME].text, addID, m->compendiumIdx);
+        
+        State.Init->Mobs.selectedIndex += 1;
+        addID                          += 1;
     }
     
-    State.encounters.numEncounters -= 1;
-    ls_uiListBoxRemoveEntry(c, &State.Init->EncounterSel, idx);
-    inputUse |= ResetOnClick(c, NULL);
-return inputUse;
-    */
-    return FALSE;
+    for(u32 i = currAllies, j = 0; i < newAlliesCount; i++, j++)
+    {
+        InitField *a = State.Init->AllyFields + i;
+        EncounterInitEntry *entry = e->ally + j;
+        
+        for(u32 k = 0; k < IF_IDX_COUNT; k++)
+        { ls_uiTextBoxSet(c, &a->editFields[k], entry->fields[k]); }
+        
+        ls_uiTextBoxSet(c, &a->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        a->compendiumIdx = entry->compendiumIdx;
+        a->ID            = addID;
+        
+        State.Init->turnsInRound         += 1;
+        CheckAndFixCounterTurns();
+        
+        AddToOrder(ls_utf32ToInt(a->maxLife.text), a->editFields[IF_IDX_NAME].text, addID, a->compendiumIdx);
+        
+        State.Init->Allies.selectedIndex += 1;
+        addID                            += 1;
+    }
+    
+    //TODO: I'm not updating throwers. Need to work on this.
+    
+    return TRUE;
 }
 
 b32 ThrowDiceOnClick(UIContext *c, void *data)
@@ -1123,6 +1130,7 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
     exit:
     
     Page->turnsInRound -= 1;
+    AssertMsg(Page->turnsInRound >= 0 && Page->turnsInRound <= 64, "Turns in Round is Fucked\n");
     
     //NOTE: We won't move the 'Current' field if you remove the 'Current' from the order.
     //      Because of that, Counters will be one count extra on the first lap after the remove.
@@ -1266,8 +1274,6 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
     //      we can't reliably re-use them, unless we create a system to dispense Unique IDs.
     //      So for simplicy we are just starting from 1000 and every single Added Init will just the next one.
     //      AddID is reset during ResetOnClick
-    //TODO:IMPORTANT!!
-    //     SERIALIZE ADDID!!
     o->ID = newID;
 }
 
@@ -1580,7 +1586,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     
     ls_uiButtonInit(&Page->SaveEnc, UIBUTTON_TEXT, ls_utf32Constant(U"Save"), SaveEncounterOnClick, NULL, NULL);
     ls_uiButtonInit(&Page->RemoveEnc, UIBUTTON_TEXT, ls_utf32Constant(U"X"), RemoveEncounterOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->AddEnc, UIBUTTON_TEXT, ls_utf32Constant(U"<-"), AddEncounterOnClick, NULL, NULL);
+    ls_uiButtonInit(&Page->AddEnc, UIBUTTON_TEXT, ls_utf32Constant(U"<-"), AddEncounterOnClick, NULL, &Page->EncounterSel);
     
     Page->Current.text         = ls_utf32Alloc(16);
     Page->Current.isReadonly   = TRUE;
@@ -1847,6 +1853,14 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40, 48, 20);
             inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40, 48, 20);
             inputUse |= ls_uiButton(c, &Page->Reset, 616, yPos-40, 48, 20);
+        }
+        else
+        {
+            inputUse |= ls_uiListBox(c, &Page->EncounterSel,  495, yPos, 120, 20, 2);
+            inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22, 44, 20);
+            inputUse |= ls_uiButton(c, &Page->AddEnc, 400, yPos, 24, 20);
+            
+            //AssertMsg(FALSE, "Fix this AddEnc\n");
         }
         
         //NOTE: We hijack the globals to know when to show the buttons.

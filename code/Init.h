@@ -12,9 +12,9 @@ utf32 ConstNumberStrings[32] = { {(u32 *)U"0",1,1} , {(u32 *)U"1",1,1}, {(u32 *)
 
 const u32 PARTY_NUM = 4;
 const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Sigismondo", U"Alice", U"Bruce" };
-const utf32 PartyNameUTF32[PARTY_NUM] = { 
-    {(u32 *)PartyName[0], 5, 5}, 
-    {(u32 *)PartyName[1], 10, 10}, 
+const utf32 PartyNameUTF32[PARTY_NUM] = {
+    {(u32 *)PartyName[0], 5, 5},
+    {(u32 *)PartyName[1], 10, 10},
     {(u32 *)PartyName[2], 5, 5},
     {(u32 *)PartyName[3], 5, 5},
 };
@@ -34,8 +34,8 @@ const char *Enemies[MOB_NUM + 1] = {
 
 
 const u32 ALLY_NUM = 8;
-const char32_t *AllyName[ALLY_NUM] = { U"Ally 1", U"Ally 2", U"Ally 3", U"Ally 4", 
-    U"Ally 5", U"Ally 6", U"Ally 7", U"Ally 8" 
+const char32_t *AllyName[ALLY_NUM] = { U"Ally 1", U"Ally 2", U"Ally 3", U"Ally 4",
+    U"Ally 5", U"Ally 6", U"Ally 7", U"Ally 8"
 };
 
 const char *Allies[ALLY_NUM + 1] = {
@@ -47,7 +47,7 @@ const u32 ORDER_NUM = PARTY_NUM + MOB_NUM + ALLY_NUM;
 const u32 COUNTER_NUM       = 9;
 const u32 DEF_COUNTER_NUM   = 8;
 const u32 PRANA_COUNTER_NUM = 6;
-const char32_t *CounterNames[COUNTER_NUM] = { U"Counter 1", U"Counter 2", U"Counter 3", U"Counter 4", 
+const char32_t *CounterNames[COUNTER_NUM] = { U"Counter 1", U"Counter 2", U"Counter 3", U"Counter 4",
     U"Counter 5", U"Counter 6", U"Counter 7", U"Counter 8", U"Counter 9" };
 
 
@@ -235,7 +235,7 @@ struct InitPage
     UIButton   Next;
     
     Order      OrderFields[ORDER_NUM];
-    u32        turnsInRound;
+    s32        turnsInRound;
     s32        orderAdjust;
     
     UITextBox  RoundCounter;
