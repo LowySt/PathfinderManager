@@ -1488,7 +1488,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         orderHandler->parent = &f->pos;
         orderHandler->order  = f;
         
-        //TODO: Use a constant increasing number table. No point in allocating data for numbers in the [0-24] range
+        //TODO: Cannot use a constant string here, because it HAS to be modifiable to change the order
         f->pos.text         = ls_utf32FromInt(i);
         f->pos.viewEndIdx   = f->pos.text.len;
         f->pos.maxLen       = 2;
