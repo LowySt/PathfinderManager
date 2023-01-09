@@ -811,7 +811,7 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     Page->Mobs.selectedIndex   = 0;
     Page->Allies.selectedIndex = 0;
-    Page->isAdding             = FALSE;
+    State.Init->isAdding             = FALSE;
     globalSelectedIndex        = -1;
     
     State.inBattle = FALSE;
@@ -1215,9 +1215,8 @@ b32 StartAddingMob(UIContext *c, void *data)
     //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
     //      The entire new mob to be undone/redone in a single action.
     suppressingUndoRecord = TRUE;
-    
-    State.Init->isAdding = TRUE;
-    globalSelectedIndex  = State.Init->Mobs.selectedIndex;
+    State.Init->isAdding  = TRUE;
+    globalSelectedIndex   = State.Init->Mobs.selectedIndex;
     
     //Clear The Extra
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
@@ -1236,9 +1235,8 @@ b32 StartAddingAlly(UIContext *c, void *data)
     //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
     //      The entire new mob to be undone/redone in a single action.
     suppressingUndoRecord = TRUE;
-    
-    State.Init->isAdding = TRUE;
-    globalSelectedIndex  = State.Init->Allies.selectedIndex + MOB_NUM;
+    State.Init->isAdding  = TRUE;
+    globalSelectedIndex   = State.Init->Allies.selectedIndex + MOB_NUM;
     
     //Clear The Extra
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
@@ -1293,7 +1291,7 @@ b32 AddMobOnClick(UIContext *c, void *data)
     
     State.Init->Mobs.selectedIndex += 1;
     addID                          += 1;
-    State.Init->isAdding            = FALSE;
+    State.Init->isAdding                  = FALSE;
     globalSelectedIndex             = -1;
     
     //Update the button!
@@ -1327,7 +1325,7 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     
     State.Init->Allies.selectedIndex += 1;
     addID                            += 1;
-    State.Init->isAdding              = FALSE;
+    State.Init->isAdding                    = FALSE;
     globalSelectedIndex               = -1;
     
     //Update the button!
@@ -1658,8 +1656,6 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx)
     
     s32 w = 136;
     
-    InitPage *Page = State.Init;
-    
     s32 x = baseX;
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME],  x         , y, w, 20);
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_BONUS], x + w     , y, 26, 20);
@@ -1817,7 +1813,7 @@ b32 DrawDefaultStyle(UIContext *c)
 
 b32 DrawPranaStyle(UIContext *c)
 {
-    //AssertMsg(FALSE, "Fix bug when changing encounters/undos (basically entire program state) and the compendiumIdx is momentarily out of bounds.\n");
+    //AssertMsg(FALSE, "Fix double printing text when rightcliking on edit fields.\n");
     
     InitPage *Page = State.Init;
     
@@ -1852,8 +1848,6 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiListBox(c, &Page->EncounterSel,  495, yPos, 120, 20, 2);
             inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22, 44, 20);
             inputUse |= ls_uiButton(c, &Page->AddEnc, 400, yPos, 24, 20);
-            
-            //AssertMsg(FALSE, "Fix this AddEnc\n");
         }
         
         //NOTE: We hijack the globals to know when to show the buttons.
@@ -1890,7 +1884,7 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         yPos = 678;
-        if(Page->isAdding)
+        if(State.Init->isAdding)
         {
             AssertMsgF(globalSelectedIndex >= 0, "Selected Index %d is not set\n", globalSelectedIndex);
             AssertMsgF(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index %d is out of bounds\n", globalSelectedIndex);
@@ -1933,8 +1927,17 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         //Add New
-        if(visibleMobs <= MOB_NUM)    inputUse |= ls_uiButton(c, &Page->addNewMob, 196, 715, 25, 20);
-        if(visibleAllies <= ALLY_NUM) inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, 780-225, 25, 20);
+        if(visibleMobs <= MOB_NUM)
+        {
+            if(!(State.Init->isAdding && globalSelectedIndex >= MOB_NUM))
+            { inputUse |= ls_uiButton(c, &Page->addNewMob, 196, 715, 25, 20); }
+        }
+        
+        if(visibleAllies <= ALLY_NUM)
+        {
+            if(!(State.Init->isAdding && globalSelectedIndex < MOB_NUM))
+            { inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, 780-225, 25, 20); }
+        }
     }
     else
     {
@@ -1955,7 +1958,7 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         yPos = 678;
-        if(Page->isAdding)
+        if(State.Init->isAdding)
         {
             AssertMsg(globalSelectedIndex >= 0, "Selected Index is not set\n");
             AssertMsg(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
@@ -1998,7 +2001,7 @@ b32 DrawPranaStyle(UIContext *c)
         //Add New
         if(visibleMobs <= MOB_NUM)
         {
-            if(!(Page->isAdding && globalSelectedIndex >= MOB_NUM))
+            if(!(State.Init->isAdding && globalSelectedIndex >= MOB_NUM))
             {
                 ls_uiLabel(c, U"Add Enemy", 30, 720);
                 inputUse |= ls_uiButton(c, &Page->addNewMob, 116, 715, 25, 20);
@@ -2007,7 +2010,7 @@ b32 DrawPranaStyle(UIContext *c)
         
         if(visibleAllies <= ALLY_NUM)
         {
-            if(!(Page->isAdding && globalSelectedIndex < MOB_NUM))
+            if(!(State.Init->isAdding && globalSelectedIndex < MOB_NUM))
             {
                 ls_uiLabel(c, U"Add Ally", 157, 720);
                 inputUse |= ls_uiButton(c, &Page->addNewAlly, 235, 715, 25, 20);

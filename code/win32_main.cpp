@@ -215,6 +215,14 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     
     //NOTE: Copy General Info
     ToState->inBattle = FromState->inBattle;
+    dest->isAdding = curr->isAdding;
+    
+    //NOTE: Restore state of Add New Buttons
+    ls_utf32Set(&dest->addNewMob.name, curr->addNewMob.name);
+    dest->addNewMob.onClick = curr->addNewMob.onClick;
+    
+    ls_utf32Set(&dest->addNewAlly.name, curr->addNewAlly.name);
+    dest->addNewAlly.onClick = curr->addNewAlly.onClick;
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -416,6 +424,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                     distanceFromOld -= 1;
                     distanceFromNow += 1;
                 }
+                
+                //NOTETODO: All globals that affect the state of the program have to be
+                //          Set to a valid state, otherwise it will not work.
+                globalSelectedIndex = -1;
+                suppressingUndoRecord = FALSE;
             }
             
             if((KeyPress(keyMap::Y) && KeyHeld(keyMap::Control)) || redoRequest)
@@ -432,6 +445,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                     distanceFromOld += 1;
                     distanceFromNow -= 1;
                 }
+                
+                //NOTETODO: All globals that affect the state of the program have to be
+                //          Set to a valid state, otherwise it will not work.
+                globalSelectedIndex = -1;
+                suppressingUndoRecord = FALSE;
             }
             
             //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus

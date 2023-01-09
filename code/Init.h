@@ -214,6 +214,7 @@ struct DiceThrow
 };
 
 s32 globalSelectedIndex = -1;
+//b32 globalIsAdding = FALSE;
 
 struct InitPage
 {
