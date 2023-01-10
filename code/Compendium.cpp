@@ -272,7 +272,8 @@ s32 CalculateHP(utf32 hp, s32 *hpStringIndex)
             s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, (u32)mulLen, (u32)mulLen});
             s32 flatVal  = ls_utf32ToInt({hpExpr.data + plusToken+1, (u32)flatLen, (u32)flatLen});
             
-            finalHP  = dieValue*dieMul + flatVal;
+            //NOTE: The flatVal is multiplied by 2 because the CON bonus is doubled.
+            finalHP  = dieValue*dieMul + (flatVal * 2);
         }
         else if(minusToken != -1)
         {
@@ -282,7 +283,8 @@ s32 CalculateHP(utf32 hp, s32 *hpStringIndex)
             s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, (u32)mulLen, (u32)mulLen});
             s32 flatVal  = ls_utf32ToInt({hpExpr.data + minusToken+1, (u32)flatLen, (u32)flatLen});
             
-            finalHP  = dieValue*dieMul - flatVal;
+            //NOTE: The flatVal is multiplied by 2 because the CON bonus is doubled.
+            finalHP  = dieValue*dieMul - (flatVal * 2);
         }
         else
         {
@@ -628,6 +630,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->AC, page.AC);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP);
