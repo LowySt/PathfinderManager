@@ -721,6 +721,7 @@ b32 SetOnClick(UIContext *c, void *data)
     tmp_order ord[ORDER_NUM] = {};
     u32 idx = 0;
     
+    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
     for(u32 i = 0; i < visibleMobs; i++)
     {
         InitField *f = Page->MobFields + i;
@@ -734,13 +735,14 @@ b32 SetOnClick(UIContext *c, void *data)
         idx += 1;
     }
     
+    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
     for(u32 i = 0; i < visibleAllies; i++)
     {
         InitField *f = Page->AllyFields + i;
         
         ord[idx].init          = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         ord[idx].name          = &f->editFields[IF_IDX_NAME].text;
-        ord[idx].maxLife       = 0;
+        ord[idx].maxLife       = ls_utf32ToInt(f->maxLife.text);
         ord[idx].compendiumIdx = f->compendiumIdx;
         ord[idx].ID            = f->ID;
         
@@ -1250,6 +1252,7 @@ b32 StartAddingAlly(UIContext *c, void *data)
     return FALSE;
 }
 
+//TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
 void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
@@ -1287,11 +1290,12 @@ b32 AddMobOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
+    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
     AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
     
     State.Init->Mobs.selectedIndex += 1;
     addID                          += 1;
-    State.Init->isAdding                  = FALSE;
+    State.Init->isAdding            = FALSE;
     globalSelectedIndex             = -1;
     
     //Update the button!
@@ -1321,11 +1325,12 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
+    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
     AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
     
     State.Init->Allies.selectedIndex += 1;
     addID                            += 1;
-    State.Init->isAdding                    = FALSE;
+    State.Init->isAdding              = FALSE;
     globalSelectedIndex               = -1;
     
     //Update the button!

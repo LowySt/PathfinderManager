@@ -244,9 +244,62 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
     return FALSE;
 }
 
+s32 CalculateHP()
+{
+    s32 hpEndIndex  = ls_utf32LeftFind(cachedPage.HP, (u32)' ');
+    AssertMsg(hpEndIndex >= 0, "HP index can't be found\n");
+    
+    s32 hpExprBegin = ls_utf32LeftFind(cachedPage.HP, (u32)'(') + 1;
+    s32 hpExprLen   = ls_utf32LeftFind(cachedPage.HP, (u32)')') - hpExprBegin;
+    
+    utf32 hpExpr    = {cachedPage.HP.data + hpExprBegin, (u32)hpExprLen, (u32)hpExprLen};
+    
+    s32 dToken      = ls_utf32LeftFind(hpExpr, (u32)'d');
+    s32 plusToken   = ls_utf32LeftFind(hpExpr, (u32)'+');
+    s32 minusToken  = ls_utf32LeftFind(hpExpr, (u32)'-');
+    s32 flatLen     = hpExprLen - plusToken - 1;
+    
+    //NOTE: If the parser fails, we just set the finalHP to -1. The program will not crash
+    //      And the error should be clearly visible.
+    s32 finalHP = -1;
+    if(dToken != -1)
+    {
+        if(plusToken != -1)
+        {
+            s32 mulLen   = plusToken - dToken - 1;
+            
+            s32 dieValue = ls_utf32ToInt({hpExpr.data, (u32)dToken, (u32)dToken});
+            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, (u32)mulLen, (u32)mulLen});
+            s32 flatVal  = ls_utf32ToInt({hpExpr.data + plusToken+1, (u32)flatLen, (u32)flatLen});
+            
+            finalHP  = dieValue*dieMul + flatVal;
+        }
+        else if(minusToken != -1)
+        {
+            s32 mulLen   = minusToken - dToken - 1;
+            
+            s32 dieValue = ls_utf32ToInt({hpExpr.data, (u32)dToken, (u32)dToken});
+            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, (u32)mulLen, (u32)mulLen});
+            s32 flatVal  = ls_utf32ToInt({hpExpr.data + minusToken+1, (u32)flatLen, (u32)flatLen});
+            
+            finalHP  = dieValue*dieMul - flatVal;
+        }
+        else
+        {
+            s32 mulLen   = hpExprLen - dToken - 1;
+            
+            s32 dieValue = ls_utf32ToInt({hpExpr.data, (u32)dToken, (u32)dToken});
+            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, (u32)mulLen, (u32)mulLen});
+            
+            finalHP  = dieValue*dieMul;
+        }
+    }
+    
+    return finalHP;
+}
+
 b32 AddMobOnClick(UIContext *, void *);
 b32 AddAllyOnClick(UIContext *, void *);
-
 b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
 {
     if(!compendium.isViewingPage)  return FALSE;
@@ -254,10 +307,12 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
     
-    s32 hpEndIndex = ls_utf32LeftFind(cachedPage.HP, (u32)' ');
-    AssertMsg(hpEndIndex >= 0, "HP index can't be found\n");
+    s32 finalHP = CalculateHP();
     
-    ls_uiTextBoxSet(c, &f->maxLife, {cachedPage.HP.data, (u32)hpEndIndex, (u32)hpEndIndex } );
+    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
+    ls_utf32FromInt_t(&f->maxLife.text, finalHP);
+    f->maxLife.viewEndIdx = f->maxLife.text.len;
+    
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     f->compendiumIdx = compendium.pageIndex;
     
@@ -273,10 +328,12 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     
-    s32 hpEndIndex = ls_utf32LeftFind(cachedPage.HP, (u32)' ');
-    AssertMsg(hpEndIndex >= 0, "HP index can't be found\n");
+    s32 finalHP = CalculateHP();
     
-    ls_uiTextBoxSet(c, &f->maxLife, {cachedPage.HP.data, (u32)hpEndIndex, (u32)hpEndIndex } );
+    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
+    ls_utf32FromInt_t(&f->maxLife.text, finalHP);
+    f->maxLife.viewEndIdx = f->maxLife.text.len;
+    
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     f->compendiumIdx = compendium.pageIndex;
     
