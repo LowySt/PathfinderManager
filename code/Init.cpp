@@ -1367,9 +1367,9 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     
     f->editFields[IF_IDX_EXTRA].text         = ls_utf32Alloc(16);
     f->editFields[IF_IDX_EXTRA].viewEndIdx   = f->editFields[IF_IDX_EXTRA].text.len;
-    f->editFields[IF_IDX_EXTRA].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_EXTRA].data         = &textHandler[2];
-    f->editFields[IF_IDX_EXTRA].isSingleLine = TRUE;
+    f->editFields[IF_IDX_EXTRA].preInput     = NULL; //CustomInitFieldText;
+    f->editFields[IF_IDX_EXTRA].data         = NULL; //&textHandler[2];
+    f->editFields[IF_IDX_EXTRA].isSingleLine = FALSE;
     
     MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     handler->parent   = &f->maxLife;
@@ -1657,7 +1657,8 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx)
     s32 w = 136;
     
     s32 x = baseX;
-    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME],  x         , y, w, 20);
+    if(globalSelectedIndex != posIdx) { inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME], x, y, w, 20); }
+    else { ls_uiLabel(c, F->editFields[IF_IDX_NAME].text, x+4, y+5); }
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_BONUS], x + w     , y, 26, 20);
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_FINAL], x + w + 26, y, 26, 20);
     
@@ -1813,8 +1814,6 @@ b32 DrawDefaultStyle(UIContext *c)
 
 b32 DrawPranaStyle(UIContext *c)
 {
-    //AssertMsg(FALSE, "Fix double printing text when rightcliking on edit fields.\n");
-    
     InitPage *Page = State.Init;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;

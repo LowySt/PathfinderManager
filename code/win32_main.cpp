@@ -454,7 +454,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
             if(LeftClick && !uiContext->focusWasSetThisFrame)
-            { uiContext->currentFocus = 0; }
+            { 
+                uiContext->currentFocus = 0;
+                
+                //NOTE: Also, we clear the globalSelectedIndex so that we can exit out of detail mob
+                if(!State.Init->isAdding) { globalSelectedIndex = -1; }
+            }
             
             
             //NOTE: Right-Alt Drag, only when nothing is in focus
