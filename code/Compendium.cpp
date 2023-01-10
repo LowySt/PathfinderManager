@@ -244,15 +244,15 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
     return FALSE;
 }
 
-s32 CalculateHP()
+s32 CalculateHP(utf32 hp, s32 *hpStringIndex)
 {
-    s32 hpEndIndex  = ls_utf32LeftFind(cachedPage.HP, (u32)' ');
+    s32 hpEndIndex  = ls_utf32LeftFind(hp, (u32)' '); *hpStringIndex = hpEndIndex;
     AssertMsg(hpEndIndex >= 0, "HP index can't be found\n");
     
-    s32 hpExprBegin = ls_utf32LeftFind(cachedPage.HP, (u32)'(') + 1;
-    s32 hpExprLen   = ls_utf32LeftFind(cachedPage.HP, (u32)')') - hpExprBegin;
+    s32 hpExprBegin = ls_utf32LeftFind(hp, (u32)'(') + 1;
+    s32 hpExprLen   = ls_utf32LeftFind(hp, (u32)')') - hpExprBegin;
     
-    utf32 hpExpr    = {cachedPage.HP.data + hpExprBegin, (u32)hpExprLen, (u32)hpExprLen};
+    utf32 hpExpr    = {hp.data + hpExprBegin, (u32)hpExprLen, (u32)hpExprLen};
     
     s32 dToken      = ls_utf32LeftFind(hpExpr, (u32)'d');
     s32 plusToken   = ls_utf32LeftFind(hpExpr, (u32)'+');
@@ -307,12 +307,7 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
     
-    s32 finalHP = CalculateHP();
-    
-    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
-    ls_utf32FromInt_t(&f->maxLife.text, finalHP);
-    f->maxLife.viewEndIdx = f->maxLife.text.len;
-    
+    ls_uiTextBoxSet(c, &f->maxLife, cachedPage.HP);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     f->compendiumIdx = compendium.pageIndex;
     
@@ -328,12 +323,7 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     
-    s32 finalHP = CalculateHP();
-    
-    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
-    ls_utf32FromInt_t(&f->maxLife.text, finalHP);
-    f->maxLife.viewEndIdx = f->maxLife.text.len;
-    
+    ls_uiTextBoxSet(c, &f->maxLife, cachedPage.HP);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     f->compendiumIdx = compendium.pageIndex;
     
@@ -629,6 +619,9 @@ void GetEntryAndConvertAC(buffer *buf, utf32 *toSet, u32 index)
 
 void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
 {
+    u32 tempUTF32Buffer[256] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 256 };
+    
     Codex *c = &compendium.codex;
     
     cachedPage->pageIndex = viewIndex;
@@ -636,7 +629,16 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->AC, page.AC);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->HP, page.HP);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP);
+    
+    s32 hpStringIndex = 0;
+    s32 finalHP       = CalculateHP(tempString, &hpStringIndex);
+    s32 restLen       = tempString.len - hpStringIndex;
+    
+    ls_utf32FromInt_t(&cachedPage->HP, finalHP);
+    ls_utf32AppendBuffer(&cachedPage->HP, tempString.data + hpStringIndex, restLen);
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ST, page.ST);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI);
