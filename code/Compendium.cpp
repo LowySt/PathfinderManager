@@ -251,8 +251,18 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
 {
     cachedPage->acHasArmor = FALSE;
     
-    s32 acExprBegin = ls_utf32LeftFind(AC, (u32)'(') + 1;
-    s32 acExprLen   = ls_utf32LeftFind(AC, (u32)')') - acExprBegin;
+    s32 acExprBeginIdx = ls_utf32LeftFind(AC, (u32)'(');
+    s32 acExprEndIdx   = ls_utf32LeftFind(AC, (u32)')');
+    
+    if((acExprBeginIdx == -1) || (acExprEndIdx == -1))
+    { 
+        cachedPage->acHasArmor = TRUE;
+        ls_utf32Set(&cachedPage->AC, AC);
+        return;
+    }
+    
+    s32 acExprBegin = acExprBeginIdx + 1;
+    s32 acExprLen   = acExprEndIdx - acExprBegin;
     utf32 acExpr    = { AC.data + acExprBegin, (u32)acExprLen, (u32)acExprLen };
     
     s32 armorBonusIdx  = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Armatura"));
@@ -270,6 +280,13 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     s32 secondValBegin  = firstValEnd + 11;
     s32 secondValEnd    = ls_utf32LeftFind(AC, secondValBegin, (u32)',');
     s32 secondValLen    = secondValEnd - secondValBegin;
+    
+    if((firstValEnd == -1) || (secondValEnd == -1))
+    {
+        cachedPage->acHasArmor = TRUE;
+        ls_utf32Set(&cachedPage->AC, AC);
+        return;
+    }
     
     s32 totAC   = ls_utf32ToInt({AC.data, (u32)firstValEnd, (u32)firstValEnd});
     s32 touchAC = ls_utf32ToInt({AC.data + secondValBegin, (u32)secondValLen, (u32)secondValLen});
@@ -304,12 +321,15 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     if(ls_utf32AreEqual(cachedPage->CON, ls_utf32Constant(U"-")))
     { conBonusNew = 0; conBonusOld = 0; }
     
+    //TODO: Make these not hardcoded like that
     s32 conSaveBegin = 7;
     s32 conSaveEnd   = ls_utf32LeftFind(ST, (u32)',');
     s32 dexSaveBegin = conSaveEnd + 11;
     s32 dexSaveEnd   = ls_utf32LeftFind(ST, dexSaveBegin, (u32)',');
     s32 wisSaveBegin = dexSaveEnd + 10;
     s32 wisSaveEnd   = ls_utf32LeftFind(ST, wisSaveBegin, (u32)';')-1; //NOTE: This might fuck
+    
+    if((conSaveEnd == -1) || (dexSaveEnd == -1)) { ls_utf32Set(&cachedPage->ST, ST); return; }
     
     if(wisSaveEnd < 0) { wisSaveEnd = ST.len-1; }
     
@@ -327,8 +347,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     ls_utf32Clear(&cachedPage->ST);
     ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U"Tempra "));
     
-    if(conSave < 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'-');
-    else            ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    if(conSave >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
     
     ls_utf32FromInt_t(&tmpString, conSave);
     ls_utf32Append(&cachedPage->ST, tmpString);
@@ -336,8 +355,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     
     ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U", Riflessi "));
     
-    if(dexSave < 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'-');
-    else            ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    if(dexSave >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
     
     ls_utf32FromInt_t(&tmpString, dexSave);
     ls_utf32Append(&cachedPage->ST, tmpString);
@@ -345,8 +363,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     
     ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U", Volont\U000000E0 "));
     
-    if(wisSave < 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'-');
-    else            ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    if(wisSave >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
     
     ls_utf32FromInt_t(&tmpString, wisSave);
     ls_utf32Append(&cachedPage->ST, tmpString);
@@ -413,6 +430,40 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
     ls_utf32AppendBuffer(&cachedPage->HP, hp.data + hpEndIndex, restLen);
     
     return;
+}
+
+void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
+{
+    if(ls_utf32AreEqual(BMC, ls_utf32Constant(U"-"))) { ls_utf32Set(&cachedPage->BMC, BMC); return; }
+    
+    s32 endIdx = ls_utf32LeftFind(BMC, (u32)'(');
+    if(endIdx == -1) endIdx = BMC.len - 1;
+    
+    //TODO: Fuck Golarion
+    b32 smallSize = ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscola"));
+    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuta"));
+    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissima"));
+    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscolo"));
+    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuto"));
+    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissimo"));
+    
+    s32 statBonusNew = (smallSize ? ls_utf32ToInt(cachedPage->DEX) : ls_utf32ToInt(cachedPage->STR)) - 10;
+    s32 statBonusOld = s32(statBonusNew / 2);
+    
+    s32 bmcVal = ls_utf32ToInt({BMC.data, (u32)endIdx+1, (u32)endIdx+1});
+    
+    bmcVal = (bmcVal - statBonusOld) + statBonusNew;
+    
+    u32 buff[32] = {};
+    utf32 tmpString = { buff, 32, 32 };
+    
+    ls_utf32Clear(&cachedPage->BMC);
+    
+    if(bmcVal >= 0) ls_utf32AppendChar(&cachedPage->BMC, (u32)'+');
+    
+    ls_utf32FromInt_t(&tmpString, bmcVal);
+    ls_utf32Append(&cachedPage->BMC, tmpString);
+    ls_utf32AppendBuffer(&cachedPage->BMC, BMC.data + endIdx + 1, BMC.len - (endIdx + 1));
 }
 
 b32 AddMobOnClick(UIContext *, void *);
@@ -743,7 +794,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     cachedPage->pageIndex = viewIndex;
     
-    AssertMsg(FALSE, "Fix: Initiative, BMC, DMC, Perception... Use golarion to see each parameter what it affects.\n");
+    //AssertMsg(FALSE, "Fix: Initiative, BMC, DMC, Perception... Use golarion to see each parameter what it affects.\n");
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
@@ -757,6 +808,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
+    GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
     CalculateAndCacheAC(tempString, cachedPage);
@@ -770,9 +822,19 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     CalculateAndCacheST(tempString, cachedPage);
     ls_utf32Clear(&tempString);
     
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC);
+    CalculateAndCacheBMC(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BMC, page.BMC);
+#if 1
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DMC, page.DMC);
+#else
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC);
+    CalculateAndCacheDMC(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+#endif
+    
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->initiative, page.initiative);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI);
@@ -836,9 +898,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
         }
         ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
     }
-    
-    GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->initiative, page.initiative);
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
@@ -1012,7 +1071,9 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         renderAndAlignW(page->type);
         
         if(page->subtype.len)   renderAndAlignW(page->subtype);
+        else                    renderAndAlignWS(U" ");
         if(page->archetype.len) renderAndAlignW(page->archetype);
+        else                    renderAndAlignWS(U" ");
         if(page->size.len)      renderAndAlignW(page->size);
         
         baseR.y -= offset.h;
