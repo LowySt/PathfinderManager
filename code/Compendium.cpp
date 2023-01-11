@@ -2,6 +2,8 @@ struct CachedPageEntry
 {
     s32 pageIndex = -1;
     
+    b32 acHasArmor = FALSE;
+    
     utf32 origin;
     utf32 shortDesc;
     utf32 AC;
@@ -244,9 +246,53 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
     return FALSE;
 }
 
-s32 CalculateHP(utf32 hp, s32 *hpStringIndex)
+void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
 {
-    s32 hpEndIndex  = ls_utf32LeftFind(hp, (u32)' '); *hpStringIndex = hpEndIndex;
+    cachedPage->acHasArmor = FALSE;
+    
+    s32 acExprBegin = ls_utf32LeftFind(AC, (u32)'(') + 1;
+    s32 acExprLen   = ls_utf32LeftFind(AC, (u32)')') - acExprBegin;
+    utf32 acExpr    = { AC.data + acExprBegin, (u32)acExprLen, (u32)acExprLen };
+    
+    s32 armorBonusIdx  = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Armatura"));
+    s32 shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Scudo"));
+    
+    if((armorBonusIdx != -1) || (shieldBonusIdx != -1))
+    {
+        cachedPage->acHasArmor = TRUE;
+        ls_utf32Set(&cachedPage->AC, AC);
+        return;
+    }
+    
+    //TODO: I don't really like these hardcoded offsets, would prefer to have a LeftFindNumeric() function
+    s32 firstValEnd     = ls_utf32LeftFind(AC, (u32)',');
+    s32 secondValBegin  = firstValEnd + 11;
+    s32 secondValEnd    = ls_utf32LeftFind(AC, secondValBegin, (u32)',');
+    s32 secondValLen    = secondValEnd - secondValBegin;
+    
+    s32 totAC   = ls_utf32ToInt({AC.data, (u32)firstValEnd, (u32)firstValEnd});
+    s32 touchAC = ls_utf32ToInt({AC.data + secondValBegin, (u32)secondValLen, (u32)secondValLen});
+    
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
+    s32 dexBonusOld = s32(dexBonusNew / 2);
+    
+    totAC   = (totAC   - dexBonusOld) + dexBonusNew;
+    touchAC = (touchAC - dexBonusOld) + dexBonusNew;
+    
+    u32 buff[32] = {};
+    utf32 tmpString = { buff, 32, 32 };
+    
+    ls_utf32Clear(&cachedPage->AC);
+    ls_utf32FromInt_t(&cachedPage->AC, totAC);
+    ls_utf32Append(&cachedPage->AC, ls_utf32Constant(U", contatto "));
+    ls_utf32FromInt_t(&tmpString, touchAC);
+    ls_utf32Append(&cachedPage->AC, tmpString);
+    ls_utf32Append(&cachedPage->AC, {AC.data + secondValEnd, AC.len - secondValEnd, AC.len - secondValEnd});
+}
+
+void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
+{
+    s32 hpEndIndex  = ls_utf32LeftFind(hp, (u32)' ');
     AssertMsg(hpEndIndex >= 0, "HP index can't be found\n");
     
     s32 hpExprBegin = ls_utf32LeftFind(hp, (u32)'(') + 1;
@@ -297,7 +343,11 @@ s32 CalculateHP(utf32 hp, s32 *hpStringIndex)
         }
     }
     
-    return finalHP;
+    s32 restLen       = hp.len - hpEndIndex;
+    ls_utf32FromInt_t(&cachedPage->HP, finalHP);
+    ls_utf32AppendBuffer(&cachedPage->HP, hp.data + hpEndIndex, restLen);
+    
+    return;
 }
 
 b32 AddMobOnClick(UIContext *, void *);
@@ -628,19 +678,33 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     cachedPage->pageIndex = viewIndex;
     
+    //NOTE: Everything tries to be ordered like the struct, to be organized
+    //      But I need to have these stats earlier because other paramaters depend on them
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->INT, page.INT);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BMC, page.BMC);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DMC, page.DMC);
+    
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
     
+#if 1
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
+    CalculateAndCacheAC(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+#else
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->AC, page.AC);
+#endif
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP);
-    
-    s32 hpStringIndex = 0;
-    s32 finalHP       = CalculateHP(tempString, &hpStringIndex);
-    s32 restLen       = tempString.len - hpStringIndex;
-    
-    ls_utf32FromInt_t(&cachedPage->HP, finalHP);
-    ls_utf32AppendBuffer(&cachedPage->HP, tempString.data + hpStringIndex, restLen);
+    CalculateAndCacheHP(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ST, page.ST);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
@@ -770,15 +834,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->speed, page.speed);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->INT, page.INT);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BMC, page.BMC);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DMC, page.DMC);
     
     if(page.talents[0])
     {
@@ -937,8 +992,17 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.y -= offset.h;
         
-        renderAndAlignS(U"CA: ");
-        renderAndAlign(page->AC);
+        if(page->acHasArmor == TRUE)
+        {
+            c->textColor = RGB(0xCC, 0x22, 0x22);
+            renderAndAlignS(U"CA: ");
+            renderAndAlign(page->AC);
+            c->textColor = RGBg(0xAA);
+        }
+        else {
+            renderAndAlignS(U"CA: ");
+            renderAndAlign(page->AC);
+        }
         
         renderAndAlignS(U"PF: ");
         renderAndAlign(page->HP);
