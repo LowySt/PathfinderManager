@@ -246,6 +246,7 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
     return FALSE;
 }
 
+//TODO: What about Deviation being affected by some things?
 void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
 {
     cachedPage->acHasArmor = FALSE;
@@ -288,6 +289,70 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     ls_utf32FromInt_t(&tmpString, touchAC);
     ls_utf32Append(&cachedPage->AC, tmpString);
     ls_utf32Append(&cachedPage->AC, {AC.data + secondValEnd, AC.len - secondValEnd, AC.len - secondValEnd});
+}
+
+void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
+{
+    s32 conBonusNew = ls_utf32ToInt(cachedPage->CON) - 10;
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
+    s32 wisBonusNew = ls_utf32ToInt(cachedPage->WIS) - 10;
+    s32 conBonusOld = s32(conBonusNew / 2);
+    s32 dexBonusOld = s32(dexBonusNew / 2);
+    s32 wisBonusOld = s32(wisBonusNew / 2);
+    
+    //NOTE: Fix for Constructs
+    if(ls_utf32AreEqual(cachedPage->CON, ls_utf32Constant(U"-")))
+    { conBonusNew = 0; conBonusOld = 0; }
+    
+    s32 conSaveBegin = 7;
+    s32 conSaveEnd   = ls_utf32LeftFind(ST, (u32)',');
+    s32 dexSaveBegin = conSaveEnd + 11;
+    s32 dexSaveEnd   = ls_utf32LeftFind(ST, dexSaveBegin, (u32)',');
+    s32 wisSaveBegin = dexSaveEnd + 10;
+    s32 wisSaveEnd   = ls_utf32LeftFind(ST, wisSaveBegin, (u32)';')-1; //NOTE: This might fuck
+    
+    if(wisSaveEnd < 0) { wisSaveEnd = ST.len-1; }
+    
+    s32 conSave = ls_utf32ToInt({ST.data + conSaveBegin, (u32)conSaveEnd - conSaveBegin, (u32)conSaveEnd - conSaveBegin});
+    s32 dexSave = ls_utf32ToInt({ST.data + dexSaveBegin, (u32)dexSaveEnd - dexSaveBegin, (u32)dexSaveEnd - dexSaveBegin});
+    s32 wisSave = ls_utf32ToInt({ST.data + wisSaveBegin, (u32)wisSaveEnd - wisSaveBegin+1, (u32)wisSaveEnd - wisSaveBegin+1});
+    
+    conSave = (conSave - conBonusOld) + conBonusNew;
+    dexSave = (dexSave - dexBonusOld) + dexBonusNew;
+    wisSave = (wisSave - wisBonusOld) + wisBonusNew;
+    
+    u32 buff[32] = {};
+    utf32 tmpString = { buff, 32, 32 };
+    
+    ls_utf32Clear(&cachedPage->ST);
+    ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U"Tempra "));
+    
+    if(conSave < 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'-');
+    else            ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    
+    ls_utf32FromInt_t(&tmpString, conSave);
+    ls_utf32Append(&cachedPage->ST, tmpString);
+    ls_utf32Clear(&tmpString);
+    
+    ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U", Riflessi "));
+    
+    if(dexSave < 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'-');
+    else            ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    
+    ls_utf32FromInt_t(&tmpString, dexSave);
+    ls_utf32Append(&cachedPage->ST, tmpString);
+    ls_utf32Clear(&tmpString);
+    
+    ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U", Volont\U000000E0 "));
+    
+    if(wisSave < 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'-');
+    else            ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    
+    ls_utf32FromInt_t(&tmpString, wisSave);
+    ls_utf32Append(&cachedPage->ST, tmpString);
+    ls_utf32Clear(&tmpString);
+    
+    ls_utf32AppendBuffer(&cachedPage->ST, ST.data + wisSaveEnd+1, ST.len - (wisSaveEnd+1));
 }
 
 void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
@@ -678,6 +743,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     cachedPage->pageIndex = viewIndex;
     
+    AssertMsg(FALSE, "Fix: Initiative, BMC, DMC, Perception... Use golarion to see each parameter what it affects.\n");
+    
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR);
@@ -687,26 +754,26 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BMC, page.BMC);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DMC, page.DMC);
-    
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
     
-#if 1
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
     CalculateAndCacheAC(tempString, cachedPage);
     ls_utf32Clear(&tempString);
-#else
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->AC, page.AC);
-#endif
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP);
     CalculateAndCacheHP(tempString, cachedPage);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ST, page.ST);
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST);
+    CalculateAndCacheST(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BMC, page.BMC);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DMC, page.DMC);
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity);
@@ -719,10 +786,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
     
+    ls_utf32Clear(&cachedPage->specials);
     if(page.specials[0])
     {
-        ls_utf32Clear(&cachedPage->specials);
-        
         GetEntryFromBuffer_t(&c->specials, &cachedPage->specials, page.specials[0]);
         u32 i = 1;
         while(page.specials[i] && i < 24)
@@ -743,10 +809,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment);
     GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type);
     
+    ls_utf32Clear(&cachedPage->subtype);
     if(page.subtype[0])
     {
-        ls_utf32Clear(&cachedPage->subtype);
-        
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U" ("));
         AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, NULL, page.subtype[0]);
         u32 i = 1;
@@ -758,10 +823,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
     }
     
+    ls_utf32Clear(&cachedPage->archetype);
     if(page.archetype[0])
     {
-        ls_utf32Clear(&cachedPage->archetype);
-        
         ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
         AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
         u32 i = 1;
@@ -776,10 +840,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->initiative, page.initiative);
     
+    ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
     {
-        ls_utf32Clear(&cachedPage->senses);
-        
         GetEntryFromBuffer_t(&c->senses, &cachedPage->senses, page.senses[0]);
         u32 i = 1;
         while(page.senses[i] && i < 8)
@@ -792,10 +855,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception);
     GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura);
     
+    ls_utf32Clear(&cachedPage->immunities);
     if(page.immunities[0])
     {
-        ls_utf32Clear(&cachedPage->immunities);
-        
         GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0]);
         u32 i = 1;
         while(page.immunities[i] && i < 16)
@@ -805,10 +867,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
         }
     }
     
+    ls_utf32Clear(&cachedPage->resistances);
     if(page.resistances[0])
     {
-        ls_utf32Clear(&cachedPage->resistances);
-        
         GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0]);
         u32 i = 1;
         while(page.resistances[i] && i < 16)
@@ -818,10 +879,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
         }
     }
     
+    ls_utf32Clear(&cachedPage->weaknesses);
     if(page.weaknesses[0])
     {
-        ls_utf32Clear(&cachedPage->weaknesses);
-        
         GetEntryFromBuffer_t(&c->weaknesses, &cachedPage->weaknesses, page.weaknesses[0]);
         u32 i = 1;
         while(page.weaknesses[i] && i < 16)
@@ -835,10 +895,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach);
     
+    ls_utf32Clear(&cachedPage->talents);
     if(page.talents[0])
     {
-        ls_utf32Clear(&cachedPage->talents);
-        
         GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0]);
         u32 i = 1;
         while(page.talents[i] && i < 24)
@@ -848,10 +907,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
         }
     }
     
+    ls_utf32Clear(&cachedPage->skills);
     if(page.skills[0])
     {
-        ls_utf32Clear(&cachedPage->skills);
-        
         GetEntryFromBuffer_t(&c->skills, &cachedPage->skills, page.skills[0]);
         u32 i = 1;
         while(page.skills[i] && i < 24)
@@ -861,10 +919,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
         }
     }
     
+    ls_utf32Clear(&cachedPage->languages);
     if(page.languages[0])
     {
-        ls_utf32Clear(&cachedPage->languages);
-        
         GetEntryFromBuffer_t(&c->languages, &cachedPage->languages, page.languages[0]);
         u32 i = 1;
         while(page.languages[i] && i < 24)
@@ -877,6 +934,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment);
 }
 
+//TODO: Make Certain Fields modifiable directly??
 s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW, s32 minY)
 {
     //NOTE: Used to adjust the next line position when changing font size, because
@@ -1292,6 +1350,7 @@ void DrawMonsterTable(UIContext *c)
     s32 endI   = startI+36 < compendium.viewIndices.count ? startI+36 : compendium.viewIndices.count;
     endI       = endI < codex->pages.count ? endI : codex->pages.count;
     
+    //TODO: BUG. Wrong index when Selecting, Searching, Selecting.
     for(s32 i = startI; i < endI; i++)
     {
         PageEntry entry = codex->pages[compendium.viewIndices[i]];
