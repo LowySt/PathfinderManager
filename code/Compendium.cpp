@@ -437,7 +437,7 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     if(ls_utf32AreEqual(BMC, ls_utf32Constant(U"-"))) { ls_utf32Set(&cachedPage->BMC, BMC); return; }
     
     s32 endIdx = ls_utf32LeftFind(BMC, (u32)'(');
-    if(endIdx == -1) endIdx = BMC.len - 1;
+    if(endIdx == -1) endIdx = BMC.len;
     
     //TODO: Fuck Golarion
     b32 smallSize = ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscola"));
@@ -450,7 +450,7 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     s32 statBonusNew = (smallSize ? ls_utf32ToInt(cachedPage->DEX) : ls_utf32ToInt(cachedPage->STR)) - 10;
     s32 statBonusOld = s32(statBonusNew / 2);
     
-    s32 bmcVal = ls_utf32ToInt({BMC.data, (u32)endIdx+1, (u32)endIdx+1});
+    s32 bmcVal = ls_utf32ToInt({BMC.data, (u32)endIdx, (u32)endIdx});
     
     bmcVal = (bmcVal - statBonusOld) + statBonusNew;
     
@@ -463,7 +463,37 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     
     ls_utf32FromInt_t(&tmpString, bmcVal);
     ls_utf32Append(&cachedPage->BMC, tmpString);
-    ls_utf32AppendBuffer(&cachedPage->BMC, BMC.data + endIdx + 1, BMC.len - (endIdx + 1));
+    ls_utf32AppendChar(&cachedPage->BMC, (u32)' ');
+    ls_utf32AppendBuffer(&cachedPage->BMC, BMC.data + endIdx, BMC.len - endIdx);
+}
+
+void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
+{
+    if(ls_utf32AreEqual(DMC, ls_utf32Constant(U"-"))) { ls_utf32Set(&cachedPage->DMC, DMC); return; }
+    
+    s32 endIdx = ls_utf32LeftFind(DMC, (u32)'(');
+    if(endIdx == -1) endIdx = DMC.len;
+    
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
+    s32 dexBonusOld = s32(dexBonusNew / 2);
+    s32 strBonusOld = s32(strBonusNew / 2);
+    
+    s32 dmcVal = ls_utf32ToInt({DMC.data, (u32)endIdx, (u32)endIdx});
+    
+    dmcVal = (dmcVal - dexBonusOld - strBonusOld) + dexBonusNew + strBonusNew;
+    
+    u32 buff[32] = {};
+    utf32 tmpString = { buff, 32, 32 };
+    
+    ls_utf32Clear(&cachedPage->DMC);
+    
+    if(dmcVal >= 0) ls_utf32AppendChar(&cachedPage->DMC, (u32)'+');
+    
+    ls_utf32FromInt_t(&tmpString, dmcVal);
+    ls_utf32Append(&cachedPage->DMC, tmpString);
+    ls_utf32AppendChar(&cachedPage->DMC, (u32)' ');
+    ls_utf32AppendBuffer(&cachedPage->DMC, DMC.data + endIdx, DMC.len - endIdx);
 }
 
 b32 AddMobOnClick(UIContext *, void *);
@@ -794,7 +824,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     cachedPage->pageIndex = viewIndex;
     
-    //AssertMsg(FALSE, "Fix: Initiative, BMC, DMC, Perception... Use golarion to see each parameter what it affects.\n");
+    AssertMsg(FALSE, "Fix: Initiative, BMC, DMC, Perception... Use golarion to see each parameter what it affects.\n");
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
@@ -826,13 +856,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     CalculateAndCacheBMC(tempString, cachedPage);
     ls_utf32Clear(&tempString);
     
-#if 1
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DMC, page.DMC);
-#else
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC);
     CalculateAndCacheDMC(tempString, cachedPage);
     ls_utf32Clear(&tempString);
-#endif
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->initiative, page.initiative);
     
