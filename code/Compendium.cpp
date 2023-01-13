@@ -496,6 +496,150 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
     ls_utf32AppendBuffer(&cachedPage->DMC, DMC.data + endIdx, DMC.len - endIdx);
 }
 
+void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
+{
+    //TODO: Fix cases like +12 (+99 Maremma Maiala)
+    //      Those cases trip the M detection, so we need a first pass to make sure the M isn't between
+    //      A couple of parentheses.
+    
+    if(Init.len == 0) { ls_utf32Set(&cachedPage->initiative, Init); return; }
+    
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
+    s32 dexBonusOld = s32(dexBonusNew / 2);
+    
+    s32 multiToken  = ls_utf32LeftFind(Init, (u32)'/');
+    s32 mithicToken = ls_utf32LeftFind(Init, (u32)'M');
+    
+    s32 commaIdx = ls_utf32LeftFind(Init, (u32)',');
+    s32 semiIdx  = ls_utf32LeftFind(Init, (u32)';');
+    s32 spaceIdx = ls_utf32LeftFind(Init, (u32)' ');
+    
+    s32 endIdx = commaIdx;
+    if(commaIdx == -1) 
+    { 
+        endIdx = semiIdx;
+        
+        if(semiIdx == -1)
+        {
+            endIdx = spaceIdx;
+            
+            if(spaceIdx == -1)
+            { 
+                endIdx = Init.len;
+            }
+        }
+    }
+    
+    u32 buff[32] = {};
+    utf32 tmpString = { buff, 32, 32 };
+    ls_utf32Clear(&cachedPage->initiative);
+    
+    s32 initOne = -999;
+    s32 initTwo = -999;
+    if(multiToken != -1)
+    {
+        if(mithicToken != -1)
+        {
+            if(mithicToken < multiToken) // +16M/-4, ...
+            {
+                s32 twoLen  = endIdx - multiToken - 1;
+                
+                initOne = ls_utf32ToInt({Init.data, (u32)mithicToken, (u32)mithicToken});
+                initTwo = ls_utf32ToInt({Init.data + multiToken + 1, (u32)twoLen, (u32)twoLen});
+                initOne = (initOne - dexBonusOld) + dexBonusNew;
+                initTwo = (initTwo - dexBonusOld) + dexBonusNew;
+                
+                if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
+                ls_utf32FromInt_t(&tmpString, initOne);
+                ls_utf32Append(&cachedPage->initiative, tmpString);
+                ls_utf32Clear(&tmpString);
+                ls_utf32AppendChar(&cachedPage->initiative, (u32)'M');
+                ls_utf32AppendChar(&cachedPage->initiative, (u32)'/');
+                if(initTwo >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
+                ls_utf32FromInt_t(&tmpString, initTwo);
+                ls_utf32Append(&cachedPage->initiative, tmpString);
+                ls_utf32AppendBuffer(&cachedPage->initiative, Init.data + endIdx, Init.len - endIdx);
+                return;
+            }
+            else // +23/+3M ...
+            {
+                s32 twoLen  = mithicToken - multiToken - 1;
+                
+                initOne = ls_utf32ToInt({Init.data, (u32)multiToken, (u32)multiToken});
+                initTwo = ls_utf32ToInt({Init.data + multiToken + 1, (u32)twoLen, (u32)twoLen});
+                initOne = (initOne - dexBonusOld) + dexBonusNew;
+                initTwo = (initTwo - dexBonusOld) + dexBonusNew;
+                
+                if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
+                ls_utf32FromInt_t(&tmpString, initOne);
+                ls_utf32Append(&cachedPage->initiative, tmpString);
+                ls_utf32Clear(&tmpString);
+                ls_utf32AppendChar(&cachedPage->initiative, (u32)'/');
+                if(initTwo >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
+                ls_utf32FromInt_t(&tmpString, initTwo);
+                ls_utf32Append(&cachedPage->initiative, tmpString);
+                ls_utf32AppendChar(&cachedPage->initiative, (u32)'M');
+                ls_utf32AppendBuffer(&cachedPage->initiative, Init.data + endIdx, Init.len - endIdx);
+                
+                return;
+            }
+        }
+        else // +12/+2,  ...
+        {
+            s32 twoLen  = endIdx - multiToken - 1;
+            
+            initOne = ls_utf32ToInt({Init.data, (u32)multiToken, (u32)multiToken});
+            initTwo = ls_utf32ToInt({Init.data + multiToken + 1, (u32)twoLen, (u32)twoLen});
+            initOne = (initOne - dexBonusOld) + dexBonusNew;
+            initTwo = (initTwo - dexBonusOld) + dexBonusNew;
+            
+            if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
+            ls_utf32FromInt_t(&tmpString, initOne);
+            ls_utf32Append(&cachedPage->initiative, tmpString);
+            ls_utf32Clear(&tmpString);
+            ls_utf32AppendChar(&cachedPage->initiative, (u32)'/');
+            if(initTwo >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
+            ls_utf32FromInt_t(&tmpString, initTwo);
+            ls_utf32Append(&cachedPage->initiative, tmpString);
+            ls_utf32AppendBuffer(&cachedPage->initiative, Init.data + endIdx, Init.len - endIdx);
+            
+            return;
+        }
+    }
+    else
+    {
+        if(mithicToken != -1) // +23M ...
+        {
+            initOne = ls_utf32ToInt({Init.data, (u32)mithicToken, (u32)mithicToken});
+            initOne = (initOne - dexBonusOld) + dexBonusNew;
+            
+            if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
+            ls_utf32FromInt_t(&tmpString, initOne);
+            ls_utf32Append(&cachedPage->initiative, tmpString);
+            ls_utf32AppendChar(&cachedPage->initiative, (u32)'M');
+            ls_utf32AppendBuffer(&cachedPage->initiative, Init.data + endIdx, Init.len - endIdx);
+            
+            return;
+        }
+        else // +12 ...
+        {
+            initOne = ls_utf32ToInt({Init.data, (u32)endIdx, (u32)endIdx});
+            initOne = (initOne - dexBonusOld) + dexBonusNew;
+            
+            if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
+            ls_utf32FromInt_t(&tmpString, initOne);
+            ls_utf32Append(&cachedPage->initiative, tmpString);
+            ls_utf32AppendBuffer(&cachedPage->initiative, Init.data + endIdx, Init.len - endIdx);
+            
+            return;
+        }
+    }
+    
+    LogMsg(FALSE, "Missed case of initiative.\n");
+    ls_utf32Set(&cachedPage->initiative, Init);
+    return;
+}
+
 b32 AddMobOnClick(UIContext *, void *);
 b32 AddAllyOnClick(UIContext *, void *);
 b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
@@ -824,7 +968,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     cachedPage->pageIndex = viewIndex;
     
-    AssertMsg(FALSE, "Fix: Initiative, BMC, DMC, Perception... Use golarion to see each parameter what it affects.\n");
+    //AssertMsg(FALSE, "Fix: Initiative, BMC, DMC, Perception... Use golarion to see each parameter what it affects.\n");
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
@@ -860,7 +1004,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     CalculateAndCacheDMC(tempString, cachedPage);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->initiative, page.initiative);
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative);
+    CalculateAndCacheInitiative(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI);
@@ -1111,8 +1257,17 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         renderAndAlignS(U"Sensi: ");
         if(page->senses.len) renderAndAlignW(page->senses);
         
-        offset = ls_uiLabelLayout(c, U"Percezione ", alignR); alignR.x = offset.x;
-        renderAndAlign(page->perception);
+        //TODO: This breaks when Perception starts too close to the limit line,
+        //      To be fixed the layout system has to use a 6 point bound, rather than just 4 points
+        //      So that we have a minimumX and a baseX, to know where to position the newline. @NewLayout
+        
+        //TODO: This is because the hypergol parser will miss Perception, if the golarion input is not perfect.
+        if(page->perception.len)
+        {
+            offset = ls_uiLabelLayout(c, U"Percezione ", alignR); alignR.x = offset.x;
+            renderAndAlign(page->perception);
+        }
+        else { baseR.y -= offset.h; }
         
         if(page->aura.len)
         {
