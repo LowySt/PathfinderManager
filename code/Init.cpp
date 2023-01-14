@@ -1917,7 +1917,7 @@ b32 DrawPranaStyle(UIContext *c)
             }
             else
             { 
-                static UIScrollableRegion initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
+                static UIScrollableRegion initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218 };
                 
                 if(mainCachedPage.pageIndex != f->compendiumIdx)
                 { 

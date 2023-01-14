@@ -327,11 +327,20 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     s32 dexSaveBegin = conSaveEnd + 11;
     s32 dexSaveEnd   = ls_utf32LeftFind(ST, dexSaveBegin, (u32)',');
     s32 wisSaveBegin = dexSaveEnd + 10;
-    s32 wisSaveEnd   = ls_utf32LeftFind(ST, wisSaveBegin, (u32)';')-1; //NOTE: This might fuck
+    s32 semiToken    = ls_utf32LeftFind(ST, wisSaveBegin, (u32)';');
+    s32 parenToken   = ls_utf32LeftFind(ST, wisSaveBegin, (u32)'(');
+    
+    s32 wisSaveEnd = semiToken - 1;
+    if(semiToken == -1)
+    {
+        wisSaveEnd = parenToken - 1;
+        if(parenToken == -1)
+        {
+            wisSaveEnd = ST.len - 1;
+        }
+    }
     
     if((conSaveEnd == -1) || (dexSaveEnd == -1)) { ls_utf32Set(&cachedPage->ST, ST); return; }
-    
-    if(wisSaveEnd < 0) { wisSaveEnd = ST.len-1; }
     
     s32 conSave = ls_utf32ToInt({ST.data + conSaveBegin, (u32)conSaveEnd - conSaveBegin, (u32)conSaveEnd - conSaveBegin});
     s32 dexSave = ls_utf32ToInt({ST.data + dexSaveBegin, (u32)dexSaveEnd - dexSaveBegin, (u32)dexSaveEnd - dexSaveBegin});
@@ -708,7 +717,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     
     cachedPage->org               = ls_utf32Alloc(512);
     cachedPage->treasure          = ls_utf32Alloc(320);
-    cachedPage->desc              = ls_utf32Alloc(8192);
+    cachedPage->desc              = ls_utf32Alloc(10240);
     cachedPage->source            = ls_utf32Alloc(256);
     
     cachedPage->name              = ls_utf32Alloc(48);
@@ -924,7 +933,7 @@ void SetMonsterTable(UIContext *c)
     Codex *codex = &compendium.codex;
     
     s32 monsterTableMinY = -((codex->pages.count-30) * 19);
-    tableScroll = { 0, 10, c->windowWidth - 4, c->windowHeight - 36, 0, 0, c->windowWidth - 32, monsterTableMinY };
+    tableScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, monsterTableMinY };
     
     compendium.searchBar.text = ls_utf32Alloc(64);
     compendium.searchBar.postInput = CompendiumSearchFunction;
@@ -1218,10 +1227,10 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     ls_uiLabelLayout(c, page->name, baseR, pureWhite);
     {
-        ls_uiLabelLayout(c, U"GS", { baseR.x + 495, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, page->gs, { baseR.x + 525, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, U"PE", { baseR.x + 620, baseR.y, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->pe, { baseR.x + 655, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"GS", UIRect { baseR.x + 495, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, page->gs, UIRect { baseR.x + 525, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"PE", UIRect { baseR.x + 620, baseR.y, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->pe, UIRect { baseR.x + 655, baseR.y, maxW, minY }, pureWhite);
         ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -1569,7 +1578,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         
         baseR.y -= (currPixelHeight+8);
         ls_uiLabelLayout(c, U"Fonte: ", baseR, pureWhite);
-        offset = ls_uiLabelLayout(c, page->source, { baseR.x + 58, baseR.y, maxW, minY });
+        offset = ls_uiLabelLayout(c, page->source, UIRect { baseR.x + 58, baseR.y, maxW, minY });
         baseR.y -= offset.maxY;
     }
     
@@ -1662,8 +1671,8 @@ void DrawCompendium(UIContext *c)
             PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[compendium.pageIndex]];
             CachePage(pEntry, compendium.pageIndex, &cachedPage);
             
-            //NOTE: Reset the page scroll for the new page
-            pageScroll = { 0, 10, c->windowWidth - 4, c->windowHeight - 36, 0, 0, c->windowWidth - 32, 0};
+            //NOTE: Reset the page scroll for the new page (Fuck GCC)
+            pageScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, 0 };
         }
         
         //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet

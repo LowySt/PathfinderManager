@@ -523,23 +523,23 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(showDebug)
         {
-            ls_uiFillRect(uiContext, 1248, 760, 20, 20, {0, (s32)uiContext->width, 0, (s32)uiContext->height},
+            ls_uiFillRect(uiContext, 1248, 760, 20, 20, UIRect {0, (s32)uiContext->width, 0, (s32)uiContext->height},
                           uiContext->scissor, {}, uiContext->backgroundColor);
             ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
             ls_uiGlyphString(uiContext, uiContext->currFont, 1248, 760,
-                             {(s32)uiContext->width/2, 0, (s32)uiContext->width, (s32)uiContext->height},
+                             UIRect {(s32)uiContext->width/2, 0, (s32)uiContext->width, (s32)uiContext->height},
                              uiContext->scissor, {}, frameTimeString, RGBg(0xEE));
             
-            ls_uiFillRect(uiContext, windowWidth/2, 0, 2, windowHeight, {0,0,windowWidth,windowHeight},
+            ls_uiFillRect(uiContext, windowWidth/2, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
                           uiContext->scissor, {},RGB(0xFF, 0xFF, 0));
             
-            ls_uiFillRect(uiContext, 260, 0, 2, windowHeight, {0,0,windowWidth,windowHeight},
+            ls_uiFillRect(uiContext, 260, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
                           uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
-            ls_uiFillRect(uiContext, 1040, 0, 2, windowHeight, {0,0,windowWidth,windowHeight},
+            ls_uiFillRect(uiContext, 1040, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
                           uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
-            ls_uiFillRect(uiContext, 0, 218, windowWidth, 2, {0,0,windowWidth,windowHeight},
+            ls_uiFillRect(uiContext, 0, 218, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
                           uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
-            ls_uiFillRect(uiContext, 0, 696, windowWidth, 2, {0,0,windowWidth,windowHeight},
+            ls_uiFillRect(uiContext, 0, 696, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
                           uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
             
         }
