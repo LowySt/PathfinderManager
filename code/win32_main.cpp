@@ -456,10 +456,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             if(LeftClick && !uiContext->focusWasSetThisFrame)
             { 
                 uiContext->currentFocus = 0;
-                
-                //NOTE: Also, we clear the globalSelectedIndex so that we can exit out of detail mob
-                if(!State.Init->isAdding) { globalSelectedIndex = -1; }
             }
+            
+            //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob
+            if(KeyPress(keyMap::Escape) && !State.Init->isAdding) globalSelectedIndex = -1;
             
             
             //NOTE: Right-Alt Drag, only when nothing is in focus

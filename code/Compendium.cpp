@@ -968,7 +968,11 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     cachedPage->pageIndex = viewIndex;
     
-    //AssertMsg(FALSE, "Fix: Initiative, BMC, DMC, Perception... Use golarion to see each parameter what it affects.\n");
+    //TODO: What's missing (apart from possible bug fixes)
+    //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
+    //      Maybe DC for Channeling Energy on clerics with Carisma?
+    //      Maybe AC Deviation bonus for specific Race/Class combos?
+    //      Skill Checks On Any Ability
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them

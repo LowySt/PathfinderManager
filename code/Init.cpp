@@ -570,6 +570,8 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
     s32 newMobsCount   = State.Init->Mobs.selectedIndex + e->numMobs;
     s32 newAlliesCount = State.Init->Allies.selectedIndex + e->numAllies;
     
+    if((newMobsCount > MOB_NUM) || (newAlliesCount > ALLY_NUM)) { return FALSE; }
+    
     for(u32 i = currMobs, j = 0; i < newMobsCount; i++, j++)
     {
         InitField *m = State.Init->MobFields + i;
@@ -1851,7 +1853,9 @@ b32 DrawPranaStyle(UIContext *c)
         {
             inputUse |= ls_uiListBox(c, &Page->EncounterSel,  495, yPos, 120, 20, 2);
             inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22, 44, 20);
-            inputUse |= ls_uiButton(c, &Page->AddEnc, 400, yPos, 24, 20);
+            
+            if(Page->EncounterSel.selectedIndex > 0) 
+            { inputUse |= ls_uiButton(c, &Page->AddEnc, 400, yPos, 24, 20); }
         }
         
         //NOTE: We hijack the globals to know when to show the buttons.
@@ -1994,10 +1998,19 @@ b32 DrawPranaStyle(UIContext *c)
                 }
                 
                 ls_uiStartScrollableRegion(c, &viewScroll);
-                viewScroll.minY = DrawPage(c , &mainCachedPage, 40, 676, 758, 218);
+                viewScroll.minY = DrawPage(c, &mainCachedPage, 40, 676, 758, 218);
                 ls_uiEndScrollableRegion(c);
                 
                 ls_uiRect(c, 40, 218, 760, 478, RGBg(0x33), RGBg(0x11));
+                
+                if(f) {
+                    //NOTE: Also draw the life box so that we can use it to add/remove HP
+                    Color base = c->widgetColor;
+                    c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
+                    ls_uiLabel(c, U"PF", 307, 720);
+                    inputUse |= ls_uiTextBox(c, &f->maxLife, 332, 715, 118, 20);
+                    c->widgetColor = base;
+                }
             }
         }
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718, 48, 20);
