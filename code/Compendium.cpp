@@ -660,6 +660,7 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.HP);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
     
     AddMobOnClick(NULL, NULL);
@@ -676,6 +677,7 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.HP);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
+    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
     
     AddAllyOnClick(NULL, NULL);
