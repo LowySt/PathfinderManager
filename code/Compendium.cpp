@@ -649,6 +649,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
     return;
 }
 
+
+//TODO: the view index has an effect on which page is shown during init!!!
 b32 AddMobOnClick(UIContext *, void *);
 b32 AddAllyOnClick(UIContext *, void *);
 b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
@@ -1607,7 +1609,6 @@ void DrawMonsterTable(UIContext *c)
     s32 endI   = startI+36 < compendium.viewIndices.count ? startI+36 : compendium.viewIndices.count;
     endI       = endI < codex->pages.count ? endI : codex->pages.count;
     
-    //TODO: BUG. Wrong index when Selecting, Searching, Selecting.
     for(s32 i = startI; i < endI; i++)
     {
         PageEntry entry = codex->pages[compendium.viewIndices[i]];
@@ -1616,7 +1617,7 @@ void DrawMonsterTable(UIContext *c)
         if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
         {
             compendium.isViewingPage = TRUE; 
-            compendium.pageIndex     = i;
+            compendium.pageIndex     = compendium.viewIndices[i];
         }
         
         if(MouseInRect(baseX-4, baseY-4, 300, 18)) { hoverColor = RGBg(0x66); }
@@ -1670,7 +1671,7 @@ void DrawCompendium(UIContext *c)
         
         if(cachedPage.pageIndex != compendium.pageIndex)
         { 
-            PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[compendium.pageIndex]];
+            PageEntry pEntry = compendium.codex.pages[compendium.pageIndex];
             CachePage(pEntry, compendium.pageIndex, &cachedPage);
             
             //NOTE: Reset the page scroll for the new page (Fuck GCC)

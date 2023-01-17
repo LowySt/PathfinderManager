@@ -1921,7 +1921,7 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 if(mainCachedPage.pageIndex != f->compendiumIdx)
                 { 
-                    PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[f->compendiumIdx]];
+                    PageEntry pEntry = compendium.codex.pages[f->compendiumIdx];
                     CachePage(pEntry, f->compendiumIdx, &mainCachedPage);
                     initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
                 }
@@ -1992,7 +1992,7 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 if(mainCachedPage.pageIndex != ord->compendiumIdx)
                 { 
-                    PageEntry pEntry = compendium.codex.pages[compendium.viewIndices[ord->compendiumIdx]];
+                    PageEntry pEntry = compendium.codex.pages[ord->compendiumIdx];
                     CachePage(pEntry, ord->compendiumIdx, &mainCachedPage);
                     viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
                 }
