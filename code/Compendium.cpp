@@ -263,7 +263,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     
     s32 acExprBegin = acExprBeginIdx + 1;
     s32 acExprLen   = acExprEndIdx - acExprBegin;
-    utf32 acExpr    = { AC.data + acExprBegin, (u32)acExprLen, (u32)acExprLen };
+    utf32 acExpr    = { AC.data + acExprBegin, acExprLen, acExprLen };
     
     s32 armorBonusIdx  = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Armatura"));
     s32 shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Scudo"));
@@ -288,8 +288,8 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
         return;
     }
     
-    s32 totAC   = ls_utf32ToInt({AC.data, (u32)firstValEnd, (u32)firstValEnd});
-    s32 touchAC = ls_utf32ToInt({AC.data + secondValBegin, (u32)secondValLen, (u32)secondValLen});
+    s32 totAC   = ls_utf32ToInt({AC.data, firstValEnd, firstValEnd});
+    s32 touchAC = ls_utf32ToInt({AC.data + secondValBegin, secondValLen, secondValLen});
     
     s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
     s32 dexBonusOld = s32(dexBonusNew / 2);
@@ -342,9 +342,9 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     
     if((conSaveEnd == -1) || (dexSaveEnd == -1)) { ls_utf32Set(&cachedPage->ST, ST); return; }
     
-    s32 conSave = ls_utf32ToInt({ST.data + conSaveBegin, (u32)conSaveEnd - conSaveBegin, (u32)conSaveEnd - conSaveBegin});
-    s32 dexSave = ls_utf32ToInt({ST.data + dexSaveBegin, (u32)dexSaveEnd - dexSaveBegin, (u32)dexSaveEnd - dexSaveBegin});
-    s32 wisSave = ls_utf32ToInt({ST.data + wisSaveBegin, (u32)wisSaveEnd - wisSaveBegin+1, (u32)wisSaveEnd - wisSaveBegin+1});
+    s32 conSave = ls_utf32ToInt({ST.data + conSaveBegin, conSaveEnd - conSaveBegin, conSaveEnd - conSaveBegin});
+    s32 dexSave = ls_utf32ToInt({ST.data + dexSaveBegin, dexSaveEnd - dexSaveBegin, dexSaveEnd - dexSaveBegin});
+    s32 wisSave = ls_utf32ToInt({ST.data + wisSaveBegin, wisSaveEnd - wisSaveBegin+1, wisSaveEnd - wisSaveBegin+1});
     
     conSave = (conSave - conBonusOld) + conBonusNew;
     dexSave = (dexSave - dexBonusOld) + dexBonusNew;
@@ -389,7 +389,7 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
     s32 hpExprBegin = ls_utf32LeftFind(hp, (u32)'(') + 1;
     s32 hpExprLen   = ls_utf32LeftFind(hp, (u32)')') - hpExprBegin;
     
-    utf32 hpExpr    = {hp.data + hpExprBegin, (u32)hpExprLen, (u32)hpExprLen};
+    utf32 hpExpr    = {hp.data + hpExprBegin, hpExprLen, hpExprLen};
     
     s32 dToken      = ls_utf32LeftFind(hpExpr, (u32)'d');
     s32 plusToken   = ls_utf32LeftFind(hpExpr, (u32)'+');
@@ -405,9 +405,9 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
         {
             s32 mulLen   = plusToken - dToken - 1;
             
-            s32 dieValue = ls_utf32ToInt({hpExpr.data, (u32)dToken, (u32)dToken});
-            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, (u32)mulLen, (u32)mulLen});
-            s32 flatVal  = ls_utf32ToInt({hpExpr.data + plusToken+1, (u32)flatLen, (u32)flatLen});
+            s32 dieValue = ls_utf32ToInt({hpExpr.data, dToken, dToken});
+            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, mulLen, mulLen});
+            s32 flatVal  = ls_utf32ToInt({hpExpr.data + plusToken+1, flatLen, flatLen});
             
             //NOTE: The flatVal is multiplied by 2 because the CON bonus is doubled.
             finalHP  = dieValue*dieMul + (flatVal * 2);
@@ -416,9 +416,9 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
         {
             s32 mulLen   = minusToken - dToken - 1;
             
-            s32 dieValue = ls_utf32ToInt({hpExpr.data, (u32)dToken, (u32)dToken});
-            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, (u32)mulLen, (u32)mulLen});
-            s32 flatVal  = ls_utf32ToInt({hpExpr.data + minusToken+1, (u32)flatLen, (u32)flatLen});
+            s32 dieValue = ls_utf32ToInt({hpExpr.data, dToken, dToken});
+            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, mulLen, mulLen});
+            s32 flatVal  = ls_utf32ToInt({hpExpr.data + minusToken+1, flatLen, flatLen});
             
             //NOTE: The flatVal is multiplied by 2 because the CON bonus is doubled.
             finalHP  = dieValue*dieMul - (flatVal * 2);
@@ -427,8 +427,8 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
         {
             s32 mulLen   = hpExprLen - dToken - 1;
             
-            s32 dieValue = ls_utf32ToInt({hpExpr.data, (u32)dToken, (u32)dToken});
-            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, (u32)mulLen, (u32)mulLen});
+            s32 dieValue = ls_utf32ToInt({hpExpr.data, dToken, dToken});
+            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, mulLen, mulLen});
             
             finalHP  = dieValue*dieMul;
         }
@@ -464,7 +464,7 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     s32 statBonusNew = (smallSize ? ls_utf32ToInt(cachedPage->DEX) : ls_utf32ToInt(cachedPage->STR)) - 10;
     s32 statBonusOld = s32(statBonusNew / 2);
     
-    s32 bmcVal = ls_utf32ToInt({BMC.data, (u32)endIdx, (u32)endIdx});
+    s32 bmcVal = ls_utf32ToInt({BMC.data, endIdx, endIdx});
     
     bmcVal = (bmcVal - statBonusOld) + statBonusNew;
     
@@ -493,7 +493,7 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
     s32 dexBonusOld = s32(dexBonusNew / 2);
     s32 strBonusOld = s32(strBonusNew / 2);
     
-    s32 dmcVal = ls_utf32ToInt({DMC.data, (u32)endIdx, (u32)endIdx});
+    s32 dmcVal = ls_utf32ToInt({DMC.data, endIdx, endIdx});
     
     dmcVal = (dmcVal - dexBonusOld - strBonusOld) + dexBonusNew + strBonusNew;
     
@@ -558,8 +558,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
             {
                 s32 twoLen  = endIdx - multiToken - 1;
                 
-                initOne = ls_utf32ToInt({Init.data, (u32)mithicToken, (u32)mithicToken});
-                initTwo = ls_utf32ToInt({Init.data + multiToken + 1, (u32)twoLen, (u32)twoLen});
+                initOne = ls_utf32ToInt({Init.data, mithicToken, mithicToken});
+                initTwo = ls_utf32ToInt({Init.data + multiToken + 1, twoLen, twoLen});
                 initOne = (initOne - dexBonusOld) + dexBonusNew;
                 initTwo = (initTwo - dexBonusOld) + dexBonusNew;
                 
@@ -579,8 +579,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
             {
                 s32 twoLen  = mithicToken - multiToken - 1;
                 
-                initOne = ls_utf32ToInt({Init.data, (u32)multiToken, (u32)multiToken});
-                initTwo = ls_utf32ToInt({Init.data + multiToken + 1, (u32)twoLen, (u32)twoLen});
+                initOne = ls_utf32ToInt({Init.data, multiToken, multiToken});
+                initTwo = ls_utf32ToInt({Init.data + multiToken + 1, twoLen, twoLen});
                 initOne = (initOne - dexBonusOld) + dexBonusNew;
                 initTwo = (initTwo - dexBonusOld) + dexBonusNew;
                 
@@ -602,8 +602,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
         {
             s32 twoLen  = endIdx - multiToken - 1;
             
-            initOne = ls_utf32ToInt({Init.data, (u32)multiToken, (u32)multiToken});
-            initTwo = ls_utf32ToInt({Init.data + multiToken + 1, (u32)twoLen, (u32)twoLen});
+            initOne = ls_utf32ToInt({Init.data, multiToken, multiToken});
+            initTwo = ls_utf32ToInt({Init.data + multiToken + 1, twoLen, twoLen});
             initOne = (initOne - dexBonusOld) + dexBonusNew;
             initTwo = (initTwo - dexBonusOld) + dexBonusNew;
             
@@ -624,7 +624,7 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
     {
         if(mithicToken != -1) // +23M ...
         {
-            initOne = ls_utf32ToInt({Init.data, (u32)mithicToken, (u32)mithicToken});
+            initOne = ls_utf32ToInt({Init.data, mithicToken, mithicToken});
             initOne = (initOne - dexBonusOld) + dexBonusNew;
             
             if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
@@ -637,7 +637,7 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
         }
         else // +12 ...
         {
-            initOne = ls_utf32ToInt({Init.data, (u32)endIdx, (u32)endIdx});
+            initOne = ls_utf32ToInt({Init.data, endIdx, endIdx});
             initOne = (initOne - dexBonusOld) + dexBonusNew;
             
             if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
