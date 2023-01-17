@@ -7,7 +7,7 @@ struct CachedPageEntry
     utf32 origin;
     utf32 shortDesc;
     utf32 AC;
-    utf32 HP;
+    utf32 HP; utf32 totHP;
     utf32 ST;
     utf32 RD;
     utf32 RI;
@@ -436,6 +436,11 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
     
     s32 restLen       = hp.len - hpEndIndex;
     ls_utf32FromInt_t(&cachedPage->HP, finalHP);
+    
+    //NOTE: We copy the current cachedPage->HP into totHP to basically create a view into 
+    //      the cachedPage->HP string, and only keep the total value!
+    cachedPage->totHP = cachedPage->HP;
+    
     ls_utf32AppendBuffer(&cachedPage->HP, hp.data + hpEndIndex, restLen);
     
     return;
@@ -650,7 +655,6 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
 }
 
 
-//TODO: the view index has an effect on which page is shown during init!!!
 b32 AddMobOnClick(UIContext *, void *);
 b32 AddAllyOnClick(UIContext *, void *);
 b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
@@ -660,7 +664,7 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
     
-    ls_uiTextBoxSet(c, &f->maxLife, cachedPage.HP);
+    ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
@@ -677,7 +681,7 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     
-    ls_uiTextBoxSet(c, &f->maxLife, cachedPage.HP);
+    ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
