@@ -1851,11 +1851,10 @@ b32 DrawPranaStyle(UIContext *c)
         }
         else
         {
-            inputUse |= ls_uiListBox(c, &Page->EncounterSel,  495, yPos, 120, 20, 2);
-            inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22, 44, 20);
+            inputUse |= ls_uiListBox(c, &Page->EncounterSel,  565, yPos, 120, 20, 2);
             
             if(Page->EncounterSel.selectedIndex > 0) 
-            { inputUse |= ls_uiButton(c, &Page->AddEnc, 400, yPos, 24, 20); }
+            { inputUse |= ls_uiButton(c, &Page->AddEnc, 520, yPos, 24, 20); }
         }
         
         //NOTE: We hijack the globals to know when to show the buttons.
