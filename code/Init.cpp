@@ -1262,6 +1262,9 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
     s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
     Order *o = State.Init->OrderFields + visibleOrder;
     
+    //TODO: Determine the number of the new mob/ally
+    
+    
     ls_utf32Set(&o->field.text, name);
     o->field.maxValue = maxLife;
     o->compendiumIdx  = compendiumIdx;

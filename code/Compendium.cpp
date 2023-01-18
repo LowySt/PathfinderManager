@@ -690,6 +690,9 @@ void ShortenAndCacheName(UIContext *c, utf32 orig_name, UITextBox *box)
         }
     }
     
+    //NOTE: If the name is still too long, shorten it to length 17
+    if(name.len > 16) { name.len = 16; }
+    
     ls_uiTextBoxSet(c, box, name);
     ls_utf32Free(&name); 
 }
