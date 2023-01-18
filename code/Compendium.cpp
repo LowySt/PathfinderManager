@@ -654,6 +654,27 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
     return;
 }
 
+void ShortenAndCacheName(utf32 name, utf32 *cachedName)
+{
+    if(name.len <= 36) { ls_utf32Set(cachedName, name); return; }
+    
+    utf32 articles[6] = {{(u32 *)U" di ", 4, 4}, {(u32 *)U" del ", 5, 5}, {(u32 *)U" della ", 7, 7}, 
+        {(u32 *)U" delle ", 7, 7}, {(u32 *)U" dell'", 6, 6}, {(u32 *)U" d'", 3, 3}};
+    s32 removeLen[6] = { 2, 3, 5, 5, 5, 2 };
+    
+    for(u32 i = 0; i < 5; i++)
+    {
+        s32 index = ls_utf32LeftFind(name, articles[i]);
+        while(index >= 0)
+        {
+            ls_utf32RmSubstr(&name, index, index + removeLen[i]);
+            index = ls_utf32LeftFind(name, articles[i]);
+        }
+    }
+    
+    ls_utf32Set(cachedName, name);
+}
+
 
 b32 AddMobOnClick(UIContext *, void *);
 b32 AddAllyOnClick(UIContext *, void *);
@@ -665,6 +686,7 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
+    
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
@@ -1235,10 +1257,10 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     ls_uiLabelLayout(c, page->name, baseR, pureWhite);
     {
-        ls_uiLabelLayout(c, U"GS", UIRect { baseR.x + 495, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, page->gs, UIRect { baseR.x + 525, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, U"PE", UIRect { baseR.x + 620, baseR.y, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->pe, UIRect { baseR.x + 655, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"GS", UIRect { baseR.x + 455, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, page->gs, UIRect { baseR.x + 485, baseR.y, maxW, minY }, pureWhite);
+        ls_uiLabelLayout(c, U"PE", UIRect { baseR.x + 580, baseR.y, maxW, minY }, pureWhite);
+        offset = ls_uiLabelLayout(c, page->pe, UIRect { baseR.x + 615, baseR.y, maxW, minY }, pureWhite);
         ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
@@ -1626,9 +1648,13 @@ void DrawMonsterTable(UIContext *c)
         
         if(MouseInRect(baseX-4, baseY-4, 300, 18)) { hoverColor = RGBg(0x66); }
         
-        //TODO: Matriarca delle Scimmie Cappuccine Corallo is too long...
+        //NOTE: Matriarca delle Scimmie Cappuccine Corallo is too long...
+        //      Adding a scissor cuts it... but I don't like that solution a lot...
+        //      What if I want automatic '...' at the end of a label??
         ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 300, 20, hoverColor, c->borderColor);
+        c->scissor = UIRect { baseX-4, 0, 298, s32(c->height) };
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY+tableScroll.deltaY, 1);
+        c->scissor = UIRect { 0, 0, s32(c->width), s32(c->height) };
         baseX += 299;
         
         ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 80, 20, bkgColor, c->borderColor);

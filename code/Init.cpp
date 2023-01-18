@@ -1367,7 +1367,7 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     f->editFields[IF_IDX_NAME].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], zeroUTF32);
-    f->editFields[IF_IDX_BONUS].maxLen       = 2;
+    f->editFields[IF_IDX_BONUS].maxLen       = 3; //NOTE: Allow for sign!
     f->editFields[IF_IDX_BONUS].preInput     = CustomInitFieldText;
     f->editFields[IF_IDX_BONUS].data         = &textHandler[1];
     f->editFields[IF_IDX_BONUS].isSingleLine = TRUE;
@@ -1657,11 +1657,9 @@ b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
     return inputUse;
 }
 
-b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx)
+b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx, s32 w)
 {
     b32 inputUse = FALSE;
-    
-    s32 w = 136;
     
     s32 x = baseX;
     if(globalSelectedIndex != posIdx) { inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME], x, y, w, 20); }
@@ -1752,7 +1750,7 @@ b32 DrawDefaultStyle(UIContext *c)
     yPos = 458;
     for(u32 i = 0; i < visibleAllies; i++)
     {
-        inputUse |= DrawInitField(c, Page->AllyFields + i, 616, yPos, i);
+        inputUse |= DrawInitField(c, Page->AllyFields + i, 616, yPos, i, 136);
         yPos -= 20;
     }
     
@@ -1762,7 +1760,7 @@ b32 DrawDefaultStyle(UIContext *c)
     {
         InitField *f = Page->MobFields + i;
         
-        inputUse |= DrawInitField(c, Page->MobFields + i, 378, yPos, i);
+        inputUse |= DrawInitField(c, Page->MobFields + i, 378, yPos, i, 136);
         yPos -= 20;
     }
     
@@ -1842,7 +1840,7 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22, 44, 20);
             inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, yPos, 24, 20);
             
-            inputUse |= ls_uiListBox(c, &Page->Mobs,   66, yPos-65, 100, 20, 1);
+            inputUse |= ls_uiListBox(c, &Page->Mobs,     50, yPos-65, 100, 20, 1);
             inputUse |= ls_uiListBox(c, &Page->Allies, 1094, yPos-225, 100, 20, 1);
             
             inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40, 48, 20);
@@ -1879,14 +1877,14 @@ b32 DrawPranaStyle(UIContext *c)
         yPos = 678;
         for(u32 i = 0; i < visibleMobs; i++)
         {
-            inputUse |= DrawInitField(c, Page->MobFields + i, 44, yPos, i);
+            inputUse |= DrawInitField(c, Page->MobFields + i, 18, yPos, i, 162);
             yPos -= 20;
         }
         
         yPos = 678;
         for(u32 i = 0; i < visibleAllies; i++)
         {
-            inputUse |= DrawInitField(c, Page->AllyFields + i, 1072, yPos-160, i+MOB_NUM);
+            inputUse |= DrawInitField(c, Page->AllyFields + i, 1072, yPos-160, i+MOB_NUM, 136);
             yPos -= 20;
         }
         
@@ -1937,7 +1935,7 @@ b32 DrawPranaStyle(UIContext *c)
         if(visibleMobs <= MOB_NUM)
         {
             if(!(State.Init->isAdding && globalSelectedIndex >= MOB_NUM))
-            { inputUse |= ls_uiButton(c, &Page->addNewMob, 196, 715, 25, 20); }
+            { inputUse |= ls_uiButton(c, &Page->addNewMob, 180, 715, 25, 20); }
         }
         
         if(visibleAllies <= ALLY_NUM)
