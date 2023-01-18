@@ -654,10 +654,14 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
     return;
 }
 
-void ShortenAndCacheName(utf32 name, utf32 *cachedName)
+void ShortenAndCacheName(UIContext *c, utf32 orig_name, UITextBox *box)
 {
-    if(name.len <= 36) { ls_utf32Set(cachedName, name); return; }
+    if(orig_name.len < 17) { ls_uiTextBoxSet(c, box, orig_name); return; }
     
+    //TODO: Can we avoid this?
+    utf32 name = ls_utf32Copy(orig_name);
+    
+    //NOTE: First remove the articles which are redundant to understanding the name
     utf32 articles[6] = {{(u32 *)U" di ", 4, 4}, {(u32 *)U" del ", 5, 5}, {(u32 *)U" della ", 7, 7}, 
         {(u32 *)U" delle ", 7, 7}, {(u32 *)U" dell'", 6, 6}, {(u32 *)U" d'", 3, 3}};
     s32 removeLen[6] = { 2, 3, 5, 5, 5, 2 };
@@ -672,7 +676,22 @@ void ShortenAndCacheName(utf32 name, utf32 *cachedName)
         }
     }
     
-    ls_utf32Set(cachedName, name);
+    if(name.len < 17) { ls_uiTextBoxSet(c, box, name); ls_utf32Free(&name); return; }
+    
+    //NOTE: If that was not enough, we shorten each word of the name by removing all vowels.
+    u32 vowels[5] = { (u32)'a', (u32)'e', (u32)'i', (u32)'o', (u32)'u' };
+    for(u32 i = 0; i < 5; i++)
+    {
+        s32 index = ls_utf32LeftFind(name, vowels[i]);
+        while(index > 0)
+        {
+            ls_utf32RmIdx(&name, index);
+            index = ls_utf32LeftFind(name, vowels[i]);
+        }
+    }
+    
+    ls_uiTextBoxSet(c, box, name);
+    ls_utf32Free(&name); 
 }
 
 
@@ -687,7 +706,7 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
     
-    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
+    ShortenAndCacheName(c, cachedPage.name, &f->editFields[IF_IDX_NAME]);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
     
@@ -704,7 +723,8 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
-    ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], cachedPage.name);
+    
+    ShortenAndCacheName(c, cachedPage.name, &f->editFields[IF_IDX_NAME]);
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
     
