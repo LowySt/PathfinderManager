@@ -654,9 +654,9 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
     return;
 }
 
-void ShortenAndCacheName(UIContext *c, utf32 orig_name, UITextBox *box)
+void ShortenAndCacheName(utf32 orig_name, utf32 *out)
 {
-    if(orig_name.len < 17) { ls_uiTextBoxSet(c, box, orig_name); return; }
+    if(orig_name.len < 17) { ls_utf32Set(out, orig_name); return; }
     
     //TODO: Can we avoid this?
     utf32 name = ls_utf32Copy(orig_name);
@@ -676,7 +676,7 @@ void ShortenAndCacheName(UIContext *c, utf32 orig_name, UITextBox *box)
         }
     }
     
-    if(name.len < 17) { ls_uiTextBoxSet(c, box, name); ls_utf32Free(&name); return; }
+    if(name.len < 17) { ls_utf32Set(out, name); ls_utf32Free(&name); return; }
     
     //NOTE: If that was not enough, we shorten each word of the name by removing all vowels.
     u32 vowels[5] = { (u32)'a', (u32)'e', (u32)'i', (u32)'o', (u32)'u' };
@@ -693,23 +693,65 @@ void ShortenAndCacheName(UIContext *c, utf32 orig_name, UITextBox *box)
     //NOTE: If the name is still too long, shorten it to length 17
     if(name.len > 16) { name.len = 16; }
     
-    ls_uiTextBoxSet(c, box, name);
+    ls_utf32Set(out, name);
     ls_utf32Free(&name); 
 }
 
+void AddIncrementalToName(UIContext *c, utf32 name, UITextBox *box)
+{
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    
+    //NOTE: Determine the number of the new mob/ally
+    s32 cleanLen       = name.len;
+    s32 maxIncremental = 0;
+    for(u32 i = 0; i < visibleOrder; i++)
+    {
+        Order *o = State.Init->OrderFields + i;
+        
+        if(ls_utf32AreEqualUpTo(o->field.text, name, cleanLen))
+        {
+            s32 lenDiff = o->field.text.len - name.len;
+            utf32 justTheNumber = { o->field.text.data + cleanLen + 1, lenDiff, lenDiff};
+            s32 incremental = ls_utf32ToInt(justTheNumber);
+            if(incremental > maxIncremental) maxIncremental = incremental;
+        }
+    }
+    
+    //TODO:Yet more temporary copy @ConvertNation
+    u32 buff[32] = {};
+    utf32 tmp = { buff, 0, 32 };
+    
+    u32 buff2[32] = {};
+    utf32 tmp2 = { buff2, 0, 32 };
+    
+    ls_utf32FromInt_t(&tmp2, maxIncremental+1);
+    ls_utf32Append(&tmp, name);
+    ls_utf32AppendChar(&tmp, (u32)' ');
+    ls_utf32Append(&tmp, tmp2);
+    
+    ls_uiTextBoxSet(c, box, tmp);
+}
 
 b32 AddMobOnClick(UIContext *, void *);
 b32 AddAllyOnClick(UIContext *, void *);
 b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
 {
+    s32 visibleMobs = State.Init->Mobs.selectedIndex;
+    InitField *f = State.Init->MobFields + visibleMobs;
+    
     if(!compendium.isViewingPage)  return FALSE;
     if(compendium.pageIndex == -1) return FALSE;
-    
-    InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
+    if(visibleMobs == MOB_NUM)     return FALSE;
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
     
-    ShortenAndCacheName(c, cachedPage.name, &f->editFields[IF_IDX_NAME]);
+    u32 buff[32] = {};
+    utf32 tmp = { buff, 0, 32 };
+    ShortenAndCacheName(cachedPage.name, &tmp);
+    AddIncrementalToName(c, tmp, &f->editFields[IF_IDX_NAME]);
+    
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
     
@@ -720,14 +762,20 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
 
 b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
 {
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    InitField *f = State.Init->AllyFields + visibleAllies;
+    
     if(!compendium.isViewingPage)  return FALSE;
     if(compendium.pageIndex == -1) return FALSE;
-    
-    InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
+    if(visibleAllies == ALLY_NUM)  return FALSE;
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
     
-    ShortenAndCacheName(c, cachedPage.name, &f->editFields[IF_IDX_NAME]);
+    u32 buff[32] = {};
+    utf32 tmp = { buff, 0, 32 };
+    ShortenAndCacheName(cachedPage.name, &tmp);
+    AddIncrementalToName(c, tmp, &f->editFields[IF_IDX_NAME]);
+    
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
     

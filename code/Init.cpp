@@ -1020,7 +1020,8 @@ void CopyOrder(Order *From, Order *To)
     //NOTE: Don't need to copy the textbox, since the position of an order field is fixed.
     //NOTE: Don't need to copy the button
     
-    To->ID = From->ID;
+    To->compendiumIdx = From->compendiumIdx;
+    To->ID            = From->ID;
 }
 
 void CopyInitField(UIContext *c, InitField *From, InitField *To)
@@ -1030,7 +1031,8 @@ void CopyInitField(UIContext *c, InitField *From, InitField *To)
     
     ls_uiTextBoxSet(c, &To->maxLife, From->maxLife.text);
     
-    To->ID = From->ID;
+    To->compendiumIdx = From->compendiumIdx;
+    To->ID            = From->ID;
 }
 
 b32 RemoveOrderOnClick(UIContext *c, void *data)
@@ -1261,9 +1263,6 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
     s32 visibleAllies = State.Init->Allies.selectedIndex;
     s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
     Order *o = State.Init->OrderFields + visibleOrder;
-    
-    //TODO: Determine the number of the new mob/ally
-    
     
     ls_utf32Set(&o->field.text, name);
     o->field.maxValue = maxLife;
@@ -1683,7 +1682,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     Color original = c->borderColor;
     if(posIdx == State.Init->currIdx) c->borderColor = RGB(0xBB, 0, 0);
     
-    inputUse |= ls_uiSlider(c, &f->field, xPos + 50, yPos, 136, 20);
+    inputUse |= ls_uiSlider(c, &f->field, xPos + 50, yPos, 166, 20);
     
     c->borderColor = original;
     
@@ -1949,7 +1948,7 @@ b32 DrawPranaStyle(UIContext *c)
     }
     else
     {
-        inputUse |= ls_uiTextBox(c, &Page->Current,      992, 668, 100, 20);
+        inputUse |= ls_uiTextBox(c, &Page->Current,      952, 668, 170, 20);
         inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1150, 698, 30, 20);
         inputUse |= ls_uiButton(c, &Page->Next, 1016, 698, 48, 20);
         
@@ -1957,10 +1956,10 @@ b32 DrawPranaStyle(UIContext *c)
         yPos = 638;
         for(u32 i = 0; i < visibleOrder; i += 2)
         {
-            inputUse |= DrawOrderField(c, Page->OrderFields + i, 862, yPos, i);
+            inputUse |= DrawOrderField(c, Page->OrderFields + i, 815, yPos, i);
             
             if((i+1) < visibleOrder)
-            { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1064, yPos, i+1); }
+            { inputUse |= DrawOrderField(c, Page->OrderFields + (i+1), 1049, yPos, i+1); }
             
             yPos -= 20;
         }
