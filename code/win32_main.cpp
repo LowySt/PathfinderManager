@@ -75,6 +75,8 @@
 #include "PlayerChar.h"
 #include "StateGlobals.h"
 #include "buttonImage.h"
+#include "Equip.h"
+
 
 #include "diceRoller.cpp"
 
