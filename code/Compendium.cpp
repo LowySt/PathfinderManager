@@ -166,6 +166,14 @@ CachedPageEntry cachedPage     = {};
 UIScrollableRegion pageScroll  = {};
 UIScrollableRegion tableScroll = {};
 
+
+//NOTE: Kinda hacky but okay.
+s32 internal_newToOldMap[] = { -5, -5, -4, -4, -3, -3, -2, -2, -1, -1, 0, 0,
+    1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10,
+    11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17 ,17
+};
+s32 *newToOldMap = internal_newToOldMap + 10;
+
 b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
 {
     compendium.isViewingPage = FALSE;
@@ -268,11 +276,81 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     s32 armorBonusIdx  = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Armatura"));
     s32 shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Scudo"));
     
-    if((armorBonusIdx != -1) || (shieldBonusIdx != -1))
+    //TODO: Problem when we are negative. We should ceil instead of floor!!!
+    //      Lookup Gigante del Fuoco
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
+    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
+    s32 strBonusOld = newToOldMap[strBonusNew];
+    
+    s32 conBonusNew = ls_utf32ToInt(cachedPage->CON) - 10;
+    s32 conBonusOld = newToOldMap[conBonusNew];
+    
+    s32 newMaxDex      = 999;
+    s32 newArmorBonus  = -1;
+    s32 newShieldBonus = -1;
+    s32 oldArmorBonus  = -1;
+    s32 oldShieldBonus = -1;
+    
+    if(armorBonusIdx != -1)
     {
-        cachedPage->acHasArmor = TRUE;
-        ls_utf32Set(&cachedPage->AC, AC);
-        return;
+        //NOTE: Look for the armor in the treasure line.
+        Armor *found = NULL;
+        s32    index = -1;
+        for(u32 i = 0; i < armorTableCount; i++)
+        {
+            Armor *armor = armorTable + i;
+            if(ls_utf32LeftFind(cachedPage->treasure, armor->name) != -1)
+            { found = armor; index = i; break; }
+        }
+        
+        if(found)
+        {
+            if(found->dexMax != -1)
+            {
+                s32 candidateMaxDex = found->dexMax + s32((conBonusNew + strBonusNew) / 2);
+                newMaxDex           = ls_min(newMaxDex, candidateMaxDex);
+            }
+            oldArmorBonus = found->armorBonus;
+            newArmorBonus = armorTablePrana[index].armorBonus;
+        }
+        else
+        {
+            cachedPage->acHasArmor = TRUE;
+            ls_utf32Set(&cachedPage->AC, AC);
+            return;
+        }
+    }
+    
+    if(shieldBonusIdx != -1)
+    {
+        //NOTE: Look for the shield in the treasure line.
+        Armor *found = NULL;
+        s32    index = -1;
+        for(u32 i = 0; i < shieldTableCount; i++)
+        {
+            Armor *shield = shieldTable + i;
+            if(ls_utf32LeftFind(cachedPage->treasure, shield->name) != -1)
+            { found = shield; index = i; break; }
+        }
+        
+        if(found)
+        {
+            if(found->dexMax != -1)
+            {
+                s32 candidateMaxDex = found->dexMax + s32((conBonusNew + strBonusNew) / 2);
+                newMaxDex           = ls_min(newMaxDex, candidateMaxDex);
+            }
+            oldShieldBonus = found->armorBonus;
+            newShieldBonus = shieldTablePrana[index].armorBonus;
+        }
+        else
+        {
+            cachedPage->acHasArmor = TRUE;
+            ls_utf32Set(&cachedPage->AC, AC);
+            return;
+        }
     }
     
     //TODO: I don't really like these hardcoded offsets, would prefer to have a LeftFindNumeric() function
@@ -280,8 +358,53 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     s32 secondValBegin  = firstValEnd + 11;
     s32 secondValEnd    = ls_utf32LeftFind(AC, secondValBegin, (u32)',');
     s32 secondValLen    = secondValEnd - secondValBegin;
+    s32 thirdValBegin   = secondValEnd + 14;
+    s32 semiToken       = ls_utf32LeftFind(AC, thirdValBegin, (u32)';');
+    s32 parenToken      = ls_utf32LeftFind(AC, thirdValBegin, (u32)'(');
+    s32 spaceToken      = ls_utf32LeftFind(AC, thirdValBegin, (u32)' ');
     
-    if((firstValEnd == -1) || (secondValEnd == -1))
+    //TODO: I don't really like these hardcoded offsets, would prefer to have a LeftFindNumeric() function
+    s32 thirdValEnd = AC.len - 1;
+    if(semiToken != -1)
+    {
+        if(parenToken != -1)
+        {
+            if(semiToken < parenToken) { thirdValEnd = semiToken; }
+            else                       { thirdValEnd = parenToken - 1; }
+        }
+        else if(spaceToken != -1)
+        {
+            if(semiToken < spaceToken) { thirdValEnd = semiToken; }
+            else                       { thirdValEnd = spaceToken; }
+        }
+        else
+        {
+            thirdValEnd = semiToken - 1;
+        }
+    }
+    else
+    {
+        if(parenToken != -1)
+        {
+            if(spaceToken != -1)
+            {
+                if(parenToken < spaceToken) { thirdValEnd = parenToken; }
+                else                        { thirdValEnd = spaceToken; }
+            }
+            else
+            {
+                thirdValEnd = parenToken;
+            }
+        }
+        else
+        {
+            if(spaceToken != -1) { thirdValEnd = spaceToken; }
+        }
+    }
+    s32 thirdValLen = thirdValEnd - thirdValBegin;
+    
+    if((firstValEnd == -1) || (secondValEnd == -1) || (thirdValEnd == -1)
+       || (secondValBegin >= AC.len) || (thirdValBegin >= AC.len))
     {
         cachedPage->acHasArmor = TRUE;
         ls_utf32Set(&cachedPage->AC, AC);
@@ -290,12 +413,25 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     
     s32 totAC   = ls_utf32ToInt({AC.data, firstValEnd, firstValEnd});
     s32 touchAC = ls_utf32ToInt({AC.data + secondValBegin, secondValLen, secondValLen});
+    s32 flatAC  = ls_utf32ToInt({AC.data + thirdValBegin, thirdValLen, thirdValLen});
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-    s32 dexBonusOld = s32(dexBonusNew / 2);
+    //NOTE: Adjust the dex bonus
+    s32 dexBonusToAC = ls_min(dexBonusNew, newMaxDex);
+    totAC   = (totAC   - dexBonusOld) + dexBonusToAC;
+    touchAC = (touchAC - dexBonusOld) + dexBonusToAC;
     
-    totAC   = (totAC   - dexBonusOld) + dexBonusNew;
-    touchAC = (touchAC - dexBonusOld) + dexBonusNew;
+    //NOTE: Adjust the armor bonus
+    if(armorBonusIdx)
+    {
+        totAC  = (totAC - oldArmorBonus) + newArmorBonus;
+        flatAC = (flatAC - oldArmorBonus) + newArmorBonus;
+    }
+    
+    if(shieldBonusIdx)
+    {
+        totAC  = (totAC - oldShieldBonus) + newShieldBonus;
+        flatAC = (flatAC - oldShieldBonus) + newShieldBonus;
+    }
     
     u32 buff[32] = {};
     utf32 tmpString = { buff, 32, 32 };
@@ -305,7 +441,10 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     ls_utf32Append(&cachedPage->AC, ls_utf32Constant(U", contatto "));
     ls_utf32FromInt_t(&tmpString, touchAC);
     ls_utf32Append(&cachedPage->AC, tmpString);
-    ls_utf32Append(&cachedPage->AC, {AC.data + secondValEnd, AC.len - secondValEnd, AC.len - secondValEnd});
+    ls_utf32Append(&cachedPage->AC, ls_utf32Constant(U", impreparato "));
+    ls_utf32FromInt_t(&tmpString, flatAC);
+    ls_utf32Append(&cachedPage->AC, tmpString);
+    ls_utf32Append(&cachedPage->AC, {AC.data + thirdValEnd, AC.len - thirdValEnd, AC.len - thirdValEnd});
 }
 
 void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
@@ -313,9 +452,9 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     s32 conBonusNew = ls_utf32ToInt(cachedPage->CON) - 10;
     s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
     s32 wisBonusNew = ls_utf32ToInt(cachedPage->WIS) - 10;
-    s32 conBonusOld = s32(conBonusNew / 2);
-    s32 dexBonusOld = s32(dexBonusNew / 2);
-    s32 wisBonusOld = s32(wisBonusNew / 2);
+    s32 conBonusOld = newToOldMap[conBonusNew];
+    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    s32 wisBonusOld = newToOldMap[wisBonusNew];
     
     //NOTE: Fix for Constructs
     if(ls_utf32AreEqual(cachedPage->CON, ls_utf32Constant(U"-")))
@@ -462,7 +601,7 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissimo"));
     
     s32 statBonusNew = (smallSize ? ls_utf32ToInt(cachedPage->DEX) : ls_utf32ToInt(cachedPage->STR)) - 10;
-    s32 statBonusOld = s32(statBonusNew / 2);
+    s32 statBonusOld = newToOldMap[statBonusNew];
     
     s32 bmcVal = ls_utf32ToInt({BMC.data, endIdx, endIdx});
     
@@ -490,8 +629,8 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
     
     s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
     s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
-    s32 dexBonusOld = s32(dexBonusNew / 2);
-    s32 strBonusOld = s32(strBonusNew / 2);
+    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    s32 strBonusOld = newToOldMap[strBonusNew];
     
     s32 dmcVal = ls_utf32ToInt({DMC.data, endIdx, endIdx});
     
@@ -519,7 +658,7 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
     if(Init.len == 0) { ls_utf32Set(&cachedPage->initiative, Init); return; }
     
     s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-    s32 dexBonusOld = s32(dexBonusNew / 2);
+    s32 dexBonusOld = newToOldMap[dexBonusNew];
     
     s32 multiToken  = ls_utf32LeftFind(Init, (u32)'/');
     s32 mithicToken = ls_utf32LeftFind(Init, (u32)'M');
@@ -1093,6 +1232,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
@@ -1147,7 +1287,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     }
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->org, page.org);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source);
     
