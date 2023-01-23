@@ -202,6 +202,14 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
     //NOTE:Iterate over the name buffer to find all names which exactly contain the substring needle
     utf8 needle = ls_utf8FromUTF32(compendium.searchBar.text);
     
+    u8 dataBuffer[128] = {};
+    utf8 needleLower = { dataBuffer, 0, 0, 128 };
+    
+    ls_utf8ToLower(&needleLower, needle);
+    
+    u8 dataBuffer2[128] = {};
+    utf8 toMatchLower = { dataBuffer2, 0, 0, 128 };
+    
     buffer *names = &compendium.codex.names;
     names->cursor = 4;
     
@@ -213,8 +221,9 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
         u8 *data       = (u8 *)names->data + names->cursor + 2;
         
         utf8 toMatch   = ls_utf8Constant(data, strByteLen);
+        ls_utf8ToLower(&toMatchLower, toMatch);
         
-        if(ls_utf8Contains(toMatch, needle))
+        if(ls_utf8Contains(toMatchLower, needleLower))
         {
             namesIndexBuffer[nibCount] = names->cursor;
             nibCount += 1;
@@ -222,6 +231,9 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
         
         ls_bufferReadSkip(names, strByteLen + 2);
     }
+    
+    //TODO: Put the needle on the stack
+    ls_utf8Free(&needle);
     
     //NOTE: Adjust scrollbar height to new monster table count.
     tableScroll.minY = -((nibCount-30) * 19);
@@ -1076,7 +1088,7 @@ void LoadCompendium(string path)
         ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
     }
     
-    const u32 currentViewIndicesCount = 2496;
+    const u32 currentViewIndicesCount = 3200;
     compendium.viewIndices = ls_arrayAlloc<u16>(currentViewIndicesCount);
     for(u16 i = 0; i < currentViewIndicesCount; i++)
     { ls_arrayAppend(&compendium.viewIndices, i); }
