@@ -799,15 +799,6 @@ b32 LoadState(UIContext *cxt)
         }
     }
     
-    //NOTE: Quick Exit if not in battle after the save.
-    if(State.inBattle == FALSE) 
-    { 
-        ls_arenaUse(globalArena);
-        ls_arenaClear(saveArena);
-        return TRUE;
-    }
-    
-    
     //NOTE: UnSerialize Player Initiative
     u32 partyNum = ls_bufferReadDWord(buf);
     u32 unserializePartyNum = partyNum < PARTY_NUM ? partyNum : PARTY_NUM;
@@ -862,6 +853,13 @@ b32 LoadState(UIContext *cxt)
         f->ID            = ls_bufferReadDWord(buf);
     }
     
+    //NOTE: Quick Exit if not in battle after the save.
+    if(State.inBattle == FALSE) 
+    { 
+        ls_arenaUse(globalArena);
+        ls_arenaClear(saveArena);
+        return TRUE;
+    }
     
     //NOTE: UnSerialize Order
     Page->orderAdjust = ls_bufferReadDWord(buf);
