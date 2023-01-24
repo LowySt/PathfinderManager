@@ -361,6 +361,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 userInputConsumed     = FALSE;
     b32 externalInputReceived = FALSE;
     
+    
     while(Running)
     {
         ls_uiFrameBegin(uiContext);
