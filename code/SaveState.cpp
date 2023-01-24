@@ -123,6 +123,12 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_bufferReadIntoUTF32(buf, &ally->editFields[j].text); }
         
+        if(ally->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(ally->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            ally->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
         ls_bufferReadIntoUTF32(buf, &ally->maxLife.text);
         ally->compendiumIdx = ls_bufferReadDWord(buf);
         ally->ID            = ls_bufferReadDWord(buf);
@@ -134,6 +140,12 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_bufferReadIntoUTF32(buf, &mob->editFields[j].text); }
+        
+        if(mob->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(mob->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            mob->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
         
         ls_bufferReadIntoUTF32(buf, &mob->maxLife.text);
         mob->compendiumIdx = ls_bufferReadDWord(buf);
@@ -806,7 +818,6 @@ b32 LoadState(UIContext *cxt)
     {
         ls_bufferReadIntoUTF32(buf, &Page->PlayerInit[i].text);
         Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
-        Page->PlayerInit[i].isReadonly = TRUE;
     }
     
     
@@ -821,7 +832,14 @@ b32 LoadState(UIContext *cxt)
         {
             ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
             f->editFields[j].viewEndIdx = f->editFields[j].text.len;
-            f->editFields[j].isReadonly = TRUE;
+        }
+        
+        //NOTE: For the EXTRA editField, because it is multi-line 
+        //      we need to count how many lines there are, and set it.
+        if(f->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(f->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
         ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
@@ -843,7 +861,14 @@ b32 LoadState(UIContext *cxt)
         {
             ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
             f->editFields[j].viewEndIdx = f->editFields[j].text.len;
-            f->editFields[j].isReadonly = TRUE;
+        }
+        
+        //NOTE: For the EXTRA editField, because it is multi-line 
+        //      we need to count how many lines there are, and set it.
+        if(f->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(f->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
         ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
@@ -859,6 +884,24 @@ b32 LoadState(UIContext *cxt)
         ls_arenaUse(globalArena);
         ls_arenaClear(saveArena);
         return TRUE;
+    }
+    
+    //NOTE: Set all Init Fields to ReadOnly because we are in battle
+    for(u32 i = 0; i < unserializePartyNum; i++)
+    { Page->PlayerInit[i].isReadonly = TRUE; }
+    
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        InitField *f = Page->MobFields + i;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { f->editFields[j].isReadonly = TRUE; }
+    }
+    
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        InitField *f = Page->AllyFields + i;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { f->editFields[j].isReadonly = TRUE; }
     }
     
     //NOTE: UnSerialize Order
