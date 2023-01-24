@@ -1375,7 +1375,7 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     f->editFields[IF_IDX_BONUS].isSingleLine = TRUE;
     
     f->editFields[IF_IDX_EXTRA].text         = ls_utf32Alloc(16);
-    f->editFields[IF_IDX_EXTRA].viewEndIdx   = f->editFields[IF_IDX_EXTRA].text.len;
+    f->editFields[IF_IDX_EXTRA].viewEndIdx   = 0;//f->editFields[IF_IDX_EXTRA].text.len;
     f->editFields[IF_IDX_EXTRA].preInput     = NULL; //CustomInitFieldText;
     f->editFields[IF_IDX_EXTRA].data         = NULL; //&textHandler[2];
     f->editFields[IF_IDX_EXTRA].isSingleLine = FALSE;
