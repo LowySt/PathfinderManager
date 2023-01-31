@@ -319,6 +319,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Monster Table", CompendiumOpenMonsterTable, NULL);
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add Enemy", CompendiumAddPageToInitMob, NULL);
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add Ally", CompendiumAddPageToInitAlly, NULL);
+    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"NPC Table", CompendiumOpenNPCTable, NULL);
     
     State.isInitialized = TRUE;
     
@@ -335,6 +336,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     initCachedPage(&mainCachedPage);
     
     SetMonsterTable(compendiumContext);
+    SetNPCTable(compendiumContext);
     
     //NOTE: Single block allocation for all Init Pages.
     InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);

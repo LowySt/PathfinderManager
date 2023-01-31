@@ -18,9 +18,13 @@ struct CachedPageEntry
     utf32 psych;
     utf32 magics;
     utf32 spells;
+    utf32 tactics;
     utf32 racialMods;
     utf32 spec_qual;
     utf32 specials;
+    utf32 given_equip;
+    utf32 properties;
+    utf32 boons;
     utf32 org;
     utf32 treasure;
     utf32 desc;
@@ -59,11 +63,66 @@ struct CachedPageEntry
     utf32 environment;
 };
 
+struct NPCPageEntry
+{
+    u32 origin;
+    u32 shortDesc;
+    u32 AC;
+    u32 HP;
+    u32 ST;
+    u32 RD;
+    u32 RI;
+    u32 defensiveCapacity;
+    u32 melee;
+    u32 ranged;
+    u32 specialAttacks;
+    u32 psych;
+    u32 magics;
+    u32 spells;
+    u32 tactics;
+    u32 racialMods;
+    u32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
+    u32 given_equip;
+    u32 properties;
+    u32 boons;
+    u32 specials[24];
+    u32 desc;
+    u32 source;
+    
+    u16 name;
+    u16 gs;
+    u16 pe;
+    u16 alignment;
+    u16 type;
+    u16 subtype[8];
+    u16 archetype[4];
+    u16 size;
+    u16 initiative;
+    u16 senses[8];
+    u16 perception;
+    u16 aura;
+    u16 immunities[16];
+    u16 resistances[16];
+    u16 weaknesses[16];
+    u16 speed;
+    u16 space;
+    u16 reach;
+    u16 STR;
+    u16 DEX;
+    u16 CON;
+    u16 INT;
+    u16 WIS;
+    u16 CHA;
+    u16 BAB;
+    u16 BMC;
+    u16 DMC;
+    u16 talents[24];
+    u16 skills[24]; //TODO Separate type from value
+    u16 languages[24];
+};
+
 struct PageEntry
 {
-    /*Image?*/
-    /*Menù*/
-    
     u32 origin;
     u32 shortDesc;
     u32 AC;
@@ -146,25 +205,31 @@ struct Codex
     buffer specials;
     
     //TODO: Change this to a FixedArray
-    Array<PageEntry> pages;
+    Array<PageEntry>    pages;
+    Array<NPCPageEntry> npcPages;
 };
 
 struct Compendium
 {
     Codex codex;
     
-    UITextBox searchBar;
+    UITextBox  searchBar;
     
-    b32   isViewingPage;
-    s32   pageIndex = -1;
+    b32        isViewingPage;
+    s32        pageIndex = -1;
     Array<u16> viewIndices;
+    
+    //TODO: Hate this, make isViewing* more consistent!
+    b32        isViewingNPCTable;
+    s32        npcPageIndex = -1;
+    Array<u16> npcViewIndices;
 };
 
-//MonsterTable monsterTable = {};
-Compendium      compendium     = {};
-CachedPageEntry cachedPage     = {};
-UIScrollableRegion pageScroll  = {};
-UIScrollableRegion tableScroll = {};
+Compendium      compendium        = {};
+CachedPageEntry cachedPage        = {};
+UIScrollableRegion pageScroll     = {};
+UIScrollableRegion tableScroll    = {};
+UIScrollableRegion npcTableScroll = {};
 
 
 //NOTE: Kinda hacky but okay.
@@ -176,8 +241,20 @@ s32 *newToOldMap = internal_newToOldMap + 10;
 
 b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
 {
-    compendium.isViewingPage = FALSE;
-    compendium.pageIndex     = -1;
+    compendium.isViewingNPCTable = FALSE;
+    compendium.isViewingPage     = FALSE;
+    compendium.pageIndex         = -1;
+    compendium.npcPageIndex      = -1;
+    
+    return FALSE;
+}
+
+b32 CompendiumOpenNPCTable(UIContext *c, void *userData)
+{
+    compendium.isViewingNPCTable = TRUE;
+    compendium.isViewingPage     = FALSE;
+    compendium.pageIndex         = -1;
+    compendium.npcPageIndex      = -1;
     
     return FALSE;
 }
@@ -957,13 +1034,17 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->RI                = ls_utf32Alloc(128);
     cachedPage->defensiveCapacity = ls_utf32Alloc(128);
     cachedPage->melee             = ls_utf32Alloc(320);
-    cachedPage->ranged            = ls_utf32Alloc(256);
+    cachedPage->ranged            = ls_utf32Alloc(448);
     cachedPage->specialAttacks    = ls_utf32Alloc(448);
     cachedPage->psych             = ls_utf32Alloc(2048);
     cachedPage->magics            = ls_utf32Alloc(2048);
     cachedPage->spells            = ls_utf32Alloc(2048);
+    cachedPage->tactics           = ls_utf32Alloc(1024);
     cachedPage->racialMods        = ls_utf32Alloc(128);
     cachedPage->spec_qual         = ls_utf32Alloc(320);
+    cachedPage->given_equip       = ls_utf32Alloc(512);
+    cachedPage->properties        = ls_utf32Alloc(256);
+    cachedPage->boons             = ls_utf32Alloc(512);
     
     cachedPage->specials          = ls_utf32Alloc(maxTalents * 2048);
     
@@ -991,7 +1072,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     
     cachedPage->speed             = ls_utf32Alloc(96);
     cachedPage->space             = ls_utf32Alloc(32);
-    cachedPage->reach             = ls_utf32Alloc(64);
+    cachedPage->reach             = ls_utf32Alloc(320);
     
     //TODO: Pre-merge all these, doens't make sense not to.
     cachedPage->STR               = ls_utf32Alloc(32);
@@ -1004,9 +1085,9 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->BMC               = ls_utf32Alloc(64);
     cachedPage->DMC               = ls_utf32Alloc(96);
     
-    cachedPage->talents           = ls_utf32Alloc(maxTalents * 32);
-    cachedPage->skills            = ls_utf32Alloc(maxTalents * 32);
-    cachedPage->languages         = ls_utf32Alloc(maxTalents * 64);
+    cachedPage->talents           = ls_utf32Alloc(maxTalents   * 32);
+    cachedPage->skills            = ls_utf32Alloc(maxSkills    * 32);
+    cachedPage->languages         = ls_utf32Alloc(maxLanguages * 64);
     cachedPage->environment       = ls_utf32Alloc(96);
 }
 
@@ -1082,10 +1163,15 @@ void LoadCompendium(string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.environment);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.specials);
         
-        //TODO: Change this to a FixedArray 
+        //TODO: Change these to a FixedArray 
         u32 entryCount = ls_bufferReadDWord(&CompendiumBuff);
         u8 *pagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
         ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
+        ls_bufferReadSkip(&CompendiumBuff, entryCount * sizeof(PageEntry));
+        
+        u32 npcEntryCount = ls_bufferReadDWord(&CompendiumBuff);
+        u8 *npcPagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
+        ls_arrayFromPointer(&compendium.codex.npcPages, (void *)npcPagesSrc, npcEntryCount);
     }
     
     const u32 currentViewIndicesCount = 3200;
@@ -1093,12 +1179,21 @@ void LoadCompendium(string path)
     for(u16 i = 0; i < currentViewIndicesCount; i++)
     { ls_arrayAppend(&compendium.viewIndices, i); }
     
+    const u32 currentNPCViewIndicesCount = 1200;
+    compendium.npcViewIndices = ls_arrayAlloc<u16>(currentNPCViewIndicesCount);
+    for(u16 i = 0; i < currentNPCViewIndicesCount; i++)
+    { ls_arrayAppend(&compendium.npcViewIndices, i); }
+    
     ls_arenaUse(globalArena);
     
     return;
 }
 
+#if _DEBUG
+void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 index, char *name = "")
+#else
 void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 index)
+#endif
 {
     if(index == 0) { AssertMsg(FALSE, "We shouldn't be here\n"); return; } //NOTE: Index zero means no entry
     
@@ -1112,7 +1207,7 @@ void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 in
     if(sep) { sepLen = ls_utf32Len(sep); }
     
     if(base->len + toAppend.len + sepLen > base->size)
-    { ls_printf("Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", base->size, toAppend.len, byteLen, index);
+    { ls_printf("%cs: Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", name, base->size, toAppend.len, byteLen, index);
         AssertMsg(FALSE, ""); }
     
     if(sep)
@@ -1131,12 +1226,24 @@ void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 in
     ls_bufferSeekBegin(buf);
 }
 
+#if _DEBUG
+void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u16 index, char *name = "")
+#else
 void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u16 index)
+#endif
 {
+#if _DEBUG
+    AppendEntryFromBuffer(buf, base, sep, (u32)index, name);
+#else
     AppendEntryFromBuffer(buf, base, sep, (u32)index);
+#endif
 }
 
+#if _DEBUG
+void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index, char *name = "")
+#else
 void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
+#endif
 {
     if(index == 0) { toSet->len = 0; return; } //NOTE: Index zero means no entry
     
@@ -1147,16 +1254,24 @@ void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
     
     u32 len = ls_utf8Len(utf8_data, byteLen);
     
-    LogMsgF(toSet->size >= len, "Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", toSet->size, len, byteLen, index);
+    LogMsgF(toSet->size >= len, "%cs: Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", name, toSet->size, len, byteLen, index);
     
     ls_utf32FromUTF8_t(toSet, utf8_data, len);
     
     ls_bufferSeekBegin(buf);
 }
 
+#if _DEBUG
+void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u16 index, char *name = "")
+#else
 void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u16 index)
+#endif
 {
+#if _DEBUG
+    GetEntryFromBuffer_t(buf, toSet, (u32)index, name);
+#else
     GetEntryFromBuffer_t(buf, toSet, (u32)index);
+#endif
 }
 
 utf8 GetEntryFromBuffer_8(buffer *buf, u32 index)
@@ -1191,6 +1306,23 @@ void SetMonsterTable(UIContext *c)
     compendium.searchBar.postInput = CompendiumSearchFunction;
     compendium.searchBar.isSingleLine = TRUE;
     
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    
+    return;
+}
+
+void SetNPCTable(UIContext *c)
+{
+    Codex *codex = &compendium.codex;
+    
+    s32 npcTableMinY = -((codex->npcPages.count-30) * 19);
+    npcTableScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, npcTableMinY };
+    
+    /*
+    compendium.searchBar.text = ls_utf32Alloc(64);
+    compendium.searchBar.postInput = CompendiumSearchFunction;
+    compendium.searchBar.isSingleLine = TRUE;
+    */
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
     return;
@@ -1283,8 +1415,15 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells);
+    
+    ls_utf32Clear(&cachedPage->tactics);
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
+    
+    ls_utf32Clear(&cachedPage->given_equip);
+    ls_utf32Clear(&cachedPage->properties);
+    ls_utf32Clear(&cachedPage->boons);
     
     ls_utf32Clear(&cachedPage->specials);
     if(page.specials[0])
@@ -1428,6 +1567,225 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     }
     
     GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment);
+}
+
+void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
+{
+    u32 tempUTF32Buffer[256] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 256 };
+    
+    Codex *c = &compendium.codex;
+    
+    cachedPage->pageIndex = viewIndex;
+    
+    //TODO: What's missing (apart from possible bug fixes)
+    //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
+    //      Maybe DC for Channeling Energy on clerics with Carisma?
+    //      Maybe AC Deviation bonus for specific Race/Class combos?
+    //      Skill Checks On Any Ability
+    
+    //NOTE: Everything tries to be ordered like the struct, to be organized
+    //      But I need to have these stats earlier because other paramaters depend on them
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR, "str");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX, "dex");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON, "con");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->INT, page.INT, "int");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS, "wis");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA, "cha");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
+    
+    ls_utf32Clear(&cachedPage->treasure);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "short_desc");
+    GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "AC");
+    CalculateAndCacheAC(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "HP");
+    CalculateAndCacheHP(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "ST");
+    CalculateAndCacheST(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC, "BMC");
+    CalculateAndCacheBMC(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC, "DMC");
+    CalculateAndCacheDMC(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative, "initiative");
+    CalculateAndCacheInitiative(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD, "RD");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI, "RI");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "Def.Cap");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->melee, page.melee, "Melee");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ranged, page.ranged, "Ranged");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "Spec.Atk");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych, "Psych");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics, "Magics");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells, "Spells");
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics, page.tactics, "tactics");
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racial mods");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->given_equip, page.given_equip, "given_equip");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->properties, page.properties, "properties");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->boons, page.boons, "boons");
+    
+    ls_utf32Clear(&cachedPage->specials);
+    if(page.specials[0])
+    {
+        GetEntryFromBuffer_t(&c->specials, &cachedPage->specials, page.specials[0], "specials");
+        u32 i = 1;
+        while(page.specials[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->specials, &cachedPage->specials, U"\n\n", page.specials[i], "specials");
+            i += 1;
+        }
+    }
+    
+    ls_utf32Clear(&cachedPage->org);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
+    
+    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
+    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs, "gs");
+    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe, "pe");
+    GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "align");
+    GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type, "type");
+    
+    ls_utf32Clear(&cachedPage->subtype);
+    if(page.subtype[0])
+    {
+        ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U" ("));
+        AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, NULL, page.subtype[0], "subtypes");
+        u32 i = 1;
+        while(page.subtype[i] && i < 8)
+        {
+            AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, U", ", page.subtype[i], "subtypes");
+            i += 1;
+        }
+        ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
+    }
+    
+    ls_utf32Clear(&cachedPage->archetype);
+    if(page.archetype[0])
+    {
+        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
+        AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0], "archetypes");
+        u32 i = 1;
+        while(page.archetype[i] && i < 4)
+        {
+            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i], "archetypes");
+            i += 1;
+        }
+        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
+    }
+    
+    ls_utf32Clear(&cachedPage->senses);
+    if(page.senses[0])
+    {
+        GetEntryFromBuffer_t(&c->senses, &cachedPage->senses, page.senses[0], "senses");
+        u32 i = 1;
+        while(page.senses[i] && i < 8)
+        {
+            AppendEntryFromBuffer(&c->senses, &cachedPage->senses, U", ", page.senses[i], "senses");
+            i += 1;
+        }
+    }
+    
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception, "perception");
+    GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura, "aura");
+    
+    ls_utf32Clear(&cachedPage->immunities);
+    if(page.immunities[0])
+    {
+        GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0], "immunities");
+        u32 i = 1;
+        while(page.immunities[i] && i < 16)
+        {
+            AppendEntryFromBuffer(&c->immunities, &cachedPage->immunities, U", ", page.immunities[i], "immunities");
+            i += 1;
+        }
+    }
+    
+    ls_utf32Clear(&cachedPage->resistances);
+    if(page.resistances[0])
+    {
+        GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0], "resistances");
+        u32 i = 1;
+        while(page.resistances[i] && i < 16)
+        {
+            AppendEntryFromBuffer(&c->resistances, &cachedPage->resistances, U", ", page.resistances[i], "resistances");
+            i += 1;
+        }
+    }
+    
+    ls_utf32Clear(&cachedPage->weaknesses);
+    if(page.weaknesses[0])
+    {
+        GetEntryFromBuffer_t(&c->weaknesses, &cachedPage->weaknesses, page.weaknesses[0], "weaknesses");
+        u32 i = 1;
+        while(page.weaknesses[i] && i < 16)
+        {
+            AppendEntryFromBuffer(&c->weaknesses, &cachedPage->weaknesses, U", ", page.weaknesses[i], "weaknesses");
+            i += 1;
+        }
+    }
+    
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->speed, page.speed, "speed");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space, "space");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach, "reach");
+    
+    ls_utf32Clear(&cachedPage->talents);
+    if(page.talents[0])
+    {
+        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0], "talents");
+        u32 i = 1;
+        while(page.talents[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->talents, &cachedPage->talents, U", ", page.talents[i], "talents");
+            i += 1;
+        }
+    }
+    
+    ls_utf32Clear(&cachedPage->skills);
+    if(page.skills[0])
+    {
+        GetEntryFromBuffer_t(&c->skills, &cachedPage->skills, page.skills[0], "skills");
+        u32 i = 1;
+        while(page.skills[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->skills, &cachedPage->skills, U", ", page.skills[i], "skills");
+            i += 1;
+        }
+    }
+    
+    ls_utf32Clear(&cachedPage->languages);
+    if(page.languages[0])
+    {
+        GetEntryFromBuffer_t(&c->languages, &cachedPage->languages, page.languages[0], "languages");
+        u32 i = 1;
+        while(page.languages[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->languages, &cachedPage->languages, U", ", page.languages[i], "languages");
+            i += 1;
+        }
+    }
+    
+    ls_utf32Clear(&cachedPage->environment);
 }
 
 //TODO: Make Certain Fields modifiable directly??
@@ -1839,6 +2197,66 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     return baseR.y;
 }
 
+void DrawNPCTable(UIContext *c)
+{
+    Input *UserInput = &c->UserInput;
+    Codex *codex     = &compendium.codex;
+    
+    Color bkgColor = RGBg(0x40);
+    
+    s32 baseX = 20;
+    s32 baseY = 630;
+    
+    ls_uiStartScrollableRegion(c, &npcTableScroll);
+    
+    s32 startI = -(npcTableScroll.deltaY / 19);
+    s32 endI   = startI+36 < compendium.npcViewIndices.count ? startI+36 : compendium.npcViewIndices.count;
+    endI       = endI < codex->npcPages.count ? endI : codex->npcPages.count;
+    
+    for(s32 i = startI; i < endI; i++)
+    {
+        NPCPageEntry entry = codex->npcPages[compendium.npcViewIndices[i]];
+        Color hoverColor = bkgColor;
+        
+        if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
+        {
+            compendium.isViewingPage = TRUE;
+            compendium.npcPageIndex  = compendium.viewIndices[i];
+        }
+        
+        if(MouseInRect(baseX-4, baseY-4, 300, 18)) { hoverColor = RGBg(0x66); }
+        
+        //NOTE: Matriarca delle Scimmie Cappuccine Corallo is too long...
+        //      Adding a scissor cuts it... but I don't like that solution a lot...
+        //      What if I want automatic '...' at the end of a label??
+        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 300, 20, hoverColor, c->borderColor);
+        c->scissor = UIRect { baseX-4, 0, 298, s32(c->height) };
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY+npcTableScroll.deltaY, 1);
+        c->scissor = UIRect { 0, 0, s32(c->width), s32(c->height) };
+        baseX += 299;
+        
+        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 80, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY+npcTableScroll.deltaY, 1);
+        baseX += 79;
+        
+        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 180, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), baseX, baseY+npcTableScroll.deltaY, 1);
+        baseX += 179;
+        
+        //TODO: Show all subtypes. Right now we only grab one.
+        //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
+        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 188, 20, bkgColor, c->borderColor);
+        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), baseX, baseY+npcTableScroll.deltaY, 1);
+        baseX += 187;
+        
+        baseY -= 19;
+        baseX = 20;
+    }
+    
+    ls_uiEndScrollableRegion(c);
+    
+}
+
 void DrawMonsterTable(UIContext *c)
 {
     Input *UserInput = &c->UserInput;
@@ -1911,10 +2329,8 @@ void DrawCompendium(UIContext *c)
     Codex *codex = &compendium.codex;
     Input *UserInput = &c->UserInput;
     
-    if(compendium.isViewingPage)
+    if(compendium.isViewingPage && compendium.pageIndex != -1)
     {
-        AssertMsg(compendium.pageIndex != -1, "Page Index was not set\n");
-        
         if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.pageIndex < (codex->pages.count-1))
         { compendium.pageIndex += 1; }
         
@@ -1936,6 +2352,34 @@ void DrawCompendium(UIContext *c)
         ls_uiStartScrollableRegion(c, &pageScroll);
         pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
         ls_uiEndScrollableRegion(c);
+    }
+    else if(compendium.isViewingPage && compendium.npcPageIndex != -1)
+    {
+        if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.npcPageIndex < (codex->npcPages.count-1))
+        { compendium.npcPageIndex += 1; }
+        
+        if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && compendium.npcPageIndex > 0)
+        { compendium.npcPageIndex -= 1; }
+        
+        if(cachedPage.pageIndex != compendium.npcPageIndex)
+        { 
+            NPCPageEntry pEntry = compendium.codex.npcPages[compendium.npcPageIndex];
+            CachePage(pEntry, compendium.npcPageIndex, &cachedPage);
+            
+            //NOTE: Reset the page scroll for the new page (Fuck GCC)
+            pageScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, 0 };
+        }
+        
+        //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
+        //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
+        //      The minY is set by the DrawPage call itself
+        ls_uiStartScrollableRegion(c, &pageScroll);
+        pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
+        ls_uiEndScrollableRegion(c);
+    }
+    else if(compendium.isViewingNPCTable)
+    {
+        DrawNPCTable(c);
     }
     else
     {
