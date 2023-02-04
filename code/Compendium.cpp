@@ -18,14 +18,16 @@ struct CachedPageEntry
     utf32 psych;
     utf32 magics;
     utf32 spells;
-    utf32 tactics;
+    utf32 tactics_before;
+    utf32 tactics_during;
+    utf32 tactics_stats;
     utf32 skills; //TODO Separate type from value
     utf32 racialMods;
     utf32 spec_qual;
-    utf32 specials;
     utf32 given_equip;
     utf32 properties;
     utf32 boons;
+    utf32 specials;
     utf32 org;
     utf32 treasure;
     utf32 desc;
@@ -79,7 +81,7 @@ struct NPCPageEntry
     u32 psych;
     u32 magics;
     u32 spells;
-    u32 tactics;
+    u32 tactics[3];
     u32 skills[24]; //TODO Separate type from value
     u32 racialMods;
     u32 spec_qual;
@@ -362,6 +364,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     s32 acExprLen   = acExprEndIdx - acExprBegin;
     utf32 acExpr    = { AC.data + acExprBegin, acExprLen, acExprLen };
     
+    //TODO: Golarion has "armor" with small letters... fuck them
     s32 armorBonusIdx  = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Armatura"));
     s32 shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Scudo"));
     
@@ -385,6 +388,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     if(armorBonusIdx != -1)
     {
         //NOTE: Look for the armor in the treasure line.
+        //TODO: Fix, In NPCs there's no treasure, but there are properties!"
         Armor *found = NULL;
         s32    index = -1;
         for(u32 i = 0; i < armorTableCount; i++)
@@ -1041,7 +1045,11 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->psych             = ls_utf32Alloc(2048);
     cachedPage->magics            = ls_utf32Alloc(2048);
     cachedPage->spells            = ls_utf32Alloc(2048);
-    cachedPage->tactics           = ls_utf32Alloc(1536);
+    
+    cachedPage->tactics_before    = ls_utf32Alloc(448);
+    cachedPage->tactics_during    = ls_utf32Alloc(832);
+    cachedPage->tactics_stats     = ls_utf32Alloc(736);
+    
     cachedPage->racialMods        = ls_utf32Alloc(256);
     cachedPage->spec_qual         = ls_utf32Alloc(512);
     cachedPage->given_equip       = ls_utf32Alloc(512);
@@ -1418,7 +1426,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells);
     
-    ls_utf32Clear(&cachedPage->tactics);
+    ls_utf32Clear(&cachedPage->tactics_before);
+    ls_utf32Clear(&cachedPage->tactics_during);
+    ls_utf32Clear(&cachedPage->tactics_stats);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
@@ -1636,7 +1646,9 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics, "Magics");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells, "Spells");
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics, page.tactics, "tactics");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_before, page.tactics[0], "tactics-before");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_during, page.tactics[1], "tactics-during");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_stats,  page.tactics[2], "tactics-stats");
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racial mods");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
@@ -2044,6 +2056,44 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     }
     
     //---------------//
+    //    TACTICS    //
+    //---------------//
+    
+    if(page->tactics_before.len || page->tactics_during.len || page->tactics_stats.len)
+    {
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+        baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y -= 4;
+        baseX    = 148;
+        {
+            offset = ls_uiLabelLayout(c, U"Tattiche", baseR, pureWhite);
+            ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+            
+            currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+            baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+            baseR.y -= offset.h;
+            
+            if(page->tactics_before.len)
+            {
+                renderAndAlignS(U"Prima del Combattimento: ");
+                renderAndAlign(page->tactics_before);
+            }
+            
+            if(page->tactics_during.len)
+            {
+                renderAndAlignS(U"Durante il Combattimento: ");
+                renderAndAlign(page->tactics_during);
+            }
+            
+            if(page->tactics_stats.len)
+            {
+                renderAndAlignS(U"Statistiche Base: ");
+                renderAndAlign(page->tactics_stats);
+            }
+        }
+    }
+    
+    //---------------//
     //     STATS     //
     //---------------//
     
@@ -2106,6 +2156,23 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
             renderAndAlign(page->spec_qual);
         }
         
+        if(page->given_equip.len)
+        {
+            renderAndAlignS(U"Dotazioni da Combattimento: ");
+            renderAndAlign(page->given_equip);
+        }
+        
+        if(page->properties.len)
+        {
+            renderAndAlignS(U"Propriet\U000000E0: ");
+            renderAndAlign(page->properties);
+        }
+        
+        if(page->boons.len)
+        {
+            renderAndAlignS(U"Beneficio: ");
+            renderAndAlign(page->boons);
+        }
     }
     
     //---------------//
@@ -2130,30 +2197,34 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
             baseR.y -= (offset.h + 8);
         }
     }
+    
     //---------------//
     //      ORG      //
     //---------------//
     
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseR.y -= 4;
-    baseX  = 148;
+    if(page->environment.len || page->org.len || page->treasure.len)
     {
-        offset = ls_uiLabelLayout(c, U"Ecologia", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
-        baseR.y -= offset.h;
-        
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        
-        renderAndAlignS(U"Ambiente: ");
-        renderAndAlign(page->environment);
-        
-        renderAndAlignS(U"Organizzazione: ");
-        renderAndAlign(page->org);
-        
-        renderAndAlignS(U"Tesoro: ");
-        renderAndAlign(page->treasure);
+        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+        baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.y -= 4;
+        baseX  = 148;
+        {
+            offset = ls_uiLabelLayout(c, U"Ecologia", baseR, pureWhite);
+            ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+            baseR.y -= offset.h;
+            
+            currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+            baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+            
+            renderAndAlignS(U"Ambiente: ");
+            renderAndAlign(page->environment);
+            
+            renderAndAlignS(U"Organizzazione: ");
+            renderAndAlign(page->org);
+            
+            renderAndAlignS(U"Tesoro: ");
+            renderAndAlign(page->treasure);
+        }
     }
     
     //---------------//
