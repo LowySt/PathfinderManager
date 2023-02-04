@@ -19,6 +19,7 @@ struct CachedPageEntry
     utf32 magics;
     utf32 spells;
     utf32 tactics;
+    utf32 skills; //TODO Separate type from value
     utf32 racialMods;
     utf32 spec_qual;
     utf32 specials;
@@ -58,7 +59,6 @@ struct CachedPageEntry
     utf32 BMC;
     utf32 DMC;
     utf32 talents;
-    utf32 skills; //TODO Separate type from value
     utf32 languages;
     utf32 environment;
 };
@@ -80,8 +80,9 @@ struct NPCPageEntry
     u32 magics;
     u32 spells;
     u32 tactics;
+    u32 skills[24]; //TODO Separate type from value
     u32 racialMods;
-    u32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
+    u32 spec_qual;
     u32 given_equip;
     u32 properties;
     u32 boons;
@@ -117,65 +118,64 @@ struct NPCPageEntry
     u16 BMC;
     u16 DMC;
     u16 talents[24];
-    u16 skills[24]; //TODO Separate type from value
     u16 languages[24];
 };
 
 struct PageEntry
 {
-    u32 origin;
-    u32 shortDesc;
-    u32 AC;
-    u32 HP;
-    u32 ST;
-    u32 RD;
-    u32 RI;
-    u32 defensiveCapacity;
-    u32 melee;
-    u32 ranged;
-    u32 specialAttacks;
-    u32 psych;
-    u32 magics;
-    u32 spells;
-    u32 racialMods;
-    u32 spec_qual; //Duplicate of defensiveCapacity + magicalCapacity + special attacks??
-    u32 specials[24];
-    u32 org;
-    u32 treasure;
-    u32 desc;
-    u32 source;
+    u32 origin;            //4
+    u32 shortDesc;         //8
+    u32 AC;                //12
+    u32 HP;                //16
+    u32 ST;                //20
+    u32 RD;                //24
+    u32 RI;                //28
+    u32 defensiveCapacity; //32
+    u32 melee;             //36
+    u32 ranged;            //40
+    u32 specialAttacks;    //44
+    u32 psych;             //48
+    u32 magics;            //52
+    u32 spells;            //56
+    u32 skills[24];        //152    //TODO Separate type from value
+    u32 racialMods;        //156
+    u32 spec_qual;         //160
+    u32 specials[24];      //256
+    u32 org;               //260
+    u32 treasure;          //264
+    u32 desc;              //268
+    u32 source;            //272
     
-    u16 name;
-    u16 gs;
-    u16 pe;
-    u16 alignment;
-    u16 type;
-    u16 subtype[8];
-    u16 archetype[4];
-    u16 size;
-    u16 initiative;
-    u16 senses[8];
-    u16 perception;
-    u16 aura;
-    u16 immunities[16];
-    u16 resistances[16];
-    u16 weaknesses[16];
-    u16 speed;
-    u16 space;
-    u16 reach;
-    u16 STR;
-    u16 DEX;
-    u16 CON;
-    u16 INT;
-    u16 WIS;
-    u16 CHA;
-    u16 BAB;
-    u16 BMC;
-    u16 DMC;
-    u16 talents[24];
-    u16 skills[24]; //TODO Separate type from value
-    u16 languages[24];
-    u16 environment;
+    u16 name;              //274
+    u16 gs;                //276
+    u16 pe;                //278
+    u16 alignment;         //280
+    u16 type;              //282
+    u16 subtype[8];        //298
+    u16 archetype[4];      //306
+    u16 size;              //308
+    u16 initiative;        //310
+    u16 senses[8];         //326
+    u16 perception;        //328
+    u16 aura;              //330
+    u16 immunities[16];    //362
+    u16 resistances[16];   //394
+    u16 weaknesses[16];    //426
+    u16 speed;             //428
+    u16 space;             //430
+    u16 reach;             //432
+    u16 STR;               //434
+    u16 DEX;               //436
+    u16 CON;               //438
+    u16 INT;               //440
+    u16 WIS;               //442
+    u16 CHA;               //444
+    u16 BAB;               //446
+    u16 BMC;               //448
+    u16 DMC;               //450
+    u16 talents[24];       //498
+    u16 languages[24];     //546
+    u16 environment;       //548
 };
 
 struct Codex
@@ -559,7 +559,9 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     s32 parenToken   = ls_utf32LeftFind(ST, wisSaveBegin, (u32)'(');
     
     s32 wisSaveEnd = semiToken - 1;
-    if(semiToken == -1)
+    if(semiToken != -1 && parenToken != -1 && semiToken > parenToken)
+    { wisSaveEnd = parenToken - 1; }
+    else if(semiToken == -1)
     {
         wisSaveEnd = parenToken - 1;
         if(parenToken == -1)
@@ -1025,25 +1027,25 @@ void initCachedPage(CachedPageEntry *cachedPage)
     const u32 maxLanguages   = 24;
     const u32 maxSpecials    = 24;
     
-    cachedPage->origin            = ls_utf32Alloc(72);
+    cachedPage->origin            = ls_utf32Alloc(128);
     cachedPage->shortDesc         = ls_utf32Alloc(512);
     cachedPage->AC                = ls_utf32Alloc(192);
     cachedPage->HP                = ls_utf32Alloc(128);
     cachedPage->ST                = ls_utf32Alloc(128);
     cachedPage->RD                = ls_utf32Alloc(128);
     cachedPage->RI                = ls_utf32Alloc(128);
-    cachedPage->defensiveCapacity = ls_utf32Alloc(128);
-    cachedPage->melee             = ls_utf32Alloc(320);
-    cachedPage->ranged            = ls_utf32Alloc(448);
-    cachedPage->specialAttacks    = ls_utf32Alloc(448);
+    cachedPage->defensiveCapacity = ls_utf32Alloc(256);
+    cachedPage->melee             = ls_utf32Alloc(1280);
+    cachedPage->ranged            = ls_utf32Alloc(1280);
+    cachedPage->specialAttacks    = ls_utf32Alloc(1536);
     cachedPage->psych             = ls_utf32Alloc(2048);
     cachedPage->magics            = ls_utf32Alloc(2048);
     cachedPage->spells            = ls_utf32Alloc(2048);
-    cachedPage->tactics           = ls_utf32Alloc(1024);
-    cachedPage->racialMods        = ls_utf32Alloc(128);
-    cachedPage->spec_qual         = ls_utf32Alloc(320);
+    cachedPage->tactics           = ls_utf32Alloc(1536);
+    cachedPage->racialMods        = ls_utf32Alloc(256);
+    cachedPage->spec_qual         = ls_utf32Alloc(512);
     cachedPage->given_equip       = ls_utf32Alloc(512);
-    cachedPage->properties        = ls_utf32Alloc(256);
+    cachedPage->properties        = ls_utf32Alloc(640);
     cachedPage->boons             = ls_utf32Alloc(512);
     
     cachedPage->specials          = ls_utf32Alloc(maxTalents * 2048);
@@ -1072,7 +1074,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     
     cachedPage->speed             = ls_utf32Alloc(96);
     cachedPage->space             = ls_utf32Alloc(32);
-    cachedPage->reach             = ls_utf32Alloc(320);
+    cachedPage->reach             = ls_utf32Alloc(768);
     
     //TODO: Pre-merge all these, doens't make sense not to.
     cachedPage->STR               = ls_utf32Alloc(32);
