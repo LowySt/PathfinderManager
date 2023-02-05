@@ -1704,7 +1704,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     inputUse |= ls_uiButton(c, &f->remove, xPos, yPos, 20, 20);
     
     Input *UserInput = &c->UserInput;
-    if(RightClickIn(xPos + 50, yPos, 120, 20)) globalSelectedIndex = (s32)posIdx;
+    if(RightClickIn(xPos + 50, yPos, 166, 20)) globalSelectedIndex = (s32)posIdx;
     
     return inputUse;
 }
@@ -1920,8 +1920,17 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 if(mainCachedPage.pageIndex != f->compendiumIdx)
                 { 
-                    PageEntry pEntry = compendium.codex.pages[f->compendiumIdx];
-                    CachePage(pEntry, f->compendiumIdx, &mainCachedPage);
+                    if(f->compendiumIdx < NPC_PAGE_INDEX_OFFSET)
+                    { 
+                        PageEntry pEntry = compendium.codex.pages[f->compendiumIdx];
+                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage);
+                    }
+                    else
+                    {
+                        NPCPageEntry pEntry = compendium.codex.npcPages[f->compendiumIdx - NPC_PAGE_INDEX_OFFSET];
+                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage);
+                    }
+                    
                     initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
                 }
                 
@@ -1991,8 +2000,18 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 if(mainCachedPage.pageIndex != ord->compendiumIdx)
                 { 
-                    PageEntry pEntry = compendium.codex.pages[ord->compendiumIdx];
-                    CachePage(pEntry, ord->compendiumIdx, &mainCachedPage);
+                    if(ord->compendiumIdx < NPC_PAGE_INDEX_OFFSET)
+                    { 
+                        PageEntry pEntry = compendium.codex.pages[ord->compendiumIdx];
+                        CachePage(pEntry, ord->compendiumIdx, &mainCachedPage);
+                    }
+                    else
+                    { 
+                        NPCPageEntry pEntry = compendium.codex.npcPages[ord->compendiumIdx - NPC_PAGE_INDEX_OFFSET];
+                        CachePage(pEntry, ord->compendiumIdx, &mainCachedPage);
+                    }
+                    
+                    
                     viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
                 }
                 

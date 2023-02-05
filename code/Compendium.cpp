@@ -1,7 +1,6 @@
 struct CachedPageEntry
 {
     s32 pageIndex    = -1;
-    s32 npcPageIndex = -1;
     
     b32 acHasArmor = FALSE;
     
@@ -212,6 +211,8 @@ struct Codex
     Array<NPCPageEntry> npcPages;
 };
 
+const s32 NPC_PAGE_INDEX_OFFSET = 5000;
+
 struct Compendium
 {
     Codex codex;
@@ -225,7 +226,6 @@ struct Compendium
     
     //TODO: Hate this, make isViewing* more consistent!
     b32        isViewingNPCTable;
-    s32        npcPageIndex = -1;
     Array<u16> npcViewIndices;
 };
 
@@ -248,7 +248,6 @@ b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
     compendium.isViewingNPCTable = FALSE;
     compendium.isViewingPage     = FALSE;
     compendium.pageIndex         = -1;
-    compendium.npcPageIndex      = -1;
     
     return FALSE;
 }
@@ -258,7 +257,6 @@ b32 CompendiumOpenNPCTable(UIContext *c, void *userData)
     compendium.isViewingNPCTable = TRUE;
     compendium.isViewingPage     = FALSE;
     compendium.pageIndex         = -1;
-    compendium.npcPageIndex      = -1;
     
     return FALSE;
 }
@@ -1304,11 +1302,7 @@ void LoadCompendium(string path)
     return;
 }
 
-#if _DEBUG
-void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 index, char *name = "")
-#else
-void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 index)
-#endif
+void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 index, const char *name = "")
 {
     if(index == 0) { AssertMsg(FALSE, "We shouldn't be here\n"); return; } //NOTE: Index zero means no entry
     
@@ -1341,24 +1335,10 @@ void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 in
     ls_bufferSeekBegin(buf);
 }
 
-#if _DEBUG
-void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u16 index, char *name = "")
-#else
-void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u16 index)
-#endif
-{
-#if _DEBUG
-    AppendEntryFromBuffer(buf, base, sep, (u32)index, name);
-#else
-    AppendEntryFromBuffer(buf, base, sep, (u32)index);
-#endif
-}
+void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u16 index, const char *name = "")
+{ AppendEntryFromBuffer(buf, base, sep, (u32)index, name); }
 
-#if _DEBUG
-void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index, char *name = "")
-#else
-void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
-#endif
+void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index, const char *name = "")
 {
     if(index == 0) { toSet->len = 0; return; } //NOTE: Index zero means no entry
     
@@ -1376,18 +1356,8 @@ void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index)
     ls_bufferSeekBegin(buf);
 }
 
-#if _DEBUG
-void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u16 index, char *name = "")
-#else
-void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u16 index)
-#endif
-{
-#if _DEBUG
-    GetEntryFromBuffer_t(buf, toSet, (u32)index, name);
-#else
-    GetEntryFromBuffer_t(buf, toSet, (u32)index);
-#endif
-}
+void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u16 index, const char *name = "")
+{ GetEntryFromBuffer_t(buf, toSet, (u32)index, name); }
 
 utf8 GetEntryFromBuffer_8(buffer *buf, u32 index)
 {
@@ -1474,7 +1444,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     Codex *c = &compendium.codex;
     
     cachedPage->pageIndex    = viewIndex;
-    cachedPage->npcPageIndex = -1;
     
     //TODO: What's missing (apart from possible bug fixes)
     //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
@@ -1693,8 +1662,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     Codex *c = &compendium.codex;
     
-    cachedPage->pageIndex = -1;
-    cachedPage->npcPageIndex = viewIndex;
+    cachedPage->pageIndex = viewIndex;
     
     //TODO: What's missing (apart from possible bug fixes)
     //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
@@ -2402,7 +2370,7 @@ void DrawNPCTable(UIContext *c)
         if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
         {
             compendium.isViewingPage = TRUE;
-            compendium.npcPageIndex  = compendium.npcViewIndices[i];
+            compendium.pageIndex  = compendium.npcViewIndices[i] + NPC_PAGE_INDEX_OFFSET;
         }
         
         if(MouseInRect(baseX-4, baseY-4, 300, 18)) { hoverColor = RGBg(0x66); }
@@ -2510,61 +2478,64 @@ void DrawCompendium(UIContext *c)
     Codex *codex = &compendium.codex;
     Input *UserInput = &c->UserInput;
     
-    if(compendium.isViewingPage && compendium.pageIndex != -1)
+    if(compendium.pageIndex == -1)
     {
-        if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.pageIndex < (codex->pages.count-1))
-        { compendium.pageIndex += 1; }
-        
-        if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && compendium.pageIndex > 0)
-        { compendium.pageIndex -= 1; }
-        
-        if(cachedPage.pageIndex != compendium.pageIndex)
-        { 
-            PageEntry pEntry = compendium.codex.pages[compendium.pageIndex];
-            CachePage(pEntry, compendium.pageIndex, &cachedPage);
-            
-            //NOTE: Reset the page scroll for the new page (Fuck GCC)
-            pageScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, 0 };
-        }
-        
-        //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
-        //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
-        //      The minY is set by the DrawPage call itself
-        ls_uiStartScrollableRegion(c, &pageScroll);
-        pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
-        ls_uiEndScrollableRegion(c);
-    }
-    else if(compendium.isViewingPage && compendium.npcPageIndex != -1)
-    {
-        if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.npcPageIndex < (codex->npcPages.count-1))
-        { compendium.npcPageIndex += 1; }
-        
-        if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && compendium.npcPageIndex > 0)
-        { compendium.npcPageIndex -= 1; }
-        
-        if(cachedPage.npcPageIndex != compendium.npcPageIndex)
-        { 
-            NPCPageEntry pEntry = compendium.codex.npcPages[compendium.npcPageIndex];
-            CachePage(pEntry, compendium.npcPageIndex, &cachedPage);
-            
-            //NOTE: Reset the page scroll for the new page (Fuck GCC)
-            pageScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, 0 };
-        }
-        
-        //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
-        //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
-        //      The minY is set by the DrawPage call itself
-        ls_uiStartScrollableRegion(c, &pageScroll);
-        pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
-        ls_uiEndScrollableRegion(c);
-    }
-    else if(compendium.isViewingNPCTable)
-    {
-        DrawNPCTable(c);
+        if(compendium.isViewingNPCTable) DrawNPCTable(c); 
+        else                             DrawMonsterTable(c);
     }
     else
     {
-        DrawMonsterTable(c);
+        //NOTE: It's a Mob's Page Index
+        if(compendium.pageIndex < NPC_PAGE_INDEX_OFFSET)
+        {
+            if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.pageIndex < (codex->pages.count-1))
+            { compendium.pageIndex += 1; ls_printf("Page Index: %d\n", compendium.pageIndex); }
+            
+            if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && compendium.pageIndex > 0)
+            { compendium.pageIndex -= 1; ls_printf("Page Index: %d\n", compendium.pageIndex); }
+            
+            if(cachedPage.pageIndex != compendium.pageIndex)
+            { 
+                PageEntry pEntry = compendium.codex.pages[compendium.pageIndex];
+                CachePage(pEntry, compendium.pageIndex, &cachedPage);
+                
+                //NOTE: Reset the page scroll for the new page (Fuck GCC)
+                pageScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, 0 };
+            }
+            
+            //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
+            //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
+            //      The minY is set by the DrawPage call itself
+            ls_uiStartScrollableRegion(c, &pageScroll);
+            pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
+            ls_uiEndScrollableRegion(c);
+        }
+        else
+        {
+            s32 npcPageIndex = compendium.pageIndex - NPC_PAGE_INDEX_OFFSET;
+            
+            if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && npcPageIndex < (codex->npcPages.count-1))
+            { compendium.pageIndex += 1; npcPageIndex += 1; }
+            
+            if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && npcPageIndex > 0)
+            { compendium.pageIndex -= 1; npcPageIndex -= 1; }
+            
+            if(cachedPage.pageIndex != compendium.pageIndex)
+            { 
+                NPCPageEntry pEntry = compendium.codex.npcPages[npcPageIndex];
+                CachePage(pEntry, compendium.pageIndex, &cachedPage);
+                
+                //NOTE: Reset the page scroll for the new page (Fuck GCC)
+                pageScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, 0 };
+            }
+            
+            //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
+            //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
+            //      The minY is set by the DrawPage call itself
+            ls_uiStartScrollableRegion(c, &pageScroll);
+            pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
+            ls_uiEndScrollableRegion(c);
+        }
     }
     
     return;
