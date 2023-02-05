@@ -346,7 +346,7 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
 }
 
 //TODO: What about Deviation being affected by some things?
-void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
+void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
 {
     cachedPage->acHasArmor = FALSE;
     
@@ -364,12 +364,13 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     s32 acExprLen   = acExprEndIdx - acExprBegin;
     utf32 acExpr    = { AC.data + acExprBegin, acExprLen, acExprLen };
     
-    //TODO: Golarion has "armor" with small letters... fuck them
+    //TODO: Golarion has "armor" and "shield" with small letters... fuck them
     s32 armorBonusIdx  = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Armatura"));
-    s32 shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Scudo"));
+    if(armorBonusIdx == -1) armorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"armatura"));
     
-    //TODO: Problem when we are negative. We should ceil instead of floor!!!
-    //      Lookup Gigante del Fuoco
+    s32 shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Scudo"));
+    if(shieldBonusIdx == -1) { shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"scudo")); }
+    
     s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
     s32 dexBonusOld = newToOldMap[dexBonusNew];
     
@@ -385,17 +386,31 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
     s32 oldArmorBonus  = -1;
     s32 oldShieldBonus = -1;
     
+    //TODO: Clear Modifiers to Armor and Shields (Like "Chiodato")
     if(armorBonusIdx != -1)
     {
-        //NOTE: Look for the armor in the treasure line.
-        //TODO: Fix, In NPCs there's no treasure, but there are properties!"
         Armor *found = NULL;
         s32    index = -1;
-        for(u32 i = 0; i < armorTableCount; i++)
+        if(isNPC == TRUE)
         {
-            Armor *armor = armorTable + i;
-            if(ls_utf32LeftFind(cachedPage->treasure, armor->name) != -1)
-            { found = armor; index = i; break; }
+            for(u32 i = 0; i < armorTableCount; i++)
+            {
+                Armor *armor = armorTable + i;
+                if(ls_utf32LeftFind(cachedPage->properties, armor->name) != -1)
+                { found = armor; index = i; break; }
+                
+                if(ls_utf32LeftFind(cachedPage->given_equip, armor->name) != -1)
+                { found = armor; index = i; break; }
+            }
+        }
+        else
+        {
+            for(u32 i = 0; i < armorTableCount; i++)
+            {
+                Armor *armor = armorTable + i;
+                if(ls_utf32LeftFind(cachedPage->treasure, armor->name) != -1)
+                { found = armor; index = i; break; }
+            }
         }
         
         if(found)
@@ -421,11 +436,27 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage)
         //NOTE: Look for the shield in the treasure line.
         Armor *found = NULL;
         s32    index = -1;
-        for(u32 i = 0; i < shieldTableCount; i++)
+        
+        if(isNPC == TRUE)
         {
-            Armor *shield = shieldTable + i;
-            if(ls_utf32LeftFind(cachedPage->treasure, shield->name) != -1)
-            { found = shield; index = i; break; }
+            for(u32 i = 0; i < shieldTableCount; i++)
+            {
+                Armor *shield = shieldTable + i;
+                if(ls_utf32LeftFind(cachedPage->properties, shield->name) != -1)
+                { found = shield; index = i; break; }
+                
+                if(ls_utf32LeftFind(cachedPage->given_equip, shield->name) != -1)
+                { found = shield; index = i; break; }
+            }
+        }
+        else
+        {
+            for(u32 i = 0; i < shieldTableCount; i++)
+            {
+                Armor *shield = shieldTable + i;
+                if(ls_utf32LeftFind(cachedPage->treasure, shield->name) != -1)
+                { found = shield; index = i; break; }
+            }
         }
         
         if(found)
@@ -1393,7 +1424,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
-    CalculateAndCacheAC(tempString, cachedPage);
+    CalculateAndCacheAC(tempString, cachedPage, FALSE);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP);
@@ -1612,8 +1643,12 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "short_desc");
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
     
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->given_equip, page.given_equip, "given_equip");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->properties, page.properties, "properties");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->boons, page.boons, "boons");
+    
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "AC");
-    CalculateAndCacheAC(tempString, cachedPage);
+    CalculateAndCacheAC(tempString, cachedPage, TRUE);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "HP");
@@ -1652,10 +1687,6 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racial mods");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
-    
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->given_equip, page.given_equip, "given_equip");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->properties, page.properties, "properties");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->boons, page.boons, "boons");
     
     ls_utf32Clear(&cachedPage->specials);
     if(page.specials[0])
