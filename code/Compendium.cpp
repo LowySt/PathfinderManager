@@ -1,6 +1,7 @@
 struct CachedPageEntry
 {
-    s32 pageIndex = -1;
+    s32 pageIndex    = -1;
+    s32 npcPageIndex = -1;
     
     b32 acHasArmor = FALSE;
     
@@ -215,7 +216,8 @@ struct Compendium
 {
     Codex codex;
     
-    UITextBox  searchBar;
+    UITextBox  searchBarMobs;
+    UITextBox  searchBarNPCs;
     
     b32        isViewingPage;
     s32        pageIndex = -1;
@@ -261,14 +263,46 @@ b32 CompendiumOpenNPCTable(UIContext *c, void *userData)
     return FALSE;
 }
 
-b32 CompendiumSearchFunction(UIContext *c, void *userData)
+u16 findNeedleAndFillIndexBuffer(utf8 needle, u16 *namesIndexBuffer, u32 buffSize)
+{
+    u8 dataBuffer[128] = {};
+    utf8 toMatchLower = { dataBuffer, 0, 0, 128 };
+    
+    buffer *names = &compendium.codex.names;
+    names->cursor = 4;
+    
+    u16 nibCount = 0;
+    while(names->cursor < names->size)
+    {
+        if(nibCount > buffSize)
+        { AssertMsg(FALSE, "Index Buffer when searching is not large enough\n"); return nibCount; }
+        
+        s32 strByteLen = ls_bufferPeekWord(names);
+        u8 *data       = (u8 *)names->data + names->cursor + 2;
+        
+        utf8 toMatch   = ls_utf8Constant(data, strByteLen);
+        ls_utf8ToLower(&toMatchLower, toMatch);
+        
+        if(ls_utf8Contains(toMatchLower, needle))
+        {
+            namesIndexBuffer[nibCount] = names->cursor;
+            nibCount += 1;
+        }
+        
+        ls_bufferReadSkip(names, strByteLen + 2);
+    }
+    
+    return nibCount;
+}
+
+b32 CompendiumSearchFunctionMobs(UIContext *c, void *userData)
 {
     ls_arenaUse(compTempArena);
     
     //NOTE: Reset the scrollbar when searching
     tableScroll.deltaY = 0;
     
-    if(compendium.searchBar.text.len < 2)
+    if(compendium.searchBarMobs.text.len < 2)
     { 
         tableScroll.minY = -((compendium.codex.pages.count-30) * 19);
         ls_arrayClear(&compendium.viewIndices);
@@ -279,37 +313,15 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
     }
     
     //NOTE:Iterate over the name buffer to find all names which exactly contain the substring needle
-    utf8 needle = ls_utf8FromUTF32(compendium.searchBar.text);
+    utf8 needle = ls_utf8FromUTF32(compendium.searchBarMobs.text);
     
     u8 dataBuffer[128] = {};
     utf8 needleLower = { dataBuffer, 0, 0, 128 };
     
     ls_utf8ToLower(&needleLower, needle);
     
-    u8 dataBuffer2[128] = {};
-    utf8 toMatchLower = { dataBuffer2, 0, 0, 128 };
-    
-    buffer *names = &compendium.codex.names;
-    names->cursor = 4;
-    
-    u16 namesIndexBuffer[2048] = {};
-    u16 nibCount = 0;
-    while(names->cursor < names->size)
-    {
-        s32 strByteLen = ls_bufferPeekWord(names);
-        u8 *data       = (u8 *)names->data + names->cursor + 2;
-        
-        utf8 toMatch   = ls_utf8Constant(data, strByteLen);
-        ls_utf8ToLower(&toMatchLower, toMatch);
-        
-        if(ls_utf8Contains(toMatchLower, needleLower))
-        {
-            namesIndexBuffer[nibCount] = names->cursor;
-            nibCount += 1;
-        }
-        
-        ls_bufferReadSkip(names, strByteLen + 2);
-    }
+    u16 namesIndexBuffer[4096] = {};
+    u16 nibCount = findNeedleAndFillIndexBuffer(needleLower, namesIndexBuffer, 4096);
     
     //TODO: Put the needle on the stack
     ls_utf8Free(&needle);
@@ -331,6 +343,68 @@ b32 CompendiumSearchFunction(UIContext *c, void *userData)
                 {
                     //NOTE: Remove from the namesIndexBuffer and add to the viewIndices array
                     ls_arrayAppend(&compendium.viewIndices, i);
+                    
+                    namesIndexBuffer[j] = namesIndexBuffer[nibCount-1];
+                    nibCount -= 1;
+                    break;
+                }
+            }
+        }
+    }
+    
+    ls_arenaUse(globalArena);
+    
+    return FALSE;
+}
+
+b32 CompendiumSearchFunctionNPCs(UIContext *c, void *userData)
+{
+    ls_arenaUse(compTempArena);
+    
+    //NOTE: Reset the scrollbar when searching
+    npcTableScroll.deltaY = 0;
+    
+    if(compendium.searchBarNPCs.text.len < 2)
+    { 
+        npcTableScroll.minY = -((compendium.codex.npcPages.count-30) * 19);
+        ls_arrayClear(&compendium.npcViewIndices);
+        for(u16 i = 0; i < compendium.npcViewIndices.cap; i++)
+        { ls_arrayAppend(&compendium.npcViewIndices, i); }
+        
+        return FALSE;
+    }
+    
+    //NOTE:Iterate over the name buffer to find all names which exactly contain the substring needle
+    utf8 needle = ls_utf8FromUTF32(compendium.searchBarNPCs.text);
+    
+    u8 dataBuffer[128] = {};
+    utf8 needleLower = { dataBuffer, 0, 0, 128 };
+    
+    ls_utf8ToLower(&needleLower, needle);
+    
+    u16 namesIndexBuffer[4096] = {};
+    u16 nibCount = findNeedleAndFillIndexBuffer(needleLower, namesIndexBuffer, 4096);
+    
+    //TODO: Put the needle on the stack
+    ls_utf8Free(&needle);
+    
+    //NOTE: Adjust scrollbar height to new monster table count.
+    npcTableScroll.minY = -((nibCount-30) * 19);
+    
+    if(nibCount > 0)
+    {
+        ls_arrayClear(&compendium.npcViewIndices);
+        
+        //NOTE: Now that we have a buffer of all matching name indices, let's search through the actual pages
+        for(u16 i = 0; i < compendium.codex.npcPages.count; i++)
+        {
+            u16 indexToMatch = compendium.codex.npcPages[i].name;
+            for(u32 j = 0; j < nibCount; j++)
+            {
+                if(namesIndexBuffer[j] == indexToMatch)
+                {
+                    //NOTE: Remove from the namesIndexBuffer and add to the viewIndices array
+                    ls_arrayAppend(&compendium.npcViewIndices, i);
                     
                     namesIndexBuffer[j] = namesIndexBuffer[nibCount-1];
                     nibCount -= 1;
@@ -1343,9 +1417,9 @@ void SetMonsterTable(UIContext *c)
     s32 monsterTableMinY = -((codex->pages.count-30) * 19);
     tableScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, monsterTableMinY };
     
-    compendium.searchBar.text = ls_utf32Alloc(64);
-    compendium.searchBar.postInput = CompendiumSearchFunction;
-    compendium.searchBar.isSingleLine = TRUE;
+    compendium.searchBarMobs.text = ls_utf32Alloc(64);
+    compendium.searchBarMobs.postInput = CompendiumSearchFunctionMobs;
+    compendium.searchBarMobs.isSingleLine = TRUE;
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
@@ -1359,11 +1433,10 @@ void SetNPCTable(UIContext *c)
     s32 npcTableMinY = -((codex->npcPages.count-30) * 19);
     npcTableScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, npcTableMinY };
     
-    /*
-    compendium.searchBar.text = ls_utf32Alloc(64);
-    compendium.searchBar.postInput = CompendiumSearchFunction;
-    compendium.searchBar.isSingleLine = TRUE;
-    */
+    compendium.searchBarNPCs.text = ls_utf32Alloc(64);
+    compendium.searchBarNPCs.postInput = CompendiumSearchFunctionNPCs;
+    compendium.searchBarNPCs.isSingleLine = TRUE;
+    
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
     return;
@@ -1400,7 +1473,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     Codex *c = &compendium.codex;
     
-    cachedPage->pageIndex = viewIndex;
+    cachedPage->pageIndex    = viewIndex;
+    cachedPage->npcPageIndex = -1;
     
     //TODO: What's missing (apart from possible bug fixes)
     //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
@@ -1619,7 +1693,8 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     Codex *c = &compendium.codex;
     
-    cachedPage->pageIndex = viewIndex;
+    cachedPage->pageIndex = -1;
+    cachedPage->npcPageIndex = viewIndex;
     
     //TODO: What's missing (apart from possible bug fixes)
     //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
@@ -2311,6 +2386,8 @@ void DrawNPCTable(UIContext *c)
     s32 baseX = 20;
     s32 baseY = 630;
     
+    ls_uiTextBox(c, &compendium.searchBarNPCs, baseX, baseY + 40, 200, 20);
+    
     ls_uiStartScrollableRegion(c, &npcTableScroll);
     
     s32 startI = -(npcTableScroll.deltaY / 19);
@@ -2325,7 +2402,7 @@ void DrawNPCTable(UIContext *c)
         if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
         {
             compendium.isViewingPage = TRUE;
-            compendium.npcPageIndex  = compendium.viewIndices[i];
+            compendium.npcPageIndex  = compendium.npcViewIndices[i];
         }
         
         if(MouseInRect(baseX-4, baseY-4, 300, 18)) { hoverColor = RGBg(0x66); }
@@ -2371,7 +2448,7 @@ void DrawMonsterTable(UIContext *c)
     s32 baseX = 20;
     s32 baseY = 630;
     
-    ls_uiTextBox(c, &compendium.searchBar, baseX, baseY + 40, 200, 20);
+    ls_uiTextBox(c, &compendium.searchBarMobs, baseX, baseY + 40, 200, 20);
     
     ls_uiStartScrollableRegion(c, &tableScroll);
     
@@ -2465,7 +2542,7 @@ void DrawCompendium(UIContext *c)
         if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && compendium.npcPageIndex > 0)
         { compendium.npcPageIndex -= 1; }
         
-        if(cachedPage.pageIndex != compendium.npcPageIndex)
+        if(cachedPage.npcPageIndex != compendium.npcPageIndex)
         { 
             NPCPageEntry pEntry = compendium.codex.npcPages[compendium.npcPageIndex];
             CachePage(pEntry, compendium.npcPageIndex, &cachedPage);
