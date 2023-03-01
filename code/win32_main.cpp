@@ -10,10 +10,6 @@
 #include "lsCRT.h"
 #undef LS_CRT_IMPLEMENTATION
 
-#define LS_ARRAY_IMPLEMENTATION
-#include "lsArray.h"
-#undef LS_ARRAY_IMPLEMENTATION
-
 #define LS_STRING_IMPLEMENTATION
 #include "lsString.h"
 #undef LS_STRING_IMPLEMENTATION
@@ -38,6 +34,17 @@
 #define LS_BITMAP_IMPLEMENTATION
 #include "lsBitmap.h"
 #undef LS_BITMAP_IMPLEMENTATION
+
+//NOTETODO: Just for testing! -----------------
+
+#define LS_LOG_IMPLEMENTATION
+#include "lsLog.h"
+#undef LS_LOG_IMPLEMENTATION
+
+//--------------------------------------------
+
+#include "lsArray.h"
+
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_ifloor(x)     ls_floor(x)
