@@ -817,7 +817,6 @@ b32 LoadState(UIContext *cxt)
     for(u32 i = 0; i < unserializePartyNum; i++)
     {
         ls_bufferReadIntoUTF32(buf, &Page->PlayerInit[i].text);
-        Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
     }
     
     
@@ -831,7 +830,6 @@ b32 LoadState(UIContext *cxt)
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         {
             ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-            f->editFields[j].viewEndIdx = f->editFields[j].text.len;
         }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
@@ -843,7 +841,6 @@ b32 LoadState(UIContext *cxt)
         }
         
         ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
-        f->maxLife.viewEndIdx = f->maxLife.text.len;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -860,7 +857,6 @@ b32 LoadState(UIContext *cxt)
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         {
             ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-            f->editFields[j].viewEndIdx = f->editFields[j].text.len;
         }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
@@ -872,7 +868,6 @@ b32 LoadState(UIContext *cxt)
         }
         
         ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
-        f->maxLife.viewEndIdx = f->maxLife.text.len;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -941,7 +936,6 @@ b32 LoadState(UIContext *cxt)
         Page->currIdx = ls_bufferReadDWord(buf);
         
         ls_bufferReadIntoUTF32(buf, &Page->Current.text);
-        Page->Current.viewEndIdx = Page->Current.text.len;
     }
     
     
@@ -949,7 +943,6 @@ b32 LoadState(UIContext *cxt)
     {
         Page->roundCount = ls_bufferReadDWord(buf);
         ls_bufferReadIntoUTF32(buf, &Page->RoundCounter.text);
-        Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     }
     
     //NOTE: Counters
@@ -958,10 +951,8 @@ b32 LoadState(UIContext *cxt)
         Counter *C = Page->Counters + i;
         
         ls_bufferReadIntoUTF32(buf, &C->name.text);
-        C->name.viewEndIdx = C->name.text.len;
         
         ls_bufferReadIntoUTF32(buf, &C->rounds.text);
-        C->rounds.viewEndIdx = C->rounds.text.len;
         
         C->roundsLeft      = ls_bufferReadDWord(buf);
         C->isActive        = ls_bufferReadDWord(buf);
@@ -975,11 +966,11 @@ b32 LoadState(UIContext *cxt)
     {
         DiceThrow *f = Page->Throwers + i;
         
-        ls_bufferReadIntoUTF32(buf, &f->name.text);   f->name.viewEndIdx   = f->name.text.len;
-        ls_bufferReadIntoUTF32(buf, &f->toHit.text);  f->toHit.viewEndIdx  = f->toHit.text.len;
-        ls_bufferReadIntoUTF32(buf, &f->hitRes.text); f->hitRes.viewEndIdx = f->hitRes.text.len;
-        ls_bufferReadIntoUTF32(buf, &f->damage.text); f->damage.viewEndIdx = f->damage.text.len;
-        ls_bufferReadIntoUTF32(buf, &f->dmgRes.text); f->dmgRes.viewEndIdx = f->dmgRes.text.len;
+        ls_bufferReadIntoUTF32(buf, &f->name.text);
+        ls_bufferReadIntoUTF32(buf, &f->toHit.text);
+        ls_bufferReadIntoUTF32(buf, &f->hitRes.text);
+        ls_bufferReadIntoUTF32(buf, &f->damage.text);
+        ls_bufferReadIntoUTF32(buf, &f->dmgRes.text);
     }
     
     ls_bufferDestroy(buf);

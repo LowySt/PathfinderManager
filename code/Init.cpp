@@ -86,6 +86,20 @@ b32 selectThemeDarkNight(UIContext *c, void *data)
     return FALSE;
 }
 
+b32 selectThemeLight(UIContext *c, void *data)
+{
+    c->backgroundColor = RGBg(0x99);
+    c->highliteColor   = RGB(0xAA, 0x99, 0xAA);
+    c->pressedColor    = RGB(0xBB, 0x99, 0xAA);
+    c->widgetColor     = RGBg(0x88);
+    c->borderColor     = RGBg(0x00);
+    c->textColor       = RGBg(0x33);
+    c->invWidgetColor  = RGB(7, 5, 43);
+    c->invTextColor    = RGBg(0xFF);
+    
+    return FALSE;
+}
+
 
 b32 CustomPlayerText(UIContext *c, void *data)
 {
@@ -176,7 +190,6 @@ b32 CustomInitFieldText(UIContext *c, void *data)
         ls_uiTextBoxClear(c, &nextFields[IF_IDX_NAME]);
         ls_utf32Set(&nextFields[IF_IDX_NAME].text, words[0]);
         ls_utf32Append(&nextFields[IF_IDX_NAME].text, words[1]);
-        nextFields[IF_IDX_NAME].viewEndIdx = nextFields[IF_IDX_NAME].text.len;
         
         //NOTE: We start at i == 1, because the name field has already been handled,
         //      We stop at COUNT-1 because the last field is 'final' which should not be modified by this routine.
@@ -434,9 +447,9 @@ void OnEncounterSelect(UIContext *c, void *data)
         ls_uiTextBoxClear(c, &t->damage);
         ls_uiTextBoxClear(c, &t->dmgRes);
         
-        ls_utf32Set(&t->name.text,   e->throwerName[i]);   t->name.viewEndIdx   = t->name.text.len;
-        ls_utf32Set(&t->toHit.text,  e->throwerHit[i]);    t->toHit.viewEndIdx  = t->toHit.text.len;
-        ls_utf32Set(&t->damage.text, e->throwerDamage[i]); t->damage.viewEndIdx = t->damage.text.len;
+        ls_utf32Set(&t->name.text,   e->throwerName[i]);
+        ls_utf32Set(&t->toHit.text,  e->throwerHit[i]);
+        ls_utf32Set(&t->damage.text, e->throwerDamage[i]);
     }
     
     //NOTE: This is to avoid the program never being reset. I don't think it's necessary,
@@ -630,7 +643,6 @@ b32 ThrowDiceOnClick(UIContext *c, void *data)
         s32 result = (s32)diceRoll(toThrow, len);
         
         ls_utf32FromInt_t(&State.Init->GeneralThrower.hitRes.text, result);
-        State.Init->GeneralThrower.hitRes.viewEndIdx = State.Init->GeneralThrower.hitRes.text.len;
     }
     else
     {
@@ -647,14 +659,12 @@ b32 ThrowDiceOnClick(UIContext *c, void *data)
         s32 result = (s32)diceRoll(toThrow, len);
         
         ls_utf32FromInt_t(&f->hitRes.text, result);
-        f->hitRes.viewEndIdx = f->hitRes.text.len;
         
         char dmgThrow[128] = {};
         len = ls_utf32ToAscii_t(&f->damage.text, dmgThrow, 128);
         result = (s32)diceRoll(dmgThrow, len);
         
         ls_utf32FromInt_t(&f->dmgRes.text, result);
-        f->dmgRes.viewEndIdx = f->dmgRes.text.len;
     }
     
     return TRUE;
@@ -689,7 +699,6 @@ b32 RollOnClick(UIContext *c, void *data)
         
         ls_utf32Clear(&f->editFields[IF_IDX_FINAL].text);
         ls_utf32FromInt_t(&f->editFields[IF_IDX_FINAL].text, bonus + die);
-        f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
     }
     
     for(u32 i = 0; i < visibleAllies; i++)
@@ -704,7 +713,6 @@ b32 RollOnClick(UIContext *c, void *data)
         
         ls_utf32Clear(&f->editFields[IF_IDX_FINAL].text);
         ls_utf32FromInt_t(&f->editFields[IF_IDX_FINAL].text, bonus + die);
-        f->editFields[IF_IDX_FINAL].viewEndIdx = f->editFields[IF_IDX_FINAL].text.len;
     }
     
     return TRUE;
@@ -777,7 +785,6 @@ b32 SetOnClick(UIContext *c, void *data)
         if(i == 0) 
         { 
             ls_utf32Set(&Page->Current.text, *ord[j].name); 
-            Page->Current.viewEndIdx = Page->Current.text.len;
         }
     }
     
@@ -826,7 +833,6 @@ b32 ResetOnClick(UIContext *c, void *data)
     { 
         ls_uiTextBoxClear(c, Page->PlayerInit + i);
         ls_utf32Set(&Page->PlayerInit[i].text, zeroUTF32);
-        Page->PlayerInit[i].viewEndIdx = Page->PlayerInit[i].text.len;
     }
     
     s32 currID = PARTY_NUM;
@@ -927,7 +933,6 @@ b32 ResetOnClick(UIContext *c, void *data)
     ls_utf32Clear(&Page->Current.text);
     
     ls_utf32Set(&Page->RoundCounter.text, zeroUTF32);
-    Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     Page->roundCount = 0;
     
     Page->orderAdjust = 0;
@@ -952,12 +957,10 @@ b32 NextOnClick(UIContext *c, void *data)
     {
         Page->roundCount += 1;
         ls_utf32FromInt_t(&Page->RoundCounter.text, Page->roundCount);
-        Page->RoundCounter.viewEndIdx = Page->RoundCounter.text.len;
     }
     
     //NOTE: Set the Current
     ls_utf32Set(&Page->Current.text, Page->OrderFields[Page->currIdx].field.text);
-    Page->Current.viewEndIdx = Page->Current.text.len;
     
     //NOTE: Advance the Counters
     for(u32 i = 0; i < COUNTER_NUM; i++)
@@ -987,7 +990,6 @@ b32 NextOnClick(UIContext *c, void *data)
                 }
                 
                 ls_utf32FromInt_t(&C->rounds.text, C->roundsLeft);
-                C->rounds.viewEndIdx = C->rounds.text.len;
                 
                 continue;
             }
@@ -1375,7 +1377,6 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     f->editFields[IF_IDX_BONUS].isSingleLine = TRUE;
     
     f->editFields[IF_IDX_EXTRA].text         = ls_utf32Alloc(16);
-    f->editFields[IF_IDX_EXTRA].viewEndIdx   = 0;//f->editFields[IF_IDX_EXTRA].text.len;
     f->editFields[IF_IDX_EXTRA].preInput     = NULL; //CustomInitFieldText;
     f->editFields[IF_IDX_EXTRA].data         = NULL; //&textHandler[2];
     f->editFields[IF_IDX_EXTRA].isSingleLine = FALSE;
@@ -1496,7 +1497,6 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         
         //TODO: Cannot use a constant string here, because it HAS to be modifiable to change the order
         f->pos.text         = ls_utf32FromInt(i);
-        f->pos.viewEndIdx   = f->pos.text.len;
         f->pos.maxLen       = 2;
         f->pos.preInput     = ChangeOrder;
         f->pos.data         = orderHandler;
@@ -1593,7 +1593,6 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     Page->Current.isSingleLine = TRUE;
     
     Page->RoundCounter.text         = ls_utf32FromUTF32(U"0");
-    Page->RoundCounter.viewEndIdx   = Page->RoundCounter.text.len;
     Page->RoundCounter.isReadonly   = TRUE;
     Page->RoundCounter.isSingleLine = TRUE;
     

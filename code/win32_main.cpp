@@ -35,13 +35,9 @@
 #include "lsBitmap.h"
 #undef LS_BITMAP_IMPLEMENTATION
 
-//NOTETODO: Just for testing! -----------------
-
 #define LS_LOG_IMPLEMENTATION
 #include "lsLog.h"
 #undef LS_LOG_IMPLEMENTATION
-
-//--------------------------------------------
 
 #include "lsArray.h"
 
@@ -62,20 +58,25 @@
 
 #include "pcg.c"
 
-
-#if 1
 #include "lsInput.h"
+
+//TODO: The UI System is NOT actually properly using arenas
+//      See renderArena being picked but it's always empty
+//      Because the render commands aren't actually being placed there...
+static Arena globalArena;
+static Arena fileArena;
+static Arena stateArena;
+static Arena saveArena;
+static Arena renderArena;
+static Arena frameArena;
+
+static Arena compendiumArena;
+static Arena compTempArena;
+
 
 #define LS_UI_IMPLEMENTATION
 #include "lsUI.h"
 #undef LS_UI_IMPLEMENTATION
-
-#else
-
-#include "Input.cpp"
-#include "ui.cpp"
-
-#endif
 
 #include "Init.h"
 #include "Class.h"
@@ -272,12 +273,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     saveArena       = ls_arenaCreate(MBytes(4));
     renderArena     = ls_arenaCreate(KBytes(8));
     
+    frameArena      = ls_arenaCreate(KBytes(8));
+    
     //TODO: Make this much smaller. It can be reduced to at least 6 MBytes, probably smaller
     compendiumArena = ls_arenaCreate(MBytes(12));
     compTempArena   = ls_arenaCreate(KBytes(8));
     
     ls_arenaUse(globalArena);
     //------------
+    
+    ls_logDefaultTypesRegister();
     
     
     //TODO: Hardcoded Compendium Window
@@ -315,6 +320,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiMenuAddSub(uiContext, &WindowMenu, U"Theme");
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Default", selectThemeDefault, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Light", selectThemeLight, NULL);
     
     ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
     
@@ -644,6 +650,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         //NOTE: End Compendium Frame
         //-------------------------------
+        
+        ls_arenaClear(frameArena);
         
         GetSystemTime(&endT);
         
