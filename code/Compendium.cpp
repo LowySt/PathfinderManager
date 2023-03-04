@@ -721,6 +721,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
 void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
 {
     s32 hpEndIndex  = ls_utf32LeftFind(hp, (u32)' ');
+    if(hpEndIndex == -1) hpEndIndex = ls_utf32LeftFind(hp, (u32)'(');
     AssertMsg(hpEndIndex >= 0, "HP index can't be found\n");
     
     s32 hpExprBegin = ls_utf32LeftFind(hp, (u32)'(') + 1;
