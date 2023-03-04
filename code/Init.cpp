@@ -464,7 +464,7 @@ void OnEncounterSelect(UIContext *c, void *data)
     return;
 }
 
-//TODO: When saving a new encounter, and no encounter is selected (Maybe only after a reset) the names get fucked.
+//TODO: When saving multiple new encounters, and no encounter is selected without resetting, the names get fucked.
 //      It is only a display bug, and on program startup it is working
 b32 SaveEncounterOnClick(UIContext *c, void *data)
 {
@@ -513,6 +513,8 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
     
     State.encounters.numEncounters += 1;
     
+    //TODO: @MemoryLeak @Leak. Because list boxes allocate data when passed literals
+    //       We could be leaking memory
     State.Init->EncounterSel.selectedIndex =
         ls_uiListBoxAddEntry(c, &State.Init->EncounterSel, State.Init->EncounterName.text);
     
@@ -827,7 +829,9 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     Page->Mobs.selectedIndex   = 0;
     Page->Allies.selectedIndex = 0;
-    State.Init->isAdding             = FALSE;
+    Page->orderAdjust          = 0;
+    
+    State.Init->isAdding       = FALSE;
     globalSelectedIndex        = -1;
     
     State.inBattle = FALSE;
@@ -939,8 +943,6 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     ls_utf32Set(&Page->RoundCounter.text, zeroUTF32);
     Page->roundCount = 0;
-    
-    Page->orderAdjust = 0;
     
     addID = 1000;
     

@@ -1049,8 +1049,8 @@ void AddIncrementalToName(UIContext *c, utf32 name, UITextBox *box)
         
         if(ls_utf32AreEqualUpTo(o->field.text, name, cleanLen))
         {
-            s32 lenDiff = o->field.text.len - name.len;
-            utf32 justTheNumber = { o->field.text.data + cleanLen + 1, lenDiff, lenDiff};
+            s32 lenDiff = (o->field.text.len - name.len) - 1;
+            utf32 justTheNumber = { o->field.text.data + cleanLen + 1, lenDiff, lenDiff}; //Skip the space
             s32 incremental = ls_utf32ToInt(justTheNumber);
             if(incremental > maxIncremental) maxIncremental = incremental;
         }
@@ -2489,10 +2489,10 @@ void DrawCompendium(UIContext *c)
         if(compendium.pageIndex < NPC_PAGE_INDEX_OFFSET)
         {
             if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.pageIndex < (codex->pages.count-1))
-            { compendium.pageIndex += 1; ls_printf("Page Index: %d\n", compendium.pageIndex); }
+            { compendium.pageIndex += 1; }
             
             if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && compendium.pageIndex > 0)
-            { compendium.pageIndex -= 1; ls_printf("Page Index: %d\n", compendium.pageIndex); }
+            { compendium.pageIndex -= 1; }
             
             if(cachedPage.pageIndex != compendium.pageIndex)
             { 
