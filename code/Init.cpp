@@ -323,12 +323,13 @@ b32 ChangeOrder(UIContext *c, void *data)
         utf32 oldName = {}; 
         ls_utf32Set(&oldName, oldOrder->field.text);
         
-        s32 oldID = oldOrder->ID;
+        s32 oldID            = oldOrder->ID;
+        s32 oldCompendiumIdx = oldOrder->compendiumIdx;
         
         s32 slideCurr = oldOrder->field.currValue;
-        s32 slideMax = oldOrder->field.maxValue;
-        s32 slideMin = oldOrder->field.minValue;
-        f64 slidePos = oldOrder->field.currPos;
+        s32 slideMax  = oldOrder->field.maxValue;
+        s32 slideMin  = oldOrder->field.minValue;
+        f64 slidePos  = oldOrder->field.currPos;
         //
         //TODO: Horrible temp saving...
         //-------------------------------
@@ -343,12 +344,13 @@ b32 ChangeOrder(UIContext *c, void *data)
                 UISlider *next = &Init->OrderFields[j+1].field;
                 
                 ls_utf32Set(&curr->text, next->text);
-                Init->OrderFields[j].ID = Init->OrderFields[j+1].ID;
+                Init->OrderFields[j].ID            = Init->OrderFields[j+1].ID;
+                Init->OrderFields[j].compendiumIdx = Init->OrderFields[j+1].compendiumIdx;
                 
-                curr->currValue = next->currValue;
-                curr->maxValue  = next->maxValue;
-                curr->minValue  = next->minValue;
-                curr->currPos   = next->currPos;
+                curr->currValue     = next->currValue;
+                curr->maxValue      = next->maxValue;
+                curr->minValue      = next->minValue;
+                curr->currPos       = next->currPos;
             }
         }
         
@@ -360,18 +362,21 @@ b32 ChangeOrder(UIContext *c, void *data)
                 UISlider *prev = &Init->OrderFields[j-1].field;
                 
                 ls_utf32Set(&curr->text, prev->text);
-                Init->OrderFields[j].ID = Init->OrderFields[j-1].ID;
                 
-                curr->currValue = prev->currValue;
-                curr->maxValue  = prev->maxValue;
-                curr->minValue  = prev->minValue;
-                curr->currPos   = prev->currPos;
+                Init->OrderFields[j].ID            = Init->OrderFields[j-1].ID;
+                Init->OrderFields[j].compendiumIdx = Init->OrderFields[j-1].compendiumIdx;
+                
+                curr->currValue     = prev->currValue;
+                curr->maxValue      = prev->maxValue;
+                curr->minValue      = prev->minValue;
+                curr->currPos       = prev->currPos;
             }
         }
         
         ls_utf32Set(&Init->OrderFields[newPosition].field.text, oldName);
         
-        Init->OrderFields[newPosition].ID = oldID;
+        Init->OrderFields[newPosition].ID              = oldID;
+        Init->OrderFields[newPosition].compendiumIdx   = oldCompendiumIdx;
         Init->OrderFields[newPosition].field.currValue = slideCurr;
         Init->OrderFields[newPosition].field.maxValue  = slideMax;
         Init->OrderFields[newPosition].field.minValue  = slideMin;
