@@ -239,18 +239,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
     
-    //------------------------------------------------------
-    //NOTE: This shit is necessary to request millisecond-precision sleeps.
-    //      An equivalent call to timeEndPeriod should happen at the end. It technically
-    //      Doesn't in this program, because we use it every frame, so we don't re-call it.
-    //      But I'm pointing it out for possible microsoft weirdness...
-    TIMECAPS tc = {};
-    MMRESULT res = timeGetDevCaps(&tc, sizeof(TIMECAPS));
-    res = timeBeginPeriod(tc.wPeriodMin);
-    //------------------------------------------------------
-    
-    windows_initRegionTimer(RT_MILLISECOND);
-    
 #if 0 //RDRAND was introduced in IvyBridge (2012). It may be too new to put in.
     u64 rand_init_state = 0;
     u64 rand_init_seq = 0;
@@ -302,6 +290,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     loadAssetFile(uiContext, ls_strConstant("assetFile"));
     LoadCompendium(ls_strConstant("Compendium"));
     
+    ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
+    
     //NOTETODOHACK:
     compendiumContext->fonts    = uiContext->fonts;
     compendiumContext->numFonts = uiContext->numFonts;
@@ -323,7 +313,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Light", selectThemeLight, NULL);
     
     ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
-    
     
     UIMenu CompendiumMenu = {};
     CompendiumMenu.closeWindow  = ls_uiMenuButton(CompendiumExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
@@ -403,7 +392,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
         //NOTE: Render The Window Menu
         userInputConsumed = ls_uiMenu(uiContext, &WindowMenu, -1, 
-                                      uiContext->windowHeight-20, uiContext->windowWidth+1, 21);
+                                      uiContext->height-20, uiContext->width+1, 21);
         
         userInputConsumed |= DrawInitTab(uiContext);
         
@@ -490,6 +479,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 uiContext->prevMousePosY = currMouse.y;
             }
             
+            //NOTE: Handle Dragging
             if(uiContext->isDragging && LeftHold)
             { 
                 MouseInput *Mouse = &uiContext->UserInput.Mouse;
@@ -571,7 +561,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //      But also update the window on first entry. For some reason, putting the entire
         //      Block between the Child Frame inside an if doesn't paint the window on first open.
         b32 compendiumInput = ls_uiMenu(compendiumContext, &CompendiumMenu, -1,
-                                        compendiumContext->windowHeight-20, compendiumContext->windowWidth+1, 21);
+                                        compendiumContext->height-20, compendiumContext->width+1, 21);
         
         if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
         
@@ -668,7 +658,5 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiFrameEnd(uiContext, frameLock);
     }
     
-    //NOTE: Technically useless, just reminding myself of this function's existance
-    res = timeEndPeriod(tc.wPeriodMin);
     return 0;
 }
