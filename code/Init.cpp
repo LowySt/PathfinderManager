@@ -1087,7 +1087,11 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
                 ls_uiTextBoxClear(c, &B->editFields[IF_IDX_NAME]);
                 ls_uiTextBoxClear(c, &B->editFields[IF_IDX_BONUS]);
                 ls_uiTextBoxClear(c, &B->editFields[IF_IDX_FINAL]);
+                
+                ls_uiTextBoxClear(c, &B->maxLife);
+                
                 B->ID = 0;
+                B->compendiumIdx = 0;
                 
                 Page->Allies.selectedIndex -= 1;
                 
@@ -1118,6 +1122,7 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
                 ls_uiTextBoxClear(c, &B->maxLife);
                 
                 B->ID = 0;
+                B->compendiumIdx = 0;
                 
                 Page->Mobs.selectedIndex -= 1;
                 
@@ -1487,8 +1492,8 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         InitFieldInit(c, f, &currID, AllyName[i]);
     }
     
-    ls_uiButtonInit(&Page->addNewMob, UIBUTTON_TEXT, U"+", StartAddingMob, NULL, NULL);
-    ls_uiButtonInit(&Page->addNewAlly, UIBUTTON_TEXT, U"+", StartAddingAlly, NULL, NULL);
+    ls_uiButtonInit(c, &Page->addNewMob, UIBUTTON_CLASSIC, U"+", StartAddingMob, NULL, NULL);
+    ls_uiButtonInit(c, &Page->addNewAlly, UIBUTTON_CLASSIC, U"+", StartAddingAlly, NULL, NULL);
     
     for(u32 i = 0; i < ORDER_NUM; i++)
     {
@@ -1510,7 +1515,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->pos.isReadonly   = TRUE;
         f->pos.isSingleLine = TRUE;
         
-        ls_uiButtonInit(&f->remove, UIBUTTON_TEXT, ls_utf32Constant(U"X"), RemoveOrderOnClick, NULL, (void *)((u64)i));
+        ls_uiButtonInit(c, &f->remove, UIBUTTON_CLASSIC, ls_utf32Constant(U"X"), RemoveOrderOnClick, NULL, (void *)((u64)i));
         
         f->compendiumIdx  = -1;
     }
@@ -1526,9 +1531,9 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->rounds.maxLen       = 2;
         f->rounds.isSingleLine = TRUE;
         
-        ls_uiButtonInit(&f->start, UIBUTTON_TEXT, ls_utf32Constant(U"Start"), StartCounterOnClick, NULL, (void *)f);
-        ls_uiButtonInit(&f->plusOne, UIBUTTON_TEXT, ls_utf32Constant(U"+1"), PlusOneCounterOnClick, NULL, (void *)f);
-        ls_uiButtonInit(&f->stop, UIBUTTON_TEXT, ls_utf32Constant(U"Stop"), StopCounterOnClick, NULL, (void *)f);
+        ls_uiButtonInit(c, &f->start, UIBUTTON_CLASSIC, ls_utf32Constant(U"Start"), StartCounterOnClick, NULL, (void *)f);
+        ls_uiButtonInit(c, &f->plusOne, UIBUTTON_CLASSIC, ls_utf32Constant(U"+1"), PlusOneCounterOnClick, NULL, (void *)f);
+        ls_uiButtonInit(c, &f->stop, UIBUTTON_CLASSIC, ls_utf32Constant(U"Stop"), StopCounterOnClick, NULL, (void *)f);
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -1553,7 +1558,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->dmgRes.isReadonly   = TRUE;
         f->dmgRes.isSingleLine = TRUE;
         
-        ls_uiButtonInit(&f->throwDie, UIBUTTON_TEXT, ls_utf32Constant(U"Go"), ThrowDiceOnClick, NULL, &f->throwDie);
+        ls_uiButtonInit(c, &f->throwDie, UIBUTTON_CLASSIC, ls_utf32Constant(U"Go"), ThrowDiceOnClick, NULL, &f->throwDie);
     }
     
     {
@@ -1575,7 +1580,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         Page->GeneralThrower.dmgRes.isReadonly   = TRUE;
         Page->GeneralThrower.dmgRes.isSingleLine = TRUE;
         
-        ls_uiButtonInit(&Page->GeneralThrower.throwDie, UIBUTTON_TEXT, ls_utf32Constant(U"Go"), ThrowDiceOnClick,
+        ls_uiButtonInit(c, &Page->GeneralThrower.throwDie, UIBUTTON_CLASSIC, ls_utf32Constant(U"Go"), ThrowDiceOnClick,
                         NULL, &Page->GeneralThrower.throwDie);
     }
     
@@ -1591,9 +1596,9 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         Page->EncounterName.isSingleLine = TRUE;
     }
     
-    ls_uiButtonInit(&Page->SaveEnc, UIBUTTON_TEXT, ls_utf32Constant(U"Save"), SaveEncounterOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->RemoveEnc, UIBUTTON_TEXT, ls_utf32Constant(U"X"), RemoveEncounterOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->AddEnc, UIBUTTON_TEXT, ls_utf32Constant(U"<-"), AddEncounterOnClick, NULL, &Page->EncounterSel);
+    ls_uiButtonInit(c, &Page->SaveEnc, UIBUTTON_CLASSIC, ls_utf32Constant(U"Save"), SaveEncounterOnClick, NULL, NULL);
+    ls_uiButtonInit(c, &Page->RemoveEnc, UIBUTTON_CLASSIC, ls_utf32Constant(U"X"), RemoveEncounterOnClick, NULL, NULL);
+    ls_uiButtonInit(c, &Page->AddEnc, UIBUTTON_CLASSIC, ls_utf32Constant(U"<-"), AddEncounterOnClick, NULL, &Page->EncounterSel);
     
     Page->Current.text         = ls_utf32Alloc(16);
     Page->Current.isReadonly   = TRUE;
@@ -1603,12 +1608,12 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     Page->RoundCounter.isReadonly   = TRUE;
     Page->RoundCounter.isSingleLine = TRUE;
     
-    ls_uiButtonInit(&Page->Roll, UIBUTTON_TEXT, ls_utf32Constant(U"Roll"), RollOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Set, UIBUTTON_TEXT, ls_utf32Constant(U"Set"), SetOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Reset, UIBUTTON_TEXT, ls_utf32Constant(U"Reset"), ResetOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Next, UIBUTTON_TEXT, ls_utf32Constant(U"Next"), NextOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Undo, UIBUTTON_TEXT, ls_utf32Constant(U"<-"), RequestUndoOnClick, NULL, NULL);
-    ls_uiButtonInit(&Page->Redo, UIBUTTON_TEXT, ls_utf32Constant(U"->"), RequestRedoOnClick, NULL, NULL);
+    ls_uiButtonInit(c, &Page->Roll, UIBUTTON_CLASSIC, ls_utf32Constant(U"Roll"), RollOnClick, NULL, NULL);
+    ls_uiButtonInit(c, &Page->Set, UIBUTTON_CLASSIC, ls_utf32Constant(U"Set"), SetOnClick, NULL, NULL);
+    ls_uiButtonInit(c, &Page->Reset, UIBUTTON_CLASSIC, ls_utf32Constant(U"Reset"), ResetOnClick, NULL, NULL);
+    ls_uiButtonInit(c, &Page->Next, UIBUTTON_CLASSIC, ls_utf32Constant(U"Next"), NextOnClick, NULL, NULL);
+    ls_uiButtonInit(c, &Page->Undo, UIBUTTON_CLASSIC, ls_utf32Constant(U"<-"), RequestUndoOnClick, NULL, NULL);
+    ls_uiButtonInit(c, &Page->Redo, UIBUTTON_CLASSIC, ls_utf32Constant(U"->"), RequestRedoOnClick, NULL, NULL);
 }
 
 b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
@@ -1707,7 +1712,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     }
     
     inputUse |= ls_uiTextBox(c, &f->pos, xPos + 25, yPos, 25, 20);
-    inputUse |= ls_uiButton(c, &f->remove, xPos, yPos, 20, 20);
+    inputUse |= ls_uiButton(c, &f->remove, xPos, yPos);
     
     Input *UserInput = &c->UserInput;
     if(RightClickIn(xPos + 50, yPos, 166, 20)) globalSelectedIndex = (s32)posIdx;
@@ -1732,14 +1737,14 @@ b32 DrawDefaultStyle(UIContext *c)
             inputUse |= ls_uiListBox(c, &Page->EncounterSel,  480, 718, 120, 20);
             inputUse |= ls_uiTextBox(c, &Page->EncounterName, 624, 718, 100, 20);
             
-            inputUse |= ls_uiButton(c, &Page->SaveEnc, 601, 740, 44, 20);
-            inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, 718, 24, 20);
+            inputUse |= ls_uiButton(c, &Page->SaveEnc, 601, 740);
+            inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, 718);
             
             inputUse |= ls_uiListBox(c, &Page->Mobs,   406, 678, 100, 20);
             inputUse |= ls_uiListBox(c, &Page->Allies, 641, 498, 100, 20);
             
-            inputUse |= ls_uiButton(c, &Page->Roll, 556, 678, 48, 20);
-            inputUse |= ls_uiButton(c, &Page->Set,  780, 678, 48, 20);
+            inputUse |= ls_uiButton(c, &Page->Roll, 556, 678);
+            inputUse |= ls_uiButton(c, &Page->Set,  780, 678);
         }
     }
     
@@ -1797,7 +1802,7 @@ b32 DrawDefaultStyle(UIContext *c)
         inputUse |= ls_uiTextBox(c, &f->damage, xPos,       yPos + 48, 138, 20);
         inputUse |= ls_uiTextBox(c, &f->dmgRes, xPos + 138, yPos + 48, 36,  20);
         
-        inputUse |= ls_uiButton(c, &f->throwDie, xPos + 126, yPos, 48, 20);
+        inputUse |= ls_uiButton(c, &f->throwDie, xPos + 126, yPos);
         
         xPos += 212;
     }
@@ -1809,17 +1814,17 @@ b32 DrawDefaultStyle(UIContext *c)
         inputUse |= ls_uiTextBox(c, &Page->GeneralThrower.toHit,  xPos,       yPos, 168, 20);
         inputUse |= ls_uiTextBox(c, &Page->GeneralThrower.hitRes, xPos + 168, yPos, 36,  20);
         
-        inputUse |= ls_uiButton(c, &Page->GeneralThrower.throwDie, xPos + 210, yPos, 48, 20);
+        inputUse |= ls_uiButton(c, &Page->GeneralThrower.throwDie, xPos + 210, yPos);
     }
     
-    inputUse |= ls_uiButton(c, &Page->Reset, 670, 678, 48, 20);
+    inputUse |= ls_uiButton(c, &Page->Reset, 670, 678);
     
     if(State.inBattle)
     {
         inputUse |= ls_uiTextBox(c, &Page->Current,      1010, 668, 100, 20);
         inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1230, 720, 30, 20);
         
-        inputUse |= ls_uiButton(c, &Page->Next, 1036, 698, 48, 20);
+        inputUse |= ls_uiButton(c, &Page->Next, 1036, 698);
     }
     
     return inputUse;
@@ -1845,27 +1850,27 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiListBox(c, &Page->EncounterSel,  495, yPos, 120, 20, 2);
             inputUse |= ls_uiTextBox(c, &Page->EncounterName, 644, yPos, 120, 20);
             
-            inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22, 44, 20);
-            inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, yPos, 24, 20);
+            inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22);
+            inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, yPos);
             
             inputUse |= ls_uiListBox(c, &Page->Mobs,     50, yPos-65, 100, 20, 1);
             inputUse |= ls_uiListBox(c, &Page->Allies, 1094, yPos-225, 100, 20, 1);
             
-            inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40, 48, 20);
-            inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40, 48, 20);
-            inputUse |= ls_uiButton(c, &Page->Reset, 616, yPos-40, 48, 20);
+            inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40);
+            inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40);
+            inputUse |= ls_uiButton(c, &Page->Reset, 616, yPos-40);
         }
         else
         {
             inputUse |= ls_uiListBox(c, &Page->EncounterSel,  565, yPos, 120, 20, 2);
             
             if(Page->EncounterSel.selectedIndex > 0) 
-            { inputUse |= ls_uiButton(c, &Page->AddEnc, 520, yPos, 24, 20); }
+            { inputUse |= ls_uiButton(c, &Page->AddEnc, 520, yPos); }
         }
         
         //NOTE: We hijack the globals to know when to show the buttons.
-        if(distanceFromOld != 0) { inputUse |= ls_uiButton(c, &Page->Undo, 1180, yPos+22, 24, 20); }
-        if(distanceFromNow != 0) { inputUse |= ls_uiButton(c, &Page->Redo, 1220, yPos+22, 24, 20); }
+        if(distanceFromOld != 0) { inputUse |= ls_uiButton(c, &Page->Undo, 1180, yPos+22); }
+        if(distanceFromNow != 0) { inputUse |= ls_uiButton(c, &Page->Redo, 1220, yPos+22); }
     }
     
     
@@ -1952,20 +1957,20 @@ b32 DrawPranaStyle(UIContext *c)
         if(visibleMobs <= MOB_NUM)
         {
             if(!(State.Init->isAdding && globalSelectedIndex >= MOB_NUM))
-            { inputUse |= ls_uiButton(c, &Page->addNewMob, 180, 715, 25, 20); }
+            { inputUse |= ls_uiButton(c, &Page->addNewMob, 180, 715); }
         }
         
         if(visibleAllies <= ALLY_NUM)
         {
             if(!(State.Init->isAdding && globalSelectedIndex < MOB_NUM))
-            { inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, 780-225, 25, 20); }
+            { inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, 780-225); }
         }
     }
     else
     {
         inputUse |= ls_uiTextBox(c, &Page->Current,      952, 668, 170, 20);
         inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1150, 698, 30, 20);
-        inputUse |= ls_uiButton(c, &Page->Next, 1016, 698, 48, 20);
+        inputUse |= ls_uiButton(c, &Page->Next, 1016, 698);
         
         // Order
         yPos = 638;
@@ -2037,7 +2042,7 @@ b32 DrawPranaStyle(UIContext *c)
                 }
             }
         }
-        inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718, 48, 20);
+        inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718);
         
         //Add New
         if(visibleMobs <= MOB_NUM)
@@ -2045,7 +2050,7 @@ b32 DrawPranaStyle(UIContext *c)
             if(!(State.Init->isAdding && globalSelectedIndex >= MOB_NUM))
             {
                 ls_uiLabel(c, U"Add Enemy", 30, 720);
-                inputUse |= ls_uiButton(c, &Page->addNewMob, 116, 715, 25, 20);
+                inputUse |= ls_uiButton(c, &Page->addNewMob, 116, 715);
             }
         }
         
@@ -2054,7 +2059,7 @@ b32 DrawPranaStyle(UIContext *c)
             if(!(State.Init->isAdding && globalSelectedIndex < MOB_NUM))
             {
                 ls_uiLabel(c, U"Add Ally", 157, 720);
-                inputUse |= ls_uiButton(c, &Page->addNewAlly, 235, 715, 25, 20);
+                inputUse |= ls_uiButton(c, &Page->addNewAlly, 235, 715);
             }
         }
     }
@@ -2076,11 +2081,11 @@ b32 DrawPranaStyle(UIContext *c)
         inputUse |= ls_uiTextBox(c, &f->name, xPos, yPos, 100, 20);
         inputUse |= ls_uiTextBox(c, &f->rounds, xPos + 105, yPos, 36, 20);
         
-        if(!f->isActive) { inputUse |= ls_uiButton(c, &f->start, xPos + 146, yPos, 48, 20); }
+        if(!f->isActive) { inputUse |= ls_uiButton(c, &f->start, xPos + 146, yPos); }
         else
         {
-            inputUse |= ls_uiButton(c, &f->plusOne, xPos + 146, yPos, 48, 20);
-            inputUse |= ls_uiButton(c, &f->stop, xPos + 93, yPos+22, 48, 20);
+            inputUse |= ls_uiButton(c, &f->plusOne, xPos + 146, yPos);
+            inputUse |= ls_uiButton(c, &f->stop, xPos + 93, yPos+22);
         }
         
         xPos += xDiff;
@@ -2099,7 +2104,7 @@ b32 DrawPranaStyle(UIContext *c)
         
         
         inputUse |= ls_uiTextBox(c, &f->name,    xPos,      yPos + 40, 98, 20);
-        inputUse |= ls_uiButton(c, &f->throwDie, xPos + 98, yPos + 40, 36, 20);
+        inputUse |= ls_uiButton(c, &f->throwDie, xPos + 98, yPos + 40);
         
         inputUse |= ls_uiTextBox(c, &f->damage, xPos,       yPos + 20, 134, 20);
         inputUse |= ls_uiTextBox(c, &f->dmgRes, xPos + 134, yPos + 20, 36,  20);
