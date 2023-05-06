@@ -1386,7 +1386,7 @@ void SetMonsterTable(UIContext *c)
     Codex *codex = &compendium.codex;
     
     s32 monsterTableMinY = -((codex->pages.count-30) * 19);
-    tableScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, monsterTableMinY };
+    tableScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, monsterTableMinY };
     
     compendium.searchBarMobs.text = ls_utf32Alloc(64);
     compendium.searchBarMobs.postInput = CompendiumSearchFunctionMobs;
@@ -1402,7 +1402,7 @@ void SetNPCTable(UIContext *c)
     Codex *codex = &compendium.codex;
     
     s32 npcTableMinY = -((codex->npcPages.count-30) * 19);
-    npcTableScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, npcTableMinY };
+    npcTableScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, npcTableMinY };
     
     compendium.searchBarNPCs.text = ls_utf32Alloc(64);
     compendium.searchBarNPCs.postInput = CompendiumSearchFunctionNPCs;
@@ -2501,14 +2501,14 @@ void DrawCompendium(UIContext *c)
                 CachePage(pEntry, compendium.pageIndex, &cachedPage);
                 
                 //NOTE: Reset the page scroll for the new page (Fuck GCC)
-                pageScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, 0 };
+                pageScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, 0 };
             }
             
             //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
             //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
-            pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
+            pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->width-42, 0);
             ls_uiEndScrollableRegion(c);
         }
         else
@@ -2527,14 +2527,14 @@ void DrawCompendium(UIContext *c)
                 CachePage(pEntry, compendium.pageIndex, &cachedPage);
                 
                 //NOTE: Reset the page scroll for the new page (Fuck GCC)
-                pageScroll = { 0, 10, c->windowWidth-4, c->windowHeight-36, 0, 0, c->windowWidth-32, 0 };
+                pageScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, 0 };
             }
             
             //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
             //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
-            pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->windowWidth-42, 0);
+            pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->width-42, 0);
             ls_uiEndScrollableRegion(c);
         }
     }
