@@ -513,6 +513,262 @@ buffer ConvertSaveToV4(buffer *buff)
     return V4;
 }
 
+b32 LoadStateV6(UIContext *c)
+{
+    ls_arenaUse(saveArena);
+    
+    char fullPathBuff[128] = {};
+    u32 len = ls_getFullPathName("SaveFile_v6", fullPathBuff, 128);
+    
+    buffer state = {};
+    buffer *buf = NULL;
+    
+    if(ls_fileExists(fullPathBuff) == FALSE) { return FALSE; }
+    else
+    {
+        string path = ls_strConstant(fullPathBuff);
+        state = ls_bufferInitFromFile(path);
+        buf = &state;
+    }
+    
+    ls_bufferSeekBegin(buf);
+    
+    u32 fileVersion = ls_bufferReadDWord(buf);
+    if(fileVersion != 6) { ls_bufferDestroy(buf); return FALSE; }
+    
+    addID                          = ls_bufferReadDWord(buf);
+    State.inBattle                 = ls_bufferReadDWord(buf);
+    State.encounters.numEncounters = ls_bufferReadDWord(buf);
+    
+    InitPage *Page = State.Init;
+    
+    //TODO: Make Encounter's memory management better.
+    //      They are currently allocated here during loading.
+    //Unserialize Encounters
+    for(u32 i = 0; i < State.encounters.numEncounters; i++)
+    {
+        Encounter *curr = State.encounters.Enc + i;
+        
+        curr->name = ls_bufferReadUTF32(buf);
+        
+        curr->numMobs = ls_bufferReadDWord(buf);
+        for(u32 j = 0; j < curr->numMobs; j++)
+        {
+            EncounterInitEntry *e = curr->mob + j;
+            
+            for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
+            { e->fields[k] = ls_bufferReadUTF32(buf); }
+            
+            e->compendiumIdx = ls_bufferReadDWord(buf);
+        }
+        
+        curr->numAllies = ls_bufferReadDWord(buf);
+        for(u32 j = 0; j < curr->numAllies; j++)
+        {
+            EncounterInitEntry *e = curr->ally + j;
+            
+            for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
+            { e->fields[k] = ls_bufferReadUTF32(buf); }
+            
+            e->compendiumIdx = ls_bufferReadDWord(buf);
+        }
+        
+        for(u32 j = 0; j < THROWER_NUM; j++)
+        {
+            curr->throwerName[j]   = ls_bufferReadUTF32(buf);
+            curr->throwerHit[j]    = ls_bufferReadUTF32(buf);
+            curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
+        }
+        
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, curr->name);
+    }
+    
+    //NOTE: UnSerialize Undo Chain
+    {
+        u32 maxUndos = ls_bufferReadDWord(buf);
+        AssertMsg(maxUndos == MAX_UNDO_STATES, "Save File not converted properly. Max Undo States don't coincide\n");
+        
+        matchingUndoIdx = ls_bufferReadDWord(buf);
+        distanceFromOld = ls_bufferReadDWord(buf);
+        distanceFromNow = ls_bufferReadDWord(buf);
+        
+        for(u32 i = 0; i < MAX_UNDO_STATES; i++)
+        {
+            ProgramState *curr = UndoStates + i;
+            CopyStateFromBuffer(curr, buf);
+        }
+    }
+    
+    //NOTE: UnSerialize Player Initiative
+    u32 partyNum = ls_bufferReadDWord(buf);
+    u32 unserializePartyNum = partyNum < PARTY_NUM ? partyNum : PARTY_NUM;
+    for(u32 i = 0; i < unserializePartyNum; i++)
+    {
+        ls_bufferReadIntoUTF32(buf, &Page->PlayerInit[i].text);
+    }
+    
+    
+    //NOTE: UnSerialize Mob Initiative
+    s32 visibleMobs          = ls_bufferReadDWord(buf);
+    Page->Mobs.selectedIndex = visibleMobs;
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        InitField *f = Page->MobFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        {
+            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
+        }
+        
+        //NOTE: For the EXTRA editField, because it is multi-line 
+        //      we need to count how many lines there are, and set it.
+        if(f->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(f->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
+        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        
+        f->compendiumIdx = ls_bufferReadDWord(buf);
+        f->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    
+    //NOTE: UnSerialize Ally Initiative
+    s32 visibleAllies          = ls_bufferReadDWord(buf);
+    Page->Allies.selectedIndex = visibleAllies;
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        InitField *f = Page->AllyFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        {
+            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
+        }
+        
+        //NOTE: For the EXTRA editField, because it is multi-line 
+        //      we need to count how many lines there are, and set it.
+        if(f->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(f->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
+        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        
+        f->compendiumIdx = ls_bufferReadDWord(buf);
+        f->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    //NOTE: Quick Exit if not in battle after the save.
+    if(State.inBattle == FALSE) 
+    { 
+        ls_arenaUse(globalArena);
+        ls_arenaClear(saveArena);
+        return TRUE;
+    }
+    
+    //NOTE: Set all Init Fields to ReadOnly because we are in battle
+    for(u32 i = 0; i < unserializePartyNum; i++)
+    { Page->PlayerInit[i].isReadonly = TRUE; }
+    
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        InitField *f = Page->MobFields + i;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { f->editFields[j].isReadonly = TRUE; }
+    }
+    
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        InitField *f = Page->AllyFields + i;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { f->editFields[j].isReadonly = TRUE; }
+    }
+    
+    //NOTE: UnSerialize Order
+    Page->orderAdjust = ls_bufferReadDWord(buf);
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    for(u32 i = 0; i < visibleOrder; i++)
+    {
+        Order *f = Page->OrderFields + i;
+        
+        ls_bufferReadIntoUTF32(buf, &f->field.text);
+        
+        f->pos.isReadonly = TRUE;
+        
+        f->field.maxValue = ls_bufferReadDWord(buf);
+        f->field.minValue = ls_bufferReadDWord(buf);
+        f->field.currPos  = ls_bufferReadDouble(buf);
+        
+        f->compendiumIdx  = ls_bufferReadDWord(buf);
+        f->ID             = ls_bufferReadDWord(buf);
+        
+        s32 currVal = ls_uiSliderGetValue(c, &f->field);
+        
+        if(currVal == 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
+        
+        else if(currVal < 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
+        
+        else if(currVal > 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
+    }
+    
+    Page->turnsInRound = ls_bufferReadDWord(buf);
+    
+    //NOTE: Current In Battle
+    {
+        Page->currIdx = ls_bufferReadDWord(buf);
+        
+        ls_bufferReadIntoUTF32(buf, &Page->Current.text);
+    }
+    
+    
+    //NOTE: Round Counter
+    {
+        Page->roundCount = ls_bufferReadDWord(buf);
+        ls_bufferReadIntoUTF32(buf, &Page->RoundCounter.text);
+    }
+    
+    //NOTE: Counters
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *C = Page->Counters + i;
+        
+        ls_bufferReadIntoUTF32(buf, &C->name.text);
+        
+        ls_bufferReadIntoUTF32(buf, &C->rounds.text);
+        
+        C->roundsLeft      = ls_bufferReadDWord(buf);
+        C->isActive        = ls_bufferReadDWord(buf);
+        C->turnCounter     = ls_bufferReadDWord(buf);
+        C->startIdxInOrder = ls_bufferReadDWord(buf);
+    }
+    
+    
+    //NOTE: Throwers
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrow *f = Page->Throwers + i;
+        
+        ls_bufferReadIntoUTF32(buf, &f->name.text);
+        ls_bufferReadIntoUTF32(buf, &f->toHit.text);
+        ls_bufferReadIntoUTF32(buf, &f->hitRes.text);
+        ls_bufferReadIntoUTF32(buf, &f->damage.text);
+        ls_bufferReadIntoUTF32(buf, &f->dmgRes.text);
+    }
+    
+    ls_bufferDestroy(buf);
+    
+    ls_arenaUse(globalArena);
+    ls_arenaClear(saveArena);
+    
+    return TRUE;
+}
+
 buffer ConvertSaveToNewVersion(buffer *oldSave, u32 oldVersion)
 {
     buffer currentSaveBuffer = *oldSave;
@@ -710,7 +966,7 @@ void SaveState(UIContext *c)
     
     //TODO: Actually use buf->cursor instead of buf->size??
     char outName[64] = {};
-    ls_sprintf(outName, 64, "SaveFile_v%d", global_saveVersion);
+    ls_sprintf(outName, 64, "SaveFile", global_saveVersion);
     ls_writeFile(outName, (char *)buf->data, buf->size, FALSE);
     
     ls_bufferDestroy(buf);
@@ -721,20 +977,33 @@ void SaveState(UIContext *c)
     return;
 }
 
-b32 LoadState(UIContext *cxt)
+typedef b32(*LoadFunc)(UIContext *c);
+
+const LoadFunc loadFunctions[] = { 0, 0, 0, 0, 0, LoadStateV6 };
+
+b32 LoadState(UIContext *c)
 {
     ls_arenaUse(saveArena);
     
     char fullPathBuff[128] = {};
-    char outName[64] = {};
-    ls_sprintf(outName, 64, "SaveFile_v%d", global_saveVersion);
-    
-    u32 len = ls_getFullPathName(outName, fullPathBuff, 128);
+    u32 len = ls_getFullPathName("SaveFile", fullPathBuff, 128);
     
     buffer state = {};
     buffer *buf = NULL;
     
-    if(ls_fileExists(fullPathBuff) == FALSE) { return FALSE; }
+    if(ls_fileExists(fullPathBuff) == FALSE) {
+        
+        //NOTE: Check legacy SaveFile_v6 version
+        u32 len = ls_getFullPathName("SaveFile_v6", fullPathBuff, 128);
+        if(ls_fileExists(fullPathBuff) == TRUE)
+        {
+            return loadFunctions[5](c);
+        }
+        else
+        {
+            return FALSE;
+        }
+    }
     else
     {
         string path = ls_strConstant(fullPathBuff);
@@ -791,7 +1060,7 @@ b32 LoadState(UIContext *cxt)
             curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
         }
         
-        ls_uiListBoxAddEntry(cxt, &Page->EncounterSel, curr->name);
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, curr->name);
     }
     
     
@@ -917,16 +1186,16 @@ b32 LoadState(UIContext *cxt)
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
         
-        s32 currVal = ls_uiSliderGetValue(cxt, &f->field);
+        s32 currVal = ls_uiSliderGetValue(c, &f->field);
         
         if(currVal == 0)
-        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), cxt->widgetColor); }
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
         
         else if(currVal < 0)
-        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), cxt->widgetColor); }
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
         
         else if(currVal > 0)
-        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), cxt->widgetColor); }
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
     }
     
     Page->turnsInRound = ls_bufferReadDWord(buf);
