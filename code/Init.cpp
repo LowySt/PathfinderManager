@@ -438,6 +438,10 @@ void OnEncounterSelect(UIContext *c, void *data)
 {
     if(State.inBattle) return;
     
+    //NOTE: This is to avoid the program never being reset. I don't think it's necessary,
+    //      but for "security" reasons we'll have it.
+    addID = 1000;
+    
     UIListBox *b = (UIListBox *)data;
     
     u32 idx = b->selectedIndex;
@@ -459,6 +463,9 @@ void OnEncounterSelect(UIContext *c, void *data)
         
         ls_uiTextBoxSet(c, &m->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
         m->compendiumIdx = entry->compendiumIdx;
+        m->ID            = addID;
+        
+        addID += 1;
     }
     
     for(u32 i = 0; i < e->numAllies; i++)
@@ -471,6 +478,9 @@ void OnEncounterSelect(UIContext *c, void *data)
         
         ls_uiTextBoxSet(c, &a->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
         a->compendiumIdx = entry->compendiumIdx;
+        a->ID            = addID;
+        
+        addID += 1;
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -487,10 +497,6 @@ void OnEncounterSelect(UIContext *c, void *data)
         ls_utf32Set(&t->toHit.text,  e->throwerHit[i]);
         ls_utf32Set(&t->damage.text, e->throwerDamage[i]);
     }
-    
-    //NOTE: This is to avoid the program never being reset. I don't think it's necessary,
-    //      but for "security" reasons we'll have it.
-    addID = 1000;
     
     return;
 }
@@ -1194,6 +1200,9 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
     
     Page->turnsInRound -= 1;
     AssertMsg(Page->turnsInRound >= 0 && Page->turnsInRound <= 64, "Turns in Round is Fucked\n");
+    
+    //NOTE: We need to check if we are removing the globalSelectedIndex order, and reset it if it's the case
+    if(globalSelectedIndex == visibleOrder-1) { globalSelectedIndex = -1; }
     
     //NOTE: We won't move the 'Current' field if you remove the 'Current' from the order.
     //      Because of that, Counters will be one count extra on the first lap after the remove.
