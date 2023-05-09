@@ -272,6 +272,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     ls_logDefaultTypesRegister();
     
+#if _DEBUG
+    ls_vlogRegister("Order", ls_vlogFormatOrder);
+#endif
     
     //TODO: Hardcoded Compendium Window
     const int compendiumWidth  = 800;

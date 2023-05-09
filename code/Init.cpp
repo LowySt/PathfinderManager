@@ -1,3 +1,34 @@
+#if _DEBUG
+
+s32 ls_vlogFormatOrder(char *dst, va_list *argList)
+{
+    Order ord = va_arg(*argList, Order);
+    
+    const s32 buffSize = 256;
+    char buff[buffSize] = {};
+    
+    s32 bytesWritten = ls_slog(buff, buffSize, "[\n\tname: {utf32}\n\tpos: {utf32}\n\tmaxLife: {s32}\n\tcurrLife:"
+                               "{s32}\n\tcompendiumIdx: {s32}\n\tID: {s32}\n]", 
+                               ord.field.text, ord.pos.text, ord.field.maxValue, ord.field.currValue,
+                               ord.compendiumIdx, ord.ID);
+    
+    ls_memcpy(buff, dst, bytesWritten);
+    return bytesWritten;
+}
+
+void DumpOrder(Order *ord)
+{
+    s32 visibleMobs   = State.Init->Mobs.selectedIndex;
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    
+    for(u32 i = 0; i < visibleOrder; i++)
+    {
+        ls_log("{u32}\n{Order}\n", i, ord[i]);
+    }
+}
+#endif
+
 b32 RequestUndoOnClick(UIContext *c, void *data)
 {
     undoRequest = TRUE;
@@ -320,7 +351,7 @@ b32 ChangeOrder(UIContext *c, void *data)
         //
         Order *oldOrder = &Init->OrderFields[oldPosition];
         
-        utf32 oldName = {}; 
+        utf32 oldName = {};
         ls_utf32Set(&oldName, oldOrder->field.text);
         
         s32 oldID            = oldOrder->ID;
@@ -1008,6 +1039,22 @@ b32 NextOnClick(UIContext *c, void *data)
     return TRUE;
 }
 
+void ClearOrder(Order *ToClear)
+{
+    ToClear->field.isHot  = FALSE;
+    ToClear->field.isHeld = FALSE;
+    
+    ls_utf32Clear(&ToClear->field.text);
+    
+    ToClear->field.currValue = 0;
+    ToClear->field.maxValue  = 100;
+    ToClear->field.minValue  = -30;
+    ToClear->field.currPos   = 1.0f;
+    
+    ToClear->compendiumIdx = -1;
+    ToClear->ID            = -1; //TODO: Is it sensible to do this?
+}
+
 void CopyOrder(Order *From, Order *To)
 {
     // Copy Slider
@@ -1069,6 +1116,9 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
             Order *B = Page->OrderFields + (i+1);
             
             CopyOrder(B, A);
+            
+            //NOTE: Last Index, Clear B
+            if(i == visibleOrder - 2) { ClearOrder(B); }
         }
         
         goto exit;
@@ -1091,7 +1141,7 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
                 ls_uiTextBoxClear(c, &B->maxLife);
                 
                 B->ID = 0;
-                B->compendiumIdx = 0;
+                B->compendiumIdx = -1;
                 
                 Page->Allies.selectedIndex -= 1;
                 
@@ -1122,7 +1172,7 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
                 ls_uiTextBoxClear(c, &B->maxLife);
                 
                 B->ID = 0;
-                B->compendiumIdx = 0;
+                B->compendiumIdx = -1;
                 
                 Page->Mobs.selectedIndex -= 1;
                 
@@ -1280,6 +1330,7 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
     
     ls_utf32Set(&o->field.text, name);
     o->field.maxValue = maxLife;
+    //TODO: o->field.minValue = -CONstitution
     o->compendiumIdx  = compendiumIdx;
     
     //NOTE: Because IDs in the InitFields get overwritten when removing from order 
@@ -1905,7 +1956,7 @@ b32 DrawPranaStyle(UIContext *c)
         if(State.Init->isAdding)
         {
             AssertMsgF(globalSelectedIndex >= 0, "Selected Index %d is not set\n", globalSelectedIndex);
-            AssertMsgF(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index %d is out of bounds\n", globalSelectedIndex);
+            AssertMsgF(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+MOB_NUM);
             
             InitField *f = 0;
             if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
@@ -1915,7 +1966,7 @@ b32 DrawPranaStyle(UIContext *c)
         }
         else if(globalSelectedIndex >= 0)
         {
-            AssertMsgF(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index %d is out of bounds\n", globalSelectedIndex);
+            AssertMsgF(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+MOB_NUM);
             
             InitField *f = 0;
             if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
@@ -1968,6 +2019,15 @@ b32 DrawPranaStyle(UIContext *c)
     }
     else
     {
+#if _DEBUG
+        Input *UserInput = &c->UserInput;
+        if(KeyPress(keyMap::F6))
+        {
+            DumpOrder(Page->OrderFields);
+        }
+#endif
+        
+        
         inputUse |= ls_uiTextBox(c, &Page->Current,      952, 668, 170, 20);
         inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1150, 698, 30, 20);
         inputUse |= ls_uiButton(c, &Page->Next, 1016, 698);
@@ -1988,7 +2048,7 @@ b32 DrawPranaStyle(UIContext *c)
         if(State.Init->isAdding)
         {
             AssertMsg(globalSelectedIndex >= 0, "Selected Index is not set\n");
-            AssertMsg(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index is out of bounds\n");
+            AssertMsgF(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+MOB_NUM);
             
             InitField *f = 0;
             if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
@@ -1998,7 +2058,7 @@ b32 DrawPranaStyle(UIContext *c)
         }
         else if(globalSelectedIndex >= 0)
         {
-            AssertMsg(globalSelectedIndex < visibleOrder, "Selected Order Index is out of bounds\n");
+            AssertMsgF(globalSelectedIndex < visibleOrder, "Selected Order Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleOrder);
             Order *ord = Page->OrderFields + globalSelectedIndex;
             InitField *f = GetInitFieldByID(ord->ID);
             

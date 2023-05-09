@@ -615,6 +615,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
     s32 dexBonusToAC = ls_min(dexBonusNew, newMaxDex);
     totAC   = (totAC   - dexBonusOld) + dexBonusToAC;
     touchAC = (touchAC - dexBonusOld) + dexBonusToAC;
+    flatAC  = (flatAC  - dexBonusOld) + dexBonusToAC;
     
     //NOTE: Adjust the armor bonus
     if(armorBonusIdx)
