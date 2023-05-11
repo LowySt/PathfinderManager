@@ -1577,6 +1577,15 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         
         ls_uiButtonInit(c, &f->remove, UIBUTTON_CLASSIC, ls_utf32Constant(U"X"), RemoveOrderOnClick, NULL, (void *)((u64)i));
         
+        for(u32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+        {
+            f->status[statusIdx].type = StatusType(statusIdx);
+            f->status[statusIdx].check = ls_uiCheckInit(c, UICHECK_BMP, statusBMPData[statusIdx],
+                                                        statusIconWidth, statusIconHeight,
+                                                        (u8 *)statusActiveRingData, statusActiveWidth,
+                                                        statusActiveHeight, onStatusChange, f);
+        }
+        
         f->compendiumIdx  = -1;
     }
     
@@ -2026,8 +2035,9 @@ b32 DrawPranaStyle(UIContext *c)
             { inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, 780-225); }
         }
     }
-    else
+    else //In Battle == TRUE
     {
+        
 #if _DEBUG
         Input *UserInput = &c->UserInput;
         if(KeyPress(keyMap::F6))
@@ -2035,7 +2045,6 @@ b32 DrawPranaStyle(UIContext *c)
             DumpOrder(Page->OrderFields);
         }
 #endif
-        
         
         inputUse |= ls_uiTextBox(c, &Page->Current,      952, 668, 170, 20);
         inputUse |= ls_uiTextBox(c, &Page->RoundCounter, 1150, 698, 30, 20);
@@ -2102,12 +2111,26 @@ b32 DrawPranaStyle(UIContext *c)
                 ls_uiRect(c, 40, 218, 760, 478, RGBg(0x33), RGBg(0x11));
                 
                 if(f) {
-                    //NOTE: Also draw the life box so that we can use it to add/remove HP
+                    //NOTE: Draw the HP Box that we can use it to add/remove HP
                     Color base = c->widgetColor;
                     c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
                     ls_uiLabel(c, U"PF", 307, 720);
-                    inputUse |= ls_uiTextBox(c, &f->maxLife, 332, 715, 118, 20);
+                    inputUse |= ls_uiTextBox(c, &f->maxLife, 332, 715, 48, 20);
                     c->widgetColor = base;
+                }
+                
+                
+                //NOTE: Draw the Status Check-circles
+                s32 statusX = 30;
+                for (u32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+                {
+                    if(statusIdx % 2 == 0) { 
+                        ls_uiCheck(c, &ord->status[statusIdx].check, statusX, 790);
+                    }
+                    else {
+                        ls_uiCheck(c, &ord->status[statusIdx].check, statusX, 750);
+                        statusX += 36;
+                    }
                 }
             }
         }

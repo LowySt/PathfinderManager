@@ -1123,6 +1123,11 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     return TRUE;
 }
 
+b32 onStatusChange(UIContext *c, void *data)
+{
+    return FALSE;
+}
+
 void initCachedPage(CachedPageEntry *cachedPage)
 {
     const u32 maxSubtypes    = 8;

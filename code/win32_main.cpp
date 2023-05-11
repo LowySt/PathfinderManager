@@ -83,6 +83,7 @@ static Arena compTempArena;
 #include "PlayerChar.h"
 #include "StateGlobals.h"
 #include "buttonImage.h"
+#include "status_icons.h"
 #include "Equip.h"
 
 
@@ -257,7 +258,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     globalArena     = ls_arenaCreate(MBytes(8));
     fileArena       = ls_arenaCreate(MBytes(4));
-    stateArena      = ls_arenaCreate(MBytes(6));
+    stateArena      = ls_arenaCreate(MBytes(8));
     saveArena       = ls_arenaCreate(MBytes(4));
     renderArena     = ls_arenaCreate(KBytes(8));
     

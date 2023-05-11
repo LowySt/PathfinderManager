@@ -164,12 +164,50 @@ struct EncList
     Encounter Enc[64];
 };
 
+enum StatusType
+{
+    STATUS_ABBAGLIATO = 0,
+    STATUS_ACCECATO,
+    STATUS_ACCOVACCIATO,
+    STATUS_AFFASCINATO,
+    STATUS_AFFATICATO,
+    STATUS_ASSORDATO,
+    STATUS_BARCOLLANTE,
+    STATUS_CONFUSO,
+    STATUS_ESAUSTO,
+    STATUS_IMMOBILIZZATO,
+    STATUS_IMPREPARATO,
+    STATUS_INDIFESO,
+    STATUS_INFERMO,
+    STATUS_INTRALCIATO,
+    STATUS_INVISIBILE,
+    STATUS_LOTTA,
+    STATUS_NAUSEATO,
+    STATUS_PANICO,
+    STATUS_PARALIZZATO,
+    STATUS_PIETRIFICATO,
+    STATUS_PRONO,
+    STATUS_SANGUINANTE,
+    STATUS_SCOSSO,
+    STATUS_SPAVENTATO,
+    STATUS_STORDITO,
+    
+    STATUS_COUNT
+};
+
+const s32 MAX_STATUS = 32;
+
+struct Status
+{
+    StatusType type;
+    UICheck check;
+};
+
 struct InitField
 {
     //NOTE: This makes referring to other boxes in the same InitField much easier
     //      For things like: CustomInitFieldText Handler.
     UITextBox editFields[IF_IDX_COUNT];
-    
     UITextBox maxLife;
     
     s32 compendiumIdx;
@@ -197,6 +235,8 @@ struct Order
     UITextBox pos;
     
     UIButton  remove;
+    
+    Status status[MAX_STATUS];
     
     s32 compendiumIdx;
     s32 ID;
