@@ -21,7 +21,7 @@ void testAllCompendiumForAsserts()
         
         len = ls_utf32ToAscii_t(&dummy.name, buff, 64);
         
-        ls_log("{string}", string({buff, len, len}));
+        //ls_log("{string}", string({buff, len, len}));
         
         f32 fract = (f32)i / (f32)compendium.codex.pages.count;
         if((fract > 0.1) && (hasMessaged1 == FALSE))  { ls_log("10% of Mobs Done"); hasMessaged1 = TRUE; }

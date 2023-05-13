@@ -1013,12 +1013,12 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
 
 void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
 {
-    auto rightFindBonus = [](utf32 Melee, s32 offset) -> s32 {
+    auto rightFindBonus = [](utf32 Melee, s32 offset, s32 min) -> s32 {
         s32 maybePlus  = ls_utf32RightFind(Melee, offset, '+');
         s32 maybeMinus = ls_utf32RightFind(Melee, offset, '-');
         
-        if(maybePlus != -1) { return maybePlus; }
-        else if(maybeMinus != -1) { return maybeMinus; }
+        if(maybePlus != -1 && maybePlus > min) { return maybePlus; }
+        else if(maybeMinus != -1 && maybeMinus > min) { return maybeMinus; }
         else { return -1; }
     };
     
@@ -1041,10 +1041,6 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
     
     s32 bab = ls_utf32ToInt(cachedPage->BAB);
     
-    s32 parenOpenIdx = ls_utf32LeftFind(Melee, '(');
-    
-    //TODO: check this!!
-    AssertMsg(parenOpenIdx != -1, "NOOOOOOO!\n");
     
     //TODO: COMBATTERE CON 2 ARMI DA IL DOPPIO DEGLI ATTACCHI!!
     b32 hasTwoW = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Combattere con Due Armi")) != -1;
@@ -1053,99 +1049,96 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
     
     //AssertMsg(hasTwoW == FALSE && hasImprTwoW == FALSE, "Not handled yet!");
     
-    s32 slashIdx = ls_utf32LeftFind(Melee, '/');
-    s32 bonuses[9] = {};
-    s32 attacksCount = 1;
     
-    if(slashIdx == -1 || slashIdx > parenOpenIdx) { bonuses[0] = rightFindBonus(Melee, parenOpenIdx); }
-    else                                          { bonuses[0] = rightFindBonus(Melee, slashIdx); }
-    
-    //TODO: What to do about this?
-    if(bonuses[0] == -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
-    AssertMsg(bonuses[0] != -1, "Missing value in 1 Attack!");
-    
-    if(slashIdx != -1 && slashIdx < parenOpenIdx)
-    {
-        //NOTE: Now count the attacks
-        s32 currSlash = slashIdx;
-        s32 lastSlash = slashIdx;
-        while(currSlash = ls_utf32LeftFind(Melee, currSlash+1, '/'), currSlash != -1 && currSlash < parenOpenIdx)
-        {
-            if(attacksCount >= 8) { break; }
-            AssertMsg(attacksCount < 8, "Too many attacks, BUG!\n");
-            
-            bonuses[attacksCount] = rightFindBonus(Melee, currSlash);
-            attacksCount += 1;
-            
-            lastSlash = currSlash;
-        }
-        
-        bonuses[attacksCount] = lastSlash+1;
-        attacksCount += 1;
-        
-        //NOTE: We got all the attacks. We are done?
-    }
-    
-    //NOTE: Skip the sign we are on and look for first.
-    bonuses[attacksCount] = ls_utf32LeftFindNotNumber(Melee, bonuses[attacksCount-1]+1);
-    
-#if 0
-    if(attacksCount > 1) { 
-        ls_log("[ {s32}, {s32}, {s32}, {s32}, {s32}, {s32}, {s32}, {s32} ]", 
-               bonuses[0], bonuses[1], bonuses[2], bonuses[3], bonuses[4], bonuses[5], bonuses[6], bonuses[7] );
-    }
-    else
-    {
-        ls_log("Single: {s32}", bonuses[0]);
-    }
-#endif
     b32 hasWeaponFinesse = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Arma Accurata")) != -1;
     
-    u32 tmpBuff[32]  = {};
-    utf32 tmpString = { tmpBuff, 0, 32 };
+    s32 parenOpenIdx = ls_utf32LeftFind(Melee, '(');
+    AssertMsg(parenOpenIdx != -1, "NOOOOOOO!\n");
     
-    u32 bonusBuffer[256]  = {};
-    utf32 newBonusString = { bonusBuffer, 0, 256 };
+    //NOTE: Prepare the string
+    ls_utf32Clear(&cachedPage->melee);
+    s32 stringIndex = 0;
     
-    for(s32 i = 0; i < attacksCount; i++)
+    while(parenOpenIdx != -1)
     {
-        s32 len = bonuses[i+1] - bonuses[i];
-        s32 oldBonus = ls_utf32ToInt({Melee.data + bonuses[i], len, len});
-        s32 newBonus = oldBonus - strBonusOld + strBonusNew;
-        if(hasWeaponFinesse) { newBonus = oldBonus - dexBonusOld + dexBonusNew; }
+        s32 slashIdx = ls_utf32LeftFind(Melee, stringIndex, '/');
+        s32 bonuses[9] = {};
+        s32 attacksCount = 1;
         
-        ls_utf32FromInt_t(&tmpString, newBonus);
+        if(slashIdx == -1 || slashIdx > parenOpenIdx)
+        { bonuses[0] = rightFindBonus(Melee, parenOpenIdx, stringIndex); }
+        else 
+        { bonuses[0] = rightFindBonus(Melee, slashIdx, stringIndex); }
         
-        if(newBonus > 0) { ls_utf32AppendChar(&newBonusString, '+'); }
-        ls_utf32Append(&newBonusString, tmpString);
+        //TODO: What to do about this?
+        if(bonuses[0] == -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
+        AssertMsg(bonuses[0] != -1, "Missing value in 1 Attack!");
         
-        if(i < attacksCount-1) { ls_utf32AppendChar(&newBonusString, '/'); }
+        if(slashIdx != -1 && slashIdx < parenOpenIdx)
+        {
+            //NOTE: Now count the attacks
+            s32 currSlash = slashIdx;
+            s32 lastSlash = slashIdx;
+            while(currSlash = ls_utf32LeftFind(Melee, currSlash+1, '/'), currSlash != -1 && currSlash < parenOpenIdx)
+            {
+                if(attacksCount >= 8) { break; }
+                AssertMsg(attacksCount < 8, "Too many attacks, BUG!\n");
+                
+                bonuses[attacksCount] = rightFindBonus(Melee, currSlash, stringIndex);
+                attacksCount += 1;
+                
+                lastSlash = currSlash;
+            }
+            
+            bonuses[attacksCount] = lastSlash+1;
+            attacksCount += 1;
+            
+            //NOTE: We got all the attacks. We are done?
+        }
+        
+        //NOTE: Skip the sign we are on and look for first.
+        bonuses[attacksCount] = ls_utf32LeftFindNotNumber(Melee, bonuses[attacksCount-1]+1);
+        
+        u32 tmpBuff[32]  = {};
+        utf32 tmpString = { tmpBuff, 0, 32 };
+        
+        u32 bonusBuffer[256]  = {};
+        utf32 newBonusString = { bonusBuffer, 0, 256 };
+        
+        for(s32 i = 0; i < attacksCount; i++)
+        {
+            s32 len = bonuses[i+1] - bonuses[i];
+            s32 oldBonus = ls_utf32ToInt({Melee.data + bonuses[i], len, len});
+            s32 newBonus = oldBonus - strBonusOld + strBonusNew;
+            if(hasWeaponFinesse) { newBonus = oldBonus - dexBonusOld + dexBonusNew; }
+            
+            ls_utf32FromInt_t(&tmpString, newBonus);
+            
+            if(newBonus > 0) { ls_utf32AppendChar(&newBonusString, '+'); }
+            ls_utf32Append(&newBonusString, tmpString);
+            
+            if(i < attacksCount-1) { ls_utf32AppendChar(&newBonusString, '/'); }
+        }
+        
+        ls_utf32Append(&cachedPage->melee, {Melee.data + stringIndex, bonuses[0] - stringIndex, bonuses[0] - stringIndex});
+        ls_utf32Append(&cachedPage->melee, newBonusString);
+        
+        s32 parenCloseIdx = ls_utf32LeftFind(Melee, parenOpenIdx, ')');
+        
+        //NOTE: Assume this is a formatting error and clamp it to the end
+        if(parenCloseIdx == -1) { parenCloseIdx = Melee.len - 1; }
+        //AssertMsg(parenCloseIdx != -1, "WHAAAT!?");
+        
+        ls_utf32Append(&cachedPage->melee, {Melee.data + bonuses[attacksCount],
+                           parenCloseIdx - bonuses[attacksCount] + 1, parenCloseIdx - bonuses[attacksCount] + 1});
+        
+        stringIndex = parenCloseIdx+1;
+        
+        parenOpenIdx = ls_utf32LeftFind(Melee, parenCloseIdx, '(');
     }
     
-#if 0
-    //NOTE: We skip possible number of attacks for natural attacks
-    //      But we also remove 1 to account for the symbol '+' or '-' (which seems to always be present??)
-    s32 valueIdx = ls_utf32LeftFindNumber(Melee, 2) - 1;
-    s32 spaceIdx = ls_utf32LeftFind(Melee, valueIdx, (u32)' ');
-    
-    utf32 val = {Melee.data + valueIdx, Melee.len - valueIdx, Melee.len - valueIdx};
-    utf32 space = {Melee.data + spaceIdx, Melee.len - spaceIdx, Melee.len - spaceIdx};
-    
-    //NOTE: Fix the value
-    s32 oldTxC = ls_utf32ToInt({Melee.data + valueIdx, spaceIdx - valueIdx, spaceIdx - valueIdx});
-    s32 newTxC = oldTxC - strBonusOld + strBonusNew;
-    if(hasWeaponFinesse) { newTxC = oldTxC - dexBonusOld + dexBonusNew; }
-    
-    u32 buff[32] = {};
-    utf32 tmpString = { buff, 0, 32 };
-#endif
-    
-    //TODO: This is all wrong because of multi-attack!!
-    ls_utf32Clear(&cachedPage->melee);
-    ls_utf32Append(&cachedPage->melee, {Melee.data, bonuses[0], bonuses[0]});
-    ls_utf32Append(&cachedPage->melee, newBonusString);
-    ls_utf32Append(&cachedPage->melee, {Melee.data + bonuses[attacksCount],
-                       Melee.len - bonuses[attacksCount], Melee.len - bonuses[attacksCount]});
+    //NOTE: It's mostly formatting errors because of fucking golarion!
+    LogMsgF(Melee.len - stringIndex == 0, "Stuff left at the end of the original string: %d\n", Melee.len - stringIndex);
 }
 
 void ShortenAndCacheName(utf32 orig_name, utf32 *out)
