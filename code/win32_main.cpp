@@ -89,9 +89,8 @@ static Arena compTempArena;
 
 #include "diceRoller.cpp"
 
-#include "Compendium.cpp"
 
-CachedPageEntry mainCachedPage = {};
+#include "Compendium.cpp"
 
 #include "Class.cpp"
 #include "Skills.cpp"
@@ -104,10 +103,15 @@ CachedPageEntry mainCachedPage = {};
 
 #include "AssetLoader.cpp"
 
+#if _DEBUG
+#include "test.cpp"
+#endif
+
 b32 ProgramExitOnButton(UIContext *c, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
 b32 CompendiumExitOnButton(UIContext *c, void *data){ ShowWindow(CompendiumWindow, SW_HIDE); return FALSE; }
 
-
+//TODO: Compendium does not answer keyboard input when MainWindow is minimized. Why???
+//      Do I have a fucked up keyboard state???
 b32 ProgramMinimizeOnButton(UIContext *c, void *data) { 
     //NOTE: We have to send an LButtonUp, else our Input handling will be confused
     //      and not register the un-pressing of the left button.
@@ -558,6 +562,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         //-------------------------------
         //NOTE: Begin Compendium Frame
+        //TODO: Put this shit in another thread!!!
         
         ls_uiFrameBeginChild(compendiumContext);
         
@@ -640,6 +645,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             // ----------------
         }
         
+        //TODO: Something fucky going on here. It should run as fast as it can,
+        //      but it definately goes slower than 30 fps when dragging?????
         ls_uiFrameEndChild(compendiumContext, 0);
         
         //NOTE: End Compendium Frame

@@ -235,6 +235,8 @@ UIScrollableRegion pageScroll     = {};
 UIScrollableRegion tableScroll    = {};
 UIScrollableRegion npcTableScroll = {};
 
+//NOTE: Used in Init.cpp
+CachedPageEntry mainCachedPage = {};
 
 //NOTE: Kinda hacky but okay.
 s32 internal_newToOldMap[] = { -5, -5, -4, -4, -3, -3, -2, -2, -1, -1, 0, 0,
@@ -242,6 +244,22 @@ s32 internal_newToOldMap[] = { -5, -5, -4, -4, -3, -3, -2, -2, -1, -1, 0, 0,
     11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17 ,17
 };
 s32 *newToOldMap = internal_newToOldMap + 10;
+
+void CachePage(PageEntry, s32, CachedPageEntry *, Status *);
+void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *);
+void GetPageEntryAndCache(s32 compendiumIdx, CachedPageEntry *page)
+{
+    if(compendiumIdx < NPC_PAGE_INDEX_OFFSET)
+    { 
+        PageEntry pEntry = compendium.codex.pages[compendiumIdx];
+        CachePage(pEntry, compendiumIdx, page, NULL);
+    }
+    else
+    { 
+        NPCPageEntry pEntry = compendium.codex.npcPages[compendiumIdx - NPC_PAGE_INDEX_OFFSET];
+        CachePage(pEntry, compendiumIdx, page, NULL);
+    }
+}
 
 b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
 {
@@ -993,6 +1011,143 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
     return;
 }
 
+void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
+{
+    auto rightFindBonus = [](utf32 Melee, s32 offset) -> s32 {
+        s32 maybePlus  = ls_utf32RightFind(Melee, offset, '+');
+        s32 maybeMinus = ls_utf32RightFind(Melee, offset, '-');
+        
+        if(maybePlus != -1) { return maybePlus; }
+        else if(maybeMinus != -1) { return maybeMinus; }
+        else { return -1; }
+    };
+    
+    if(Melee.len < 2) { ls_utf32Set(&cachedPage->melee, Melee); return; }
+    
+    s32 sciameIdx  = ls_utf32LeftFind(Melee, ls_utf32Constant(U"sciame"));
+    s32 sciame2Idx = ls_utf32LeftFind(Melee, ls_utf32Constant(U"Sciame"));
+    s32 truppaIdx  = ls_utf32LeftFind(Melee, ls_utf32Constant(U"truppa"));
+    
+    //TODO: Maybe signal with red? Or directly fix damage???
+    if(sciameIdx != -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
+    if(sciame2Idx != -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
+    if(truppaIdx != -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
+    
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;;
+    s32 strBonusOld = newToOldMap[strBonusNew];
+    
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
+    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    
+    s32 bab = ls_utf32ToInt(cachedPage->BAB);
+    
+    s32 parenOpenIdx = ls_utf32LeftFind(Melee, '(');
+    
+    //TODO: check this!!
+    AssertMsg(parenOpenIdx != -1, "NOOOOOOO!\n");
+    
+    //TODO: COMBATTERE CON 2 ARMI DA IL DOPPIO DEGLI ATTACCHI!!
+    b32 hasTwoW = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Combattere con Due Armi")) != -1;
+    b32 hasImprTwoW = ls_utf32LeftFind(cachedPage->talents, 
+                                       ls_utf32Constant(U"Combattere con Due Armi Migliorato")) != -1;
+    
+    //AssertMsg(hasTwoW == FALSE && hasImprTwoW == FALSE, "Not handled yet!");
+    
+    s32 slashIdx = ls_utf32LeftFind(Melee, '/');
+    s32 bonuses[9] = {};
+    s32 attacksCount = 1;
+    
+    if(slashIdx == -1 || slashIdx > parenOpenIdx) { bonuses[0] = rightFindBonus(Melee, parenOpenIdx); }
+    else                                          { bonuses[0] = rightFindBonus(Melee, slashIdx); }
+    
+    //TODO: What to do about this?
+    if(bonuses[0] == -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
+    AssertMsg(bonuses[0] != -1, "Missing value in 1 Attack!");
+    
+    if(slashIdx != -1 && slashIdx < parenOpenIdx)
+    {
+        //NOTE: Now count the attacks
+        s32 currSlash = slashIdx;
+        s32 lastSlash = slashIdx;
+        while(currSlash = ls_utf32LeftFind(Melee, currSlash+1, '/'), currSlash != -1 && currSlash < parenOpenIdx)
+        {
+            if(attacksCount >= 8) { break; }
+            AssertMsg(attacksCount < 8, "Too many attacks, BUG!\n");
+            
+            bonuses[attacksCount] = rightFindBonus(Melee, currSlash);
+            attacksCount += 1;
+            
+            lastSlash = currSlash;
+        }
+        
+        bonuses[attacksCount] = lastSlash+1;
+        attacksCount += 1;
+        
+        //NOTE: We got all the attacks. We are done?
+    }
+    
+    //NOTE: Skip the sign we are on and look for first.
+    bonuses[attacksCount] = ls_utf32LeftFindNotNumber(Melee, bonuses[attacksCount-1]+1);
+    
+#if 0
+    if(attacksCount > 1) { 
+        ls_log("[ {s32}, {s32}, {s32}, {s32}, {s32}, {s32}, {s32}, {s32} ]", 
+               bonuses[0], bonuses[1], bonuses[2], bonuses[3], bonuses[4], bonuses[5], bonuses[6], bonuses[7] );
+    }
+    else
+    {
+        ls_log("Single: {s32}", bonuses[0]);
+    }
+#endif
+    b32 hasWeaponFinesse = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Arma Accurata")) != -1;
+    
+    u32 tmpBuff[32]  = {};
+    utf32 tmpString = { tmpBuff, 0, 32 };
+    
+    u32 bonusBuffer[256]  = {};
+    utf32 newBonusString = { bonusBuffer, 0, 256 };
+    
+    for(s32 i = 0; i < attacksCount; i++)
+    {
+        s32 len = bonuses[i+1] - bonuses[i];
+        s32 oldBonus = ls_utf32ToInt({Melee.data + bonuses[i], len, len});
+        s32 newBonus = oldBonus - strBonusOld + strBonusNew;
+        if(hasWeaponFinesse) { newBonus = oldBonus - dexBonusOld + dexBonusNew; }
+        
+        ls_utf32FromInt_t(&tmpString, newBonus);
+        
+        if(newBonus > 0) { ls_utf32AppendChar(&newBonusString, '+'); }
+        ls_utf32Append(&newBonusString, tmpString);
+        
+        if(i < attacksCount-1) { ls_utf32AppendChar(&newBonusString, '/'); }
+    }
+    
+#if 0
+    //NOTE: We skip possible number of attacks for natural attacks
+    //      But we also remove 1 to account for the symbol '+' or '-' (which seems to always be present??)
+    s32 valueIdx = ls_utf32LeftFindNumber(Melee, 2) - 1;
+    s32 spaceIdx = ls_utf32LeftFind(Melee, valueIdx, (u32)' ');
+    
+    utf32 val = {Melee.data + valueIdx, Melee.len - valueIdx, Melee.len - valueIdx};
+    utf32 space = {Melee.data + spaceIdx, Melee.len - spaceIdx, Melee.len - spaceIdx};
+    
+    //NOTE: Fix the value
+    s32 oldTxC = ls_utf32ToInt({Melee.data + valueIdx, spaceIdx - valueIdx, spaceIdx - valueIdx});
+    s32 newTxC = oldTxC - strBonusOld + strBonusNew;
+    if(hasWeaponFinesse) { newTxC = oldTxC - dexBonusOld + dexBonusNew; }
+    
+    u32 buff[32] = {};
+    utf32 tmpString = { buff, 0, 32 };
+#endif
+    
+    //TODO: This is all wrong because of multi-attack!!
+    ls_utf32Clear(&cachedPage->melee);
+    ls_utf32Append(&cachedPage->melee, {Melee.data, bonuses[0], bonuses[0]});
+    ls_utf32Append(&cachedPage->melee, newBonusString);
+    ls_utf32Append(&cachedPage->melee, {Melee.data + bonuses[attacksCount],
+                       Melee.len - bonuses[attacksCount], Melee.len - bonuses[attacksCount]});
+}
+
 void ShortenAndCacheName(utf32 orig_name, utf32 *out)
 {
     if(orig_name.len < 17) { ls_utf32Set(out, orig_name); return; }
@@ -1125,7 +1280,12 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
 
 b32 onStatusChange(UIContext *c, void *data)
 {
-    return FALSE;
+    Order *ord = (Order *)data;
+    
+    //NOTE: We re-cache the page to apply the changes.
+    GetPageEntryAndCache(ord->compendiumIdx, &mainCachedPage);
+    
+    return TRUE;
 }
 
 void initCachedPage(CachedPageEntry *cachedPage)
@@ -1443,10 +1603,10 @@ void GetEntryAndConvertAC(buffer *buf, utf32 *toSet, u32 index)
     ls_bufferSeekBegin(buf);
 }
 
-void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
+void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *statuses = NULL)
 {
-    u32 tempUTF32Buffer[256] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 256 };
+    u32 tempUTF32Buffer[512] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 512 };
     
     Codex *c = &compendium.codex;
     
@@ -1460,6 +1620,10 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
+    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name);
+    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs);
+    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe);
+    
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON);
@@ -1472,6 +1636,23 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size);
+    
+    //NOTE: Early talents are for attack modifiers!
+    //TODO: I should create an enum and save the existance of certain talents
+    //      into an array, to be more efficiently used later!!
+    ls_utf32Clear(&cachedPage->talents);
+    if(page.talents[0])
+    {
+        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0]);
+        
+        u32 i = 1;
+        while(page.talents[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->talents, &cachedPage->talents, U", ", page.talents[i]);
+            i += 1;
+        }
+    }
+    
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
     CalculateAndCacheAC(tempString, cachedPage, FALSE);
@@ -1500,7 +1681,11 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->melee, page.melee);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee);
+    CalculateAndCacheMelee(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ranged, page.ranged);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych);
@@ -1534,9 +1719,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source);
     
-    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name);
-    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs);
-    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe);
+    
     GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment);
     GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type);
     
@@ -1623,18 +1806,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach);
     
-    ls_utf32Clear(&cachedPage->talents);
-    if(page.talents[0])
-    {
-        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0]);
-        u32 i = 1;
-        while(page.talents[i] && i < 24)
-        {
-            AppendEntryFromBuffer(&c->talents, &cachedPage->talents, U", ", page.talents[i]);
-            i += 1;
-        }
-    }
-    
     ls_utf32Clear(&cachedPage->skills);
     if(page.skills[0])
     {
@@ -1662,10 +1833,10 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
     GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment);
 }
 
-void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage)
+void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *statuses = NULL)
 {
-    u32 tempUTF32Buffer[256] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 256 };
+    u32 tempUTF32Buffer[512] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 512 };
     
     Codex *c = &compendium.codex;
     
@@ -2476,6 +2647,10 @@ void DrawMonsterTable(UIContext *c)
     return;
 }
 
+#if _DEBUG
+void testAllCompendiumForAsserts();
+#endif
+
 void DrawCompendium(UIContext *c)
 {
     //NOTE: This arena is cleared every frame,
@@ -2484,6 +2659,14 @@ void DrawCompendium(UIContext *c)
     
     Codex *codex = &compendium.codex;
     Input *UserInput = &c->UserInput;
+    
+#if _DEBUG
+    if(KeyPress(keyMap::F1))
+    {
+        testAllCompendiumForAsserts();
+    }
+#endif
+    
     
     if(compendium.pageIndex == -1)
     {
