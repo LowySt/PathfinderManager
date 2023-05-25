@@ -2,8 +2,9 @@ struct CachedPageEntry
 {
     s32 pageIndex   = -1;
     
-    b32 acError    = FALSE;
-    b32 meleeError = FALSE;
+    b32 acError     = FALSE;
+    b32 meleeError  = FALSE;
+    b32 rangedError = FALSE;
     
     utf32 origin;
     utf32 shortDesc;
@@ -439,6 +440,125 @@ b32 CompendiumSearchFunctionNPCs(UIContext *c, void *userData)
     
     return FALSE;
 }
+
+//-------------------------------------------
+//NOTE: Utility Dice/Bonus Finding Functions
+s32 rightFindBonus(utf32 Melee, s32 offset, s32 min)
+{
+    s32 maybePlus  = ls_utf32RightFind(Melee, offset, '+');
+    s32 maybeMinus = ls_utf32RightFind(Melee, offset, '-');
+    
+    if(maybePlus != -1 && maybePlus > min) { return maybePlus; }
+    else if(maybeMinus != -1 && maybeMinus > min) { return maybeMinus; }
+    else { return -1; }
+};
+
+s32 leftFindBonus(utf32 Melee, s32 offset, s32 max)
+{
+    s32 maybePlus  = ls_utf32LeftFind(Melee, offset, '+');
+    s32 maybeMinus = ls_utf32LeftFind(Melee, offset, '-');
+    
+    if(maybePlus != -1 && maybePlus < max) { return maybePlus; }
+    else if(maybeMinus != -1 && maybeMinus < max) { return maybeMinus; }
+    else { return -1; }
+};
+
+s64 leftFindDiceThrow(utf32 Melee, s32 offset, s32 max)
+{
+    
+    s32 diceIdx = ls_utf32LeftFind(Melee, offset+1, 'd');
+    if(diceIdx == -1) { return -1; }
+    
+    do
+    {
+        if(diceIdx > max) { return -1; }
+        
+        if((ls_utf32IsNumber(Melee.data[diceIdx-1]) == TRUE) &&
+           (ls_utf32IsNumber(Melee.data[diceIdx+1]) == TRUE))
+        { 
+            s32 end = ls_utf32LeftFindNotNumber(Melee, diceIdx+1);
+            return ((s64)diceIdx << 32) | end;
+        }
+        
+        diceIdx = ls_utf32LeftFind(Melee, diceIdx+1, 'd'); //NOTE: The +1 is to avoid infinite loops
+        
+    } while(diceIdx != -1);
+    
+    return -1;
+};
+
+s64 leftFindDiceBonus(utf32 s, s32 off, s32 max)
+{
+    //NOTE: First look for + or -, without any non numeric characters in between.
+    //      If you don't find it before other non-numeric, it means it doesn't exist
+    //      EXCEPT FOR WHITESPACE, WHICH IS IGNORED!
+    
+    AssertMsg(s.data, "Source data is null.\n");
+    AssertMsg(off >= 0, "Negative offset.\n"); 
+    
+    if(s.data == NULL) { return -1; }
+    if(s.len  == 0)    { return -1; }
+    if(off >= s.len)   { return -1; }
+    if(off < 0)        { return -1; }
+    
+    s32 beginIdx = -1;
+    {
+        u32 *At    = s.data + off;
+        s32 offset = off;
+        while (At != (s.data + s.len))
+        { 
+            if(At + 1 > (s.data + s.len)) { break; }
+            if(offset > max)              { return -1; }
+            
+            if(*At == '+' || *At == '-') { beginIdx = offset; break; }
+            if(*At == ' ' || ls_utf32IsNumber(*At)) { At++; offset++; continue; }
+            break;
+        }
+        
+        if(beginIdx == -1) return -1;
+    }
+    
+    s32 endIdx = -1;
+    {
+        u32 *At         = s.data + beginIdx + 1; //Skip the +/-
+        s32 offset      = beginIdx + 1;
+        s32 addedSpaces = 0;
+        b32 afterValue  = FALSE;
+        while (At != (s.data + s.len))
+        { 
+            if(At + 1 > (s.data + s.len)) { break; }
+            if(offset > max)              { return -1; }
+            
+            if(*At == ' ')
+            {
+                if(afterValue) { addedSpaces += 1; }
+                At++; offset++; continue;
+            }
+            
+            if(ls_utf32IsNumber(*At))
+            { 
+                if(afterValue == FALSE) { afterValue = TRUE; }
+                At++; offset++; continue;
+            }
+            
+            //NOTE: Not a valid bonus if it's actually another dice throw!
+            if(*At == 'd') //NOTE: Already SUS
+            {
+                //TODO: Is this enough? (1d3+ 22 d 7) ????
+                if((At+1 < (s.data + s.len)) && ls_utf32IsNumber(*(At+1))) { return -1; }
+            }
+            
+            break;
+        }
+        
+        endIdx = offset - addedSpaces;
+    }
+    
+    return ((s64)beginIdx << 32 | endIdx);
+};
+//
+//-------------------------------------------
+
 
 //NOTE: I'm pretty sure Deviation doesn't matter, because it's a non-stacking bonus unaffected by other things
 //      in AC. Since it's not affacted by STR or DEX (Which are the quanities changing) I can ignore it.
@@ -1048,116 +1168,6 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
         ls_utf32Constant(U"capelli uncinati"),
     };
     
-    auto rightFindBonus = [](utf32 Melee, s32 offset, s32 min) -> s32 {
-        s32 maybePlus  = ls_utf32RightFind(Melee, offset, '+');
-        s32 maybeMinus = ls_utf32RightFind(Melee, offset, '-');
-        
-        if(maybePlus != -1 && maybePlus > min) { return maybePlus; }
-        else if(maybeMinus != -1 && maybeMinus > min) { return maybeMinus; }
-        else { return -1; }
-    };
-    
-    auto leftFindBonus = [](utf32 Melee, s32 offset, s32 max) -> s32 {
-        s32 maybePlus  = ls_utf32LeftFind(Melee, offset, '+');
-        s32 maybeMinus = ls_utf32LeftFind(Melee, offset, '-');
-        
-        if(maybePlus != -1 && maybePlus < max) { return maybePlus; }
-        else if(maybeMinus != -1 && maybeMinus < max) { return maybeMinus; }
-        else { return -1; }
-    };
-    
-    auto leftFindDiceThrow = [](utf32 Melee, s32 offset, s32 max) -> s64 {
-        
-        s32 diceIdx = ls_utf32LeftFind(Melee, offset+1, 'd');
-        if(diceIdx == -1) { return -1; }
-        
-        do
-        {
-            if(diceIdx > max) { return -1; }
-            
-            if((ls_utf32IsNumber(Melee.data[diceIdx-1]) == TRUE) &&
-               (ls_utf32IsNumber(Melee.data[diceIdx+1]) == TRUE))
-            { 
-                s32 end = ls_utf32LeftFindNotNumber(Melee, diceIdx+1);
-                return ((s64)diceIdx << 32) | end;
-            }
-            
-            diceIdx = ls_utf32LeftFind(Melee, diceIdx+1, 'd'); //NOTE: The +1 is to avoid infinite loops
-            
-        } while(diceIdx != -1);
-        
-        return -1;
-    };
-    
-    auto leftFindDiceBonus = [](utf32 s, s32 off, s32 max) -> s64 {
-        //NOTE: First look for + or -, without any non numeric characters in between.
-        //      If you don't find it before other non-numeric, it means it doesn't exist
-        //      EXCEPT FOR WHITESPACE, WHICH IS IGNORED!
-        
-        AssertMsg(s.data, "Source data is null.\n");
-        AssertMsg(off >= 0, "Negative offset.\n"); 
-        
-        if(s.data == NULL) { return -1; }
-        if(s.len  == 0)    { return -1; }
-        if(off >= s.len)   { return -1; }
-        if(off < 0)        { return -1; }
-        
-        s32 beginIdx = -1;
-        {
-            u32 *At    = s.data + off;
-            s32 offset = off;
-            while (At != (s.data + s.len))
-            { 
-                if(At + 1 > (s.data + s.len)) { break; }
-                if(offset > max)              { return -1; }
-                
-                if(*At == '+' || *At == '-') { beginIdx = offset; break; }
-                if(*At == ' ' || ls_utf32IsNumber(*At)) { At++; offset++; continue; }
-                break;
-            }
-            
-            if(beginIdx == -1) return -1;
-        }
-        
-        s32 endIdx = -1;
-        {
-            u32 *At         = s.data + beginIdx + 1; //Skip the +/-
-            s32 offset      = beginIdx + 1;
-            s32 addedSpaces = 0;
-            b32 afterValue  = FALSE;
-            while (At != (s.data + s.len))
-            { 
-                if(At + 1 > (s.data + s.len)) { break; }
-                if(offset > max)              { return -1; }
-                
-                if(*At == ' ')
-                {
-                    if(afterValue) { addedSpaces += 1; }
-                    At++; offset++; continue;
-                }
-                
-                if(ls_utf32IsNumber(*At))
-                { 
-                    if(afterValue == FALSE) { afterValue = TRUE; }
-                    At++; offset++; continue;
-                }
-                
-                //NOTE: Not a valid bonus if it's actually another dice throw!
-                if(*At == 'd') //NOTE: Already SUS
-                {
-                    //TODO: Is this enough? (1d3+ 22 d 7) ????
-                    if((At+1 < (s.data + s.len)) && ls_utf32IsNumber(*(At+1))) { return -1; }
-                }
-                
-                break;
-            }
-            
-            endIdx = offset - addedSpaces;
-        }
-        
-        return ((s64)beginIdx << 32 | endIdx);
-    };
-    
     if(Melee.len < 2) { ls_utf32Set(&cachedPage->melee, Melee); return; }
     
     s32 sciameIdx  = ls_utf32LeftFind(Melee, ls_utf32Constant(U"sciame"));
@@ -1179,8 +1189,6 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
     s32 chaBonusOld = newToOldMap[chaBonusNew];
     
     s32 bab = ls_utf32ToInt(cachedPage->BAB);
-    
-    //b32 hasPowerfulBite = (ls_utf32LeftFind(cachedPage->spec_qual, ls_utf32Constant(U"Morso Possente")) != -1) || (ls_utf32LeftFind(cachedPage->spec_qual, ls_utf32Constant(U"Morso Potente")) != -1);
     
     b32 hasAdvancedArch  = ls_utf32LeftFind(cachedPage->archetype, ls_utf32Constant(U"Avanzato")) != -1;
     b32 isIncorporeal    = ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1;
@@ -1377,6 +1385,156 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
     
     //NOTE: It's mostly formatting errors because of fucking golarion!
     LogMsgF(Melee.len - stringIndex == 0, "Stuff left at the end of the original string: %d\n", Melee.len - stringIndex);
+}
+
+void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
+{
+    //ls_utf32Set(&cachedPage->ranged, Ranged);
+    //return;
+    
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
+    s32 strBonusOld = newToOldMap[strBonusNew];
+    
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
+    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    
+    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA) - 10;
+    s32 chaBonusOld = newToOldMap[chaBonusNew];
+    
+    s32 bab = ls_utf32ToInt(cachedPage->BAB);
+    
+    b32 hasAdvancedArch  = ls_utf32LeftFind(cachedPage->archetype, ls_utf32Constant(U"Avanzato")) != -1;
+    
+    s32 parenOpenIdx = ls_utf32LeftFind(Ranged, '(');
+    if(parenOpenIdx == -1) { cachedPage->rangedError = TRUE; ls_utf32Set(&cachedPage->ranged, Ranged); return; }
+    AssertMsg(parenOpenIdx != -1, "NOOOOOOO!\n");
+    
+    //NOTE: Prepare the string
+    ls_utf32Clear(&cachedPage->ranged);
+    s32 stringIndex = 0;
+    
+    while(parenOpenIdx != -1)
+    {
+        s32 slashIdx = ls_utf32LeftFind(Ranged, stringIndex, '/');
+        s32 bonuses[9] = {};
+        s32 attacksCount = 1;
+        
+        if(slashIdx == -1 || slashIdx > parenOpenIdx)
+        { bonuses[0] = rightFindBonus(Ranged, parenOpenIdx, stringIndex); }
+        else 
+        { bonuses[0] = rightFindBonus(Ranged, slashIdx, stringIndex); }
+        
+        //TODO: What to do about this?
+        if(bonuses[0] == -1) { cachedPage->rangedError = TRUE; ls_utf32Set(&cachedPage->ranged, Ranged); return; }
+        AssertMsg(bonuses[0] != -1, "Missing value in 1 Attack!");
+        
+        if(slashIdx != -1 && slashIdx < parenOpenIdx)
+        {
+            //NOTE: Now count the attacks
+            s32 currSlash = slashIdx;
+            s32 lastSlash = slashIdx;
+            while(currSlash = ls_utf32LeftFind(Ranged, currSlash+1, '/'), currSlash != -1 && currSlash < parenOpenIdx)
+            {
+                if(attacksCount >= 8) { break; }
+                AssertMsg(attacksCount < 8, "Too many attacks, BUG!\n");
+                
+                bonuses[attacksCount] = rightFindBonus(Ranged, currSlash, stringIndex);
+                attacksCount += 1;
+                
+                lastSlash = currSlash;
+            }
+            
+            bonuses[attacksCount] = lastSlash+1;
+            attacksCount += 1;
+            
+            //NOTE: We got all the attacks. We are done?
+        }
+        
+        //NOTE: Skip the sign we are on and look for first.
+        bonuses[attacksCount] = ls_utf32LeftFindNotNumber(Ranged, bonuses[attacksCount-1]+1);
+        
+        u32 tmpBuff[32]  = {};
+        utf32 tmpString = { tmpBuff, 0, 32 };
+        
+        u32 bonusBuffer[256]  = {};
+        utf32 newBonusString = { bonusBuffer, 0, 256 };
+        
+        for(s32 i = 0; i < attacksCount; i++)
+        {
+            s32 len = bonuses[i+1] - bonuses[i];
+            s32 oldBonus = ls_utf32ToInt({Ranged.data + bonuses[i], len, len});
+            s32 newBonus = oldBonus - dexBonusOld + dexBonusNew; //TODO: Is this everything??
+            
+            ls_utf32FromInt_t(&tmpString, newBonus);
+            
+            if(newBonus > 0) { ls_utf32AppendChar(&newBonusString, '+'); }
+            ls_utf32Append(&newBonusString, tmpString);
+            
+            if(i < attacksCount-1) { ls_utf32AppendChar(&newBonusString, '/'); }
+        }
+        
+        ls_utf32Append(&cachedPage->ranged, {Ranged.data + stringIndex, bonuses[0] - stringIndex, bonuses[0] - stringIndex});
+        ls_utf32Append(&cachedPage->ranged, newBonusString);
+        
+        s32 parenCloseIdx = ls_utf32LeftFind(Ranged, parenOpenIdx, ')');
+        
+        //NOTE: Assume this is a formatting error and clamp it to the end
+        if(parenCloseIdx == -1) { parenCloseIdx = Ranged.len - 1; }
+        //AssertMsg(parenCloseIdx != -1, "WHAAAT!?");
+        
+        //NOTE: And now, fix the damage, Ranged attacks cannot be natural!
+        {
+            s64 diceThrowRange = leftFindDiceThrow(Ranged, parenOpenIdx, parenCloseIdx);
+            s32 diceThrowIdx = s32(diceThrowRange >> 32);
+            s32 diceThrowEnd = s32(diceThrowRange);
+            if(diceThrowIdx != -1)
+            {
+                //NOTE: Now find the bonus. If it doesn't exist, notify it somehow!
+                s64 diceBonusRange = leftFindDiceBonus(Ranged, diceThrowIdx+1, parenCloseIdx);
+                s32 diceBonus     = s32(diceBonusRange >> 32);
+                s32 dmgBonusEnd   = s32(diceBonusRange);
+                
+                s32 oldDBonus = 0;
+                if(diceBonusRange != -1)
+                {
+                    utf32 tmpDmgString = {Ranged.data + diceBonus, dmgBonusEnd - diceBonus, dmgBonusEnd - diceBonus};
+                    oldDBonus = ls_utf32ToIntIgnoreWhitespace(tmpDmgString);
+                }
+                else
+                {
+                    dmgBonusEnd = diceThrowEnd;
+                }
+                
+                //TODO: Broken Weapons!!
+                //TODO: The modifier applied depends on the WEAPON!
+                cachedPage->rangedError = TRUE;
+                s32 newDBonus = -99; //oldDBonus - dexBonusOld + dexBonusNew;
+                
+                ls_utf32Append(&cachedPage->ranged, {Ranged.data + bonuses[attacksCount],
+                                   diceThrowEnd - bonuses[attacksCount], diceThrowEnd - bonuses[attacksCount]});
+                if(newDBonus != 0) 
+                {
+                    ls_utf32FromInt_t(&tmpString, newDBonus);
+                    if(newDBonus > 0) { ls_utf32AppendChar(&cachedPage->ranged, '+'); }
+                    ls_utf32Append(&cachedPage->ranged, tmpString);
+                }
+                ls_utf32Append(&cachedPage->ranged, {Ranged.data + dmgBonusEnd,
+                                   parenCloseIdx - dmgBonusEnd + 1, parenCloseIdx - dmgBonusEnd + 1});
+            }
+            else
+            {
+                ls_utf32Append(&cachedPage->ranged, {Ranged.data + bonuses[attacksCount],
+                                   parenCloseIdx - bonuses[attacksCount] + 1, parenCloseIdx - bonuses[attacksCount] + 1});
+            }
+        }
+        
+        stringIndex = parenCloseIdx+1;
+        
+        parenOpenIdx = ls_utf32LeftFind(Ranged, parenCloseIdx, '(');
+    }
+    
+    //NOTE: It's mostly formatting errors because of fucking golarion!
+    LogMsgF(Ranged.len - stringIndex == 0, "Stuff left at the end of the original string: %d\n", Ranged.len - stringIndex);
 }
 
 void ShortenAndCacheName(utf32 orig_name, utf32 *out)
@@ -1949,7 +2107,10 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     CalculateAndCacheMelee(tempString, cachedPage);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ranged, page.ranged);
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged);
+    CalculateAndCacheRanged(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics);
@@ -2502,14 +2663,21 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         
         if(page->ranged.len)
         {
+            if(page->rangedError == TRUE)
+            { c->textColor = RGB(0xCC, 0x22, 0x22); }
+            
             renderAndAlignS(U"Distanza: ");
             renderAndAlign(page->ranged);
+            
+            c->textColor = RGBg(0xAA);
         }
         
         if(page->specialAttacks.len)
         {
+            c->textColor = RGB(0xCC, 0x22, 0x22);
             renderAndAlignS(U"Attacchi Speciali: ");
             renderAndAlign(page->specialAttacks);
+            c->textColor = RGBg(0xAA);
         }
         
         if(page->space.len)
