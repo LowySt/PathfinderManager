@@ -440,7 +440,9 @@ b32 CompendiumSearchFunctionNPCs(UIContext *c, void *userData)
     return FALSE;
 }
 
-//TODO: What about Deviation being affected by some things?
+//NOTE: I'm pretty sure Deviation doesn't matter, because it's a non-stacking bonus unaffected by other things
+//      in AC. Since it's not affacted by STR or DEX (Which are the quanities changing) I can ignore it.
+//      Incorporeal creatures get adjusted for free
 void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
 {
     cachedPage->acError = FALSE;
