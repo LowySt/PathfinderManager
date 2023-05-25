@@ -638,7 +638,10 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
     s32 dexBonusToAC = ls_min(dexBonusNew, newMaxDex);
     totAC   = (totAC   - dexBonusOld) + dexBonusToAC;
     touchAC = (touchAC - dexBonusOld) + dexBonusToAC;
-    flatAC  = (flatAC  - dexBonusOld) + dexBonusToAC;
+    
+    //NOTE: Adjust the dex MALUS on being flat footed!
+    if(dexBonusOld < 0)
+    { flatAC  = (flatAC  - dexBonusOld) + dexBonusToAC; }
     
     //NOTE: Adjust the armor bonus
     if(armorBonusIdx)
@@ -817,14 +820,16 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     if(endIdx == -1) endIdx = BMC.len;
     
     //TODO: Fuck Golarion
-    b32 smallSize = ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscola"));
-    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuta"));
-    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissima"));
-    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscolo"));
-    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuto"));
-    smallSize |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissimo"));
+    b32 useDex = ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscola"));
+    useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuta"));
+    useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissima"));
+    useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscolo"));
+    useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuto"));
+    useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissimo"));
     
-    s32 statBonusNew = (smallSize ? ls_utf32ToInt(cachedPage->DEX) : ls_utf32ToInt(cachedPage->STR)) - 10;
+    useDex |= (ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1);
+    
+    s32 statBonusNew = (useDex == TRUE ? ls_utf32ToInt(cachedPage->DEX) : ls_utf32ToInt(cachedPage->STR)) - 10;
     s32 statBonusOld = newToOldMap[statBonusNew];
     
     s32 bmcVal = ls_utf32ToInt({BMC.data, endIdx, endIdx});
