@@ -1,8 +1,9 @@
 struct CachedPageEntry
 {
-    s32 pageIndex    = -1;
+    s32 pageIndex   = -1;
     
-    b32 acHasArmor = FALSE;
+    b32 acError    = FALSE;
+    b32 meleeError = FALSE;
     
     utf32 origin;
     utf32 shortDesc;
@@ -239,9 +240,13 @@ UIScrollableRegion npcTableScroll = {};
 CachedPageEntry mainCachedPage = {};
 
 //NOTE: Kinda hacky but okay.
-s32 internal_newToOldMap[] = { -5, -5, -4, -4, -3, -3, -2, -2, -1, -1, 0, 0,
-    1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10,
-    11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16, 17 ,17
+s32 internal_newToOldMap[] = { 
+    -5, -5, -4, -4, -3, -3, -2, -2, -1, -1,
+    0, 0, 1, 1, 2, 2, 3, 3, 4, 4,
+    5, 5, 6, 6, 7, 7, 8, 8, 9, 9,
+    10, 10, 11, 11, 12, 12, 13, 13, 14, 14,
+    15, 15, 16, 16, 17, 17, 18, 18, 19, 19,
+    20, 20, 21, 21, 22, 22, 23, 23, 24, 24
 };
 s32 *newToOldMap = internal_newToOldMap + 10;
 
@@ -438,14 +443,14 @@ b32 CompendiumSearchFunctionNPCs(UIContext *c, void *userData)
 //TODO: What about Deviation being affected by some things?
 void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
 {
-    cachedPage->acHasArmor = FALSE;
+    cachedPage->acError = FALSE;
     
     s32 acExprBeginIdx = ls_utf32LeftFind(AC, (u32)'(');
     s32 acExprEndIdx   = ls_utf32LeftFind(AC, (u32)')');
     
     if((acExprBeginIdx == -1) || (acExprEndIdx == -1))
     { 
-        cachedPage->acHasArmor = TRUE;
+        cachedPage->acError = TRUE;
         ls_utf32Set(&cachedPage->AC, AC);
         return;
     }
@@ -515,7 +520,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
         }
         else
         {
-            cachedPage->acHasArmor = TRUE;
+            cachedPage->acError = TRUE;
             ls_utf32Set(&cachedPage->AC, AC);
             return;
         }
@@ -561,7 +566,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
         }
         else
         {
-            cachedPage->acHasArmor = TRUE;
+            cachedPage->acError = TRUE;
             ls_utf32Set(&cachedPage->AC, AC);
             return;
         }
@@ -620,7 +625,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
     if((firstValEnd == -1) || (secondValEnd == -1) || (thirdValEnd == -1)
        || (secondValBegin >= AC.len) || (thirdValBegin >= AC.len))
     {
-        cachedPage->acHasArmor = TRUE;
+        cachedPage->acError = TRUE;
         ls_utf32Set(&cachedPage->AC, AC);
         return;
     }
@@ -662,6 +667,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
     ls_utf32Append(&cachedPage->AC, {AC.data + thirdValEnd, AC.len - thirdValEnd, AC.len - thirdValEnd});
 }
 
+//TODO: Fix Carisma instead of Constitution for Undeads!!
 void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
 {
     s32 conBonusNew = ls_utf32ToInt(cachedPage->CON) - 10;
@@ -1013,6 +1019,28 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
 
 void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
 {
+    cachedPage->meleeError = FALSE;
+    
+    const s32 naturalAttacksCount = 39;
+    const utf32 naturalAttacks[naturalAttacksCount] = { 
+        ls_utf32Constant(U"morso"), ls_utf32Constant(U"Morso"), ls_utf32Constant(U"morsi"),
+        ls_utf32Constant(U"Morsi"), ls_utf32Constant(U"artiglio"), ls_utf32Constant(U"Artiglio"),
+        ls_utf32Constant(U"artigli"), ls_utf32Constant(U"Artigli"), ls_utf32Constant(U"ala "),
+        ls_utf32Constant(U"Ala "), ls_utf32Constant(U"ali"), ls_utf32Constant(U"Ali"),
+        ls_utf32Constant(U"tentacolo"), ls_utf32Constant(U"Tentacolo"), ls_utf32Constant(U"tentacoli"),
+        ls_utf32Constant(U"Tentacoli"), ls_utf32Constant(U"zoccolo"), ls_utf32Constant(U"Zoccolo"),
+        ls_utf32Constant(U"zoccoli"), ls_utf32Constant(U"Zoccoli"), ls_utf32Constant(U"chela"),
+        ls_utf32Constant(U"Chela"), ls_utf32Constant(U"chele"), ls_utf32Constant(U"Chele"),
+        ls_utf32Constant(U"colpo di coda"), ls_utf32Constant(U"Colpo di coda"), ls_utf32Constant(U"corno"),
+        ls_utf32Constant(U"Corno"), ls_utf32Constant(U"corni"), ls_utf32Constant(U"Corni"),
+        ls_utf32Constant(U"pungiglione"), ls_utf32Constant(U"Pungiglione"), ls_utf32Constant(U"pungiglioni"),
+        ls_utf32Constant(U"Pungiglioni"), ls_utf32Constant(U"schianto"), ls_utf32Constant(U"Schianto"),
+        ls_utf32Constant(U"schianti"), ls_utf32Constant(U"Schianti"),
+        
+        //NOTE: Eccezioni!
+        ls_utf32Constant(U"capelli uncinati"),
+    };
+    
     auto rightFindBonus = [](utf32 Melee, s32 offset, s32 min) -> s32 {
         s32 maybePlus  = ls_utf32RightFind(Melee, offset, '+');
         s32 maybeMinus = ls_utf32RightFind(Melee, offset, '-');
@@ -1022,37 +1050,143 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
         else { return -1; }
     };
     
+    auto leftFindBonus = [](utf32 Melee, s32 offset, s32 max) -> s32 {
+        s32 maybePlus  = ls_utf32LeftFind(Melee, offset, '+');
+        s32 maybeMinus = ls_utf32LeftFind(Melee, offset, '-');
+        
+        if(maybePlus != -1 && maybePlus < max) { return maybePlus; }
+        else if(maybeMinus != -1 && maybeMinus < max) { return maybeMinus; }
+        else { return -1; }
+    };
+    
+    auto leftFindDiceThrow = [](utf32 Melee, s32 offset, s32 max) -> s64 {
+        
+        s32 diceIdx = ls_utf32LeftFind(Melee, offset+1, 'd');
+        if(diceIdx == -1) { return -1; }
+        
+        do
+        {
+            if(diceIdx > max) { return -1; }
+            
+            if((ls_utf32IsNumber(Melee.data[diceIdx-1]) == TRUE) &&
+               (ls_utf32IsNumber(Melee.data[diceIdx+1]) == TRUE))
+            { 
+                s32 end = ls_utf32LeftFindNotNumber(Melee, diceIdx+1);
+                return ((s64)diceIdx << 32) | end;
+            }
+            
+            diceIdx = ls_utf32LeftFind(Melee, diceIdx+1, 'd'); //NOTE: The +1 is to avoid infinite loops
+            
+        } while(diceIdx != -1);
+        
+        return -1;
+    };
+    
+    auto leftFindDiceBonus = [](utf32 s, s32 off, s32 max) -> s64 {
+        //NOTE: First look for + or -, without any non numeric characters in between.
+        //      If you don't find it before other non-numeric, it means it doesn't exist
+        //      EXCEPT FOR WHITESPACE, WHICH IS IGNORED!
+        
+        AssertMsg(s.data, "Source data is null.\n");
+        AssertMsg(off >= 0, "Negative offset.\n"); 
+        
+        if(s.data == NULL) { return -1; }
+        if(s.len  == 0)    { return -1; }
+        if(off >= s.len)   { return -1; }
+        if(off < 0)        { return -1; }
+        
+        s32 beginIdx = -1;
+        {
+            u32 *At    = s.data + off;
+            s32 offset = off;
+            while (At != (s.data + s.len))
+            { 
+                if(At + 1 > (s.data + s.len)) { break; }
+                if(offset > max)              { return -1; }
+                
+                if(*At == '+' || *At == '-') { beginIdx = offset; break; }
+                if(*At == ' ' || ls_utf32IsNumber(*At)) { At++; offset++; continue; }
+                break;
+            }
+            
+            if(beginIdx == -1) return -1;
+        }
+        
+        s32 endIdx = -1;
+        {
+            u32 *At         = s.data + beginIdx + 1; //Skip the +/-
+            s32 offset      = beginIdx + 1;
+            s32 addedSpaces = 0;
+            b32 afterValue  = FALSE;
+            while (At != (s.data + s.len))
+            { 
+                if(At + 1 > (s.data + s.len)) { break; }
+                if(offset > max)              { return -1; }
+                
+                if(*At == ' ')
+                {
+                    if(afterValue) { addedSpaces += 1; }
+                    At++; offset++; continue;
+                }
+                
+                if(ls_utf32IsNumber(*At))
+                { 
+                    if(afterValue == FALSE) { afterValue = TRUE; }
+                    At++; offset++; continue;
+                }
+                
+                //NOTE: Not a valid bonus if it's actually another dice throw!
+                if(*At == 'd') //NOTE: Already SUS
+                {
+                    //TODO: Is this enough? (1d3+ 22 d 7) ????
+                    if((At+1 < (s.data + s.len)) && ls_utf32IsNumber(*(At+1))) { return -1; }
+                }
+                
+                break;
+            }
+            
+            endIdx = offset - addedSpaces;
+        }
+        
+        return ((s64)beginIdx << 32 | endIdx);
+    };
+    
     if(Melee.len < 2) { ls_utf32Set(&cachedPage->melee, Melee); return; }
     
     s32 sciameIdx  = ls_utf32LeftFind(Melee, ls_utf32Constant(U"sciame"));
     s32 sciame2Idx = ls_utf32LeftFind(Melee, ls_utf32Constant(U"Sciame"));
     s32 truppaIdx  = ls_utf32LeftFind(Melee, ls_utf32Constant(U"truppa"));
     
-    //TODO: Maybe signal with red? Or directly fix damage???
-    if(sciameIdx != -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
-    if(sciame2Idx != -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
-    if(truppaIdx != -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
+    //NOTE: Quick exit on special types of attacks
+    if(sciameIdx  != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
+    if(sciame2Idx != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
+    if(truppaIdx  != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;;
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
     s32 strBonusOld = newToOldMap[strBonusNew];
     
     s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
     s32 dexBonusOld = newToOldMap[dexBonusNew];
     
+    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA) - 10;
+    s32 chaBonusOld = newToOldMap[chaBonusNew];
+    
     s32 bab = ls_utf32ToInt(cachedPage->BAB);
     
+    //b32 hasPowerfulBite = (ls_utf32LeftFind(cachedPage->spec_qual, ls_utf32Constant(U"Morso Possente")) != -1) || (ls_utf32LeftFind(cachedPage->spec_qual, ls_utf32Constant(U"Morso Potente")) != -1);
     
-    //TODO: COMBATTERE CON 2 ARMI DA IL DOPPIO DEGLI ATTACCHI!!
-    b32 hasTwoW = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Combattere con Due Armi")) != -1;
-    b32 hasImprTwoW = ls_utf32LeftFind(cachedPage->talents, 
-                                       ls_utf32Constant(U"Combattere con Due Armi Migliorato")) != -1;
+    b32 hasAdvancedArch  = ls_utf32LeftFind(cachedPage->archetype, ls_utf32Constant(U"Avanzato")) != -1;
+    b32 isIncorporeal    = ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1;
+    b32 hasChangelingMod = ls_utf32LeftFind(cachedPage->spec_qual, ls_utf32Constant(U"Changeling Imponente")) != -1;
     
-    //AssertMsg(hasTwoW == FALSE && hasImprTwoW == FALSE, "Not handled yet!");
-    
-    
+    //TODO: Mithic Arma Accurata
     b32 hasWeaponFinesse = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Arma Accurata")) != -1;
     
+    //NOTE: Special Enemies with special bullshit!
+    b32 isTiyanak = ls_utf32AreEqual(cachedPage->name, ls_utf32Constant(U"Tiyanak"));
+    
     s32 parenOpenIdx = ls_utf32LeftFind(Melee, '(');
+    if(parenOpenIdx == -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     AssertMsg(parenOpenIdx != -1, "NOOOOOOO!\n");
     
     //NOTE: Prepare the string
@@ -1071,7 +1205,7 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
         { bonuses[0] = rightFindBonus(Melee, slashIdx, stringIndex); }
         
         //TODO: What to do about this?
-        if(bonuses[0] == -1) { ls_utf32Set(&cachedPage->melee, Melee); return; }
+        if(bonuses[0] == -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
         AssertMsg(bonuses[0] != -1, "Missing value in 1 Attack!");
         
         if(slashIdx != -1 && slashIdx < parenOpenIdx)
@@ -1110,7 +1244,7 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
             s32 len = bonuses[i+1] - bonuses[i];
             s32 oldBonus = ls_utf32ToInt({Melee.data + bonuses[i], len, len});
             s32 newBonus = oldBonus - strBonusOld + strBonusNew;
-            if(hasWeaponFinesse) { newBonus = oldBonus - dexBonusOld + dexBonusNew; }
+            if(hasWeaponFinesse || isIncorporeal) { newBonus = oldBonus - dexBonusOld + dexBonusNew; }
             
             ls_utf32FromInt_t(&tmpString, newBonus);
             
@@ -1129,8 +1263,105 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
         if(parenCloseIdx == -1) { parenCloseIdx = Melee.len - 1; }
         //AssertMsg(parenCloseIdx != -1, "WHAAAT!?");
         
-        ls_utf32Append(&cachedPage->melee, {Melee.data + bonuses[attacksCount],
-                           parenCloseIdx - bonuses[attacksCount] + 1, parenCloseIdx - bonuses[attacksCount] + 1});
+        //NOTE: And now, fix the damage
+        {
+            b32 isNatural = FALSE;
+            for(s32 nIdx = 0; nIdx < naturalAttacksCount; nIdx++)
+            {
+                utf32 haystack = { Melee.data + stringIndex, parenOpenIdx - stringIndex, parenOpenIdx - stringIndex };
+                if(ls_utf32LeftFind(haystack, naturalAttacks[nIdx]) != -1)
+                { isNatural = TRUE; break; }
+            }
+            
+            s64 diceThrowRange = leftFindDiceThrow(Melee, parenOpenIdx, parenCloseIdx);
+            s32 diceThrowIdx = s32(diceThrowRange >> 32);
+            s32 diceThrowEnd = s32(diceThrowRange);
+            if(diceThrowIdx != -1)
+            {
+                //NOTE: Now find the bonus. If it doesn't exist, notify it somehow!
+                s64 diceBonusRange = leftFindDiceBonus(Melee, diceThrowIdx+1, parenCloseIdx);
+                s32 diceBonus     = s32(diceBonusRange >> 32);
+                s32 dmgBonusEnd   = s32(diceBonusRange);
+                
+                s32 oldDBonus = 0;
+                if(diceBonusRange != -1)
+                {
+                    utf32 tmpDmgString = {Melee.data + diceBonus, dmgBonusEnd - diceBonus, dmgBonusEnd - diceBonus};
+                    oldDBonus = ls_utf32ToIntIgnoreWhitespace(tmpDmgString);
+                }
+                else
+                {
+                    dmgBonusEnd = diceThrowEnd;
+                }
+                
+                //NOTE: Escaped From Unhandled case
+                if(isIncorporeal && oldDBonus != 0)
+                { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
+                
+                s32 newDBonus = 0;
+                if(!isIncorporeal) //NOTE: Shitty way to not add damage when creature is incorporeal.
+                {
+                    if(isNatural == TRUE)
+                    {
+                        s32 add     = 0;
+                        s32 postAdd = 0;
+                        
+                        if(hasChangelingMod) { add += 1; }
+                        if(hasAdvancedArch)  { add += 2; }
+                        if(isTiyanak)        { add += chaBonusOld; postAdd += chaBonusNew; }
+                        
+                        //TODO: Felino Marino, WTF!?!?!?
+                        //TODO: Mastino Ombra, WTF!?!?!?
+                        //TODO: Rakshasa Mitico, WTF!?!?!? Mithic Arma Accurata
+                        s32 halfOld = strBonusOld / 2;
+                        s32 halfNew = strBonusNew / 2;
+                        if(oldDBonus == strBonusOld + add) //NOTE: It's primary
+                        { newDBonus = oldDBonus - strBonusOld + strBonusNew; }
+                        else if(oldDBonus == halfOld + add)  //NOTE: It's secondary
+                        { newDBonus = oldDBonus - halfOld + halfNew; }
+                        else if(oldDBonus == strBonusOld + halfOld + add)  //NOTE: It's SINGLE ONLY attack
+                        { 
+                            s32 oldBon = strBonusOld + halfOld;
+                            s32 newBon = strBonusNew + halfNew;
+                            newDBonus = oldDBonus - oldBon + newBon;
+                        }
+                        else if(oldDBonus == strBonusOld*2 + add) //NOTE: Many have special attacks that give them 2*STR bonus!
+                        { newDBonus = oldDBonus - strBonusOld*2 + strBonusNew*2; }
+                        else
+                        {
+                            //NOTE: Escaped From Unhandled case
+                            cachedPage->meleeError = TRUE; 
+                            ls_utf32Set(&cachedPage->melee, Melee);
+                            return;
+                        }
+                        
+                        //NOTE: Add the postAdd
+                        newDBonus += postAdd;
+                    }
+                    else
+                    {
+                        //TODO: Broken Weapons!!
+                        newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                    }
+                }
+                
+                ls_utf32Append(&cachedPage->melee, {Melee.data + bonuses[attacksCount],
+                                   diceThrowEnd - bonuses[attacksCount], diceThrowEnd - bonuses[attacksCount]});
+                if(newDBonus != 0) 
+                {
+                    ls_utf32FromInt_t(&tmpString, newDBonus);
+                    if(newDBonus > 0) { ls_utf32AppendChar(&cachedPage->melee, '+'); }
+                    ls_utf32Append(&cachedPage->melee, tmpString);
+                }
+                ls_utf32Append(&cachedPage->melee, {Melee.data + dmgBonusEnd,
+                                   parenCloseIdx - dmgBonusEnd + 1, parenCloseIdx - dmgBonusEnd + 1});
+            }
+            else
+            {
+                ls_utf32Append(&cachedPage->melee, {Melee.data + bonuses[attacksCount],
+                                   parenCloseIdx - bonuses[attacksCount] + 1, parenCloseIdx - bonuses[attacksCount] + 1});
+            }
+        }
         
         stringIndex = parenCloseIdx+1;
         
@@ -1630,8 +1861,38 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size);
     
+    GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type);
+    
+    ls_utf32Clear(&cachedPage->subtype);
+    if(page.subtype[0])
+    {
+        ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U" ("));
+        AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, NULL, page.subtype[0]);
+        u32 i = 1;
+        while(page.subtype[i] && i < 8)
+        {
+            AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, U", ", page.subtype[i]);
+            i += 1;
+        }
+        ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
+    }
+    
+    ls_utf32Clear(&cachedPage->archetype);
+    if(page.archetype[0])
+    {
+        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
+        AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
+        u32 i = 1;
+        while(page.archetype[i] && i < 4)
+        {
+            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i]);
+            i += 1;
+        }
+        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
+    }
+    
     //NOTE: Early talents are for attack modifiers!
-    //TODO: I should create an enum and save the existance of certain talents
+    //TODO: I should create an enum and save the existence of certain talents
     //      into an array, to be more efficiently used later!!
     ls_utf32Clear(&cachedPage->talents);
     if(page.talents[0])
@@ -1646,6 +1907,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         }
     }
     
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
     CalculateAndCacheAC(tempString, cachedPage, FALSE);
@@ -1689,9 +1952,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&cachedPage->tactics_during);
     ls_utf32Clear(&cachedPage->tactics_stats);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
-    
     ls_utf32Clear(&cachedPage->given_equip);
     ls_utf32Clear(&cachedPage->properties);
     ls_utf32Clear(&cachedPage->boons);
@@ -1714,35 +1974,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     
     GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment);
-    GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type);
-    
-    ls_utf32Clear(&cachedPage->subtype);
-    if(page.subtype[0])
-    {
-        ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U" ("));
-        AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, NULL, page.subtype[0]);
-        u32 i = 1;
-        while(page.subtype[i] && i < 8)
-        {
-            AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, U", ", page.subtype[i]);
-            i += 1;
-        }
-        ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
-    }
-    
-    ls_utf32Clear(&cachedPage->archetype);
-    if(page.archetype[0])
-    {
-        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
-        AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
-        u32 i = 1;
-        while(page.archetype[i] && i < 4)
-        {
-            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i]);
-            i += 1;
-        }
-        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
-    }
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
@@ -2174,7 +2405,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.y -= offset.h;
         
-        if(page->acHasArmor == TRUE)
+        if(page->acError == TRUE)
         {
             c->textColor = RGB(0xCC, 0x22, 0x22);
             renderAndAlignS(U"CA: ");
@@ -2253,8 +2484,13 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         
         if(page->melee.len)
         {
+            if(page->meleeError == TRUE)
+            { c->textColor = RGB(0xCC, 0x22, 0x22); }
+            
             renderAndAlignS(U"Mischia: ");
             renderAndAlign(page->melee);
+            
+            c->textColor = RGBg(0xAA);
         }
         
         if(page->ranged.len)
@@ -2641,7 +2877,7 @@ void DrawMonsterTable(UIContext *c)
 }
 
 #if _DEBUG
-void testAllCompendiumForAsserts();
+void testAllCompendiumForAsserts(b32);
 #endif
 
 void DrawCompendium(UIContext *c)
@@ -2656,7 +2892,8 @@ void DrawCompendium(UIContext *c)
 #if _DEBUG
     if(KeyPress(keyMap::F1))
     {
-        testAllCompendiumForAsserts();
+        b32 logNames = KeyHeld(keyMap::Shift);
+        testAllCompendiumForAsserts(logNames);
     }
 #endif
     
