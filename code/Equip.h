@@ -1,6 +1,29 @@
 #ifndef _EQUIP_H
 #define _EQUIP_H
 
+struct DiceThrow
+{
+    //NOTETODO: 0, 0 indicates something special???
+    s8 numDice;
+    s8 numFaces;
+};
+
+struct CritRange
+{
+    // Range is the distance from 20, so 19-20/x2 would be {range: 1, mul: 2}
+    s8 range;
+    s8 mul;
+};
+
+enum DamageTypeFlag : u8
+{
+    DMG_BLUDGEONING = 1,
+    DMG_SLASHING    = 2,
+    DMG_PIERCING    = 4,
+    
+    DMG_OTHER       = 128
+};
+
 enum ArmorType : s32
 {
     ARMOR_UNDEFINED,
@@ -133,6 +156,86 @@ Armor shieldTablePrana[shieldTableCount] = {
     {{(u32 *)U"Scudo Pesante di Legno", 22, 22},          +4, -1, -2, 15, ARMOR_SHIELD},
     {{(u32 *)U"Scudo Pesante di Metallo", 24, 24},        +5, -1, -2, 15, ARMOR_SHIELD},
     {{(u32 *)U"Scudo Torre", 11, 11},                     +6, +2, -10, 50, ARMOR_SHIELD},
+};
+
+enum RangedWeaponCat
+{
+    RANGED_CAT_UNDEFINED,
+    
+    RANGED_CAT_SIMPLE,
+    RANGED_CAT_WAR,
+    RANGED_CAT_EXOTIC,
+    
+    RANGED_CAT_COUNT,
+};
+
+enum RangedWeaponType
+{
+    RANGED_UNDEFINED,
+    
+    RANGED_THROW,
+    RANGED_SPREAD,
+    RANGED_AIM,
+    
+    RANGED_COUNT
+};
+
+struct RangedWeapon
+{
+    utf32            name;
+    DiceThrow        smallDmg;
+    DiceThrow        mediumDmg;
+    CritRange        crit;
+    s32              range; //NOTE: In Squares of 1,5m each!
+    
+    DamageTypeFlag   dmgType;
+    RangedWeaponCat  cat;
+    RangedWeaponType type;
+};
+
+const s32 rangedWeaponCount = 34;
+RangedWeapon rangedTable[rangedWeaponCount] = {
+    
+    //NOTE: Simple Weapons
+    { ls_utf32Constant(U"Balestra Leggera"), {1, 6}, {1, 8}, {1, 2}, 16, DMG_PIERCING, RANGED_CAT_SIMPLE, RANGED_AIM },
+    { ls_utf32Constant(U"Balestra Pesante"), {1, 8}, {1, 10}, {1, 2}, 24, DMG_PIERCING, RANGED_CAT_SIMPLE, RANGED_AIM },
+    { ls_utf32Constant(U"Balestra Subacquea Leggera"), {1, 6}, {1, 8}, {1, 2}, 16, DMG_PIERCING, RANGED_CAT_SIMPLE, RANGED_AIM },
+    { ls_utf32Constant(U"Balestra Subacquea Pesante"), {1, 8}, {1, 10}, {1, 2}, 24, DMG_PIERCING, RANGED_CAT_SIMPLE, RANGED_AIM },
+    { ls_utf32Constant(U"Cerbottana"), {1, 1}, {1, 2}, {0, 2}, 4, DMG_PIERCING, RANGED_CAT_SIMPLE, RANGED_THROW },
+    { ls_utf32Constant(U"Dardo"), {1, 3}, {1, 4}, {0, 2}, 4, DMG_PIERCING, RANGED_CAT_SIMPLE, RANGED_THROW },
+    { ls_utf32Constant(U"Fionda"), {1, 3}, {1, 4}, {0, 2}, 10, DMG_BLUDGEONING, RANGED_CAT_SIMPLE, RANGED_THROW },
+    { ls_utf32Constant(U"Giavellotto"), {1, 4}, {1, 6}, {0, 2}, 6, DMG_PIERCING, RANGED_CAT_SIMPLE, RANGED_THROW },
+    
+    
+    //NOTE: War Weapons
+    { ls_utf32Constant(U"Amentum (G)"), {1, 4}, {1, 6}, {0, 2}, 10, DMG_PIERCING, RANGED_CAT_WAR, RANGED_THROW },
+    { ls_utf32Constant(U"Arco Corto"), {1, 4}, {1, 6}, {0, 3}, 12, DMG_PIERCING, RANGED_CAT_WAR, RANGED_AIM },
+    { ls_utf32Constant(U"Arco Corto Composito"), {1, 4}, {1, 6}, {0, 3}, 14, DMG_PIERCING, RANGED_CAT_WAR, RANGED_AIM},
+    { ls_utf32Constant(U"Arco Lungo"), {1, 6}, {1, 8}, {0, 3}, 20, DMG_PIERCING, RANGED_CAT_WAR, RANGED_AIM },
+    { ls_utf32Constant(U"Arco Lungo Composito"), {1, 6}, {1, 8}, {0, 3}, 22, DMG_PIERCING, RANGED_CAT_WAR, RANGED_AIM},
+    { ls_utf32Constant(U"Chakram (O)"), {1, 6}, {1, 8}, {0, 2}, 6, DMG_SLASHING, RANGED_CAT_WAR, RANGED_THROW },
+    { ls_utf32Constant(U"Hunga Munga"), {1, 4}, {1, 6}, {0, 2}, 3, DMG_PIERCING, RANGED_CAT_WAR, RANGED_THROW },
+    { ls_utf32Constant(U"Pilum"), {1, 6}, {1, 8}, {0, 2}, 4, DMG_PIERCING, RANGED_CAT_WAR, RANGED_THROW },
+    { ls_utf32Constant(U"Propulsore (P)"), {1, 4}, {1, 6}, {0, 2}, 10, DMG_PIERCING, RANGED_CAT_WAR, RANGED_THROW },
+    { ls_utf32Constant(U"Tubo della Polvere Velenosa (O)"), {0, 0}, {0, 0}, {0, 0}, 0, DMG_OTHER, RANGED_CAT_WAR, RANGED_UNDEFINED },
+    { ls_utf32Constant(U"Tubo Lancia Frecce (O)"), {1, 3}, {1, 4}, {0, 2}, 8, DMG_PIERCING, RANGED_CAT_WAR, RANGED_UNDEFINED },
+    
+    //NOTE: Exotic Weapons
+    { ls_utf32Constant(U"Balestra a Mano"), {1, 3}, {1, 4}, {1, 2}, 6, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_AIM },
+    { ls_utf32Constant(U"Balestra a Ripetizione a Mano"), {1, 3}, {1, 4}, {1, 2}, 6, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_AIM },
+    { ls_utf32Constant(U"Balestra a Ripetizione Leggera"), {1, 6}, {1, 8}, {1, 2}, 16, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_AIM },
+    { ls_utf32Constant(U"Balestra a Ripetizione Pesante"), {1, 8}, {1, 10}, {1, 2}, 24, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_AIM },
+    { ls_utf32Constant(U"Balestra Doppia"), {1, 6}, {1, 8}, {1, 2}, 16, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_AIM },
+    { ls_utf32Constant(U"Bastone Fionda Halfling"), {1, 6}, {1, 8}, {0, 3}, 16, DMG_BLUDGEONING, RANGED_CAT_EXOTIC, RANGED_THROW },
+    { ls_utf32Constant(U"Bolas"), {1, 3}, {1, 4}, {0, 2}, 2, DMG_BLUDGEONING, RANGED_CAT_EXOTIC, RANGED_THROW },
+    { ls_utf32Constant(U"Boomerang"), {1, 4}, {1, 6}, {0, 2}, 6, DMG_BLUDGEONING, RANGED_CAT_EXOTIC, RANGED_THROW },
+    { ls_utf32Constant(U"Kestros (P)"), {1, 6}, {1, 8}, {0, 3}, 10, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_THROW },
+    { ls_utf32Constant(U"Lazo"), {}, {}, {}, 0, DMG_OTHER, RANGED_CAT_EXOTIC, RANGED_UNDEFINED},
+    { ls_utf32Constant(U"Rete"), {}, {}, {}, 2, DMG_OTHER, RANGED_CAT_EXOTIC, RANGED_UNDEFINED},
+    { ls_utf32Constant(U"Rete da Cattura"), {}, {}, {}, 2, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_UNDEFINED},
+    { ls_utf32Constant(U"Scudo da Lancio (G)"), {1, 4}, {1, 6}, {0, 2}, 4, DMG_BLUDGEONING, RANGED_CAT_EXOTIC, RANGED_THROW },
+    { ls_utf32Constant(U"Sheng Biao (O)"), {1, 3}, {1, 4}, {0, 2}, 4, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_THROW },
+    { ls_utf32Constant(U"Shuriken (5) (O)"), {1, 1}, {1, 2}, {0, 2}, 2, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_THROW },
 };
 
 #endif //_EQUIP_H
