@@ -210,8 +210,8 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *From = curr->Throwers + i;
-        DiceThrow *To   = dest->Throwers + i;
+        DiceThrowBox *From = curr->Throwers + i;
+        DiceThrowBox *To   = dest->Throwers + i;
         
         ls_uiTextBoxSet(cxt, &To->name,   From->name.text);
         ls_uiTextBoxSet(cxt, &To->toHit,  From->toHit.text);

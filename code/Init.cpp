@@ -485,7 +485,7 @@ void OnEncounterSelect(UIContext *c, void *data)
     
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *t = State.Init->Throwers + i;
+        DiceThrowBox *t = State.Init->Throwers + i;
         
         ls_uiTextBoxClear(c, &t->name);
         ls_uiTextBoxClear(c, &t->toHit);
@@ -696,7 +696,7 @@ b32 ThrowDiceOnClick(UIContext *c, void *data)
         }
         AssertMsg(idx != 9999, "Couldn't find thrower\n");
         
-        DiceThrow *f = State.Init->Throwers + idx;
+        DiceThrowBox *f = State.Init->Throwers + idx;
         
         char toThrow[128] = {};
         s32 len = ls_utf32ToAscii_t(&f->toHit.text, toThrow, 128);
@@ -951,7 +951,7 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *f = Page->Throwers + i;
+        DiceThrowBox *f = Page->Throwers + i;
         
         ls_uiTextBoxClear(c, &f->name);
         ls_uiTextBoxClear(c, &f->toHit);
@@ -1607,7 +1607,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *f = Page->Throwers + i;
+        DiceThrowBox *f = Page->Throwers + i;
         
         f->name.text   = ls_utf32Alloc(32);
         f->toHit.text  = ls_utf32Alloc(32);
@@ -1863,7 +1863,7 @@ b32 DrawDefaultStyle(UIContext *c)
     yPos = 90;
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *f = Page->Throwers + i;
+        DiceThrowBox *f = Page->Throwers + i;
         
         inputUse |= ls_uiTextBox(c, &f->name,   xPos,       yPos,      120, 20);
         inputUse |= ls_uiTextBox(c, &f->toHit,  xPos,       yPos + 24, 138, 20);
@@ -2178,7 +2178,7 @@ b32 DrawPranaStyle(UIContext *c)
     yPos = 100;
     for(u32 i = 0; i < PRANA_THROWER_NUM; i++)
     {
-        DiceThrow *f = Page->Throwers + i;
+        DiceThrowBox *f = Page->Throwers + i;
         
         if((i % 2) == 0) { yPos = 100; }
         if((i % 2) == 1) { yPos = 20; xDiff = 186; }

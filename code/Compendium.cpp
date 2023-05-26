@@ -1389,9 +1389,6 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
 
 void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
 {
-    //ls_utf32Set(&cachedPage->ranged, Ranged);
-    //return;
-    
     s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
     s32 strBonusOld = newToOldMap[strBonusNew];
     

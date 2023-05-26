@@ -242,7 +242,7 @@ struct Order
     s32 ID;
 };
 
-struct DiceThrow
+struct DiceThrowBox
 {
     UITextBox name;
     UITextBox toHit;
@@ -258,46 +258,46 @@ s32 globalSelectedIndex = -1;
 
 struct InitPage
 {
-    UIListBox  Mobs;
-    UIListBox  Allies;
+    UIListBox    Mobs;
+    UIListBox    Allies;
     
-    UITextBox  PlayerInit[PARTY_NUM];
+    UITextBox    PlayerInit[PARTY_NUM];
     
-    InitField  AllyFields[ALLY_NUM];
-    InitField  MobFields[MOB_NUM];
+    InitField    AllyFields[ALLY_NUM];
+    InitField    MobFields[MOB_NUM];
     
-    UIButton   addNewMob;
-    UIButton   addNewAlly;
-    b32        isAdding;
+    UIButton     addNewMob;
+    UIButton     addNewAlly;
+    b32          isAdding;
     
-    UIButton   Roll;
-    UIButton   Set;
-    UIButton   Reset;
-    UIButton   Next;
+    UIButton     Roll;
+    UIButton     Set;
+    UIButton     Reset;
+    UIButton     Next;
     
-    Order      OrderFields[ORDER_NUM];
-    s32        turnsInRound;
-    s32        orderAdjust;
+    Order        OrderFields[ORDER_NUM];
+    s32          turnsInRound;
+    s32          orderAdjust;
     
-    UITextBox  RoundCounter;
-    u32        roundCount;
+    UITextBox    RoundCounter;
+    u32          roundCount;
     
-    UITextBox  Current;
-    u32        currIdx;
+    UITextBox    Current;
+    u32          currIdx;
     
-    Counter    Counters[COUNTER_NUM];
+    Counter      Counters[COUNTER_NUM];
     
-    DiceThrow  Throwers[THROWER_NUM];
-    DiceThrow  GeneralThrower;
+    DiceThrowBox Throwers[THROWER_NUM];
+    DiceThrowBox GeneralThrower;
     
-    UIListBox  EncounterSel;
-    UITextBox  EncounterName;
-    UIButton   SaveEnc;
-    UIButton   RemoveEnc;
-    UIButton   AddEnc;
+    UIListBox    EncounterSel;
+    UITextBox    EncounterName;
+    UIButton     SaveEnc;
+    UIButton     RemoveEnc;
+    UIButton     AddEnc;
     
-    UIButton   Undo;
-    UIButton   Redo;
+    UIButton     Undo;
+    UIButton     Redo;
 };
 
 #endif //_INIT_H

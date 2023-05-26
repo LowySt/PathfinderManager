@@ -82,7 +82,7 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
     //3.568 + (20*THROWER_NUM) = 3.728
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *thrower = init->Throwers + i;
+        DiceThrowBox *thrower = init->Throwers + i;
         
         ls_bufferAddUTF32(buf, thrower->name.text);
         ls_bufferAddUTF32(buf, thrower->toHit.text);
@@ -193,7 +193,7 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
     
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *thrower = init->Throwers + i;
+        DiceThrowBox *thrower = init->Throwers + i;
         
         ls_bufferReadIntoUTF32(buf, &thrower->name.text);
         ls_bufferReadIntoUTF32(buf, &thrower->toHit.text);
@@ -752,7 +752,7 @@ b32 LoadStateV6(UIContext *c)
     //NOTE: Throwers
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *f = Page->Throwers + i;
+        DiceThrowBox *f = Page->Throwers + i;
         
         ls_bufferReadIntoUTF32(buf, &f->name.text);
         ls_bufferReadIntoUTF32(buf, &f->toHit.text);
@@ -956,7 +956,7 @@ void SaveState(UIContext *c)
     //NOTE: Throwers
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *f = Page->Throwers + i;
+        DiceThrowBox *f = Page->Throwers + i;
         ls_bufferAddUTF32(buf, f->name.text);
         ls_bufferAddUTF32(buf, f->toHit.text);
         ls_bufferAddUTF32(buf, f->hitRes.text);
@@ -1233,7 +1233,7 @@ b32 LoadState(UIContext *c)
     //NOTE: Throwers
     for(u32 i = 0; i < THROWER_NUM; i++)
     {
-        DiceThrow *f = Page->Throwers + i;
+        DiceThrowBox *f = Page->Throwers + i;
         
         ls_bufferReadIntoUTF32(buf, &f->name.text);
         ls_bufferReadIntoUTF32(buf, &f->toHit.text);
