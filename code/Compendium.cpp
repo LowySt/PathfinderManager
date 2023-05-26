@@ -1389,6 +1389,8 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
 
 void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
 {
+    cachedPage->rangedError = FALSE;
+    
     s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
     s32 strBonusOld = newToOldMap[strBonusNew];
     
@@ -1401,6 +1403,7 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
     s32 bab = ls_utf32ToInt(cachedPage->BAB);
     
     b32 hasAdvancedArch  = ls_utf32LeftFind(cachedPage->archetype, ls_utf32Constant(U"Avanzato")) != -1;
+    b32 isIncorporeal    = ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1;
     
     s32 parenOpenIdx = ls_utf32LeftFind(Ranged, '(');
     if(parenOpenIdx == -1) { cachedPage->rangedError = TRUE; ls_utf32Set(&cachedPage->ranged, Ranged); return; }
@@ -1412,6 +1415,21 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
     
     while(parenOpenIdx != -1)
     {
+        //NOTE: Get the weapon used for this attack
+        RangedWeapon *weapon = NULL;
+        utf32 searchBlock = { Ranged.data + stringIndex, parenOpenIdx - stringIndex, parenOpenIdx - stringIndex };
+        for(s32 i = 0; i < rangedWeaponCount; i++)
+        {
+            if(ls_utf32LeftFind(searchBlock, rangedTable[i].name) != -1)
+            {
+                weapon = rangedTable + i;
+                break;
+            }
+        }
+        
+        //LogMsg(weapon != NULL, "Ranged Weapon not found!");
+        if(weapon == NULL) { cachedPage->rangedError = TRUE; ls_utf32Set(&cachedPage->ranged, Ranged); return; }
+        
         s32 slashIdx = ls_utf32LeftFind(Ranged, stringIndex, '/');
         s32 bonuses[9] = {};
         s32 attacksCount = 1;
@@ -1502,10 +1520,31 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
                     dmgBonusEnd = diceThrowEnd;
                 }
                 
+                //NOTE: Escaped From Unhandled case
+                if(isIncorporeal && oldDBonus != 0)
+                { cachedPage->rangedError = TRUE; ls_utf32Set(&cachedPage->ranged, Ranged); return; }
+                
                 //TODO: Broken Weapons!!
-                //TODO: The modifier applied depends on the WEAPON!
-                cachedPage->rangedError = TRUE;
-                s32 newDBonus = -99; //oldDBonus - dexBonusOld + dexBonusNew;
+                s32 newDBonus = oldDBonus;
+                if(!isIncorporeal)
+                {
+                    if(weapon->type == RANGED_THROW)
+                    {
+                        newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                    }
+                    else if(weapon->type == RANGED_AIM_STR)
+                    {
+                        if(strBonusOld < 0) { newDBonus -= strBonusOld; }
+                        if(strBonusNew < 0) { newDBonus += strBonusNew; }
+                    }
+                    else if(weapon->type == RANGED_AIM_STR_BON)
+                    {
+                        newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                    }
+                }
+                
+                //TODO: Do I want this else? I don't think I do.
+                //else { cachedPage->rangedError = TRUE; ls_utf32Set(&cachedPage->ranged, Ranged); return; }
                 
                 ls_utf32Append(&cachedPage->ranged, {Ranged.data + bonuses[attacksCount],
                                    diceThrowEnd - bonuses[attacksCount], diceThrowEnd - bonuses[attacksCount]});
