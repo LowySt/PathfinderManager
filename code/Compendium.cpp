@@ -489,8 +489,9 @@ s64 leftFindDiceThrow(utf32 Melee, s32 offset, s32 max)
 
 s64 leftFindDiceBonus(utf32 s, s32 off, s32 max)
 {
-    //NOTE: First look for + or -, without any non numeric characters in between.
-    //      If you don't find it before other non-numeric, it means it doesn't exist
+    //NOTE: This function expects to start from a valid dice throw (i.e. 1d3 ) then it
+    //      first looks for '+' or '-', without any non numeric characters in between.
+    //      If it doesn't find it before other non-numeric, it means the bonus doesn't exist
     //      EXCEPT FOR WHITESPACE, WHICH IS IGNORED!
     
     AssertMsg(s.data, "Source data is null.\n");
@@ -1573,6 +1574,108 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
     LogMsgF(Ranged.len - stringIndex == 0, "Stuff left at the end of the original string: %d\n", Ranged.len - stringIndex);
 }
 
+//NOTE: Skill map to Skill Cat
+enum SkillASCat { SK_STR, SK_DEX, SK_CON, SK_INT, SK_WIS, SK_CHA, SK_UNDEFINED };
+
+const char32_t *skillNames[] = {
+    U"Acrobazia", U"Addestrare Animali", U"Artigianato", U"Artista della Fuga",
+    U"Camuffare", U"Cavalcare", U"Conoscenze", U"Diplomazia", U"Disattivare Congegni",
+    U"Furtivit\U000000E0", U"Guarire", U"Intimidire", U"Intrattenere", U"Intuizione", U"Linguistica", U"Nuotare",
+    U"Percezione", U"Professione", U"Raggirare", U"Rapidit\U000000E0 di Mano", U"Sapienza Magica", U"Scalare",
+    U"Sopravvivenza", U"Utilizzare Congegni Magici", U"Valutare", U"Volare"
+};
+
+SkillASCat mapPosToCat[] = { 
+    SK_DEX, SK_CHA, SK_INT, SK_DEX, SK_CHA, SK_DEX,
+    SK_INT, SK_CHA, SK_DEX, SK_DEX, SK_WIS, SK_CHA, SK_CHA, SK_WIS, SK_INT, SK_STR, SK_WIS, SK_WIS,
+    SK_CHA, SK_DEX, SK_INT, SK_STR, SK_WIS, SK_CHA, SK_INT, SK_DEX
+};
+constexpr s32 mapPosToCatLen = (sizeof(mapPosToCat) / sizeof(SkillASCat));
+
+static_assert((sizeof(skillNames) / sizeof(char32_t*)) == (sizeof(mapPosToCat) / sizeof(SkillASCat)), "SkillToAS");
+
+void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
+{
+    SkillASCat skillCat = SK_UNDEFINED;
+    
+    for(s32 i = 0; i < mapPosToCatLen; i++)
+    {
+        utf32 check = ls_utf32Constant(skillNames[i]);
+        
+        if(ls_utf32LeftFind(Skill, check) != -1)
+        {
+            skillCat = mapPosToCat[i];
+            break;
+        }
+    }
+    
+    AssertMsg(skillCat != SK_UNDEFINED, "Unable to find Skill AS Category!");
+    
+    s32 asBonusNew = 0;
+    s32 asBonusOld = 0;
+    
+    switch(skillCat)
+    {
+        case SK_STR:
+        {
+            asBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
+            asBonusOld = newToOldMap[asBonusNew];
+        } break;
+        
+        case SK_DEX:
+        {
+            asBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
+            asBonusOld = newToOldMap[asBonusNew];
+        } break;
+        
+        case SK_CON:
+        {
+            asBonusNew = ls_utf32ToInt(cachedPage->CON) - 10;
+            asBonusOld = newToOldMap[asBonusNew];
+        } break;
+        
+        case SK_INT:
+        {
+            asBonusNew = ls_utf32ToInt(cachedPage->INT) - 10;
+            asBonusOld = newToOldMap[asBonusNew];
+        } break;
+        
+        case SK_WIS:
+        {
+            asBonusNew = ls_utf32ToInt(cachedPage->WIS) - 10;
+            asBonusOld = newToOldMap[asBonusNew];
+        } break;
+        
+        case SK_CHA:
+        {
+            asBonusNew = ls_utf32ToInt(cachedPage->CHA) - 10;
+            asBonusOld = newToOldMap[asBonusNew];
+        } break;
+    }
+    
+    //NOTE: Need To find the bonus now
+    //TODO: Artigianato (Costruire Trappole) +6
+    s32 openParenIdx = ls_utf32LeftFind(Skill, '(');
+    s32 end          = openParenIdx != -1 ? openParenIdx : Skill.len;
+    s32 bonus        = leftFindBonus(Skill, 0, end);
+    
+    if(bonus == -1) { LogMsg(FALSE, "No bonus to Skill????"); ls_utf32Append(&cachedPage->skills, Skill); return; }
+    
+    s32 bonusValue = ls_utf32ToIntIgnoreWhitespace({Skill.data + bonus, end - bonus, end - bonus});
+    bonusValue = bonusValue - asBonusOld + asBonusNew;
+    
+    u32 tmpBuff[32]  = {};
+    utf32 tmpString = { tmpBuff, 0, 32 };
+    
+    ls_utf32Append(&cachedPage->skills, {Skill.data, bonus, bonus});
+    
+    ls_utf32FromInt_t(&tmpString, bonusValue);
+    if(bonusValue > 0) { ls_utf32AppendChar(&cachedPage->skills, '+'); }
+    
+    ls_utf32Append(&cachedPage->skills, tmpString);
+    ls_utf32Append(&cachedPage->skills, {Skill.data + end, Skill.len - end, Skill.len - end});
+}
+
 void ShortenAndCacheName(utf32 orig_name, utf32 *out)
 {
     if(orig_name.len < 17) { ls_utf32Set(out, orig_name); return; }
@@ -2040,7 +2143,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     //TODO: What's missing (apart from possible bug fixes)
     //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
     //      Maybe DC for Channeling Energy on clerics with Carisma?
-    //      Maybe AC Deviation bonus for specific Race/Class combos?
     //      Skill Checks On Any Ability
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
@@ -2235,6 +2337,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach);
     
     ls_utf32Clear(&cachedPage->skills);
+#if 0
     if(page.skills[0])
     {
         GetEntryFromBuffer_t(&c->skills, &cachedPage->skills, page.skills[0]);
@@ -2245,6 +2348,17 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
             i += 1;
         }
     }
+#else
+    s32 i = 0;
+    while(page.skills[i])
+    {
+        GetEntryFromBuffer_t(&c->skills, &tempString, page.skills[i]);
+        CalculateAndCacheSkill(tempString, cachedPage);
+        if(i < 23 && page.skills[i+1] != 0) { ls_utf32Append(&cachedPage->skills, ls_utf32Constant(U", ")); }
+        ls_utf32Clear(&tempString);
+        i += 1;
+    }
+#endif
     
     ls_utf32Clear(&cachedPage->languages);
     if(page.languages[0])

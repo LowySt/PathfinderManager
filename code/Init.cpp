@@ -1,5 +1,4 @@
 #if _DEBUG
-
 s32 ls_vlogFormatOrder(char *dst, va_list *argList)
 {
     Order ord = va_arg(*argList, Order);
@@ -7,9 +6,17 @@ s32 ls_vlogFormatOrder(char *dst, va_list *argList)
     const s32 buffSize = 256;
     char buff[buffSize] = {};
     
-    s32 bytesWritten = ls_slog(buff, buffSize, "[\n\tname: {utf32}\n\tpos: {utf32}\n\tmaxLife: {s32}\n\tcurrLife:"
+    char tmpNameBuff[64] = {};
+    string tmpName = { tmpNameBuff, 0, 64 };
+    tmpName.len = ls_utf32ToAscii_t(&ord.field.text, tmpNameBuff, 64);
+    
+    char tmpPosBuff[16] = {};
+    string tmpPos = { tmpPosBuff, 0, 16 };
+    tmpPos.len = ls_utf32ToAscii_t(&ord.pos.text, tmpPosBuff, 16);
+    
+    s32 bytesWritten = ls_slog(buff, buffSize, "[\n\tname: {string}\n\tpos: {string}\n\tmaxLife: {s32}\n\tcurrLife:"
                                "{s32}\n\tcompendiumIdx: {s32}\n\tID: {s32}\n]", 
-                               ord.field.text, ord.pos.text, ord.field.maxValue, ord.field.currValue,
+                               tmpName, tmpPos, ord.field.maxValue, ord.field.currValue,
                                ord.compendiumIdx, ord.ID);
     
     ls_memcpy(buff, dst, bytesWritten);
