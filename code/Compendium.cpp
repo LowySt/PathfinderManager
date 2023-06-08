@@ -1596,6 +1596,9 @@ static_assert((sizeof(skillNames) / sizeof(char32_t*)) == (sizeof(mapPosToCat) /
 
 void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
 {
+    if(ls_utf32AreEqual(Skill, ls_utf32Constant(U"-")))
+    { ls_utf32Append(&cachedPage->skills, Skill); return; }
+    
     SkillASCat skillCat = SK_UNDEFINED;
     
     for(s32 i = 0; i < mapPosToCatLen; i++)
@@ -1609,7 +1612,7 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
         }
     }
     
-    AssertMsg(skillCat != SK_UNDEFINED, "Unable to find Skill AS Category!");
+    AssertMsg(skillCat != SK_UNDEFINED, "Unable to find Skill AS Category!\n");
     
     s32 asBonusNew = 0;
     s32 asBonusOld = 0;
@@ -1857,11 +1860,11 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->specials          = ls_utf32Alloc(maxTalents * 2048);
     
     cachedPage->org               = ls_utf32Alloc(512);
-    cachedPage->treasure          = ls_utf32Alloc(320);
+    cachedPage->treasure          = ls_utf32Alloc(512);
     cachedPage->desc              = ls_utf32Alloc(10240);
     cachedPage->source            = ls_utf32Alloc(256);
     
-    cachedPage->name              = ls_utf32Alloc(48);
+    cachedPage->name              = ls_utf32Alloc(64);
     cachedPage->gs                = ls_utf32Alloc(16);
     cachedPage->pe                = ls_utf32Alloc(16);
     cachedPage->alignment         = ls_utf32Alloc(32);
