@@ -443,44 +443,76 @@ b32 CompendiumSearchFunctionNPCs(UIContext *c, void *userData)
 
 //-------------------------------------------
 //NOTE: Utility Dice/Bonus Finding Functions
-s32 rightFindBonus(utf32 Melee, s32 offset, s32 min)
+s32 rightFindBonus(utf32 key, s32 offset, s32 min)
 {
-    s32 maybePlus  = ls_utf32RightFind(Melee, offset, '+');
-    s32 maybeMinus = ls_utf32RightFind(Melee, offset, '-');
+    s32 maybePlus  = ls_utf32RightFind(key, offset, '+');
+    s32 maybeMinus = ls_utf32RightFind(key, offset, '-');
     
     if(maybePlus != -1 && maybePlus > min) { return maybePlus; }
     else if(maybeMinus != -1 && maybeMinus > min) { return maybeMinus; }
     else { return -1; }
 };
 
-s32 leftFindBonus(utf32 Melee, s32 offset, s32 max)
+s64 leftFindBonus(utf32 key, s32 offset, s32 max)
 {
-    s32 maybePlus  = ls_utf32LeftFind(Melee, offset, '+');
-    s32 maybeMinus = ls_utf32LeftFind(Melee, offset, '-');
+    if(offset < 0)    { return -1; }
+    if(offset >= max) { return -1; }
     
-    if(maybePlus != -1 && maybePlus < max) { return maybePlus; }
-    else if(maybeMinus != -1 && maybeMinus < max) { return maybeMinus; }
+    s32 maybePlus  = ls_utf32LeftFind(key, offset, '+');
+    s32 maybeMinus = ls_utf32LeftFind(key, offset, '-');
+    
+    s32 beginOffset = -1;
+    s32 endOffset   = -1;
+    if(maybePlus != -1 && maybePlus < max) { beginOffset = maybePlus; }
+    else if(maybeMinus != -1 && maybeMinus < max) { beginOffset = maybeMinus; }
     else { return -1; }
+    
+    endOffset       = beginOffset+1; //NOTE: Skip the sign
+    
+    u32 *At         = key.data + endOffset;
+    s32 addedSpaces = 0;
+    b32 afterValue  = FALSE;
+    while (At != (key.data + key.len))
+    { 
+        if(At + 1  > (key.data + key.len)) { break; }
+        if(endOffset > max)                  { return -1; }
+        
+        if(*At == ' ')
+        {
+            if(afterValue) { addedSpaces += 1; }
+            At++; endOffset++; continue;
+        }
+        
+        if(ls_utf32IsNumber(*At))
+        { 
+            if(afterValue == FALSE) { afterValue = TRUE; }
+            At++; endOffset++; continue;
+        }
+        
+        break;
+    }
+    
+    return ((s64)beginOffset << 32 | endOffset);
 };
 
-s64 leftFindDiceThrow(utf32 Melee, s32 offset, s32 max)
+s64 leftFindDiceThrow(utf32 key, s32 offset, s32 max)
 {
     
-    s32 diceIdx = ls_utf32LeftFind(Melee, offset+1, 'd');
+    s32 diceIdx = ls_utf32LeftFind(key, offset+1, 'd');
     if(diceIdx == -1) { return -1; }
     
     do
     {
         if(diceIdx > max) { return -1; }
         
-        if((ls_utf32IsNumber(Melee.data[diceIdx-1]) == TRUE) &&
-           (ls_utf32IsNumber(Melee.data[diceIdx+1]) == TRUE))
+        if((ls_utf32IsNumber(key.data[diceIdx-1]) == TRUE) &&
+           (ls_utf32IsNumber(key.data[diceIdx+1]) == TRUE))
         { 
-            s32 end = ls_utf32LeftFindNotNumber(Melee, diceIdx+1);
+            s32 end = ls_utf32LeftFindNotNumber(key, diceIdx+1);
             return ((s64)diceIdx << 32) | end;
         }
         
-        diceIdx = ls_utf32LeftFind(Melee, diceIdx+1, 'd'); //NOTE: The +1 is to avoid infinite loops
+        diceIdx = ls_utf32LeftFind(key, diceIdx+1, 'd'); //NOTE: The +1 is to avoid infinite loops
         
     } while(diceIdx != -1);
     
@@ -1657,26 +1689,128 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
     }
     
     //NOTE: Need To find the bonus now
-    //TODO: Artigianato (Costruire Trappole) +6
-    s32 openParenIdx = ls_utf32LeftFind(Skill, '(');
-    s32 end          = openParenIdx != -1 ? openParenIdx : Skill.len;
-    s32 bonus        = leftFindBonus(Skill, 0, end);
-    
-    if(bonus == -1) { LogMsg(FALSE, "No bonus to Skill????"); ls_utf32Append(&cachedPage->skills, Skill); return; }
-    
-    s32 bonusValue = ls_utf32ToIntIgnoreWhitespace({Skill.data + bonus, end - bonus, end - bonus});
-    bonusValue = bonusValue - asBonusOld + asBonusNew;
-    
-    u32 tmpBuff[32]  = {};
-    utf32 tmpString = { tmpBuff, 0, 32 };
-    
-    ls_utf32Append(&cachedPage->skills, {Skill.data, bonus, bonus});
-    
-    ls_utf32FromInt_t(&tmpString, bonusValue);
-    if(bonusValue > 0) { ls_utf32AppendChar(&cachedPage->skills, '+'); }
-    
-    ls_utf32Append(&cachedPage->skills, tmpString);
-    ls_utf32Append(&cachedPage->skills, {Skill.data + end, Skill.len - end, Skill.len - end});
+    s32 openParenIdx  = ls_utf32LeftFind(Skill, '(');
+    s32 closeParenIdx = -1;
+    if(openParenIdx != -1)
+    {
+        closeParenIdx = ls_utf32LeftFind(Skill, ')');
+        AssertMsg(closeParenIdx != -1, "Paren block doesn't close\n");
+        
+        //NOTE: Extract the paren block and operate on 2 strings separately
+        u32 d1 [128] = {};
+        utf32 parenBlock = {d1, 0, 128};
+        
+        u32 d2 [128] = {};
+        utf32 cleanBlock = {d2, 0, 128};
+        
+        ls_utf32Set(&parenBlock, {Skill.data + openParenIdx-1, closeParenIdx - openParenIdx + 2, closeParenIdx - openParenIdx + 2});
+        
+        ls_utf32Set(&cleanBlock, {Skill.data, openParenIdx-1, openParenIdx-1});
+        ls_utf32Append(&cleanBlock,{Skill.data + closeParenIdx + 1, Skill.len-closeParenIdx-1, Skill.len-closeParenIdx-1});
+        
+        //NOTE: Now find the bonuses
+        
+        s64 mainBonusRange = leftFindBonus(cleanBlock, 0, cleanBlock.len);
+        if(mainBonusRange == -1)
+        {
+            LogMsg(FALSE, "No bonus in clean part of paren-FUL skill");
+            ls_utf32Append(&cachedPage->skills, Skill);
+            return;
+        }
+        
+        s32 mainBonus    = mainBonusRange >> 32;
+        s32 mainBonusEnd = (s32)mainBonusRange;
+        
+        s64 parenBonuses[16] = {};
+        s32 pbIdx = 0;
+        s32 parenBlockIdx = 0;
+        
+        parenBonuses[pbIdx] = leftFindBonus(parenBlock, parenBlockIdx, parenBlock.len);
+        while(parenBonuses[pbIdx] != -1)
+        {
+            parenBlockIdx = (s32)parenBonuses[pbIdx];
+            
+            pbIdx += 1;
+            parenBonuses[pbIdx] = leftFindBonus(parenBlock, parenBlockIdx, parenBlock.len);
+        }
+        
+        //NOTE: Now fix the bonuses!
+        s32 mainBonusValue = ls_utf32ToIntIgnoreWhitespace({cleanBlock.data + mainBonus, mainBonusEnd - mainBonus, mainBonusEnd - mainBonus});
+        mainBonusValue = mainBonusValue - asBonusOld + asBonusNew;
+        
+        s32 parenBonusValues[16] = {};
+        for(s32 i = 0; i < pbIdx; i++)
+        {
+            s32 parenBonus    = parenBonuses[i] >> 32;
+            s32 parenBonusEnd = (s32)parenBonuses[i];
+            
+            parenBonusValues[i] = ls_utf32ToIntIgnoreWhitespace({parenBlock.data + parenBonus, parenBonusEnd - parenBonus, parenBonusEnd - parenBonus});
+            parenBonusValues[i] = parenBonusValues[i] - asBonusOld + asBonusNew;
+        }
+        
+        //NOTE: And finally, generate the final string.
+        u32 valueBuff[16] = {};
+        utf32 valueStr = { valueBuff, 0, 16 };
+        
+        u32 d3 [256] = {};
+        utf32 resultBlock = { d3, 0, 256 };
+        
+        //Set clean block with bonus
+        ls_utf32Set(&resultBlock, { cleanBlock.data, mainBonus, mainBonus });
+        ls_utf32FromInt_t(&valueStr, mainBonusValue);
+        if(mainBonusValue >= 0) { ls_utf32AppendChar(&resultBlock, '+'); }
+        ls_utf32Append(&resultBlock, valueStr);
+        ls_utf32Append(&resultBlock, { cleanBlock.data + mainBonusEnd, cleanBlock.len - mainBonusEnd, cleanBlock.len - mainBonusEnd });
+        
+        //Set paren block with all bonuses
+        s32 currIdx = 0;
+        for(s32 i = 0; i < pbIdx; i++)
+        {
+            s32 bgIdx = parenBonuses[i] >> 32;
+            ls_utf32Append(&resultBlock, { parenBlock.data + currIdx, bgIdx - currIdx, bgIdx - currIdx });
+            
+            ls_utf32FromInt_t(&valueStr, parenBonusValues[i]);
+            if(parenBonusValues[i] >= 0) { ls_utf32AppendChar(&resultBlock, '+'); }
+            ls_utf32Append(&resultBlock, valueStr);
+            ls_utf32AppendChar(&resultBlock, ' '); //NOTETODO: Fuck this, justt append a fucking space
+            currIdx = (s32)parenBonuses[i];
+        }
+        ls_utf32Append(&resultBlock, { parenBlock.data + currIdx, parenBlock.len - currIdx, parenBlock.len - currIdx });
+        
+        ls_utf32Append(&cachedPage->skills, resultBlock);
+        
+        return;
+    }
+    else
+    {
+        s32 end          = Skill.len;
+        s64 bonusRange   = leftFindBonus(Skill, 0, end);
+        s32 bonus        = bonusRange >> 32;
+        end              = (s32)bonusRange;
+        
+        if(bonus == -1)
+        {
+            LogMsg(FALSE, "No bonus in paren-less skill");
+            ls_utf32Append(&cachedPage->skills, Skill);
+            return;
+        }
+        
+        s32 bonusValue = ls_utf32ToIntIgnoreWhitespace({Skill.data + bonus, end - bonus, end - bonus});
+        bonusValue = bonusValue - asBonusOld + asBonusNew;
+        
+        u32 tmpBuff[32]  = {};
+        utf32 tmpString = { tmpBuff, 0, 32 };
+        
+        ls_utf32Append(&cachedPage->skills, {Skill.data, bonus, bonus});
+        
+        ls_utf32FromInt_t(&tmpString, bonusValue);
+        if(bonusValue > 0) { ls_utf32AppendChar(&cachedPage->skills, '+'); }
+        
+        ls_utf32Append(&cachedPage->skills, tmpString);
+        ls_utf32Append(&cachedPage->skills, {Skill.data + end, Skill.len - end, Skill.len - end});
+        
+        return;
+    }
 }
 
 void ShortenAndCacheName(utf32 orig_name, utf32 *out)
