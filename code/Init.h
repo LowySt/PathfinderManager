@@ -166,31 +166,31 @@ struct EncList
 
 enum StatusType
 {
-    STATUS_ABBAGLIATO = 0,
-    STATUS_ACCECATO,
-    STATUS_ACCOVACCIATO,
-    STATUS_AFFASCINATO,
-    STATUS_AFFATICATO,
-    STATUS_ASSORDATO,
-    STATUS_BARCOLLANTE,
-    STATUS_CONFUSO,
-    STATUS_ESAUSTO,
-    STATUS_IMMOBILIZZATO,
-    STATUS_IMPREPARATO,
-    STATUS_INDIFESO,
-    STATUS_INFERMO,
-    STATUS_INTRALCIATO,
-    STATUS_INVISIBILE,
-    STATUS_LOTTA,
-    STATUS_NAUSEATO,
-    STATUS_PANICO,
-    STATUS_PARALIZZATO,
-    STATUS_PIETRIFICATO,
-    STATUS_PRONO,
-    STATUS_SANGUINANTE,
-    STATUS_SCOSSO,
-    STATUS_SPAVENTATO,
-    STATUS_STORDITO,
+    STATUS_ABBAGLIATO = 0,   // -1 TxC e Percezione (su vista)
+    STATUS_ACCECATO,         // -2 CA, lose DEX to CA, -4 on Skills on STR/DEX and against Perception 
+    STATUS_ACCOVACCIATO,     // -2 CA, lose DEX bonus
+    STATUS_AFFASCINATO,      // -4 Skill checks as a reaction (ex Perception)
+    STATUS_AFFATICATO,       // -2 STR/DEX
+    STATUS_ASSORDATO,        // -4 Init
+    STATUS_BARCOLLANTE,      // No numeric change
+    STATUS_CONFUSO,          // No numeric change
+    STATUS_ESAUSTO,          // -6 STR/DEX
+    STATUS_IMMOBILIZZATO,    // Flat footed (CA/DMC), -4 CA NOTE EXCEPT SCHIVARE PRODIGIOSO
+    STATUS_IMPREPARATO,      // Flat footed (CA/DMC)        NOTE EXCEPT SCHIVARE PRODIGIOSO
+    STATUS_INDIFESO,         // DEX -> 0
+    STATUS_INFERMO,          // -2 TxC/Damage/SavingThrows/SkillChecks/AbilityChecks
+    STATUS_INTRALCIATO,      // -2 TxC e -4 DEX
+    STATUS_INVISIBILE,       // +2 TxC
+    STATUS_LOTTA,            // -4 DEX, -2 TxC/(BMC except for freeing/fighting)
+    STATUS_NAUSEATO,         // No numeric change
+    STATUS_PANICO,           // -2 TxC/SavingThrows/Checks
+    STATUS_PARALIZZATO,      // STR/DEX -> 0
+    STATUS_PIETRIFICATO,     // DEX -> 0
+    STATUS_PRONO,            // -4 TxC, +4 CA Ranged / -4 CA Melee
+    STATUS_SANGUINANTE,      // No numeric change
+    STATUS_SCOSSO,           // -2 TxC/SavingThrows/Checks
+    STATUS_SPAVENTATO,       // -2 TxC/SavingThrows/Checks
+    STATUS_STORDITO,         // -2 CA, lose DEX Bonus to CA
     
     STATUS_COUNT
 };

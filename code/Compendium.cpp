@@ -253,12 +253,12 @@ s32 *newToOldMap = internal_newToOldMap + 10;
 
 void CachePage(PageEntry, s32, CachedPageEntry *, Status *);
 void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *);
-void GetPageEntryAndCache(s32 compendiumIdx, CachedPageEntry *page)
+void GetPageEntryAndCache(s32 compendiumIdx, CachedPageEntry *page, Status *status = NULL)
 {
     if(compendiumIdx < NPC_PAGE_INDEX_OFFSET)
     { 
         PageEntry pEntry = compendium.codex.pages[compendiumIdx];
-        CachePage(pEntry, compendiumIdx, page, NULL);
+        CachePage(pEntry, compendiumIdx, page, status);
     }
     else
     { 
@@ -596,7 +596,7 @@ s64 leftFindDiceBonus(utf32 s, s32 off, s32 max)
 //NOTE: I'm pretty sure Deviation doesn't matter, because it's a non-stacking bonus unaffected by other things
 //      in AC. Since it's not affacted by STR or DEX (Which are the quanities changing) I can ignore it.
 //      Incorporeal creatures get adjusted for free
-void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
+void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Status *status = NULL)
 {
     cachedPage->acError = FALSE;
     
@@ -809,6 +809,68 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC)
     {
         totAC  = (totAC - oldShieldBonus) + newShieldBonus;
         flatAC = (flatAC - oldShieldBonus) + newShieldBonus;
+    }
+    
+    
+    //NOTE: Apply status conditions if present
+    if(status)
+    {
+        for(s32 i = 0; i < STATUS_COUNT; i++)
+        {
+            if(!status[i].check.isActive) { continue; }
+            
+            Assert(FALSE);
+            switch(status[i].type)
+            {
+                case STATUS_ACCECATO:
+                case STATUS_ACCOVACCIATO:
+                {
+                    s32 dexAC = dexBonusToAC > 0 ? dexBonusToAC : 0;
+                    totAC -= (dexAC + 2); touchAC -= (dexAC + 2); flatAC -=  2;
+                } break;
+                
+                case STATUS_AFFATICATO:
+                {
+                    s32 dexRed = (dexBonusToAC - 2) > -1 ? -(dexBonusToAC-2) : 0;
+                    totAC -= 2; touchAC -= 2; flatAC -= dexRed;
+                } break;
+                
+                case STATUS_ESAUSTO:
+                {
+                    s32 dexRed = (dexBonusToAC - 6) > -5 ? -(dexBonusToAC-6) : 0;
+                    if(dexBonusToAC < -5) { dexRed = 0; }
+                    else if(dexBonusToAC - 6 > -5 && dexBonusToAC - 6 < 0)
+                    { dexRed = 6 - (dexBonusToAC - 6); }
+                    else { dexRed = 0; }
+                    
+                    totAC -= 2; touchAC -= 2; flatAC -=  dexRed;
+                } break;
+                
+                case STATUS_IMMOBILIZZATO:
+                {
+                } break;
+                
+                case STATUS_IMPREPARATO:
+                {
+                } break;
+                
+                case STATUS_INTRALCIATO:
+                {
+                } break;
+                
+                case STATUS_LOTTA:
+                {
+                } break;
+                
+                case STATUS_PRONO:
+                { //TODO
+                } break;
+                
+                case STATUS_STORDITO:
+                {
+                } break;
+            }
+        }
     }
     
     u32 buff[32] = {};
@@ -1948,7 +2010,7 @@ b32 onStatusChange(UIContext *c, void *data)
     Order *ord = (Order *)data;
     
     //NOTE: We re-cache the page to apply the changes.
-    GetPageEntryAndCache(ord->compendiumIdx, &mainCachedPage);
+    GetPageEntryAndCache(ord->compendiumIdx, &mainCachedPage, ord->status);
     
     return TRUE;
 }
@@ -2270,17 +2332,17 @@ void GetEntryAndConvertAC(buffer *buf, utf32 *toSet, u32 index)
 
 void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *statuses = NULL)
 {
-    u32 tempUTF32Buffer[512] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 512 };
+    u32 tempUTF32Buffer[1024] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 1024 };
     
     Codex *c = &compendium.codex;
     
     cachedPage->pageIndex    = viewIndex;
     
     //TODO: What's missing (apart from possible bug fixes)
-    //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
+    //      Special Attacks
+    //      Random Fixes on Attacks/Special Attacks
     //      Maybe DC for Channeling Energy on clerics with Carisma?
-    //      Skill Checks On Any Ability
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
