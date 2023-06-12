@@ -813,61 +813,39 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     
     
     //NOTE: Apply status conditions if present
+    b32 hasSchivareProdigioso = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Schivare Prodigioso")) != -1;
     if(status)
     {
         for(s32 i = 0; i < STATUS_COUNT; i++)
         {
             if(!status[i].check.isActive) { continue; }
             
-            Assert(FALSE);
+            //TODO: You can't lose dex bonus multiple times!!
+            //Assert(FALSE);
+            s32 dexAC = dexBonusToAC > 0 ? dexBonusToAC : 0;
             switch(status[i].type)
             {
                 case STATUS_ACCECATO:
                 case STATUS_ACCOVACCIATO:
+                case STATUS_STORDITO:
                 {
-                    s32 dexAC = dexBonusToAC > 0 ? dexBonusToAC : 0;
                     totAC -= (dexAC + 2); touchAC -= (dexAC + 2); flatAC -=  2;
-                } break;
-                
-                case STATUS_AFFATICATO:
-                {
-                    s32 dexRed = (dexBonusToAC - 2) > -1 ? -(dexBonusToAC-2) : 0;
-                    totAC -= 2; touchAC -= 2; flatAC -= dexRed;
-                } break;
-                
-                case STATUS_ESAUSTO:
-                {
-                    s32 dexRed = (dexBonusToAC - 6) > -5 ? -(dexBonusToAC-6) : 0;
-                    if(dexBonusToAC < -5) { dexRed = 0; }
-                    else if(dexBonusToAC - 6 > -5 && dexBonusToAC - 6 < 0)
-                    { dexRed = 6 - (dexBonusToAC - 6); }
-                    else { dexRed = 0; }
-                    
-                    totAC -= 2; touchAC -= 2; flatAC -=  dexRed;
                 } break;
                 
                 case STATUS_IMMOBILIZZATO:
                 {
+                    if(!hasSchivareProdigioso)
+                    { totAC -= (dexBonusToAC + 4); touchAC -= (dexBonusToAC + 4); flatAC -= 4; }
                 } break;
                 
                 case STATUS_IMPREPARATO:
                 {
-                } break;
-                
-                case STATUS_INTRALCIATO:
-                {
-                } break;
-                
-                case STATUS_LOTTA:
-                {
+                    if(!hasSchivareProdigioso) { totAC -= dexBonusToAC; touchAC -= dexBonusToAC; }
                 } break;
                 
                 case STATUS_PRONO:
                 { //TODO
-                } break;
-                
-                case STATUS_STORDITO:
-                {
+                    Assert(FALSE);
                 } break;
             }
         }
@@ -1839,6 +1817,7 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
         }
         ls_utf32Append(&resultBlock, { parenBlock.data + currIdx, parenBlock.len - currIdx, parenBlock.len - currIdx });
         
+        ls_utf32Clear(&cachedPage->skills);
         ls_utf32Append(&cachedPage->skills, resultBlock);
         
         return;
@@ -1862,6 +1841,8 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
         
         u32 tmpBuff[32]  = {};
         utf32 tmpString = { tmpBuff, 0, 32 };
+        
+        ls_utf32Clear(&cachedPage->skills);
         
         ls_utf32Append(&cachedPage->skills, {Skill.data, bonus, bonus});
         
@@ -2330,7 +2311,7 @@ void GetEntryAndConvertAC(buffer *buf, utf32 *toSet, u32 index)
     ls_bufferSeekBegin(buf);
 }
 
-void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *statuses = NULL)
+void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     u32 tempUTF32Buffer[1024] = {};
     utf32 tempString = { tempUTF32Buffer, 0, 1024 };
@@ -2357,6 +2338,38 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
+    
+    if(status)
+    {
+        //TODO: For some reason a change of 2 (Like when using AFFATICATO) doesn't propagate properly???
+        Assert(FALSE);
+        s32 str = ls_utf32ToInt(cachedPage->STR);
+        s32 dex = ls_utf32ToInt(cachedPage->DEX);
+        
+        for(s32 i = 0; i < STATUS_COUNT; i++)
+        {
+            if(!status[i].check.isActive) { continue; }
+            
+            switch(status[i].type)
+            {
+                case STATUS_AFFATICATO:   { str -= 2; dex -= 2; } break;
+                case STATUS_ESAUSTO:      { str -= 6; dex -= 6; } break;
+                case STATUS_INTRALCIATO:  { dex -= 4; }           break;
+                case STATUS_LOTTA:        { dex -= 4; }           break;
+                
+                case STATUS_INDIFESO:     { dex  = 0; }           goto out_of_for_loop;
+                case STATUS_PIETRIFICATO: { dex  = 0; }           goto out_of_for_loop;
+                case STATUS_PARALIZZATO:  { str  = 0; dex  = 0; } goto out_of_for_loop;
+            }
+        }
+        
+        out_of_for_loop:
+        
+        ls_utf32FromInt_t(&cachedPage->STR, str);
+        ls_utf32FromInt_t(&cachedPage->DEX, dex);
+    }
+    
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
@@ -2413,7 +2426,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
-    CalculateAndCacheAC(tempString, cachedPage, FALSE);
+    CalculateAndCacheAC(tempString, cachedPage, FALSE, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP);
