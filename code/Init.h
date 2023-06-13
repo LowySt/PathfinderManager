@@ -169,7 +169,7 @@ enum StatusType
     STATUS_ABBAGLIATO = 0,   // -1 TxC e Percezione (su vista)
     STATUS_ACCECATO,         // -2 CA, lose DEX to CA, -4 on Skills on STR/DEX and against Perception 
     STATUS_ACCOVACCIATO,     // -2 CA, lose DEX bonus
-    STATUS_AFFASCINATO,      // -4 Skill checks as a reaction (ex Perception)
+    STATUS_AFFASCINATO,      // -4 Skill checks as a reaction (ex Perception) TODO
     STATUS_AFFATICATO,       // -2 STR/DEX
     STATUS_ASSORDATO,        // -4 Init
     STATUS_BARCOLLANTE,      // No numeric change

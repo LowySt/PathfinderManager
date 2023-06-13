@@ -1743,7 +1743,7 @@ constexpr s32 mapPosToCatLen = (sizeof(mapPosToCat) / sizeof(SkillASCat));
 
 static_assert((sizeof(skillNames) / sizeof(char32_t*)) == (sizeof(mapPosToCat) / sizeof(SkillASCat)), "SkillToAS");
 
-void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
+void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     if(ls_utf32AreEqual(Skill, ls_utf32Constant(U"-")))
     { ls_utf32Append(&cachedPage->skills, Skill); return; }
@@ -1805,6 +1805,42 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
         } break;
     }
     
+    //NOTE: Calculate Status Effect on Skill Modifier
+    s32 statusEffect = 0;
+    if(status)
+    {
+        for(s32 i = 0; i < STATUS_COUNT; i++)
+        {
+            if(!status[i].check.isActive) { continue; }
+            
+            switch(status[i].type)
+            {
+                case STATUS_ABBAGLIATO:
+                {
+                    if(ls_utf32LeftFind(Skill, ls_utf32Constant(U"Percezione")) != -1)
+                    { statusEffect += -1; }
+                } break;
+                
+                case STATUS_ACCECATO:
+                {
+                    if(skillCat == SK_STR || skillCat == SK_DEX)
+                    { statusEffect += -4; }
+                } break;
+                
+                case STATUS_AFFASCINATO:
+                {
+                    //TODO
+                    Assert(FALSE);
+                } break;
+                
+                case STATUS_INFERMO:
+                case STATUS_PANICO:
+                case STATUS_SPAVENTATO:
+                case STATUS_SCOSSO: { statusEffect += -2; } break;
+            }
+        }
+    }
+    
     //NOTE: Need To find the bonus now
     s32 openParenIdx  = ls_utf32LeftFind(Skill, '(');
     s32 closeParenIdx = -1;
@@ -1855,6 +1891,9 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
         s32 mainBonusValue = ls_utf32ToIntIgnoreWhitespace({cleanBlock.data + mainBonus, mainBonusEnd - mainBonus, mainBonusEnd - mainBonus});
         mainBonusValue = mainBonusValue - asBonusOld + asBonusNew;
         
+        //NOTE: STATUS
+        mainBonusValue += statusEffect;
+        
         s32 parenBonusValues[16] = {};
         for(s32 i = 0; i < pbIdx; i++)
         {
@@ -1863,6 +1902,9 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
             
             parenBonusValues[i] = ls_utf32ToIntIgnoreWhitespace({parenBlock.data + parenBonus, parenBonusEnd - parenBonus, parenBonusEnd - parenBonus});
             parenBonusValues[i] = parenBonusValues[i] - asBonusOld + asBonusNew;
+            
+            //NOTE: STATUS
+            parenBonusValues[i] += statusEffect;
         }
         
         //NOTE: And finally, generate the final string.
@@ -1915,6 +1957,9 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage)
         
         s32 bonusValue = ls_utf32ToIntIgnoreWhitespace({Skill.data + bonus, end - bonus, end - bonus});
         bonusValue = bonusValue - asBonusOld + asBonusNew;
+        
+        //NOTE: STATUS
+        bonusValue += statusEffect;
         
         u32 tmpBuff[32]  = {};
         utf32 tmpString = { tmpBuff, 0, 32 };
@@ -2097,6 +2142,8 @@ b32 onStatusChange(UIContext *c, void *data)
             } break;
             
             
+            case STATUS_ABBAGLIATO: { all[STATUS_ACCECATO].check.isActive = FALSE;   } break;
+            case STATUS_ACCECATO:   { all[STATUS_ABBAGLIATO].check.isActive = FALSE; } break;
         }
     }
     
@@ -2666,28 +2713,16 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach);
     
     ls_utf32Clear(&cachedPage->skills);
-#if 0
-    if(page.skills[0])
-    {
-        GetEntryFromBuffer_t(&c->skills, &cachedPage->skills, page.skills[0]);
-        u32 i = 1;
-        while(page.skills[i] && i < 24)
-        {
-            AppendEntryFromBuffer(&c->skills, &cachedPage->skills, U", ", page.skills[i]);
-            i += 1;
-        }
-    }
-#else
+    
     s32 i = 0;
     while(page.skills[i])
     {
         GetEntryFromBuffer_t(&c->skills, &tempString, page.skills[i]);
-        CalculateAndCacheSkill(tempString, cachedPage);
+        CalculateAndCacheSkill(tempString, cachedPage, status);
         if(i < 23 && page.skills[i+1] != 0) { ls_utf32Append(&cachedPage->skills, ls_utf32Constant(U", ")); }
         ls_utf32Clear(&tempString);
         i += 1;
     }
-#endif
     
     ls_utf32Clear(&cachedPage->languages);
     if(page.languages[0])
