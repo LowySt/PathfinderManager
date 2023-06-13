@@ -6,6 +6,9 @@ struct CachedPageEntry
     b32 meleeError  = FALSE;
     b32 rangedError = FALSE;
     
+    //Ability scores of the page without any status effect / modifications applied.
+    s32 origSTR, origDEX, origCON, origINT, origWIS, origCHA;
+    
     utf32 origin;
     utf32 shortDesc;
     utf32 AC;
@@ -621,14 +624,14 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     s32 shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Scudo"));
     if(shieldBonusIdx == -1) { shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"scudo")); }
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
     
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
-    s32 strBonusOld = newToOldMap[strBonusNew];
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
+    s32 strBonusOld = newToOldMap[cachedPage->origSTR - 10];
     
-    s32 conBonusNew = ls_utf32ToInt(cachedPage->CON) - 10;
-    s32 conBonusOld = newToOldMap[conBonusNew];
+    s32 conBonusNew = ls_utf32ToInt(cachedPage->CON)  - 10;
+    s32 conBonusOld = newToOldMap[cachedPage->origCON - 10];
     
     s32 newMaxDex      = 999;
     s32 newArmorBonus  = -1;
@@ -799,13 +802,13 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     { flatAC  = (flatAC  - dexBonusOld) + dexBonusToAC; }
     
     //NOTE: Adjust the armor bonus
-    if(armorBonusIdx)
+    if(armorBonusIdx != -1)
     {
         totAC  = (totAC - oldArmorBonus) + newArmorBonus;
         flatAC = (flatAC - oldArmorBonus) + newArmorBonus;
     }
     
-    if(shieldBonusIdx)
+    if(shieldBonusIdx != -1)
     {
         totAC  = (totAC - oldShieldBonus) + newShieldBonus;
         flatAC = (flatAC - oldShieldBonus) + newShieldBonus;
@@ -816,12 +819,11 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     b32 hasSchivareProdigioso = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Schivare Prodigioso")) != -1;
     if(status)
     {
+        b32 hasLostDexBonus = FALSE;
         for(s32 i = 0; i < STATUS_COUNT; i++)
         {
             if(!status[i].check.isActive) { continue; }
             
-            //TODO: You can't lose dex bonus multiple times!!
-            //Assert(FALSE);
             s32 dexAC = dexBonusToAC > 0 ? dexBonusToAC : 0;
             switch(status[i].type)
             {
@@ -829,18 +831,30 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
                 case STATUS_ACCOVACCIATO:
                 case STATUS_STORDITO:
                 {
-                    totAC -= (dexAC + 2); touchAC -= (dexAC + 2); flatAC -=  2;
+                    totAC -= 2; touchAC -= 2; flatAC -= 2;
+                    if(!hasLostDexBonus) {
+                        hasLostDexBonus = TRUE;
+                        totAC -= dexAC; touchAC -= dexAC;
+                    }
                 } break;
                 
                 case STATUS_IMMOBILIZZATO:
                 {
-                    if(!hasSchivareProdigioso)
-                    { totAC -= (dexBonusToAC + 4); touchAC -= (dexBonusToAC + 4); flatAC -= 4; }
+                    if(!hasSchivareProdigioso) { 
+                        totAC -= 4; touchAC -= 4; flatAC -= 4;
+                        if(!hasLostDexBonus) {
+                            hasLostDexBonus = TRUE;
+                            totAC -= dexAC; touchAC -= dexAC;
+                        }
+                    }
                 } break;
                 
                 case STATUS_IMPREPARATO:
                 {
-                    if(!hasSchivareProdigioso) { totAC -= dexBonusToAC; touchAC -= dexBonusToAC; }
+                    if(!hasSchivareProdigioso && !hasLostDexBonus) {
+                        hasLostDexBonus = TRUE;
+                        totAC -= dexAC; touchAC -= dexAC;
+                    }
                 } break;
                 
                 case STATUS_PRONO:
@@ -865,19 +879,22 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     ls_utf32Append(&cachedPage->AC, {AC.data + thirdValEnd, AC.len - thirdValEnd, AC.len - thirdValEnd});
 }
 
-//TODO: Fix Carisma instead of Constitution for Undeads!!
-void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
+void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status = NULL)
 {
-    s32 conBonusNew = ls_utf32ToInt(cachedPage->CON) - 10;
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-    s32 wisBonusNew = ls_utf32ToInt(cachedPage->WIS) - 10;
-    s32 conBonusOld = newToOldMap[conBonusNew];
-    s32 dexBonusOld = newToOldMap[dexBonusNew];
-    s32 wisBonusOld = newToOldMap[wisBonusNew];
+    s32 conBonusNew = ls_utf32ToInt(cachedPage->CON)  - 10;
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
+    s32 wisBonusNew = ls_utf32ToInt(cachedPage->WIS)  - 10;
+    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
+    s32 conBonusOld = newToOldMap[cachedPage->origCON - 10];
+    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
+    s32 wisBonusOld = newToOldMap[cachedPage->origWIS - 10];
+    s32 chaBonusOld = newToOldMap[cachedPage->origCHA - 10];
     
     //NOTE: Fix for Constructs
     if(ls_utf32AreEqual(cachedPage->CON, ls_utf32Constant(U"-")))
     { conBonusNew = 0; conBonusOld = 0; }
+    
+    b32 isUndead = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Non Morto")) != -1;
     
     //TODO: Make these not hardcoded like that
     s32 conSaveBegin = 7;
@@ -906,9 +923,34 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage)
     s32 dexSave = ls_utf32ToInt({ST.data + dexSaveBegin, dexSaveEnd - dexSaveBegin, dexSaveEnd - dexSaveBegin});
     s32 wisSave = ls_utf32ToInt({ST.data + wisSaveBegin, wisSaveEnd - wisSaveBegin+1, wisSaveEnd - wisSaveBegin+1});
     
-    conSave = (conSave - conBonusOld) + conBonusNew;
+    if(isUndead) { conSave = (conSave - chaBonusOld) + chaBonusNew; }
+    else         { conSave = (conSave - conBonusOld) + conBonusNew; }
+    
     dexSave = (dexSave - dexBonusOld) + dexBonusNew;
     wisSave = (wisSave - wisBonusOld) + wisBonusNew;
+    
+    //Handle Status Conditions
+    if(status)
+    {
+        for(s32 i = 0; i < STATUS_COUNT; i++)
+        {
+            if(!status[i].check.isActive) { continue; }
+            
+            switch(status[i].type)
+            {
+                case STATUS_INFERMO:
+                case STATUS_PANICO:
+                case STATUS_SPAVENTATO:
+                case STATUS_SCOSSO:
+                {
+                    conSave -= 2;
+                    dexSave -= 2;
+                    wisSave -= 2;
+                } break;
+            }
+        }
+    }
+    
     
     u32 buff[32] = {};
     utf32 tmpString = { buff, 32, 32 };
@@ -2339,12 +2381,18 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
     
+    //TODO: Fix these on Melee/Ranged/BMC/DMC/... everything.
+    cachedPage->origSTR = ls_utf32ToInt(cachedPage->STR);
+    cachedPage->origDEX = ls_utf32ToInt(cachedPage->DEX);
+    cachedPage->origCON = ls_utf32ToInt(cachedPage->CON);
+    cachedPage->origINT = ls_utf32ToInt(cachedPage->INT);
+    cachedPage->origWIS = ls_utf32ToInt(cachedPage->WIS);
+    cachedPage->origCHA = ls_utf32ToInt(cachedPage->CHA);
+    
     if(status)
     {
-        //TODO: For some reason a change of 2 (Like when using AFFATICATO) doesn't propagate properly???
-        Assert(FALSE);
-        s32 str = ls_utf32ToInt(cachedPage->STR);
-        s32 dex = ls_utf32ToInt(cachedPage->DEX);
+        s32 str = cachedPage->origSTR;
+        s32 dex = cachedPage->origDEX;
         
         for(s32 i = 0; i < STATUS_COUNT; i++)
         {
@@ -2352,6 +2400,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
             
             switch(status[i].type)
             {
+                //TODO: Make sure you're not AFFATICATO && ESAUSTO at the same time
                 case STATUS_AFFATICATO:   { str -= 2; dex -= 2; } break;
                 case STATUS_ESAUSTO:      { str -= 6; dex -= 6; } break;
                 case STATUS_INTRALCIATO:  { dex -= 4; }           break;
@@ -2434,7 +2483,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST);
-    CalculateAndCacheST(tempString, cachedPage);
+    CalculateAndCacheST(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC);

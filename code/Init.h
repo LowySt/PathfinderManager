@@ -186,7 +186,7 @@ enum StatusType
     STATUS_PANICO,           // -2 TxC/SavingThrows/Checks
     STATUS_PARALIZZATO,      // STR/DEX -> 0
     STATUS_PIETRIFICATO,     // DEX -> 0
-    STATUS_PRONO,            // -4 TxC, +4 CA Ranged / -4 CA Melee
+    STATUS_PRONO,            // -4 TxC, TODO +4 CA Ranged / -4 CA Melee
     STATUS_SANGUINANTE,      // No numeric change
     STATUS_SCOSSO,           // -2 TxC/SavingThrows/Checks
     STATUS_SPAVENTATO,       // -2 TxC/SavingThrows/Checks
