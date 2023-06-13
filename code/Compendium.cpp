@@ -1294,7 +1294,7 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
     return;
 }
 
-void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
+void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     cachedPage->meleeError = FALSE;
     
@@ -1411,6 +1411,32 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
             s32 newBonus = oldBonus - strBonusOld + strBonusNew;
             if(hasWeaponFinesse || isIncorporeal) { newBonus = oldBonus - dexBonusOld + dexBonusNew; }
             
+            //NOTE: Handle status conditions
+            if(status)
+            {
+                for(s32 i = 0; i < STATUS_COUNT; i++)
+                {
+                    if(!status[i].check.isActive) { continue; }
+                    
+                    switch(status[i].type)
+                    {
+                        case STATUS_ABBAGLIATO: { newBonus -= 1; } break;
+                        
+                        case STATUS_INFERMO:
+                        case STATUS_INTRALCIATO:
+                        case STATUS_LOTTA:
+                        case STATUS_SCOSSO:
+                        case STATUS_SPAVENTATO:
+                        case STATUS_PANICO: { newBonus -= 2; } break;
+                        
+                        case STATUS_PRONO: { newBonus -= 4; } break;
+                        
+                        //TODONOTE: I think this would only apply against enemies that can't see you... so...
+                        //case STATUS_INVISIBILE: { newBonus += 2 } break; 
+                    }
+                }
+            }
+            
             ls_utf32FromInt_t(&tmpString, newBonus);
             
             if(newBonus > 0) { ls_utf32AppendChar(&newBonusString, '+'); }
@@ -1510,9 +1536,13 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
                     }
                 }
                 
+                //NOTE: Handle Status Conditions
+                if(status && status[STATUS_INFERMO].check.isActive) { newDBonus -= 2; }
+                
+                //NOTE: Now print the damage
                 ls_utf32Append(&cachedPage->melee, {Melee.data + bonuses[attacksCount],
                                    diceThrowEnd - bonuses[attacksCount], diceThrowEnd - bonuses[attacksCount]});
-                if(newDBonus != 0) 
+                if(newDBonus != 0)
                 {
                     ls_utf32FromInt_t(&tmpString, newDBonus);
                     if(newDBonus > 0) { ls_utf32AppendChar(&cachedPage->melee, '+'); }
@@ -1537,7 +1567,7 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage)
     LogMsgF(Melee.len - stringIndex == 0, "Stuff left at the end of the original string: %d\n", Melee.len - stringIndex);
 }
 
-void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
+void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     cachedPage->rangedError = FALSE;
     
@@ -1630,6 +1660,33 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
             s32 oldBonus = ls_utf32ToInt({Ranged.data + bonuses[i], len, len});
             s32 newBonus = oldBonus - dexBonusOld + dexBonusNew; //TODO: Is this everything??
             
+            //NOTE: Handle status conditions
+            if(status)
+            {
+                for(s32 i = 0; i < STATUS_COUNT; i++)
+                {
+                    if(!status[i].check.isActive) { continue; }
+                    
+                    switch(status[i].type)
+                    {
+                        case STATUS_ABBAGLIATO: { newBonus -= 1; } break;
+                        
+                        case STATUS_INFERMO:
+                        case STATUS_INTRALCIATO:
+                        case STATUS_LOTTA:
+                        case STATUS_SCOSSO:
+                        case STATUS_SPAVENTATO:
+                        case STATUS_PANICO: { newBonus -= 2; } break;
+                        
+                        case STATUS_PRONO: { newBonus -= 4; } break;
+                        
+                        //TODONOTE: I think this would only apply against enemies that can't see you... so...
+                        //case STATUS_INVISIBILE: { newBonus += 2 } break; 
+                    }
+                }
+            }
+            
+            //NOTE: Now print the TxC
             ls_utf32FromInt_t(&tmpString, newBonus);
             
             if(newBonus > 0) { ls_utf32AppendChar(&newBonusString, '+'); }
@@ -1693,8 +1750,8 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage)
                     }
                 }
                 
-                //TODO: Do I want this else? I don't think I do.
-                //else { cachedPage->rangedError = TRUE; ls_utf32Set(&cachedPage->ranged, Ranged); return; }
+                //NOTE: Handle Status Conditions
+                if(status && status[STATUS_INFERMO].check.isActive) { newDBonus -= 2; }
                 
                 ls_utf32Append(&cachedPage->ranged, {Ranged.data + bonuses[attacksCount],
                                    diceThrowEnd - bonuses[attacksCount], diceThrowEnd - bonuses[attacksCount]});
@@ -2618,11 +2675,11 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee);
-    CalculateAndCacheMelee(tempString, cachedPage);
+    CalculateAndCacheMelee(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged);
-    CalculateAndCacheRanged(tempString, cachedPage);
+    CalculateAndCacheRanged(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks);
