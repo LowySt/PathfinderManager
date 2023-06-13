@@ -1066,8 +1066,17 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     
     useDex |= (ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1);
     
-    s32 statBonusNew = (useDex == TRUE ? ls_utf32ToInt(cachedPage->DEX) : ls_utf32ToInt(cachedPage->STR)) - 10;
-    s32 statBonusOld = newToOldMap[statBonusNew];
+    s32 statBonusNew = -1;
+    s32 statBonusOld = -1;
+    
+    if(useDex == TRUE) {
+        statBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
+        statBonusOld = newToOldMap[cachedPage->origDEX - 10];
+    }
+    else {
+        statBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
+        statBonusOld = newToOldMap[cachedPage->origSTR - 10];
+    }
     
     s32 bmcVal = ls_utf32ToInt({BMC.data, endIdx, endIdx});
     
@@ -1093,10 +1102,11 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
     s32 endIdx = ls_utf32LeftFind(DMC, (u32)'(');
     if(endIdx == -1) endIdx = DMC.len;
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
-    s32 dexBonusOld = newToOldMap[dexBonusNew];
-    s32 strBonusOld = newToOldMap[strBonusNew];
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
+    
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
+    s32 strBonusOld = newToOldMap[cachedPage->origSTR - 10];
     
     s32 dmcVal = ls_utf32ToInt({DMC.data, endIdx, endIdx});
     
@@ -1329,14 +1339,14 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
     if(sciame2Idx != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     if(truppaIdx  != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
-    s32 strBonusOld = newToOldMap[strBonusNew];
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
+    s32 strBonusOld = newToOldMap[cachedPage->origSTR - 10];
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
     
-    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA) - 10;
-    s32 chaBonusOld = newToOldMap[chaBonusNew];
+    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
+    s32 chaBonusOld = newToOldMap[cachedPage->origCHA - 10];
     
     s32 bab = ls_utf32ToInt(cachedPage->BAB);
     
@@ -1571,14 +1581,14 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *
 {
     cachedPage->rangedError = FALSE;
     
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
-    s32 strBonusOld = newToOldMap[strBonusNew];
+    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
+    s32 strBonusOld = newToOldMap[cachedPage->origSTR - 10];
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
     
-    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA) - 10;
-    s32 chaBonusOld = newToOldMap[chaBonusNew];
+    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
+    s32 chaBonusOld = newToOldMap[cachedPage->origCHA - 10];
     
     s32 bab = ls_utf32ToInt(cachedPage->BAB);
     
@@ -1827,38 +1837,38 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
     {
         case SK_STR:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->STR) - 10;
-            asBonusOld = newToOldMap[asBonusNew];
+            asBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
+            asBonusOld = newToOldMap[cachedPage->origSTR - 10];
         } break;
         
         case SK_DEX:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-            asBonusOld = newToOldMap[asBonusNew];
+            asBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
+            asBonusOld = newToOldMap[cachedPage->origDEX - 10];
         } break;
         
         case SK_CON:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->CON) - 10;
-            asBonusOld = newToOldMap[asBonusNew];
+            asBonusNew = ls_utf32ToInt(cachedPage->CON)  - 10;
+            asBonusOld = newToOldMap[cachedPage->origCON - 10];
         } break;
         
         case SK_INT:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->INT) - 10;
-            asBonusOld = newToOldMap[asBonusNew];
+            asBonusNew = ls_utf32ToInt(cachedPage->INT)  - 10;
+            asBonusOld = newToOldMap[cachedPage->origINT - 10];
         } break;
         
         case SK_WIS:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->WIS) - 10;
-            asBonusOld = newToOldMap[asBonusNew];
+            asBonusNew = ls_utf32ToInt(cachedPage->WIS)  - 10;
+            asBonusOld = newToOldMap[cachedPage->origWIS - 10];
         } break;
         
         case SK_CHA:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->CHA) - 10;
-            asBonusOld = newToOldMap[asBonusNew];
+            asBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
+            asBonusOld = newToOldMap[cachedPage->origCHA - 10];
         } break;
     }
     
@@ -2553,7 +2563,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
     
-    //TODO: Fix these on Melee/Ranged/BMC/DMC/... everything.
     cachedPage->origSTR = ls_utf32ToInt(cachedPage->STR);
     cachedPage->origDEX = ls_utf32ToInt(cachedPage->DEX);
     cachedPage->origCON = ls_utf32ToInt(cachedPage->CON);
