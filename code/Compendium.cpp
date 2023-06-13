@@ -1115,7 +1115,7 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
     ls_utf32AppendBuffer(&cachedPage->DMC, DMC.data + endIdx, DMC.len - endIdx);
 }
 
-void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
+void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     //TODO: Fix cases like +12 (+99 Maremma Maiala)
     //      Those cases trip the M detection, so we need a first pass to make sure the M isn't between
@@ -1123,8 +1123,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
     
     if(Init.len == 0) { ls_utf32Set(&cachedPage->initiative, Init); return; }
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX) - 10;
-    s32 dexBonusOld = newToOldMap[dexBonusNew];
+    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
     
     s32 multiToken  = ls_utf32LeftFind(Init, (u32)'/');
     s32 mithicToken = ls_utf32LeftFind(Init, (u32)'M');
@@ -1149,6 +1149,28 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
         }
     }
     
+    //NOTE: Handle status conditions
+    s32 statusEffect = 0;
+    if(status)
+    {
+        for(s32 i = 0; i < STATUS_COUNT; i++)
+        {
+            if(!status[i].check.isActive) { continue; }
+            
+            switch(status[i].type)
+            {
+                case STATUS_ASSORDATO: { statusEffect = -4; } break;
+                
+                case STATUS_PANICO:
+                case STATUS_SPAVENTATO:
+                case STATUS_SCOSSO:
+                {
+                    statusEffect = -2;
+                } break;
+            }
+        }
+    }
+    
     u32 buff[32] = {};
     utf32 tmpString = { buff, 32, 32 };
     ls_utf32Clear(&cachedPage->initiative);
@@ -1167,6 +1189,9 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
                 initTwo = ls_utf32ToInt({Init.data + multiToken + 1, twoLen, twoLen});
                 initOne = (initOne - dexBonusOld) + dexBonusNew;
                 initTwo = (initTwo - dexBonusOld) + dexBonusNew;
+                
+                initOne += statusEffect;
+                initTwo += statusEffect;
                 
                 if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
                 ls_utf32FromInt_t(&tmpString, initOne);
@@ -1188,6 +1213,9 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
                 initTwo = ls_utf32ToInt({Init.data + multiToken + 1, twoLen, twoLen});
                 initOne = (initOne - dexBonusOld) + dexBonusNew;
                 initTwo = (initTwo - dexBonusOld) + dexBonusNew;
+                
+                initOne += statusEffect;
+                initTwo += statusEffect;
                 
                 if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
                 ls_utf32FromInt_t(&tmpString, initOne);
@@ -1212,6 +1240,9 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
             initOne = (initOne - dexBonusOld) + dexBonusNew;
             initTwo = (initTwo - dexBonusOld) + dexBonusNew;
             
+            initOne += statusEffect;
+            initTwo += statusEffect;
+            
             if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
             ls_utf32FromInt_t(&tmpString, initOne);
             ls_utf32Append(&cachedPage->initiative, tmpString);
@@ -1232,6 +1263,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
             initOne = ls_utf32ToInt({Init.data, mithicToken, mithicToken});
             initOne = (initOne - dexBonusOld) + dexBonusNew;
             
+            initOne += statusEffect;
+            
             if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
             ls_utf32FromInt_t(&tmpString, initOne);
             ls_utf32Append(&cachedPage->initiative, tmpString);
@@ -1244,6 +1277,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage)
         {
             initOne = ls_utf32ToInt({Init.data, endIdx, endIdx});
             initOne = (initOne - dexBonusOld) + dexBonusNew;
+            
+            initOne += statusEffect;
             
             if(initOne >= 0) ls_utf32AppendChar(&cachedPage->initiative, (u32)'+');
             ls_utf32FromInt_t(&tmpString, initOne);
@@ -2030,7 +2065,40 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
 
 b32 onStatusChange(UIContext *c, void *data)
 {
-    Order *ord = (Order *)data;
+    s64 mixedIndices = (s64)data;
+    s32 ordIndex     = (s32)mixedIndices;
+    s32 statusIndex  = mixedIndices >> 32;
+    
+    Order *ord = State.Init->OrderFields + ordIndex;
+    Status *changed = ord->status + statusIndex;
+    
+    //NOTE: Check for conflicting status on activation!
+    Status *all = ord->status;
+    if(changed->check.isActive)
+    {
+        switch(changed->type)
+        {
+            case STATUS_SCOSSO:
+            {
+                all[STATUS_SPAVENTATO].check.isActive = FALSE;
+                all[STATUS_PANICO].check.isActive     = FALSE;
+            } break;
+            
+            case STATUS_SPAVENTATO:
+            {
+                all[STATUS_SCOSSO].check.isActive = FALSE;
+                all[STATUS_PANICO].check.isActive = FALSE;
+            } break;
+            
+            case STATUS_PANICO:
+            {
+                all[STATUS_SCOSSO].check.isActive     = FALSE;
+                all[STATUS_SPAVENTATO].check.isActive = FALSE;
+            } break;
+            
+            
+        }
+    }
     
     //NOTE: We re-cache the page to apply the changes.
     GetPageEntryAndCache(ord->compendiumIdx, &mainCachedPage, ord->status);
@@ -2495,7 +2563,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative);
-    CalculateAndCacheInitiative(tempString, cachedPage);
+    CalculateAndCacheInitiative(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
@@ -2636,7 +2704,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment);
 }
 
-void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *statuses = NULL)
+void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     u32 tempUTF32Buffer[512] = {};
     utf32 tempString = { tempUTF32Buffer, 0, 512 };

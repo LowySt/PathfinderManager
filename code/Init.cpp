@@ -1586,11 +1586,12 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         
         for(u32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
         {
+            s64 mixedIndex = ((s64)statusIdx << 32) | i;
             f->status[statusIdx].type = StatusType(statusIdx);
             f->status[statusIdx].check = ls_uiCheckInit(c, UICHECK_BMP, statusBMPData[statusIdx],
                                                         statusIconWidth, statusIconHeight,
                                                         (u8 *)statusActiveRingData, statusActiveWidth,
-                                                        statusActiveHeight, onStatusChange, f);
+                                                        statusActiveHeight, onStatusChange, (void *)mixedIndex);
         }
         
         f->compendiumIdx  = -1;
