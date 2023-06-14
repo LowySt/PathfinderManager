@@ -678,9 +678,40 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         }
         else
         {
-            cachedPage->acError = TRUE;
-            ls_utf32Set(&cachedPage->AC, AC);
-            return;
+            //NOTE: Look for magic items giving an armor bonus, like "Bracciali dell'Armatura"
+            s32 braccialiIdx = ls_utf32LeftFind(cachedPage->properties, ls_utf32Constant(U"Bracciali dell'Armatura"));
+            
+            /*TODO: Do I need this?
+                    if(braccialiIdx == -1)
+                    { braccialiIdx = ls_utf32LeftFind(cachedPage->given_equip, U"Bracciali dell'Armatura"); }
+                    */
+            
+            if(braccialiIdx != -1)
+            {
+                s32 nextComma = ls_utf32LeftFind(cachedPage->properties, braccialiIdx, ls_utf32Constant(U", "));
+                
+                if(nextComma != -1) //TODO: What about if we are at the end of the string?
+                {
+                    s64 braceBonusRange = leftFindBonus(cachedPage->properties, braccialiIdx, nextComma);
+                    s32 braceBonusBegin = braceBonusRange >> 32;
+                    s32 braceBonusEnd   = (s32)braceBonusRange;
+                    
+                    newArmorBonus = ls_utf32ToIntIgnoreWhitespace({cachedPage->properties.data + braceBonusBegin, braceBonusEnd - braceBonusBegin, braceBonusEnd - braceBonusBegin});
+                    oldArmorBonus = newArmorBonus;
+                }
+                else
+                {
+                    cachedPage->acError = TRUE;
+                    ls_utf32Set(&cachedPage->AC, AC);
+                    return;
+                }
+            }
+            else
+            {
+                cachedPage->acError = TRUE;
+                ls_utf32Set(&cachedPage->AC, AC);
+                return;
+            }
         }
     }
     
