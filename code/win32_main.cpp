@@ -410,9 +410,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
             {
-                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[0]);
-                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[1]);
-                ls_stackClear(&uiContext->renderGroups[i].RenderCommands[2]);
+                for(s32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
+                {
+                    ls_stackClear(&uiContext->renderGroups[i].RenderCommands[zLayer]);
+                }
             }
             
             Sleep(32);
@@ -580,9 +581,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         {
             for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
             {
-                ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[0]);
-                ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[1]);
-                ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[2]);
+                for(s32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
+                {
+                    ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[zLayer]);
+                }
             }
         }
         else

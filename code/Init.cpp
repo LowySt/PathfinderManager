@@ -1888,8 +1888,8 @@ void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
         s32 x = State.Init->tooltipMouseX + 12;
         s32 y = State.Init->tooltipMouseY;
         
-        ls_uiLabel(c, label, x, y - c->currFont->pixelHeight, c->textColor, 2);
-        ls_uiRect(c, x - 8, y - labelRect.h - 5, labelRect.w + 16, labelRect.h + 6, 2);
+        ls_uiLabel(c, label, x, y - c->currFont->pixelHeight, c->textColor, 3);
+        ls_uiRect(c, x - 8, y - labelRect.h - 5, labelRect.w + 16, labelRect.h + 6, 3);
         
         if(firstShow == TRUE) { c->hasReceivedInput = TRUE; }
         firstShow = FALSE;
