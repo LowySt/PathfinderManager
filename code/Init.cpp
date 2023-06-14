@@ -1691,6 +1691,13 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     ls_uiButtonInit(c, &Page->Next, UIBUTTON_CLASSIC, ls_utf32Constant(U"Next"), NextOnClick, NULL, NULL);
     ls_uiButtonInit(c, &Page->Undo, UIBUTTON_CLASSIC, ls_utf32Constant(U"<-"), RequestUndoOnClick, NULL, NULL);
     ls_uiButtonInit(c, &Page->Redo, UIBUTTON_CLASSIC, ls_utf32Constant(U"->"), RequestRedoOnClick, NULL, NULL);
+    
+    
+    //Status Tooltips
+    Page->isShowingStatusTooltip = FALSE;
+    Page->tooltipCurrentDT =  STATUS_TOOLTIP_DT;
+    Page->tooltipMouseX    = -999;
+    Page->tooltipMouseY    = -999;
 }
 
 b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
@@ -1795,6 +1802,98 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     if(RightClickIn(xPos + 50, yPos, 166, 20)) globalSelectedIndex = (s32)posIdx;
     
     return inputUse;
+}
+
+void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
+{
+    Input *UserInput = &c->UserInput;
+    
+    s32 tooltipIndex = -1;
+    s32 mouseX = -999;
+    s32 mouseY = -999;
+    
+    static b32 firstShow = TRUE;
+    
+    
+    for(u32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+    {
+        Status *status = ord->status + statusIdx;
+        
+        if(statusIdx % 2 == 0) { 
+            ls_uiCheck(c, &status->check, statusX, statusY + 40);
+            
+            if(MouseInRect(statusX, statusY + 40, status->check.w, status->check.h))
+            { 
+                tooltipIndex = statusIdx;
+                mouseX = UserInput->Mouse.currPosX;
+                mouseY = UserInput->Mouse.currPosY;
+            }
+        }
+        else {
+            ls_uiCheck(c, &status->check, statusX, statusY);
+            if(MouseInRect(statusX, statusY, status->check.w, status->check.h))
+            { 
+                tooltipIndex = statusIdx;
+                mouseX = UserInput->Mouse.currPosX;
+                mouseY = UserInput->Mouse.currPosY;
+            }
+            
+            statusX += 36;
+        }
+    }
+    
+    if(tooltipIndex != -1 && State.Init->isShowingStatusTooltip != TRUE)
+    {
+        if(State.Init->tooltipCurrentDT == STATUS_TOOLTIP_DT)
+        {
+            State.Init->tooltipMouseX = mouseX;
+            State.Init->tooltipMouseY = mouseY;
+        }
+        
+        if((State.Init->tooltipMouseX != UserInput->Mouse.currPosX) || 
+           (State.Init->tooltipMouseY != UserInput->Mouse.currPosY))
+        { 
+            State.Init->isShowingStatusTooltip = FALSE;
+            State.Init->tooltipCurrentDT       = STATUS_TOOLTIP_DT;
+            State.Init->tooltipMouseX          = -999;
+            State.Init->tooltipMouseY          = -999;
+            firstShow                          = TRUE;
+            return;
+        }
+        
+        if(State.Init->tooltipCurrentDT != 0)
+        {
+            State.Init->tooltipCurrentDT -= c->dt;
+            if(State.Init->tooltipCurrentDT < 0) { State.Init->tooltipCurrentDT = 0; }
+        }
+        else { State.Init->isShowingStatusTooltip = TRUE; }
+    }
+    
+    if(State.Init->isShowingStatusTooltip == TRUE)
+    {
+        if((State.Init->tooltipMouseX != UserInput->Mouse.currPosX) || 
+           (State.Init->tooltipMouseY != UserInput->Mouse.currPosY))
+        { 
+            State.Init->isShowingStatusTooltip = FALSE;
+            State.Init->tooltipCurrentDT       = STATUS_TOOLTIP_DT;
+            State.Init->tooltipMouseX          = -999;
+            State.Init->tooltipMouseY          = -999;
+            firstShow                          = TRUE;
+            return;
+        }
+        
+        utf32 label      = ls_utf32Constant(statusTooltips[tooltipIndex]);
+        UIRect labelRect = ls_uiGlyphStringRect(c, c->currFont, label);
+        
+        s32 x = State.Init->tooltipMouseX + 12;
+        s32 y = State.Init->tooltipMouseY;
+        
+        ls_uiLabel(c, label, x, y - c->currFont->pixelHeight, c->textColor, 2);
+        ls_uiRect(c, x - 8, y - labelRect.h - 5, labelRect.w + 16, labelRect.h + 6, 2);
+        
+        if(firstShow == TRUE) { c->hasReceivedInput = TRUE; }
+        firstShow = FALSE;
+    }
 }
 
 b32 DrawDefaultStyle(UIContext *c)
@@ -2118,17 +2217,7 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 
                 //NOTE: Draw the Status Check-circles
-                s32 statusX = 30;
-                for (u32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
-                {
-                    if(statusIdx % 2 == 0) { 
-                        ls_uiCheck(c, &ord->status[statusIdx].check, statusX, 790);
-                    }
-                    else {
-                        ls_uiCheck(c, &ord->status[statusIdx].check, statusX, 750);
-                        statusX += 36;
-                    }
-                }
+                DrawStatusIcons(c, ord, 30, 750);
             }
         }
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718);

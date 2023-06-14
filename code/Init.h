@@ -164,6 +164,8 @@ struct EncList
     Encounter Enc[64];
 };
 
+const s32 STATUS_TOOLTIP_DT = 350;
+
 enum StatusType
 {
     STATUS_ABBAGLIATO = 0,   // -1 TxC e Percezione (su vista)
@@ -298,6 +300,12 @@ struct InitPage
     
     UIButton     Undo;
     UIButton     Redo;
+    
+    
+    b32          isShowingStatusTooltip;
+    s32          tooltipCurrentDT;
+    s32          tooltipMouseX;
+    s32          tooltipMouseY;
 };
 
 #endif //_INIT_H

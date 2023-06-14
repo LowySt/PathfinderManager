@@ -2209,8 +2209,11 @@ b32 onStatusChange(UIContext *c, void *data)
             } break;
             
             
-            case STATUS_ABBAGLIATO: { all[STATUS_ACCECATO].check.isActive = FALSE;   } break;
+            case STATUS_ABBAGLIATO: { all[STATUS_ACCECATO].check.isActive   = FALSE; } break;
             case STATUS_ACCECATO:   { all[STATUS_ABBAGLIATO].check.isActive = FALSE; } break;
+            
+            case STATUS_IMMOBILIZZATO: { all[STATUS_LOTTA].check.isActive         = FALSE; } break;
+            case STATUS_LOTTA:         { all[STATUS_IMMOBILIZZATO].check.isActive = FALSE; } break;
         }
     }
     

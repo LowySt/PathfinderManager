@@ -6851,3 +6851,220 @@ const u8 statusActiveRingData[] = {
     0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0,
 };
 
+
+const char32_t *statusTooltips[STATUS_COUNT] = {
+    U"Abbagliato\n"
+        "La creatura \u00E8 incapace di vedere bene a causa di un'eccessiva stimolazione degli occhi.\n"
+        "Una creatura abbagliata subisce penalit\u00E0 -1 al Tiro per Colpire e\n"
+        "alle prove di Percezione basate sulla vista.",
+    
+    U"Accecato\n"
+        "Il personaggio non riesce a vedere nulla. Subisce penalit\u00E0 -2 alla Classe Armatura,\n"
+        "perde il suo bonus di Destrezza alla CA (se presente), subisce penalit\U000000E0 -4 alla maggior\n"
+        "parte delle Abilit\u00E0 basate su Forza e Destrezza e alle prove contrapposte di Percezione.\n"
+        "Tutte le prove o le attivit\u00E0 basate sulla visione (come ad esempio leggere, o eventuali prove\n"
+        "di Percezione basate sulla vista) falliscono automaticamente. Tutti gli avversari vengono\n"
+        "considerati dotati di Occultamento Totale (probabilit\u00E0 del 50% di essere mancati)\n"
+        "nei confronti del personaggio accecato. I personaggi accecati devono effettuare una prova\n"
+        "di Acrobazia con CD 10 per muoversi pi\u00F9 veloci della propria velocit\u00E0 dimezzata.\n"
+        "Le creature che falliscono questa prova cadono a terra Prone.\n"
+        "I personaggi che rimangono per lungo tempo accecati possono abituarsi ad alcune di\n"
+        "queste penalit\u00E0 e iniziare a superarne alcune, a discrezione del GM.",
+    
+    U"Accovacciato\n"
+        "Il personaggio \u00E8 congelato dalla paura ed \u00E8 incapace di compiere azioni.\n"
+        "Un personaggio accovacciato subisce penalit\u00E0 -2 alla Classe Armatura e\n"
+        "perde qualsiasi bonus di Destrezza (se posseduto).",
+    
+    U"Affascinato\n"
+        "Una creatura affascinata \u00E8 soggiogata da un effetto soprannaturale o di un incantesimo.\n"
+        "La creatura rimane in piedi o si siede tranquilla, senza effettuare alcuna azione se non\n"
+        "prestare attenzione alla fonte del fascino, fintanto che dura l'effetto.\n"
+        "L'effetto provoca penalit\u00E0 -4 alle Prove di Abilit\u00E0 richieste come reazione,\n"
+        "come ad esempio le prove di Percezione. Qualsiasi potenziale minaccia, come ad esempio\n"
+        "una creatura ostile in avvicinamento, consente alla creatura affascinata un nuovo Tiro Salvezza\n"
+        "contro l'effetto del fascino. Qualsiasi minaccia palese, come ad esempio\n"
+        "qualcuno che estrae un'arma, lancia un incantesimo o punta un'arma a distanza\n"
+        "verso la creatura affascinata, interrompe automaticamente l'effetto.\n"
+        "Un alleato della creatura affascinata pu\u00F2 scuoterla per liberarla dall'effetto come azione standard.",
+    
+    U"Affaticato\n"
+        "Un personaggio affaticato non pu\u00F2 correre o Caricare e subisce una penalit\u00E0 -2 a\n"
+        "Forza e Destrezza. Se compie qualsiasi cosa normalmente affaticante diventa Esausto.\n"
+        "Ci vogliono 8 ore di riposo totale per rimuovere la condizione di affaticato.",
+    
+    U"Assordato\n"
+        "Un personaggio assordato non pu\u00F2 ascoltare. Subisce penalit\u00E0 -4 alle prove di Iniziativa,\n"
+        "fallisce automaticamente tutte le prove di Percezione basate sul suono\n"
+        "e ha una probabilit\u00E0 del 20% di fallire il lancio degli incantesimi con componenti verbali.\n"
+        "I personaggi che rimangono assordati per lunghi periodi di tempo, possono abituarsi\n"
+        "a queste penalit\u00E0 e superarne alcune, a discrezione del GM.",
+    
+    U"Barcollante\n"
+        "Un personaggio barcollante pu\u00F2 effettuare una singola azione di movimento\n"
+        "o una standard ad ogni round (ma non entrambe, e non pu\u00F2 effettuare azioni di round completo).\n"
+        "Una creatura barcollante pu\u00F2 sempre compiere azioni gratuite, veloci o immediate.\n"
+        "Una creatura i cui danni non letali eguagliano i Punti Ferita attuali ottiene la condizione barcollante.",
+    
+    U"Confuso\n"
+        "Una creatura confusa \u00E8 mentalmente ottenebrata e non pu\u00F2 agire normalmente.\n"
+        "Una creatura confusa non riesce a distinguere un alleato da un nemico, e considera tutti come nemici.\n"
+        "Gli alleati che vogliono lanciare un incantesimo a vantaggio della creatura confusa\n"
+        "devono comunque toccarla con un attacco di contatto in mischia riuscito.\n"
+        "Se una creatura confusa \u00E8 attaccata, attacca sempre l'ultima creatura\n"
+        "che la ha attaccata, finch\u00E9 quella creatura non muore o esce dalla sua visuale.\n\n"
+        "Tirate sulla tabella seguente all'inizio di ogni turno della creatura confusa\n"
+        "ad ogni round per vedere quello che la creatura fa in quel round.\n\n"
+        "01-25    Agisce normalmente\n"
+        "26-50    Non fa altro che balbettare in modo incoerente\n"
+        "51-75    Si infligge 1d8 + modificatore di Forza con l'arma che tiene in mano\n"
+        "76-100   Attacca la creatura pi\u00F2 vicina (a tale scopo, un Famiglio conta come parte del soggetto stesso)\n\n"
+        "Una creatura confusa che non \u00E8 in grado di eseguire l'azione indicata\n"
+        "non far\u00E0 altro che balbettare in modo incoerente.\n"
+        "Gli aggressori non hanno alcun vantaggio speciale quando attaccano una creatura confusa.\n"
+        "Qualsiasi creatura confusa che venga attaccata, attacca automaticamente a sua volta\n"
+        "il suo aggressore al suo turno successivo, fintanto che rimane confusa quando giunge il suo turno.\n"
+        "Una creatura confusa non effettua attacchi di opportunit\u00E0 contro nessuno con cui\n"
+        "non sia gi\u00E0 impegnata a combattere\n"
+        "(perch\u00E9 cos\u00EC richiedeva la sua azione pi\u00F2 recente, o perch\u00E9 \u00E8 stata appena attaccata).",
+    
+    U"Esausto\n"
+        "Un personaggio esausto si muove a velocit\u00E0 dimezzata e subisce penalit\u00E0 -6 a Forza e Destrezza.\n"
+        "Dopo 1 ora di completo riposo, un personaggio esausto diventa solo Affaticato.\n"
+        "Un personaggio Affaticato diventa esausto compiendo un'azione che normalmente lo affaticherebbe.",
+    
+    U"Immobilizzato\n"
+        "Una creatura immobilizzata \u00E8 strettamente limitata nei movimenti\n"
+        "e pu\u00F2 compiere solo alcune azioni. Una creatura immobilizzata non pu\u00F2 muoversi\n"
+        "ed \u00E8 Impreparata. Un personaggio immobilizzato inoltre subisce una ulteriore\n"
+        "penalit\u00E0 -4 alla sua Classe Armatura. Una creatura immobilizzata \u00E8 limitata nelle azioni\n"
+        "che pu\u00F2 compiere. Una creatura immobilizzata pu\u00F2 tentare sempre di liberarsi,\n"
+        "solitamente attraverso una prova di Manovra in Combattimento o una prova di Artista della Fuga.\n"
+        "Una creatura immobilizzata pu\u00F2 compiere azioni verbali e mentali, ma non pu\u00F2 lanciare incantesimi che\n"
+        "richiedono una componente somatica o materiale. Un personaggio immobilizzato che tenta di lanciare un\n"
+        "incantesimo o usare una Capacit\u00E0 Magica deve effettuare una prova di Concentrazione\n"
+        "(CD 10 + BMC dell'aggressore + livello dell'incantesimo) o perde l'incantesimo.\n"
+        "Immobilizzato \u00E8 una condizione pi\u00F9 grave di In Lotta, ed i loro effetti non si cumulano.",
+    
+    U"Impreparato\n"
+        "Un personaggio che non ha ancora agito durante un Combattimento \u00E8 Impreparato,\n"
+        "incapace di reagire normalmente alla situazione.\n\n"
+        "Un personaggio Impreparato perde il suo bonus di Destrezza alla CA e alla DMC (se presente)\n"
+        "e non pu\u00F2 effettuare Attacchi di Opportunit\u00E0, a meno che non abbia il Talento\n"
+        "Riflessi in Combattimento o il privilegio di Classe Schivare Prodigioso.\n\n"
+        "I personaggi con Schivare Prodigioso mantengono il loro bonus di Destrezza alla CA\n"
+        "e possono fare Attacchi di Opportunit\u00E0 prima di aver agito nel primo round di Combattimento.\n\n"
+        "Nota del redattore: non si possono intraprendere Azioni Immediate mentre si \u00E8 Impreparati.",
+    
+    U"Indifeso\n"
+        "Un personaggio addormentato, bloccato, legato, Paralizzato, Privo di Sensi\n"
+        "o per qualche altro motivo completamente alla merc\u00E9 dei suoi avversari, \u00E8 considerato indifeso.\n"
+        "Un personaggio indifeso viene considerato come se avesse Destrezza 0 (modificatore di -5).\n"
+        "Gli attacchi in mischia contro un personaggio indifeso ottengono bonus +4\n"
+        "(equivalente ad attaccare un personaggio Prono).\n"
+        "Gli attacchi a distanza non ottengono alcun bonus particolare contro i bersagli indifesi.\n"
+        "I Ladri possono effettuare Attacchi Furtivi contro un bersaglio indifeso.",
+    
+    U"Infermo\n"
+        "Un personaggio infermo subisce una penalit\u00E0 -2 a tutti i Tiri per Colpire\n"
+        "e per i danni delle armi, ai Tiri Salvezza, alle Prove di Abilit\u00E0 e di caratteristica.\n",
+    
+    U"Intralciato\n"
+        "Il personaggio rimane intrappolato. Un personaggio intralciato ha difficolt\u00E0 di movimento,\n"
+        "ma pu\u00F2 comunque provare a muoversi, a meno che i legami che lo intralciano non siano\n"
+        "ancorati a un oggetto immobile o impugnati da una forza contrapposta.\n"
+        "Una creatura intralciata pu\u00F2 muoversi a velocit\u00E0 dimezzata\n"
+        "ma non pu\u00F2 Correre o Caricare, e subisce penalit\u00E0 -2 ai Tiri per Colpire\n"
+        "e penalit\u00E0 -4 alla Destrezza. Un personaggio intralciato che cerca di lanciare\n"
+        "un incantesimo deve superare una prova di Concentrazione\n"
+        "(CD 15 + il livello dell'incantesimo) o perde l'incantesimo.",
+    
+    U"Invisibile\n"
+        "Le creature invisibili non sono percepibili dalla vista,\n"
+        "ricevono bonus +2 al Tiro per Colpire contro avversari visibili\n"
+        "e negano il bonus di Destrezza alla CA dei loro avversari (se posseduto).",
+    
+    U"In Lotta\n"
+        "Una creatura in lotta \u00E8 trattenuta da una creatura, da una trappola o da un effetto.\n"
+        "Le creature in lotta non possono muoversi e subiscono penalit\u00E0 -4 a Destrezza.\n"
+        "Una creatura in lotta subisce penalit\u00E0 -2 a tutti i Tiri per Colpire\n"
+        "e alle prove di Manovra in Combattimento, tranne quelle effettuate per lottare o sfuggire ad una lotta.\n"
+        "Inoltre, le creature in lotta non possono compiere azioni che richiedano due mani per essere effettuate.\n"
+        "Un personaggio in lotta che tenta di lanciare un incantesimo o usare una Capacit\u00E0 Magica\n"
+        "deve effettuare una prova di Concentrazione (CD 10 + BMC dell'aggressore + livello dell'incantesimo)\n"
+        "o perde l'incantesimo. Le creature in lotta non possono effettuare Attacchi di Opportunit\u00E0.\n\n"
+        "Una creatura in lotta non pu\u00F2 usare Furtivit\u00E0 per nascondersi dalla creatura con cui\n"
+        "sta lottando, anche se una capacit\u00E0 speciale, come nascondersi in piena vista, lo permetterebbe.\n"
+        "Se una creatura in lotta diventa Invisibile, con un incantesimo o un'altra capacit\u00E0, guadagna\n"
+        "Bonus di Circostanza +2 alla sua DMC per evitare di essere afferrata, ma non riceve altri benefici.",
+    
+    U"Nauseato\n"
+        "Le creature Nauseate soffrono di disturbi di stomaco.\n"
+        "Le creature Nauseate non sono in grado di attaccare, lanciare Incantesimi,\n"
+        "concentrarsi sugli Incantesimi o fare qualsiasi altra cosa che richieda attenzione.\n"
+        "La sola azione che un tale personaggio pu\u00F2 compiere \u00E8 una singola Azione di Movimento per turno.",
+    
+    U"In Preda al Panico\n"
+        "I personaggi In Preda al Panico sono Scossi e, inoltre, hanno una probabilit\u00E0\n"
+        "del 50% di far cadere a terra qualsiasi cosa stanno tenendo in mano, e di fuggire dalla fonte del\n"
+        "loro terrore il pi\u00F9 in fretta possibile seguendo un percorso di fuga completamente casuale.\n"
+        "I personaggi In Preda al Panico fuggono davanti a qualsiasi altro pericolo che possano trovarsi di fronte.\n"
+        "A parte ci\u00F2, una volta che sono fuori vista (o udito) dalla fonte della loro Paura,\n"
+        "possono agire normalmente. I personaggi In Preda al Panico prendono anche\n"
+        "la condizione Accovacciato se non possono fuggire.",
+    
+    U"Paralizzato\n"
+        "Un personaggio paralizzato \u00E8 bloccato sul posto ed \u00E8 incapace di muoversi od agire.\n"
+        "Ha punteggi effettivi di Forza e Destrezza pari a 0, \u00E8 Indifeso e pu\u00F2 compiere\n"
+        "azioni esclusivamente mentali. Una creatura alata in volo, nel momento in cui viene paralizzata\n"
+        "non pu\u00F2 pi\u00F9 battere le ali e precipita. Un nuotatore paralizzato\n"
+        "non pu\u00F2 pi\u00F9 Nuotare e potrebbe annegare. Una creatura pu\u00F2 attraversare\n"
+        "un quadretto occupato da una creatura paralizzata, che sia un alleato o meno,\n"
+        "ma ogni quadretto occupato da una creatura paralizzata conta come 2 quadretti di movimento.",
+    
+    U"Pietrificato\n"
+        "Un personaggio pietrificato \u00E8 stato trasformato in pietra ed \u00E8 Privo di Sensi.\n"
+        "Se un personaggio pietrificato si incrina o si rompe, ma i pezzi rotti sono uniti al corpo\n"
+        "quando ritorna di carne, il personaggio non viene ferito o danneggiato.\n"
+        "Se il corpo pietrificato del personaggio \u00E8 incompleto quando viene ritrasformato in carne,\n"
+        "il corpo rimane incompleto e potrebbe avere una qualche perdita permanente\n"
+        "di punti ferita e/o altre menomazioni.",
+    
+    U"Prono\n"
+        "Il personaggio \u00E8 a terra e subisce penalit\u00E0 -4 al Tiro per Colpire\n"
+        "in mischia e non pu\u00F2 usare armi a distanza (eccetto per la balestra).\n"
+        "Un difensore prono ottiene bonus +4 alla Classe Armatura contro gli attacchi a distanza,\n"
+        "ma subisce penalit\u00E0 -4 alla CA negli attacchi in mischia.\n"
+        "Rialzarsi \u00E8 un'azione di movimento che provoca Attacchi di Opportunit\u00E0.",
+    
+    U"Sanguinante\n"
+        "Una creatura che sta subendo danni da sanguinamento subisce la quantit\u00E0 di danno\n"
+        "indicata all'inizio del suo turno. Il sanguinamento pu\u00F2 essere interrotto superando\n"
+        "una prova di Guarire con CD 15 o con un incantesimo che cura i Punti Ferita\n"
+        "(anche se il sanguinamento \u00E8 un danno di caratteristica).\n"
+        "Alcuni effetti di sanguinamento causano un danno di caratteristica\n"
+        "o persino un risucchio di caratteristica. Gli effetti di sanguinamento non si cumulano\n"
+        "a meno che non causino tipi differenti di danno. Quando due o pi\u00F9 effetti di sanguinamento\n"
+        "causano lo stesso tipo di danno, si tenga l'effetto peggiore.\n"
+        "In questo caso, il risucchio di caratteristica \u00E8 peggiore del danno di caratteristica.",
+    
+    U"Scosso\n"
+        "I personaggi che sono Scossi subiscono\n"
+        "penalit\u00E0 morale -2 ai Tiri per Colpire, ai Tiri Salvezza e alle prove.",
+    
+    U"Spaventato\n"
+        "I personaggi Spaventati sono anche Scossi, e inoltre fuggono dalla fonte della\n"
+        "loro Paura il pi\u00F9 velocemente possibile,\n"
+        "anche se possono scegliere la direzione di fuga. A parte ci\u00F2, una volta\n"
+        "che sono fuori vista (o udito) dalla fonte della loro Paura, possono agire normalmente.\n"
+        "Se la durata della Paura non \u00E8 ancora arrivata al termine, qualora dovessero\n"
+        "incontrare di nuovo la fonte della loro Paura, cercherebbero nuovamente di fuggire.\n"
+        "I personaggi che non sono in grado di fuggire\n"
+        "possono combattere (anche se continuano ad essere Scossi).",
+    
+    U"Stordito\n"
+        "Una creatura stordita lascia cadere a terra qualsiasi cosa abbia in mano,\n"
+        "non pu\u00F2 compiere azioni, subisce penalit\u00E0 -2 alla CA,\n"
+        "e perde il suo bonus di Destrezza alla CA (se presente).",
+};
+
