@@ -44,10 +44,17 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         Order *order = init->OrderFields + i;
         
         ls_bufferAddUTF32(buf, order->field.text);
+        
         ls_bufferAddDWord(buf, order->field.currValue);
         ls_bufferAddDWord(buf, order->field.maxValue);
         ls_bufferAddDWord(buf, order->field.minValue);
         ls_bufferAddDouble(buf, order->field.currPos);
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+        { ls_bufferAddDWord(buf, order->status[statusIdx].check.isActive); }
+        
+        //TODO: Probably can be removed
         ls_bufferAddData32(buf, &order->field.lColor, sizeof(Color));
         ls_bufferAddData32(buf, &order->field.rColor, sizeof(Color));
         
@@ -103,6 +110,121 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
     //NOTE: Copy General Info
     ls_bufferAddDWord(buf, curr->inBattle);
     ls_bufferAddDWord(buf, addID);
+}
+
+void CopyStateFromBufferV6(ProgramState *curr, buffer *buf, u32 saveV = global_saveVersion)
+{
+    //NOTE: Copy Init Page
+    InitPage *init = curr->Init;
+    
+    init->Mobs.selectedIndex   = (s32)ls_bufferReadDWord(buf);
+    init->Allies.selectedIndex = (s32)ls_bufferReadDWord(buf);
+    
+    for(u32 i = 0; i < PARTY_NUM; i++)
+    { ls_bufferReadIntoUTF32(buf, &init->PlayerInit[i].text); }
+    
+    for(u32 i = 0; i < ALLY_NUM; i++)
+    {
+        InitField *ally = init->AllyFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_bufferReadIntoUTF32(buf, &ally->editFields[j].text); }
+        
+        if(ally->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(ally->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            ally->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
+        ls_bufferReadIntoUTF32(buf, &ally->maxLife.text);
+        ally->compendiumIdx = ls_bufferReadDWord(buf);
+        ally->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    for(u32 i = 0; i < MOB_NUM; i++)
+    {
+        InitField *mob = init->MobFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_bufferReadIntoUTF32(buf, &mob->editFields[j].text); }
+        
+        if(mob->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(mob->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            mob->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
+        ls_bufferReadIntoUTF32(buf, &mob->maxLife.text);
+        mob->compendiumIdx = ls_bufferReadDWord(buf);
+        mob->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    for(u32 i = 0; i < ORDER_NUM; i++)
+    {
+        Order *order = init->OrderFields + i;
+        
+        ls_bufferReadIntoUTF32(buf, &order->field.text);
+        order->field.currValue = ls_bufferReadDWord(buf);
+        order->field.maxValue  = ls_bufferReadDWord(buf);
+        order->field.minValue  = ls_bufferReadDWord(buf);
+        order->field.currPos   = ls_bufferReadDouble(buf);
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++) // @V7
+        { order->status[statusIdx].check.isActive = FALSE; }
+        
+        ls_bufferReadData32(buf, &order->field.lColor);
+        ls_bufferReadData32(buf, &order->field.rColor);
+        
+        order->compendiumIdx = ls_bufferReadDWord(buf);
+        order->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    init->turnsInRound = ls_bufferReadDWord(buf);
+    init->orderAdjust = ls_bufferReadDWord(buf);
+    
+    ls_bufferReadIntoUTF32(buf, &init->RoundCounter.text);
+    init->roundCount = ls_bufferReadDWord(buf);
+    
+    ls_bufferReadIntoUTF32(buf, &init->Current.text);
+    init->currIdx = ls_bufferReadDWord(buf);
+    
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *counter = init->Counters + i;
+        
+        ls_bufferReadIntoUTF32(buf, &counter->name.text);
+        ls_bufferReadIntoUTF32(buf, &counter->rounds.text);
+        
+        counter->roundsLeft = ls_bufferReadDWord(buf);
+        counter->startIdxInOrder = ls_bufferReadDWord(buf);
+        counter->turnCounter = ls_bufferReadDWord(buf);
+        counter->isActive = ls_bufferReadDWord(buf);
+    }
+    
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrowBox *thrower = init->Throwers + i;
+        
+        ls_bufferReadIntoUTF32(buf, &thrower->name.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->toHit.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->hitRes.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->damage.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->dmgRes.text);
+    }
+    
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.name.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.toHit.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.hitRes.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.damage.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.dmgRes.text);
+    
+    
+    init->EncounterSel.selectedIndex = ls_bufferReadDWord(buf);
+    
+    //NOTE: Copy General Info
+    curr->inBattle = ls_bufferReadDWord(buf);
+    addID          = ls_bufferReadDWord(buf);
 }
 
 void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveVersion)
@@ -161,6 +283,10 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         order->field.maxValue  = ls_bufferReadDWord(buf);
         order->field.minValue  = ls_bufferReadDWord(buf);
         order->field.currPos   = ls_bufferReadDouble(buf);
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+        { order->status[statusIdx].check.isActive = ls_bufferReadDWord(buf); }
         
         ls_bufferReadData32(buf, &order->field.lColor);
         ls_bufferReadData32(buf, &order->field.rColor);
@@ -536,6 +662,11 @@ b32 LoadStateV6(UIContext *c)
     u32 fileVersion = ls_bufferReadDWord(buf);
     if(fileVersion != 6) { ls_bufferDestroy(buf); return FALSE; }
     
+    //NOTE: Random Stuff to de-serialize
+    currentStyle = INIT_STYLE_PRANA; // @V7-V*
+    currentTheme = THEME_DEFAULT;    // @V7-V*
+    
+    //NOTE: Init Starts Here
     addID                          = ls_bufferReadDWord(buf);
     State.inBattle                 = ls_bufferReadDWord(buf);
     State.encounters.numEncounters = ls_bufferReadDWord(buf);
@@ -595,7 +726,7 @@ b32 LoadStateV6(UIContext *c)
         for(u32 i = 0; i < MAX_UNDO_STATES; i++)
         {
             ProgramState *curr = UndoStates + i;
-            CopyStateFromBuffer(curr, buf);
+            CopyStateFromBufferV6(curr, buf);
         }
     }
     
@@ -698,9 +829,14 @@ b32 LoadStateV6(UIContext *c)
         
         f->pos.isReadonly = TRUE;
         
+        //HP Slider
         f->field.maxValue = ls_bufferReadDWord(buf);
         f->field.minValue = ls_bufferReadDWord(buf);
         f->field.currPos  = ls_bufferReadDouble(buf);
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++) // @V7
+        { f->status[statusIdx].check.isActive = FALSE; }
         
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
@@ -803,6 +939,12 @@ void SaveState(UIContext *c)
     buffer *buf = &state;
     
     ls_bufferAddDWord(buf, global_saveVersion);
+    
+    //NOTE: Random stuff to serialize
+    ls_bufferAddDWord(buf, currentStyle);
+    ls_bufferAddDWord(buf, currentTheme);
+    
+    //NOTE: Init Starts Here
     ls_bufferAddDWord(buf, addID);
     ls_bufferAddDWord(buf, State.inBattle);
     ls_bufferAddDWord(buf, State.encounters.numEncounters);
@@ -914,9 +1056,14 @@ void SaveState(UIContext *c)
         
         ls_bufferAddUTF32(buf, f->field.text);
         
+        //HP Slider
         ls_bufferAddDWord(buf,  f->field.maxValue);
         ls_bufferAddDWord(buf,  f->field.minValue);
         ls_bufferAddDouble(buf, f->field.currPos);
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+        { ls_bufferAddDWord(buf, f->status[statusIdx].check.isActive); }
         
         ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
@@ -1016,6 +1163,11 @@ b32 LoadState(UIContext *c)
     u32 fileVersion = ls_bufferReadDWord(buf);
     if(fileVersion != global_saveVersion) { ls_bufferDestroy(buf); return FALSE; }
     
+    //NOTE: Random stuff to de-serialize
+    currentStyle = (InitStyle)ls_bufferReadDWord(buf);
+    currentTheme = (ProgramTheme)ls_bufferReadDWord(buf);
+    
+    //NOTE: Init Starts Here
     addID                          = ls_bufferReadDWord(buf);
     State.inBattle                 = ls_bufferReadDWord(buf);
     State.encounters.numEncounters = ls_bufferReadDWord(buf);
@@ -1179,9 +1331,14 @@ b32 LoadState(UIContext *c)
         
         f->pos.isReadonly = TRUE;
         
+        //HP Slider
         f->field.maxValue = ls_bufferReadDWord(buf);
         f->field.minValue = ls_bufferReadDWord(buf);
         f->field.currPos  = ls_bufferReadDouble(buf);
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+        { f->status[statusIdx].check.isActive = ls_bufferReadDWord(buf); }
         
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);

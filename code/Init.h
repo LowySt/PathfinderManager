@@ -194,6 +194,7 @@ enum StatusType
     STATUS_SPAVENTATO,       // -2 TxC/SavingThrows/Checks
     STATUS_STORDITO,         // -2 CA, lose DEX Bonus to CA
     
+    //NOTE: CAREFUL! For serialization ease new status conditions HAVE to be added after the last one!
     STATUS_COUNT
 };
 

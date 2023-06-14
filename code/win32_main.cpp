@@ -365,6 +365,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //      has ben Initialized to allow data to be properly set.
     b32 result = LoadState(uiContext);
     
+    selectThemeProcs[currentTheme](uiContext, NULL);
+    
     RegionTimer frameTime = {};
     
     b32 Running               = TRUE;
@@ -425,6 +427,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             //NOTETODO: annoying non-global user input
             Input *UserInput = &uiContext->UserInput;
             
+            //TODO: Undo-Redo for StatusConditions
             if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
             {
                 undoRequest = FALSE;
