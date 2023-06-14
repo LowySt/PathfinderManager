@@ -195,7 +195,7 @@ struct RangedWeapon
     RangedWeaponType type;
 };
 
-const s32 rangedWeaponCount = 43;
+const s32 rangedWeaponCount = 44;
 RangedWeapon rangedTable[rangedWeaponCount] = {
     
     //NOTE: Simple Weapons
@@ -221,6 +221,7 @@ RangedWeapon rangedTable[rangedWeaponCount] = {
     { ls_utf32Constant(U"Arco Lungo"), {1, 6}, {1, 8}, {0, 3}, 20, DMG_PIERCING, RANGED_CAT_WAR, RANGED_AIM_STR },
     { ls_utf32Constant(U"Archi Lunghi"), {1, 6}, {1, 8}, {0, 3}, 20, DMG_PIERCING, RANGED_CAT_WAR, RANGED_AIM_STR },
     { ls_utf32Constant(U"Arco Lungo Composito"), {1, 6}, {1, 8}, {0, 3}, 22, DMG_PIERCING, RANGED_CAT_WAR, RANGED_AIM_STR_BON },
+    { ls_utf32Constant(U"arco lungo composito"), {1, 6}, {1, 8}, {0, 3}, 22, DMG_PIERCING, RANGED_CAT_WAR, RANGED_AIM_STR_BON },
     { ls_utf32Constant(U"Chakram (O)"), {1, 6}, {1, 8}, {0, 2}, 6, DMG_SLASHING, RANGED_CAT_WAR, RANGED_THROW },
     { ls_utf32Constant(U"Hunga Munga"), {1, 4}, {1, 6}, {0, 2}, 3, DMG_PIERCING, RANGED_CAT_WAR, RANGED_THROW },
     { ls_utf32Constant(U"Pilum"), {1, 6}, {1, 8}, {0, 2}, 4, DMG_PIERCING, RANGED_CAT_WAR, RANGED_THROW },

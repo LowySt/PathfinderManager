@@ -1798,13 +1798,19 @@ const char32_t *skillNames[] = {
     U"Camuffare", U"Cavalcare", U"Conoscenze", U"Diplomazia", U"Disattivare Congegni",
     U"Furtivit\U000000E0", U"Guarire", U"Intimidire", U"Intrattenere", U"Intuizione", U"Linguistica", U"Nuotare",
     U"Percezione", U"Professione", U"Raggirare", U"Rapidit\U000000E0 di Mano", U"Sapienza Magica", U"Scalare",
-    U"Sopravvivenza", U"Utilizzare Congegni Magici", U"Valutare", U"Volare"
+    U"Sopravvivenza", U"Utilizzare Congegni Magici", U"Valutare", U"Volare",
+    
+    //NOTE: Oddballs
+    U"Esibire", U"Eseguire"
 };
 
 SkillASCat mapPosToCat[] = { 
     SK_DEX, SK_CHA, SK_INT, SK_DEX, SK_CHA, SK_DEX,
     SK_INT, SK_CHA, SK_DEX, SK_DEX, SK_WIS, SK_CHA, SK_CHA, SK_WIS, SK_INT, SK_STR, SK_WIS, SK_WIS,
-    SK_CHA, SK_DEX, SK_INT, SK_STR, SK_WIS, SK_CHA, SK_INT, SK_DEX
+    SK_CHA, SK_DEX, SK_INT, SK_STR, SK_WIS, SK_CHA, SK_INT, SK_DEX,
+    
+    //NOTE: Oddballs
+    SK_CHA, SK_CHA
 };
 constexpr s32 mapPosToCatLen = (sizeof(mapPosToCat) / sizeof(SkillASCat));
 
@@ -2003,7 +2009,6 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
         }
         ls_utf32Append(&resultBlock, { parenBlock.data + currIdx, parenBlock.len - currIdx, parenBlock.len - currIdx });
         
-        ls_utf32Clear(&cachedPage->skills);
         ls_utf32Append(&cachedPage->skills, resultBlock);
         
         return;
@@ -2030,8 +2035,6 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
         
         u32 tmpBuff[32]  = {};
         utf32 tmpString = { tmpBuff, 0, 32 };
-        
-        ls_utf32Clear(&cachedPage->skills);
         
         ls_utf32Append(&cachedPage->skills, {Skill.data, bonus, bonus});
         
@@ -2214,6 +2217,9 @@ b32 onStatusChange(UIContext *c, void *data)
             
             case STATUS_IMMOBILIZZATO: { all[STATUS_LOTTA].check.isActive         = FALSE; } break;
             case STATUS_LOTTA:         { all[STATUS_IMMOBILIZZATO].check.isActive = FALSE; } break;
+            
+            case STATUS_AFFATICATO: { all[STATUS_ESAUSTO].check.isActive = FALSE;    } break;
+            case STATUS_ESAUSTO:    { all[STATUS_AFFATICATO].check.isActive = FALSE; } break;
         }
     }
     
@@ -2551,6 +2557,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     //      Special Attacks
     //      Random Fixes on Attacks/Special Attacks
     //      Maybe DC for Channeling Energy on clerics with Carisma?
+    //TODO: Perception is not being modified by statuses! :StatusPerception
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
@@ -2573,6 +2580,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     cachedPage->origWIS = ls_utf32ToInt(cachedPage->WIS);
     cachedPage->origCHA = ls_utf32ToInt(cachedPage->CHA);
     
+    //NOTE: Cache Status Conditions
+    //TODO: Perception is not being modified by statuses! :StatusPerception
     if(status)
     {
         s32 str = cachedPage->origSTR;
@@ -2584,7 +2593,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
             
             switch(status[i].type)
             {
-                //TODO: Make sure you're not AFFATICATO && ESAUSTO at the same time
                 case STATUS_AFFATICATO:   { str -= 2; dex -= 2; } break;
                 case STATUS_ESAUSTO:      { str -= 6; dex -= 6; } break;
                 case STATUS_INTRALCIATO:  { dex -= 4; }           break;
@@ -2601,7 +2609,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         ls_utf32FromInt_t(&cachedPage->STR, str);
         ls_utf32FromInt_t(&cachedPage->DEX, dex);
     }
-    
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure);
     
@@ -2655,9 +2662,11 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         }
     }
     
+    //NOTE: Racial Mods, Special Qualities
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
     
+    //NOTE: General Battle Stats. AC, HP, Saving Throws, BMC/DMC, Initiative, RD/RI
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
     CalculateAndCacheAC(tempString, cachedPage, FALSE, status);
     ls_utf32Clear(&tempString);
@@ -2699,6 +2708,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics);
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells);
     
+    //NOTE: Mobs don't have tactics/equip/properties or boons. We need to clear it to
+    //      avoid pollution from the previous cachedPage
     ls_utf32Clear(&cachedPage->tactics_before);
     ls_utf32Clear(&cachedPage->tactics_during);
     ls_utf32Clear(&cachedPage->tactics_stats);
@@ -2738,6 +2749,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         }
     }
     
+    //TODO :StatusPerception
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception);
     GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura);
     
@@ -2782,7 +2794,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach);
     
     ls_utf32Clear(&cachedPage->skills);
-    
     s32 i = 0;
     while(page.skills[i])
     {
@@ -2810,21 +2821,24 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
 
 void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
-    u32 tempUTF32Buffer[512] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 512 };
+    u32 tempUTF32Buffer[1024] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 1024 };
     
     Codex *c = &compendium.codex;
     
     cachedPage->pageIndex = viewIndex;
     
     //TODO: What's missing (apart from possible bug fixes)
-    //      TxC + Dmg (There's a lot of exceptions with weapons and it's shit. This is for laater)
+    //      Special Attacks
+    //      Random Fixes on Attacks/Special Attacks
     //      Maybe DC for Channeling Energy on clerics with Carisma?
-    //      Maybe AC Deviation bonus for specific Race/Class combos?
-    //      Skill Checks On Any Ability
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
+    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
+    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs, "gs");
+    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe, "pe");
+    
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR, "str");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX, "dex");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON, "con");
@@ -2833,78 +2847,56 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA, "cha");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
     
+    cachedPage->origSTR = ls_utf32ToInt(cachedPage->STR);
+    cachedPage->origDEX = ls_utf32ToInt(cachedPage->DEX);
+    cachedPage->origCON = ls_utf32ToInt(cachedPage->CON);
+    cachedPage->origINT = ls_utf32ToInt(cachedPage->INT);
+    cachedPage->origWIS = ls_utf32ToInt(cachedPage->WIS);
+    cachedPage->origCHA = ls_utf32ToInt(cachedPage->CHA);
+    
+    //NOTE: Cache Status Conditions
+    if(status)
+    {
+        s32 str = cachedPage->origSTR;
+        s32 dex = cachedPage->origDEX;
+        
+        for(s32 i = 0; i < STATUS_COUNT; i++)
+        {
+            if(!status[i].check.isActive) { continue; }
+            
+            switch(status[i].type)
+            {
+                case STATUS_AFFATICATO:   { str -= 2; dex -= 2; } break;
+                case STATUS_ESAUSTO:      { str -= 6; dex -= 6; } break;
+                case STATUS_INTRALCIATO:  { dex -= 4; }           break;
+                case STATUS_LOTTA:        { dex -= 4; }           break;
+                
+                case STATUS_INDIFESO:     { dex  = 0; }           goto out_of_for_loop;
+                case STATUS_PIETRIFICATO: { dex  = 0; }           goto out_of_for_loop;
+                case STATUS_PARALIZZATO:  { str  = 0; dex  = 0; } goto out_of_for_loop;
+            }
+        }
+        
+        out_of_for_loop:
+        
+        ls_utf32FromInt_t(&cachedPage->STR, str);
+        ls_utf32FromInt_t(&cachedPage->DEX, dex);
+    }
+    
+    
+    //NOTE: NPCs don't have a treasure field. We must clear to avoid pollution from the previous cachedPage
     ls_utf32Clear(&cachedPage->treasure);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "short_desc");
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
     
+    //NOTE: NPC Specific Equip, Properties, Boons
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->given_equip, page.given_equip, "given_equip");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->properties, page.properties, "properties");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->boons, page.boons, "boons");
     
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "AC");
-    CalculateAndCacheAC(tempString, cachedPage, TRUE);
-    ls_utf32Clear(&tempString);
-    
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "HP");
-    CalculateAndCacheHP(tempString, cachedPage);
-    ls_utf32Clear(&tempString);
-    
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "ST");
-    CalculateAndCacheST(tempString, cachedPage);
-    ls_utf32Clear(&tempString);
-    
-    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC, "BMC");
-    CalculateAndCacheBMC(tempString, cachedPage);
-    ls_utf32Clear(&tempString);
-    
-    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC, "DMC");
-    CalculateAndCacheDMC(tempString, cachedPage);
-    ls_utf32Clear(&tempString);
-    
-    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative, "initiative");
-    CalculateAndCacheInitiative(tempString, cachedPage);
-    ls_utf32Clear(&tempString);
-    
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD, "RD");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI, "RI");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "Def.Cap");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->melee, page.melee, "Melee");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->ranged, page.ranged, "Ranged");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "Spec.Atk");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych, "Psych");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics, "Magics");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells, "Spells");
-    
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_before, page.tactics[0], "tactics-before");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_during, page.tactics[1], "tactics-during");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_stats,  page.tactics[2], "tactics-stats");
-    
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racial mods");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
-    
-    ls_utf32Clear(&cachedPage->specials);
-    if(page.specials[0])
-    {
-        GetEntryFromBuffer_t(&c->specials, &cachedPage->specials, page.specials[0], "specials");
-        u32 i = 1;
-        while(page.specials[i] && i < 24)
-        {
-            AppendEntryFromBuffer(&c->specials, &cachedPage->specials, U"\n\n", page.specials[i], "specials");
-            i += 1;
-        }
-    }
-    
-    ls_utf32Clear(&cachedPage->org);
-    
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
-    
-    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
-    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs, "gs");
-    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe, "pe");
-    GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "align");
+    //NOTE: Type, SubTypes, ArcheTypes
     GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type, "type");
     
     ls_utf32Clear(&cachedPage->subtype);
@@ -2934,6 +2926,92 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
         }
         ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
     }
+    
+    //NOTE: Early talents are for attack modifiers!
+    //TODO: I should create an enum and save the existence of certain talents
+    //      into an array, to be more efficiently used later!!
+    ls_utf32Clear(&cachedPage->talents);
+    if(page.talents[0])
+    {
+        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0], "talents");
+        u32 i = 1;
+        while(page.talents[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->talents, &cachedPage->talents, U", ", page.talents[i], "talents");
+            i += 1;
+        }
+    }
+    
+    //NOTE: Racial Mods, Special Qualities
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racial mods");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
+    
+    //NOTE: General Battle Stats. AC, HP, Saving Throws, BMC/DMC, Initiative, RD/RI
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "AC");
+    CalculateAndCacheAC(tempString, cachedPage, TRUE, status);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "HP");
+    CalculateAndCacheHP(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "ST");
+    CalculateAndCacheST(tempString, cachedPage, status);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC, "BMC");
+    CalculateAndCacheBMC(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC, "DMC");
+    CalculateAndCacheDMC(tempString, cachedPage);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative, "initiative");
+    CalculateAndCacheInitiative(tempString, cachedPage, status);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD, "RD");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI, "RI");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "Def.Cap");
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee, "Melee");
+    CalculateAndCacheMelee(tempString, cachedPage, status);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged, "Ranged");
+    CalculateAndCacheRanged(tempString, cachedPage, status);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "Spec.Atk");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych, "Psych");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics, "Magics");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells, "Spells");
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_before, page.tactics[0], "tactics-before");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_during, page.tactics[1], "tactics-during");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_stats,  page.tactics[2], "tactics-stats");
+    
+    ls_utf32Clear(&cachedPage->specials);
+    if(page.specials[0])
+    {
+        GetEntryFromBuffer_t(&c->specials, &cachedPage->specials, page.specials[0], "specials");
+        u32 i = 1;
+        while(page.specials[i] && i < 24)
+        {
+            AppendEntryFromBuffer(&c->specials, &cachedPage->specials, U"\n\n", page.specials[i], "specials");
+            i += 1;
+        }
+    }
+    
+    //NOTE: NPCs don't have an org field. We need to clear it to avoid pollution from the previous cachedPage
+    ls_utf32Clear(&cachedPage->org);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
+    
+    
+    GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "align");
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
@@ -2990,28 +3068,15 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space, "space");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach, "reach");
     
-    ls_utf32Clear(&cachedPage->talents);
-    if(page.talents[0])
-    {
-        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0], "talents");
-        u32 i = 1;
-        while(page.talents[i] && i < 24)
-        {
-            AppendEntryFromBuffer(&c->talents, &cachedPage->talents, U", ", page.talents[i], "talents");
-            i += 1;
-        }
-    }
-    
     ls_utf32Clear(&cachedPage->skills);
-    if(page.skills[0])
+    s32 i = 0;
+    while(page.skills[i])
     {
-        GetEntryFromBuffer_t(&c->skills, &cachedPage->skills, page.skills[0], "skills");
-        u32 i = 1;
-        while(page.skills[i] && i < 24)
-        {
-            AppendEntryFromBuffer(&c->skills, &cachedPage->skills, U", ", page.skills[i], "skills");
-            i += 1;
-        }
+        GetEntryFromBuffer_t(&c->skills, &tempString, page.skills[i]);
+        CalculateAndCacheSkill(tempString, cachedPage, status);
+        if(i < 23 && page.skills[i+1] != 0) { ls_utf32Append(&cachedPage->skills, ls_utf32Constant(U", ")); }
+        ls_utf32Clear(&tempString);
+        i += 1;
     }
     
     ls_utf32Clear(&cachedPage->languages);
@@ -3026,6 +3091,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
         }
     }
     
+    //NOTE: NPCs don't have an environment field. We need to clear it to avoid pollution from the previous cachedPage
     ls_utf32Clear(&cachedPage->environment);
 }
 

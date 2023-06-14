@@ -164,7 +164,7 @@ struct EncList
     Encounter Enc[64];
 };
 
-const s32 STATUS_TOOLTIP_DT = 350;
+const s32 STATUS_TOOLTIP_DT = 450;
 
 enum StatusType
 {

@@ -44,6 +44,9 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
         NPCPageEntry pEntry = compendium.codex.npcPages[i];
         CachePage(pEntry, i, &dummy, NULL);
         
+        len = ls_utf32ToAscii_t(&dummy.name, buff, 64);
+        if(logNames) { ls_log("{string}", string({buff, len, len})); }
+        
         f32 fract = (f32)i / (f32)compendium.codex.npcPages.count;
         if((fract > 0.1) && (hasMessaged1 == FALSE))  { ls_log("10% of NPCs Done"); hasMessaged1 = TRUE; }
         if((fract > 0.25) && (hasMessaged2 == FALSE)) { ls_log("25% of NPCs Done"); hasMessaged2 = TRUE; }
