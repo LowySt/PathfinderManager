@@ -500,7 +500,6 @@ s64 leftFindBonus(utf32 key, s32 offset, s32 max)
 
 s64 leftFindDiceThrow(utf32 key, s32 offset, s32 max)
 {
-    
     s32 diceIdx = ls_utf32LeftFind(key, offset+1, 'd');
     if(diceIdx == -1) { return -1; }
     
@@ -512,6 +511,10 @@ s64 leftFindDiceThrow(utf32 key, s32 offset, s32 max)
            (ls_utf32IsNumber(key.data[diceIdx+1]) == TRUE))
         { 
             s32 end = ls_utf32LeftFindNotNumber(key, diceIdx+1);
+            //NOTE: If end == -1 it means it never found a NON number character.
+            //      So the number goes until the end of the string and end == key.len
+            if(end == -1) { end = key.len; }
+            
             return ((s64)diceIdx << 32) | end;
         }
         
@@ -1025,57 +1028,64 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
     
     utf32 hpExpr    = {hp.data + hpExprBegin, hpExprLen, hpExprLen};
     
-    s32 dToken      = ls_utf32LeftFind(hpExpr, (u32)'d');
-    s32 plusToken   = ls_utf32LeftFind(hpExpr, (u32)'+');
-    s32 minusToken  = ls_utf32LeftFind(hpExpr, (u32)'-');
-    s32 flatLen     = hpExprLen - plusToken - 1;
+    s64 diceThrows[8] = {};
     
-    //NOTE: If the parser fails, we just set the finalHP to -1. The program will not crash
-    //      And the error should be clearly visible.
-    s32 finalHP = -1;
-    if(dToken != -1)
+    s64 firstDiceThrow = leftFindDiceThrow(hpExpr, 0, hpExpr.len);
+    AssertMsg(firstDiceThrow != -1, "No HP Dice?\n");
+    
+    diceThrows[0] = firstDiceThrow;
+    
+    s32 throwBegin = firstDiceThrow >> 32;
+    s32 throwEnd   = (s32)firstDiceThrow;
+    
+    //NOTE: There might be multiple HP Dice because of multiple Class Levels
+    s64 throwBonus = leftFindDiceBonus(hpExpr, throwBegin+1, hpExpr.len);
+    s32 dIdx = 1;
+    while(throwBonus == -1)
     {
-        if(plusToken != -1)
-        {
-            s32 mulLen   = plusToken - dToken - 1;
-            
-            s32 dieValue = ls_utf32ToInt({hpExpr.data, dToken, dToken});
-            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, mulLen, mulLen});
-            s32 flatVal  = ls_utf32ToInt({hpExpr.data + plusToken+1, flatLen, flatLen});
-            
-            //NOTE: The flatVal is multiplied by 2 because the CON bonus is doubled.
-            finalHP  = dieValue*dieMul + (flatVal * 2);
-        }
-        else if(minusToken != -1)
-        {
-            s32 mulLen   = minusToken - dToken - 1;
-            
-            s32 dieValue = ls_utf32ToInt({hpExpr.data, dToken, dToken});
-            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, mulLen, mulLen});
-            s32 flatVal  = ls_utf32ToInt({hpExpr.data + minusToken+1, flatLen, flatLen});
-            
-            //NOTE: The flatVal is multiplied by 2 because the CON bonus is doubled.
-            finalHP  = dieValue*dieMul - (flatVal * 2);
-        }
-        else
-        {
-            s32 mulLen   = hpExprLen - dToken - 1;
-            
-            s32 dieValue = ls_utf32ToInt({hpExpr.data, dToken, dToken});
-            s32 dieMul   = ls_utf32ToInt({hpExpr.data + dToken+1, mulLen, mulLen});
-            
-            finalHP  = dieValue*dieMul;
-        }
+        diceThrows[dIdx] = leftFindDiceThrow(hpExpr, throwBegin+1, hpExpr.len);
+        if(diceThrows[dIdx] == -1) { break; } //NOTE: Means there's only dice throws, no bonus
+        
+        dIdx += 1;
+        
+        throwBegin = diceThrows[dIdx-1] >> 32;
+        throwEnd   = (s32)diceThrows[dIdx-1];
+        
+        throwBonus = leftFindDiceBonus(hpExpr, throwBegin+1, hpExpr.len);
     }
     
-    s32 restLen       = hp.len - hpEndIndex;
+    //NOTE: We should have found ALL dice throws, and the bonus if it exists.
+    s32 finalHP = 0;
+    s32 currIdx = 0;
+    for(s32 i = 0; i < dIdx; i++)
+    {
+        s32 throwD       = diceThrows[i] >> 32;
+        s32 throwEnd     = (s32)diceThrows[i];
+        
+        utf32 dieValExpr = {hpExpr.data + currIdx, throwD - currIdx, throwD - currIdx};
+        utf32 dieMulExpr = {hpExpr.data + throwD+1, throwEnd - throwD - 1, throwEnd - throwD - 1};
+        s32 dieValue     = ls_utf32ToIntIgnoreWhitespace(dieValExpr);
+        s32 dieMul       = ls_utf32ToIntIgnoreWhitespace(dieMulExpr);
+        
+        currIdx  = throwEnd;
+        
+        finalHP += dieValue*dieMul;
+    }
+    
+    s32 flatBegin = throwBonus >> 32;
+    s32 flatEnd   = (s32)throwBonus;
+    
+    s32 flatVal   = ls_utf32ToIntIgnoreWhitespace({hpExpr.data + flatBegin, flatEnd - flatBegin, flatEnd - flatBegin});
+    
+    finalHP      += flatVal * 2;
+    
     ls_utf32FromInt_t(&cachedPage->HP, finalHP);
     
     //NOTE: We copy the current cachedPage->HP into totHP to basically create a view into 
     //      the cachedPage->HP string, and only keep the total value!
     cachedPage->totHP = cachedPage->HP;
     
-    ls_utf32AppendBuffer(&cachedPage->HP, hp.data + hpEndIndex, restLen);
+    ls_utf32Append(&cachedPage->HP, {hp.data + hpEndIndex, hp.len - hpEndIndex, hp.len - hpEndIndex });
     
     return;
 }
@@ -2301,7 +2311,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->specials          = ls_utf32Alloc(maxTalents * 2048);
     
     cachedPage->org               = ls_utf32Alloc(512);
-    cachedPage->treasure          = ls_utf32Alloc(512);
+    cachedPage->treasure          = ls_utf32Alloc(576);
     cachedPage->desc              = ls_utf32Alloc(10240);
     cachedPage->source            = ls_utf32Alloc(256);
     
@@ -2326,7 +2336,6 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->space             = ls_utf32Alloc(32);
     cachedPage->reach             = ls_utf32Alloc(768);
     
-    //TODO: Pre-merge all these, doens't make sense not to.
     cachedPage->STR               = ls_utf32Alloc(32);
     cachedPage->DEX               = ls_utf32Alloc(32);
     cachedPage->CON               = ls_utf32Alloc(32);
