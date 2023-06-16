@@ -86,10 +86,10 @@ b32 selectThemeLight(UIContext *c, void *data)
 {
     currentTheme = THEME_LIGHT;
     
-    c->backgroundColor = RGBg(0x99);
+    c->backgroundColor = RGBg(0xEE);
     c->highliteColor   = RGB(0xAA, 0x99, 0xAA);
     c->pressedColor    = RGB(0xBB, 0x99, 0xAA);
-    c->widgetColor     = RGBg(0x88);
+    c->widgetColor     = RGBg(0xBB);
     c->borderColor     = RGBg(0x00);
     c->textColor       = RGBg(0x33);
     c->invWidgetColor  = RGB(7, 5, 43);
