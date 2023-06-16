@@ -375,9 +375,18 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 userInputConsumed     = FALSE;
     b32 externalInputReceived = FALSE;
     
-    
     while(Running)
     {
+        u32 frameLockMain       = 16;
+        u32 frameLockCompendium = 16;
+        
+        //NOTE: The child frame doesn't need a message pump, because windows
+        //      Pumps messages to all windows that were created by this thread.
+        //      BUT This means that we must begin the child frame before the main frame
+        //      to properly clear input.
+        //      TODO: Maybe we want to move the message pump to a separate function
+        //      to make the order of function calls more obvious and less error prone!
+        ls_uiFrameBeginChild(compendiumContext);
         ls_uiFrameBegin(uiContext);
         
         //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
@@ -418,7 +427,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 }
             }
             
-            Sleep(32);
+            frameLockMain = 32;
         }
         else
         {
@@ -566,9 +575,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         //-------------------------------
         //NOTE: Begin Compendium Frame
-        //TODO: Put this shit in another thread!!!
-        
-        ls_uiFrameBeginChild(compendiumContext);
         
         //TODO: Skip drawing the compendium if the window is closed
         //      But also update the window on first entry. For some reason, putting the entire
@@ -589,6 +595,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                     ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[zLayer]);
                 }
             }
+            
+            frameLockCompendium = 32;
         }
         else
         {
@@ -648,11 +656,34 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_arenaClear(renderArena);
             //
             // ----------------
+            
+            if(compendiumContext->UserInput.Keyboard.currentState.keyMap::F12 == 1 && 
+               compendiumContext->UserInput.Keyboard.prevState.keyMap::F12 == 0) { showDebug = !showDebug; }
+            
+            if(showDebug)
+            {
+                ls_uiFillRect(compendiumContext, 762, 620, 20, 20, UIRect {0, (s32)compendiumContext->width, 0, (s32)compendiumContext->height},
+                              compendiumContext->scissor, {}, compendiumContext->backgroundColor);
+                ls_utf32FromInt_t(&frameTimeString, compendiumContext->dt);
+                ls_uiGlyphString(compendiumContext, compendiumContext->currFont, 762, 620,
+                                 UIRect {(s32)compendiumContext->width/2, 0, (s32)compendiumContext->width, (s32)compendiumContext->height},
+                                 compendiumContext->scissor, {}, frameTimeString, RGBg(0xEE));
+                
+                ls_uiFillRect(compendiumContext, windowWidth/2, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
+                              compendiumContext->scissor, {},RGB(0xFF, 0xFF, 0));
+                
+                ls_uiFillRect(compendiumContext, windowWidth/4, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
+                              compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(compendiumContext, 3*windowWidth/4, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
+                              compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(compendiumContext, 0, windowHeight/3, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
+                              compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(compendiumContext, 0, 2*windowHeight/3, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
+                              compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                
+            }
+            
         }
-        
-        //TODO: Something fucky going on here. It should run as fast as it can,
-        //      but it definately goes slower than 30 fps when dragging?????
-        ls_uiFrameEndChild(compendiumContext, 0);
         
         //NOTE: End Compendium Frame
         //-------------------------------
@@ -670,7 +701,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         beginT = endT;
         
-        const u32 frameLock = 16;
+        const s32 frameLock = ls_min((s32)frameLockCompendium, (s32)frameLockMain);
+        ls_uiFrameEndChild(compendiumContext, frameLock);
         ls_uiFrameEnd(uiContext, frameLock);
     }
     
