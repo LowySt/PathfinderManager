@@ -3290,8 +3290,9 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     s32 prevPixelHeight = 0;
     s32 currPixelHeight = 0;
     
-    Color pureWhite = RGBg(0xFF);
-    c->textColor    = RGBg(0xAA);
+    Color originalTextColor = c->textColor;
+    Color pureWhite         = RGBg(0xFF);
+    c->textColor            = RGBg(0xAA);
     
     UIRect baseR  = { c->scroll.x + 10, baseY, maxW, minY };
     UIRect alignR = { baseX, baseY, maxW, minY };
@@ -3757,7 +3758,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         baseR.y -= offset.maxY;
     }
     
-    c->textColor = RGBg(0xCC);
+    c->textColor = originalTextColor;
     
     return baseR.y;
 }
