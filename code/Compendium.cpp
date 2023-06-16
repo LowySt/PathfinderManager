@@ -222,8 +222,13 @@ struct Compendium
 {
     Codex codex;
     
-    UITextBox  searchBarMobs;
-    UITextBox  searchBarNPCs;
+    UITextBox  searchBarNameMobs;
+    UITextBox  searchBarGSMobs;
+    UITextBox  searchBarTypeMobs;
+    
+    UITextBox  searchBarNameNPCs;
+    UITextBox  searchBarGSNPCs;
+    UITextBox  searchBarTypeNPCs;
     
     b32        isViewingPage;
     s32        pageIndex = -1;
@@ -288,33 +293,46 @@ b32 CompendiumOpenNPCTable(UIContext *c, void *userData)
     return FALSE;
 }
 
-u16 findNeedleAndFillIndexBuffer(utf8 needle, u16 *namesIndexBuffer, u32 buffSize)
+enum SearchKind
+{
+    SEARCH_NAME,
+    SEARCH_GS,
+    SEARCH_TYPE,
+};
+
+struct CompendiumSearchData
+{ 
+    UITextBox *searchBar;
+    buffer *searchBuffer;
+    SearchKind kind;
+};
+
+u16 findNeedleAndFillIndexBuffer(utf8 needle, u16 *indexBuffer, buffer *buf, u32 buffSize)
 {
     u8 dataBuffer[128] = {};
     utf8 toMatchLower = { dataBuffer, 0, 0, 128 };
     
-    buffer *names = &compendium.codex.names;
-    names->cursor = 4;
+    buf->cursor = 4;
     
     u16 nibCount = 0;
-    while(names->cursor < names->size)
+    while(buf->cursor < buf->size)
     {
         if(nibCount > buffSize)
         { AssertMsg(FALSE, "Index Buffer when searching is not large enough\n"); return nibCount; }
         
-        s32 strByteLen = ls_bufferPeekWord(names);
-        u8 *data       = (u8 *)names->data + names->cursor + 2;
+        s32 strByteLen = ls_bufferPeekWord(buf);
+        u8 *data       = (u8 *)buf->data + buf->cursor + 2;
         
         utf8 toMatch   = ls_utf8Constant(data, strByteLen);
         ls_utf8ToLower(&toMatchLower, toMatch);
         
         if(ls_utf8Contains(toMatchLower, needle))
         {
-            namesIndexBuffer[nibCount] = names->cursor;
+            indexBuffer[nibCount] = buf->cursor;
             nibCount += 1;
         }
         
-        ls_bufferReadSkip(names, strByteLen + 2);
+        ls_bufferReadSkip(buf, strByteLen + 2);
     }
     
     return nibCount;
@@ -324,10 +342,16 @@ b32 CompendiumSearchFunctionMobs(UIContext *c, void *userData)
 {
     ls_arenaUse(compTempArena);
     
+    CompendiumSearchData *searchData = (CompendiumSearchData *)userData;
+    
     //NOTE: Reset the scrollbar when searching
     tableScroll.deltaY = 0;
     
-    if(compendium.searchBarMobs.text.len < 2)
+    //NOTE: The limit under which we reset the view and stop searching
+    s32 minCharLimit = 2;
+    if(searchData->kind == SEARCH_GS) { minCharLimit = 1; }
+    
+    if(searchData->searchBar->text.len < minCharLimit)
     { 
         tableScroll.minY = -((compendium.codex.pages.count-30) * 19);
         ls_arrayClear(&compendium.viewIndices);
@@ -338,44 +362,88 @@ b32 CompendiumSearchFunctionMobs(UIContext *c, void *userData)
     }
     
     //NOTE:Iterate over the name buffer to find all names which exactly contain the substring needle
-    utf8 needle = ls_utf8FromUTF32(compendium.searchBarMobs.text);
+    utf8 needle = ls_utf8FromUTF32(searchData->searchBar->text);
     
     u8 dataBuffer[128] = {};
     utf8 needleLower = { dataBuffer, 0, 0, 128 };
     
     ls_utf8ToLower(&needleLower, needle);
     
-    u16 namesIndexBuffer[4096] = {};
-    u16 nibCount = findNeedleAndFillIndexBuffer(needleLower, namesIndexBuffer, 4096);
+    u16 indexBuffer[4096] = {};
+    u16 nibCount = findNeedleAndFillIndexBuffer(needleLower, indexBuffer, searchData->searchBuffer, 4096);
     
     //TODO: Put the needle on the stack
     ls_utf8Free(&needle);
-    
-    //NOTE: Adjust scrollbar height to new monster table count.
-    tableScroll.minY = -((nibCount-30) * 19);
     
     if(nibCount > 0)
     {
         ls_arrayClear(&compendium.viewIndices);
         
         //NOTE: Now that we have a buffer of all matching name indices, let's search through the actual pages
+        b32 shouldStop = FALSE;
         for(u16 i = 0; i < compendium.codex.pages.count; i++)
         {
-            u16 indexToMatch = compendium.codex.pages[i].name;
-            for(u32 j = 0; j < nibCount; j++)
+            if(nibCount == 0)      { break; }
+            if(shouldStop == TRUE) { break; }
+            
+            switch(searchData->kind)
             {
-                if(namesIndexBuffer[j] == indexToMatch)
-                {
-                    //NOTE: Remove from the namesIndexBuffer and add to the viewIndices array
-                    ls_arrayAppend(&compendium.viewIndices, i);
+                case SEARCH_NAME:
+                { 
+                    u16 indexToMatch = compendium.codex.pages[i].name;
                     
-                    namesIndexBuffer[j] = namesIndexBuffer[nibCount-1];
-                    nibCount -= 1;
-                    break;
-                }
+                    for(u32 j = 0; j < nibCount; j++)
+                    {
+                        if(indexBuffer[j] == indexToMatch)
+                        {
+                            ls_arrayAppend(&compendium.viewIndices, i);
+                            
+                            indexBuffer[j] = indexBuffer[nibCount-1];
+                            nibCount -= 1;
+                            break;
+                        }
+                    }
+                    
+                } break;
+                
+                case SEARCH_GS:
+                {
+                    u16 indexToMatch = compendium.codex.pages[i].gs;
+                    
+                    //NOTE: Quick exit since GS only increases. *SHOULD* not create problems?
+                    if(indexToMatch > indexBuffer[nibCount-1]) { shouldStop = TRUE; }
+                    
+                    for(u32 j = 0; j < nibCount; j++)
+                    {
+                        if(indexBuffer[j] == indexToMatch)
+                        {
+                            ls_arrayAppend(&compendium.viewIndices, i);
+                            break;
+                        }
+                    }
+                } break;
+                
+                case SEARCH_TYPE:
+                {
+                    u16 indexToMatch = compendium.codex.pages[i].type;
+                    
+                    for(u32 j = 0; j < nibCount; j++)
+                    {
+                        if(indexBuffer[j] == indexToMatch)
+                        {
+                            ls_arrayAppend(&compendium.viewIndices, i);
+                            break;
+                        }
+                    }
+                } break;
             }
         }
     }
+    
+    //NOTE: Adjust scrollbar height to new monster table count.
+    if(compendium.viewIndices.count > 30) { tableScroll.minY = -((compendium.viewIndices.count-30) * 19); }
+    else                                  { tableScroll.minY = -1; }
+    
     
     ls_arenaUse(globalArena);
     
@@ -386,10 +454,16 @@ b32 CompendiumSearchFunctionNPCs(UIContext *c, void *userData)
 {
     ls_arenaUse(compTempArena);
     
+    CompendiumSearchData *searchData = (CompendiumSearchData *)userData;
+    
     //NOTE: Reset the scrollbar when searching
     npcTableScroll.deltaY = 0;
     
-    if(compendium.searchBarNPCs.text.len < 2)
+    //NOTE: The limit under which we reset the view and stop searching
+    s32 minCharLimit = 2;
+    if(searchData->kind == SEARCH_GS) { minCharLimit = 1; }
+    
+    if(searchData->searchBar->text.len < minCharLimit)
     { 
         npcTableScroll.minY = -((compendium.codex.npcPages.count-30) * 19);
         ls_arrayClear(&compendium.npcViewIndices);
@@ -400,44 +474,86 @@ b32 CompendiumSearchFunctionNPCs(UIContext *c, void *userData)
     }
     
     //NOTE:Iterate over the name buffer to find all names which exactly contain the substring needle
-    utf8 needle = ls_utf8FromUTF32(compendium.searchBarNPCs.text);
+    utf8 needle = ls_utf8FromUTF32(searchData->searchBar->text);
     
     u8 dataBuffer[128] = {};
     utf8 needleLower = { dataBuffer, 0, 0, 128 };
     
     ls_utf8ToLower(&needleLower, needle);
     
-    u16 namesIndexBuffer[4096] = {};
-    u16 nibCount = findNeedleAndFillIndexBuffer(needleLower, namesIndexBuffer, 4096);
+    u16 indexBuffer[4096] = {};
+    u16 nibCount = findNeedleAndFillIndexBuffer(needleLower, indexBuffer, searchData->searchBuffer, 4096);
     
     //TODO: Put the needle on the stack
     ls_utf8Free(&needle);
-    
-    //NOTE: Adjust scrollbar height to new monster table count.
-    npcTableScroll.minY = -((nibCount-30) * 19);
     
     if(nibCount > 0)
     {
         ls_arrayClear(&compendium.npcViewIndices);
         
         //NOTE: Now that we have a buffer of all matching name indices, let's search through the actual pages
+        b32 shouldStop = FALSE;
         for(u16 i = 0; i < compendium.codex.npcPages.count; i++)
         {
-            u16 indexToMatch = compendium.codex.npcPages[i].name;
-            for(u32 j = 0; j < nibCount; j++)
+            if(nibCount == 0)      { break; }
+            if(shouldStop == TRUE) { break; }
+            
+            switch(searchData->kind)
             {
-                if(namesIndexBuffer[j] == indexToMatch)
+                case SEARCH_NAME:
                 {
-                    //NOTE: Remove from the namesIndexBuffer and add to the viewIndices array
-                    ls_arrayAppend(&compendium.npcViewIndices, i);
+                    u16 indexToMatch = compendium.codex.npcPages[i].name;
                     
-                    namesIndexBuffer[j] = namesIndexBuffer[nibCount-1];
-                    nibCount -= 1;
-                    break;
-                }
+                    for(u32 j = 0; j < nibCount; j++)
+                    {
+                        if(indexBuffer[j] == indexToMatch)
+                        {
+                            ls_arrayAppend(&compendium.npcViewIndices, i);
+                            
+                            indexBuffer[j] = indexBuffer[nibCount-1];
+                            nibCount -= 1;
+                            break;
+                        }
+                    }
+                } break;
+                
+                case SEARCH_GS:
+                {
+                    u16 indexToMatch = compendium.codex.npcPages[i].gs;
+                    
+                    //NOTE: Quick exit since GS only increases. *SHOULD* not create problems?
+                    if(indexToMatch > indexBuffer[nibCount-1]) { shouldStop = TRUE; }
+                    
+                    for(u32 j = 0; j < nibCount; j++)
+                    {
+                        if(indexBuffer[j] == indexToMatch)
+                        {
+                            ls_arrayAppend(&compendium.npcViewIndices, i);
+                            break;
+                        }
+                    }
+                } break;
+                
+                case SEARCH_TYPE:
+                {
+                    u16 indexToMatch = compendium.codex.npcPages[i].type;
+                    
+                    for(u32 j = 0; j < nibCount; j++)
+                    {
+                        if(indexBuffer[j] == indexToMatch)
+                        {
+                            ls_arrayAppend(&compendium.npcViewIndices, i);
+                            break;
+                        }
+                    }
+                } break;
             }
         }
     }
+    
+    //NOTE: Adjust scrollbar height to new table count.
+    if(compendium.npcViewIndices.count > 30) { npcTableScroll.minY = -((compendium.npcViewIndices.count-30) * 19); }
+    else                                     { npcTableScroll.minY = -1; }
     
     ls_arenaUse(globalArena);
     
@@ -2535,9 +2651,35 @@ void SetMonsterTable(UIContext *c)
     s32 monsterTableMinY = -((codex->pages.count-30) * 19);
     tableScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, monsterTableMinY };
     
-    compendium.searchBarMobs.text = ls_utf32Alloc(64);
-    compendium.searchBarMobs.postInput = CompendiumSearchFunctionMobs;
-    compendium.searchBarMobs.isSingleLine = TRUE;
+    CompendiumSearchData *nameSearchMob = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
+    nameSearchMob->searchBar            = &compendium.searchBarNameMobs;
+    nameSearchMob->searchBuffer         = &compendium.codex.names;
+    nameSearchMob->kind                 = SEARCH_NAME;
+    
+    compendium.searchBarNameMobs.text         = ls_utf32Alloc(64);
+    compendium.searchBarNameMobs.postInput    = CompendiumSearchFunctionMobs;
+    compendium.searchBarNameMobs.data         = nameSearchMob;
+    compendium.searchBarNameMobs.isSingleLine = TRUE;
+    
+    CompendiumSearchData *gsSearchMob = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
+    gsSearchMob->searchBar            = &compendium.searchBarGSMobs;
+    gsSearchMob->searchBuffer         = &compendium.codex.gs;
+    gsSearchMob->kind                 = SEARCH_GS;
+    
+    compendium.searchBarGSMobs.text         = ls_utf32Alloc(8);
+    compendium.searchBarGSMobs.postInput    = CompendiumSearchFunctionMobs;
+    compendium.searchBarGSMobs.data         = gsSearchMob;
+    compendium.searchBarGSMobs.isSingleLine = TRUE;
+    
+    CompendiumSearchData *typeSearchMob = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
+    typeSearchMob->searchBar            = &compendium.searchBarTypeMobs;
+    typeSearchMob->searchBuffer         = &compendium.codex.types;
+    typeSearchMob->kind                 = SEARCH_TYPE;
+    
+    compendium.searchBarTypeMobs.text         = ls_utf32Alloc(64);
+    compendium.searchBarTypeMobs.postInput    = CompendiumSearchFunctionMobs;
+    compendium.searchBarTypeMobs.data         = typeSearchMob;
+    compendium.searchBarTypeMobs.isSingleLine = TRUE;
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
@@ -2551,37 +2693,42 @@ void SetNPCTable(UIContext *c)
     s32 npcTableMinY = -((codex->npcPages.count-30) * 19);
     npcTableScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, npcTableMinY };
     
-    compendium.searchBarNPCs.text = ls_utf32Alloc(64);
-    compendium.searchBarNPCs.postInput = CompendiumSearchFunctionNPCs;
-    compendium.searchBarNPCs.isSingleLine = TRUE;
+    CompendiumSearchData *nameSearchNPC = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
+    nameSearchNPC->searchBar            = &compendium.searchBarNameNPCs;
+    nameSearchNPC->searchBuffer         = &compendium.codex.names;
+    nameSearchNPC->kind                 = SEARCH_NAME;
+    
+    UITextBox *name    = &compendium.searchBarNameNPCs;
+    name->text         = ls_utf32Alloc(64);
+    name->postInput    = CompendiumSearchFunctionNPCs;
+    name->data         = nameSearchNPC;
+    name->isSingleLine = TRUE;
+    
+    CompendiumSearchData *gsSearchNPC = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
+    gsSearchNPC->searchBar            = &compendium.searchBarGSNPCs;
+    gsSearchNPC->searchBuffer         = &compendium.codex.gs;
+    gsSearchNPC->kind                 = SEARCH_GS;
+    
+    UITextBox *gs    = &compendium.searchBarGSNPCs;
+    gs->text         = ls_utf32Alloc(8);
+    gs->postInput    = CompendiumSearchFunctionNPCs;
+    gs->data         = gsSearchNPC;
+    gs->isSingleLine = TRUE;
+    
+    CompendiumSearchData *typeSearchNPC = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
+    typeSearchNPC->searchBar            = &compendium.searchBarTypeNPCs;
+    typeSearchNPC->searchBuffer         = &compendium.codex.types;
+    typeSearchNPC->kind                 = SEARCH_TYPE;
+    
+    UITextBox *type    = &compendium.searchBarTypeNPCs;
+    type->text         = ls_utf32Alloc(64);
+    type->postInput    = CompendiumSearchFunctionNPCs;
+    type->data         = typeSearchNPC;
+    type->isSingleLine = TRUE;
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
     return;
-}
-
-void GetEntryAndConvertAC(buffer *buf, utf32 *toSet, u32 index)
-{
-    if(index == 0) { toSet->len = 0; return; } //NOTE: Index zero means no entry
-    
-    buf->cursor = index;
-    
-    s32 byteLen   = ls_bufferPeekWord(buf);
-    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
-    
-    u32 len = ls_utf8Len(utf8_data, byteLen);
-    
-    LogMsgF(toSet->size >= len, "Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", toSet->size, len, byteLen, index);
-    
-    //NOTE: Parse the AC line, and convert every element to the Prana Ruleset
-    
-    utf8 s = ls_utf8Constant((u8 *)utf8_data, byteLen);
-    
-    AssertMsg(FALSE, "Not Implemented Yet\n");
-    
-    //ls_utf32FromUTF8_t(toSet, utf8_data, len);
-    
-    ls_bufferSeekBegin(buf);
 }
 
 void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
@@ -3625,7 +3772,9 @@ void DrawNPCTable(UIContext *c)
     s32 baseX = 20;
     s32 baseY = 630;
     
-    ls_uiTextBox(c, &compendium.searchBarNPCs, baseX, baseY + 40, 200, 20);
+    ls_uiTextBox(c, &compendium.searchBarNameNPCs, baseX, baseY + 40, 200, 20);
+    ls_uiTextBox(c, &compendium.searchBarGSNPCs,   baseX + 295, baseY + 40, 60, 20);
+    ls_uiTextBox(c, &compendium.searchBarTypeNPCs, baseX + 375, baseY + 40, 160, 20);
     
     ls_uiStartScrollableRegion(c, &npcTableScroll);
     
@@ -3687,7 +3836,9 @@ void DrawMonsterTable(UIContext *c)
     s32 baseX = 20;
     s32 baseY = 630;
     
-    ls_uiTextBox(c, &compendium.searchBarMobs, baseX, baseY + 40, 200, 20);
+    ls_uiTextBox(c, &compendium.searchBarNameMobs, baseX, baseY + 40, 200, 20);
+    ls_uiTextBox(c, &compendium.searchBarGSMobs,   baseX + 295, baseY + 40, 60, 20);
+    ls_uiTextBox(c, &compendium.searchBarTypeMobs, baseX + 375, baseY + 40, 160, 20);
     
     ls_uiStartScrollableRegion(c, &tableScroll);
     
