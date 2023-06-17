@@ -531,7 +531,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             if(LeftUp || RightUp || MiddleUp)
             { uiContext->mouseCapture = 0; }
             
-            //ls_uiSlider(uiContext, &sldr, 400, 300, 300, 20);
+            ls_uiColorWheel(uiContext, 600, 400, 100, 2);
             
             // ----------------
             // Render Everything
@@ -570,7 +570,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                           uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
             ls_uiFillRect(uiContext, 0, 696, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
                           uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
-            
         }
         
         //-------------------------------
@@ -680,7 +679,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                               compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
                 ls_uiFillRect(compendiumContext, 0, 2*windowHeight/3, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
                               compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
-                
             }
             
         }
