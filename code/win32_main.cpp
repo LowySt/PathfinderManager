@@ -375,6 +375,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 userInputConsumed     = FALSE;
     b32 externalInputReceived = FALSE;
     
+    UIColorPicker picker = {};
+    picker.value = 1.0f;
+    
     while(Running)
     {
         u32 frameLockMain       = 16;
@@ -531,7 +534,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             if(LeftUp || RightUp || MiddleUp)
             { uiContext->mouseCapture = 0; }
             
-            ls_uiColorWheel(uiContext, 600, 400, 100, 2);
+            ls_uiColorPicker(uiContext, &picker, 600, 400, 100, 2);
             
             // ----------------
             // Render Everything
