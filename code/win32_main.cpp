@@ -494,7 +494,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             }
             
             //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob
-            if(KeyPress(keyMap::Escape) && !State.Init->isAdding) globalSelectedIndex = -1;
+            if(KeyPress(keyMap::Escape) && !State.Init->isAdding) { globalSelectedIndex = -1; }
+            
+            //NOTE: We close the theme selector
+            if(KeyPress(keyMap::Escape) && State.themePicker.isShown) { State.themePicker.isShown = FALSE; }
             
             
             //NOTE: Right-Alt Drag, only when nothing is in focus
