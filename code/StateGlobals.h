@@ -16,6 +16,14 @@ enum ProgramTheme
 
 static ProgramTheme currentTheme = THEME_DEFAULT;
 
+struct ThemePicker
+{
+    UIColorPicker wheel;
+    b32           isShown;
+    
+    s8 selected = -1;
+};
+
 struct ProgramState
 {
     InitPage  *Init;
@@ -23,6 +31,9 @@ struct ProgramState
     //State Management
     b32       inBattle;
     EncList   encounters;
+    
+    //Custom Theme
+    ThemePicker themePicker;
     
     b32 isInitialized;
     
@@ -100,5 +111,11 @@ b32 selectThemeLight(UIContext *c, void *data)
 
 typedef  b32(*SelectThemeProc)(UIContext *, void *);
 SelectThemeProc selectThemeProcs[THEME_COUNT] = { selectThemeDefault, selectThemeDarkNight, selectThemeLight };
+
+b32 openThemeColorPicker(UIContext *c, void *data)
+{
+    State.themePicker.isShown = TRUE;
+    return TRUE;
+}
 
 #endif //_STATE_GLOBALS_H

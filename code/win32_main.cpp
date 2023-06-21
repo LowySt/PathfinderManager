@@ -88,7 +88,7 @@ static Arena compTempArena;
 
 
 #include "diceRoller.cpp"
-
+#include "themePicker.cpp"
 
 #include "Compendium.cpp"
 
@@ -319,6 +319,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Default", selectThemeDefault, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Light", selectThemeLight, NULL);
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Custom", openThemeColorPicker, NULL);
     
     ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
     
@@ -339,6 +340,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_arenaUse(stateArena);
     
     //NOTE: Initialize State and Undo States
+    State.themePicker.wheel             = ls_uiColorPickerInit(uiContext, &State.themePicker);
+    State.themePicker.wheel.pickedColor = uiContext->backgroundColor;
+    
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     SetInitTab(uiContext, &State);
     
@@ -374,9 +378,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     b32 showDebug             = FALSE;
     b32 userInputConsumed     = FALSE;
     b32 externalInputReceived = FALSE;
-    
-    UIColorPicker picker = {};
-    picker.value = 1.0f;
     
     while(Running)
     {
@@ -415,6 +416,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Render The Window Menu
         userInputConsumed = ls_uiMenu(uiContext, &WindowMenu, -1, 
                                       uiContext->height-20, uiContext->width+1, 21);
+        
+        //NOTE: Custom Theme Color Picker
+        userInputConsumed |= DrawThemePicker(uiContext);
         
         userInputConsumed |= DrawInitTab(uiContext);
         
@@ -533,8 +537,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             if(LeftUp || RightUp || MiddleUp)
             { uiContext->mouseCapture = 0; }
-            
-            ls_uiColorPicker(uiContext, &picker, 600, 400, 100, 2);
             
             // ----------------
             // Render Everything
