@@ -114,7 +114,7 @@ SelectThemeProc selectThemeProcs[THEME_COUNT] = { selectThemeDefault, selectThem
 
 b32 openThemeColorPicker(UIContext *c, void *data)
 {
-    State.themePicker.isShown = TRUE;
+    State.themePicker.isShown = !State.themePicker.isShown;
     return TRUE;
 }
 

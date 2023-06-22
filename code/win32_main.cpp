@@ -340,8 +340,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_arenaUse(stateArena);
     
     //NOTE: Initialize State and Undo States
-    State.themePicker.wheel             = ls_uiColorPickerInit(uiContext, &State.themePicker);
-    State.themePicker.wheel.pickedColor = uiContext->backgroundColor;
+    State.themePicker.wheel                = ls_uiColorPickerInit(uiContext, &State.themePicker);
+    State.themePicker.wheel.pickedColor    = uiContext->backgroundColor;
     
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     SetInitTab(uiContext, &State);
