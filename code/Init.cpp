@@ -533,7 +533,7 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
     u32 lastIdx = State.Init->EncounterSel.list.count-1;
     
     Encounter *selected = State.encounters.Enc + (idx-1);
-    Encounter *last = State.encounters.Enc + (lastIdx-1);
+    Encounter *last     = State.encounters.Enc + (lastIdx-1);
     
     //NOTE:      When idx == lastIdx we just decrease the numEncounters
     //
@@ -1717,8 +1717,8 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx, s32 
     s32 x = baseX;
     if(globalSelectedIndex != posIdx) { inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME], x, y, w, 20); }
     else { ls_uiLabel(c, F->editFields[IF_IDX_NAME].text, x+4, y+5); }
-    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_BONUS], x + w     , y, 26, 20);
-    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_FINAL], x + w + 26, y, 26, 20);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_BONUS], x + w     , y, 35, 20);
+    inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_FINAL], x + w + 35, y, 35, 20);
     
     Input *UserInput = &c->UserInput;
     if(RightClickIn(x, y, w+26, 19)) { globalSelectedIndex = (s32)posIdx; }
