@@ -86,9 +86,8 @@ static Arena compTempArena;
 #include "status_icons.h"
 #include "Equip.h"
 
-
-#include "diceRoller.cpp"
 #include "themePicker.cpp"
+#include "diceRoller.cpp"
 
 #include "Compendium.cpp"
 
@@ -319,7 +318,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Default", selectThemeDefault, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Light", selectThemeLight, NULL);
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Custom", openThemeColorPicker, NULL);
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"User", selectThemeUser, NULL);
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Customize", openThemeColorPicker, NULL);
     
     ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
     
@@ -368,8 +368,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
     b32 result = LoadState(uiContext);
-    
-    selectThemeProcs[currentTheme](uiContext, NULL);
     
     RegionTimer frameTime = {};
     

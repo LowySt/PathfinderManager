@@ -1,7 +1,29 @@
+enum ProgramTheme
+{
+    THEME_DEFAULT,
+    THEME_DARKNIGHT,
+    THEME_LIGHT,
+    THEME_USER,
+    
+    THEME_COUNT
+};
+
+static ProgramTheme currentTheme = THEME_DEFAULT;
+
+
 b32 themeApplyToBackground(UIContext *c, void *userData)
 {
     UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
     c->backgroundColor    = picker->pickedColor;
+    State.backgroundColor = picker->pickedColor;
+    return TRUE;
+}
+
+b32 themeApplyToMenu(UIContext *c, void *userData)
+{
+    UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
+    c->menuBarColor       = picker->pickedColor;
+    State.menuBarColor    = picker->pickedColor;
     return TRUE;
 }
 
@@ -9,6 +31,7 @@ b32 themeApplyToBorder(UIContext *c, void *userData)
 {
     UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
     c->borderColor        = picker->pickedColor;
+    State.borderColor     = picker->pickedColor;
     return TRUE;
 }
 
@@ -16,6 +39,7 @@ b32 themeApplyToHighlite(UIContext *c, void *userData)
 {
     UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
     c->highliteColor      = picker->pickedColor;
+    State.highliteColor   = picker->pickedColor;
     return TRUE;
 }
 
@@ -23,6 +47,7 @@ b32 themeApplyToPressed(UIContext *c, void *userData)
 {
     UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
     c->pressedColor       = picker->pickedColor;
+    State.pressedColor    = picker->pickedColor;
     return TRUE;
 }
 
@@ -30,6 +55,7 @@ b32 themeApplyToWidget(UIContext *c, void *userData)
 {
     UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
     c->widgetColor        = picker->pickedColor;
+    State.widgetColor     = picker->pickedColor;
     return TRUE;
 }
 
@@ -37,6 +63,7 @@ b32 themeApplyToText(UIContext *c, void *userData)
 {
     UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
     c->textColor          = picker->pickedColor;
+    State.textColor       = picker->pickedColor;
     return TRUE;
 }
 
@@ -44,6 +71,7 @@ b32 themeApplyToInvertedText(UIContext *c, void *userData)
 {
     UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
     c->invTextColor       = picker->pickedColor;
+    State.invTextColor    = picker->pickedColor;
     return TRUE;
 }
 
@@ -51,6 +79,7 @@ b32 themeApplyToInvertedWidget(UIContext *c, void *userData)
 {
     UIColorPicker *picker = &((ThemePicker *)userData)->wheel;
     c->invWidgetColor     = picker->pickedColor;
+    State.invWidgetColor  = picker->pickedColor;
     return TRUE;
 }
 
@@ -211,9 +240,96 @@ b32 DrawThemePicker(UIContext *c)
         { ls_uiRect(c, rect.x, rect.y, rect.w, rect.h, c->widgetColor, c->borderColor, 2); }
         
         
+        //NOTE: Menu Bar Color
+        rect = { previewX + 3*xMargin + 2*rect.w, topY - 3*yMargin - 3*rectH, (s32)(0.2f*previewW), rectH };
+        if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
+        { theme->selected = 8; theme->wheel.apply.onClick = themeApplyToMenu; }
+        
+        if(theme->selected == 8) 
+        { ls_uiRect(c, rect.x, rect.y, rect.w, rect.h, theme->wheel.pickedColor, RGBg(0xFF), 2); }
+        else
+        { ls_uiRect(c, rect.x, rect.y, rect.w, rect.h, c->menuBarColor, c->menuBarColor, 2); }
+        
         ls_uiRect(c, previewX, previewY, previewW, previewH, 2);
         
     }
     
     return usedInput;
+}
+
+b32 selectThemeDefault(UIContext *c, void *data)
+{
+    currentTheme = THEME_DEFAULT;
+    
+    c->backgroundColor = RGBg(0x38);
+    c->borderColor     = RGBg(0x22);
+    c->menuBarColor    = RGBg(0x20);
+    c->highliteColor   = RGBg(0x65);
+    c->pressedColor    = RGBg(0x75);
+    c->widgetColor     = RGBg(0x45);
+    c->textColor       = RGBg(0xCC);
+    c->invWidgetColor  = RGBg(0xBA);
+    c->invTextColor    = RGBg(0x33);
+    
+    return FALSE;
+}
+
+b32 selectThemeDarkNight(UIContext *c, void *data)
+{
+    currentTheme = THEME_DARKNIGHT;
+    
+    c->backgroundColor = RGB(0x0C, 0x08, 0x0B);
+    c->borderColor     = RGB(0x60, 0x7B, 0x7D);
+    c->menuBarColor    = RGBg(0x20);
+    c->highliteColor   = RGB(0x14, 0x15, 0x13);
+    c->pressedColor    = RGB(0x18, 0x20, 0x19);
+    c->widgetColor     = RGB(0x1C, 0x18, 0x1B);
+    c->textColor       = RGBg(0xCC);
+    c->invWidgetColor  = RGB(0xE3, 0xE7, 0xE4);
+    c->invTextColor    = RGB(0x7D, 0x71, 0x7D);
+    
+    return FALSE;
+}
+
+b32 selectThemeLight(UIContext *c, void *data)
+{
+    currentTheme = THEME_LIGHT;
+    
+    c->backgroundColor = RGBg(0xEE);
+    c->borderColor     = RGBg(0x00);
+    c->menuBarColor    = RGBg(0x20);
+    c->highliteColor   = RGB(0xAA, 0x99, 0xAA);
+    c->pressedColor    = RGB(0xBB, 0x99, 0xAA);
+    c->widgetColor     = RGBg(0xBB);
+    c->textColor       = RGBg(0x33);
+    c->invWidgetColor  = RGB(7, 5, 43);
+    c->invTextColor    = RGBg(0xFF);
+    
+    return FALSE;
+}
+
+b32 selectThemeUser(UIContext *c, void *data)
+{
+    currentTheme = THEME_USER;
+    
+    c->backgroundColor = State.backgroundColor;
+    c->menuBarColor    = State.menuBarColor;
+    c->highliteColor   = State.highliteColor;
+    c->pressedColor    = State.pressedColor;
+    c->widgetColor     = State.widgetColor;
+    c->borderColor     = State.borderColor;
+    c->textColor       = State.textColor;
+    c->invWidgetColor  = State.invWidgetColor;
+    c->invTextColor    = State.invTextColor;
+    
+    return FALSE;
+}
+
+typedef  b32(*SelectThemeProc)(UIContext *, void *);
+SelectThemeProc selectThemeProcs[THEME_COUNT] = { selectThemeDefault, selectThemeDarkNight, selectThemeLight, selectThemeUser };
+
+b32 openThemeColorPicker(UIContext *c, void *data)
+{
+    State.themePicker.isShown = !State.themePicker.isShown;
+    return TRUE;
 }
