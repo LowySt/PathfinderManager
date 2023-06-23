@@ -2029,7 +2029,7 @@ b32 DrawPranaStyle(UIContext *c)
         yPos = 678;
         for(u32 i = 0; i < visibleAllies; i++)
         {
-            inputUse |= DrawInitField(c, Page->AllyFields + i, 1072, yPos-160, i+MOB_NUM, 136);
+            inputUse |= DrawInitField(c, Page->AllyFields + i, 1063, yPos-160, i+MOB_NUM, 136);
             yPos -= 20;
         }
         
