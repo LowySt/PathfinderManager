@@ -4015,6 +4015,8 @@ void DrawCompendium(UIContext *c)
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
             pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->width-42, 0);
+            //TODO: When the page is smaller than the viewport, it ends up flip-flopping if we don't clamp it.
+            //      Kind of annoying. Can we do something like this in endscrollaberegion automatically?
             if(pageScroll.minY > -19) { pageScroll.minY = -1; }
             ls_uiEndScrollableRegion(c);
         }
@@ -4042,6 +4044,8 @@ void DrawCompendium(UIContext *c)
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
             pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->width-42, 0);
+            //TODO: When the page is smaller than the viewport, it ends up flip-flopping if we don't clamp it.
+            //      Kind of annoying. Can we do something like this in endscrollaberegion automatically?
             if(pageScroll.minY > -19) { pageScroll.minY = -1; }
             ls_uiEndScrollableRegion(c);
         }
