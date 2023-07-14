@@ -769,7 +769,7 @@ b32 SetOnClick(UIContext *c, void *data)
     for(u32 i = 0; i < PARTY_NUM; i++)
     {
         ord[idx].init          = ls_utf32ToInt(Page->PlayerInit[i].text);
-        ord[idx].name          = (utf32 *)(PartyNameUTF32 + i);
+        ord[idx].name          = (utf32 *)(PartyName + i);
         ord[idx].maxLife       = 0;
         ord[idx].compendiumIdx = -1;
         ord[idx].ID            = i;
@@ -2079,6 +2079,7 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 ls_uiStartScrollableRegion(c, &initViewScroll);
                 initViewScroll.minY = DrawPage(c , &mainCachedPage, 260, 676, 998, 218);
+                if(initViewScroll.minY > -19) { initViewScroll.minY = -1; }
                 ls_uiEndScrollableRegion(c);
                 
                 ls_uiRect(c, 260, 218, 780, 478, RGBg(0x33), RGBg(0x11));
@@ -2158,6 +2159,7 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 ls_uiStartScrollableRegion(c, &viewScroll);
                 viewScroll.minY = DrawPage(c, &mainCachedPage, 40, 676, 758, 218);
+                if(viewScroll.minY > -19) { viewScroll.minY = -1; }
                 ls_uiEndScrollableRegion(c);
                 
                 ls_uiRect(c, 40, 218, 760, 478, RGBg(0x33), RGBg(0x11));

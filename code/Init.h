@@ -11,12 +11,11 @@ utf32 ConstNumberStrings[32] = { {(u32 *)U"0",1,1} , {(u32 *)U"1",1,1}, {(u32 *)
     {(u32 *)U"29",2,2}, {(u32 *)U"30",2,2}, {(u32 *)U"31",2,2} };
 
 const u32 PARTY_NUM = 4;
-const char32_t *PartyName[PARTY_NUM] = { U"Efrea", U"Casto", U"Max", U"" };
-const utf32 PartyNameUTF32[PARTY_NUM] = {
-    {(u32 *)PartyName[0], 5, 5},
-    {(u32 *)PartyName[1], 5, 5},
-    {(u32 *)PartyName[2], 3, 3},
-    {(u32 *)PartyName[3], 0, 0},
+const utf32 PartyName[PARTY_NUM] = {
+    {(u32 *)U"Efrea", 5, 5},
+    {(u32 *)U"Casto", 5, 5},
+    {(u32 *)U"Clovis", 6, 6},
+    {(u32 *)U"XXXXX", 5, 5},
 };
 
 const u32 MOB_NUM = 24;

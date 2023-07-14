@@ -4015,6 +4015,7 @@ void DrawCompendium(UIContext *c)
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
             pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->width-42, 0);
+            if(pageScroll.minY > -19) { pageScroll.minY = -1; }
             ls_uiEndScrollableRegion(c);
         }
         else
@@ -4041,6 +4042,7 @@ void DrawCompendium(UIContext *c)
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
             pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->width-42, 0);
+            if(pageScroll.minY > -19) { pageScroll.minY = -1; }
             ls_uiEndScrollableRegion(c);
         }
     }
