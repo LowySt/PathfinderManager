@@ -13,7 +13,7 @@ utf32 ConstNumberStrings[32] = { {(u32 *)U"0",1,1} , {(u32 *)U"1",1,1}, {(u32 *)
 const u32 PARTY_NUM = 4;
 const utf32 PartyName[PARTY_NUM] = {
     {(u32 *)U"Efrea", 5, 5},
-    {(u32 *)U"Casto", 5, 5},
+    {(u32 *)U"Nick", 4, 4},
     {(u32 *)U"Clovis", 6, 6},
     {(u32 *)U"XXXXX", 5, 5},
 };

@@ -485,7 +485,7 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
         InitField *currMob = State.Init->MobFields + i;
         EncounterInitEntry *e = curr->mob + i;
         
-        for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_utf32Set(&e->fields[j], currMob->editFields[j].text); }
         
         ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currMob->maxLife.text);
@@ -497,7 +497,7 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
         InitField *currAlly = State.Init->AllyFields + i;
         EncounterInitEntry *e = curr->ally + i;
         
-        for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_utf32Set(&e->fields[j], currAlly->editFields[j].text); }
         
         ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currAlly->maxLife.text);

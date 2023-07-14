@@ -6,7 +6,7 @@ SET CLANGDIR="C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\T
 SET TOOLDIR=F:\ProgrammingProjects\IncludeDir\Tools
 SET PLATDIR=F:\ProgrammingProjects\IncludeDir\Platform
 
-SET OPTS= -o release.exe -O3 -I %TOOLDIR% -I %PLATDIR% -Wno-switch -std=c++11 -mfpmath=sse -mmmx -msse -msse2 -msse4.1 -mwindows
+SET OPTS= -o release.exe -O3 -I %TOOLDIR% -I %PLATDIR% -Wno-switch -std=c++20 -mfpmath=sse -mmmx -msse -msse2 -msse4.1 -mwindows
 SET LINKER= -static -lkernel32 -luser32 -lgdi32 -lwinmm
 
 pushd clangout
