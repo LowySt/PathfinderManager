@@ -778,7 +778,7 @@ b32 SetOnClick(UIContext *c, void *data)
         idx += 1;
     }
     
-    ls_quicksortCustom(ord, sizeof(tmp_order), visibleOrder, sortTmpOrder);
+    ls_quicksort(ord, sizeof(tmp_order), visibleOrder, sortTmpOrder);
     
     for(u32 i = 0, j = visibleOrder - 1; i < visibleOrder; i++, j--)
     {
