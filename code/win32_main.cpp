@@ -41,7 +41,6 @@
 
 #include "lsArray.h"
 
-
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_ifloor(x)     ls_floor(x)
 #define STBTT_iceil(x)      ls_ceil(x)

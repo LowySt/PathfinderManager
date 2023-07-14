@@ -14,10 +14,13 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
     char buff[64] = {};
     s32 len = 0;
     
+    s32 failedACCount = 0;
     for(s32 i = 0; i < compendium.codex.pages.count; i++)
     {
         PageEntry pEntry = compendium.codex.pages[i];
         CachePage(pEntry, i, &dummy, NULL);
+        
+        if(dummy.acError == TRUE) { failedACCount += 1; }
         
         len = ls_utf32ToAscii_t(&dummy.name, buff, 64);
         
@@ -31,6 +34,7 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
         if((fract > 0.75) && (hasMessaged5 == FALSE)) { ls_log("75% of Mobs Done"); hasMessaged5 = TRUE; }
     }
     
+    ls_log("Count of Failed AC Fixes: {s32}", failedACCount);
     ls_log("Done With Mobs, beginning NPCs");
     
     hasMessaged1 = FALSE;
@@ -39,10 +43,13 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
     hasMessaged4 = FALSE;
     hasMessaged5 = FALSE;
     
+    failedACCount = 0;
     for(s32 i = 0; i < compendium.codex.npcPages.count; i++)
     {
         NPCPageEntry pEntry = compendium.codex.npcPages[i];
         CachePage(pEntry, i, &dummy, NULL);
+        
+        if(dummy.acError == TRUE) { failedACCount += 1; }
         
         len = ls_utf32ToAscii_t(&dummy.name, buff, 64);
         if(logNames) { ls_log("{string}", string({buff, len, len})); }
@@ -55,6 +62,7 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
         if((fract > 0.75) && (hasMessaged5 == FALSE)) { ls_log("75% of NPCs Done"); hasMessaged5 = TRUE; }
     }
     
+    ls_log("Count of Failed AC Fixes: {s32}", failedACCount);
     ls_log("Done With NPCs!");
     
     ls_arenaUse(compTempArena);

@@ -572,6 +572,45 @@ s32 rightFindBonus(utf32 key, s32 offset, s32 min)
     else { return -1; }
 };
 
+s64 rightFindBonusEX(utf32 key, s32 offset, s32 min)
+{
+    s32 maybePlus  = ls_utf32RightFind(key, offset, '+');
+    s32 maybeMinus = ls_utf32RightFind(key, offset, '-');
+    
+    s32 beginOffset = -1;
+    s32 endOffset   = -1;
+    if(maybePlus != -1 && maybePlus > min) { beginOffset = maybePlus; }
+    else if(maybeMinus != -1 && maybeMinus > min) { beginOffset = maybeMinus; }
+    else { return -1; }
+    
+    endOffset = beginOffset + 1; //NOTE: Skip the sign;
+    
+    u32 *At         = key.data + endOffset;
+    s32 addedSpaces = 0;
+    b32 afterValue  = FALSE;
+    while (At != (key.data + key.len))
+    { 
+        if(At + 1  > (key.data + key.len)) { break; }
+        if(endOffset > offset)             { return -1; }
+        
+        if(*At == ' ')
+        {
+            if(afterValue) { addedSpaces += 1; }
+            At++; endOffset++; continue;
+        }
+        
+        if(ls_utf32IsNumber(*At))
+        { 
+            if(afterValue == FALSE) { afterValue = TRUE; }
+            At++; endOffset++; continue;
+        }
+        
+        break;
+    }
+    
+    return ((s64)beginOffset << 32 | endOffset);
+};
+
 s64 leftFindBonus(utf32 key, s32 offset, s32 max)
 {
     if(offset < 0)    { return -1; }
@@ -738,10 +777,13 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     
     //TODO: Golarion has "armor" and "shield" with small letters... fuck them
     s32 armorBonusIdx  = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Armatura"));
-    if(armorBonusIdx == -1) armorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"armatura"));
+    if(armorBonusIdx == -1) { armorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"armatura")); }
     
     s32 shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Scudo"));
     if(shieldBonusIdx == -1) { shieldBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"scudo")); }
+    
+    s32 natArmorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Naturale"));
+    if(natArmorBonusIdx == -1) { natArmorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"naturale")); }
     
     s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
     s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
@@ -880,6 +922,29 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         }
     }
     
+    s32 oldNatArmor = 0;
+    s32 newNatArmor = 0;
+    
+    if(natArmorBonusIdx != -1)
+    {
+        s64 natBonusRange    = rightFindBonusEX(acExpr, natArmorBonusIdx, -1);
+        s32 natBonusBegin    = natBonusRange >> 32;
+        s32 natBonusEnd      = (s32)natBonusRange;
+        
+        if(natBonusRange == -1)
+        {
+            cachedPage->acError = TRUE;
+            ls_utf32Set(&cachedPage->AC, AC);
+            LogMsg(FALSE, "Can't find bonus in Natural Armor\n");
+            return;
+        }
+        
+        s32 rangeLen         = natBonusEnd - natBonusBegin;
+        utf32 natBonusString = { acExpr.data + natBonusBegin, rangeLen, rangeLen };
+        oldNatArmor          = ls_utf32ToIntIgnoreWhitespace(natBonusString);
+        newNatArmor          = (f32)oldNatArmor * 1.34f;
+    }
+    
     //TODO: I don't really like these hardcoded offsets, would prefer to have a LeftFindNumeric() function
     s32 firstValEnd     = ls_utf32LeftFind(AC, (u32)',');
     s32 secondValBegin  = firstValEnd + 11;
@@ -964,6 +1029,12 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         flatAC = (flatAC - oldShieldBonus) + newShieldBonus;
     }
     
+    //NOTE: Adjust Natural Armor Bonus
+    if(natArmorBonusIdx != -1)
+    {
+        totAC  = (totAC - oldNatArmor) + newNatArmor;
+        flatAC = (flatAC - oldNatArmor) + newNatArmor;
+    }
     
     //NOTE: Apply status conditions if present
     b32 hasSchivareProdigioso = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Schivare Prodigioso")) != -1;
@@ -2427,7 +2498,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->specials          = ls_utf32Alloc(maxTalents * 2048);
     
     cachedPage->org               = ls_utf32Alloc(512);
-    cachedPage->treasure          = ls_utf32Alloc(576);
+    cachedPage->treasure          = ls_utf32Alloc(1024);
     cachedPage->desc              = ls_utf32Alloc(10240);
     cachedPage->source            = ls_utf32Alloc(256);
     
