@@ -27,7 +27,7 @@ void DumpOrder(Order *ord)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
     s32 visibleAllies = State.Init->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - State.Init->orderAdjust;
     
     for(u32 i = 0; i < visibleOrder; i++)
     {
@@ -52,7 +52,7 @@ Order *GetOrderByID(s32 ID)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
     s32 visibleAllies = State.Init->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - State.Init->orderAdjust;
     
     for(u32 i = 0; i < visibleOrder; i++)
     {
@@ -108,7 +108,7 @@ b32 CustomPlayerText(UIContext *c, void *data)
     
     if(KeyPress(keyMap::Enter))
     {
-        UITextBox *lastPlayerBox = Page->PlayerInit + (PARTY_NUM - 1);
+        UITextBox *lastPlayerBox = Page->PlayerInit + (party_count - 1);
         
         if(f == lastPlayerBox) { ls_uiFocusChange(c, 0x0); return TRUE; }
         
@@ -131,8 +131,8 @@ b32 CustomInitFieldText(UIContext *c, void *data)
     if((c->lastFocus != (u64 *)f->field) && (c->currentFocus == (u64 *)f->field))
     { ls_uiTextBoxClear(c, f->field); inputUse = TRUE; }
     
-    InitField *lastMob  = State.Init->MobFields  + (MOB_NUM-1);
-    InitField *lastAlly = State.Init->AllyFields + (ALLY_NUM-1);
+    InitField *lastMob  = State.Init->MobFields  + (mob_count-1);
+    InitField *lastAlly = State.Init->AllyFields + (ally_count-1);
     
     if(KeyPress(keyMap::Enter))
     {
@@ -291,7 +291,7 @@ b32 ChangeOrder(UIContext *c, void *data)
         
         s32 visibleMobs   = Init->Mobs.selectedIndex;
         s32 visibleAllies = Init->Allies.selectedIndex;
-        s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Init->orderAdjust;
+        s32 visibleOrder  = visibleMobs + visibleAllies + party_count - Init->orderAdjust;
         
         Order *order = h->order;
         
@@ -470,7 +470,7 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
     s32 visibleAllies = State.Init->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - State.Init->orderAdjust;
     
     u32 numEncounters = State.encounters.numEncounters;
     Encounter *curr = State.encounters.Enc + numEncounters;
@@ -545,14 +545,14 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
     {
         //TODO: In this case I have to free memory, else I will leak
         //TODO: Should I change how Encounters are stored to avoid this annoyance?
-        for(u32 i = 0; i < MOB_NUM; i++)
+        for(u32 i = 0; i < mob_count; i++)
         {
             for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
             { ls_utf32Free(&selected->mob[i].fields[j]); }
             selected->mob[i].compendiumIdx = -1;
         }
         
-        for(u32 i = 0; i < ALLY_NUM; i++)
+        for(u32 i = 0; i < ally_count; i++)
         {
             for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
             { ls_utf32Free(&selected->ally[i].fields[j]); }
@@ -590,7 +590,7 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
     s32 newMobsCount   = State.Init->Mobs.selectedIndex + e->numMobs;
     s32 newAlliesCount = State.Init->Allies.selectedIndex + e->numAllies;
     
-    if((newMobsCount > MOB_NUM) || (newAlliesCount > ALLY_NUM)) { return FALSE; }
+    if((newMobsCount > mob_count) || (newAlliesCount > ally_count)) { return FALSE; }
     
     for(u32 i = currMobs, j = 0; i < newMobsCount; i++, j++)
     {
@@ -733,9 +733,9 @@ b32 SetOnClick(UIContext *c, void *data)
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - Page->orderAdjust;
     
-    tmp_order ord[ORDER_NUM] = {};
+    tmp_order ord[MAX_ORDER_NUM] = {};
     u32 idx = 0;
     
     //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
@@ -766,14 +766,13 @@ b32 SetOnClick(UIContext *c, void *data)
         idx += 1;
     }
     
-    for(u32 i = 0; i < PARTY_NUM; i++)
+    for(u32 i = 0; i < party_count; i++)
     {
         ord[idx].init          = ls_utf32ToInt(Page->PlayerInit[i].text);
-        ord[idx].name          = (utf32 *)(PartyName + i);
+        ord[idx].name          = (utf32 *)(&State.PartyName[i].text);
         ord[idx].maxLife       = 0;
         ord[idx].compendiumIdx = -1;
         ord[idx].ID            = i;
-        
         
         idx += 1;
     }
@@ -795,10 +794,10 @@ b32 SetOnClick(UIContext *c, void *data)
         }
     }
     
-    for(u32 i = 0; i < PARTY_NUM; i++)
+    for(u32 i = 0; i < party_count; i++)
     { Page->PlayerInit[i].isReadonly = TRUE; }
     
-    for(u32 i = 0; i < MOB_NUM; i++)
+    for(u32 i = 0; i < mob_count; i++)
     {
         InitField *f = Page->MobFields + i;
         
@@ -806,13 +805,13 @@ b32 SetOnClick(UIContext *c, void *data)
         { f->editFields[j].isReadonly = TRUE; }
     }
     
-    for(u32 i = 0; i < ALLY_NUM; i++) { 
+    for(u32 i = 0; i < ally_count; i++) { 
         Page->AllyFields[i].editFields[IF_IDX_NAME].isReadonly  = TRUE;
         Page->AllyFields[i].editFields[IF_IDX_BONUS].isReadonly = TRUE;
         Page->AllyFields[i].editFields[IF_IDX_FINAL].isReadonly = TRUE;
     }
     
-    for(u32 i = 0; i < ORDER_NUM; i++)
+    for(u32 i = 0; i < order_count; i++)
     { Page->OrderFields[i].pos.isReadonly = FALSE; }
     
     Page->turnsInRound  = visibleOrder;
@@ -838,14 +837,14 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
-    for(u32 i = 0; i < PARTY_NUM; i++) 
+    for(u32 i = 0; i < party_count; i++) 
     { 
         ls_uiTextBoxClear(c, Page->PlayerInit + i);
         ls_utf32Set(&Page->PlayerInit[i].text, zeroUTF32);
     }
     
-    s32 currID = PARTY_NUM;
-    for(u32 i = 0; i < MOB_NUM; i++)   
+    s32 currID = party_count;
+    for(u32 i = 0; i < mob_count; i++)   
     { 
         InitField *f = Page->MobFields + i;
         
@@ -868,7 +867,7 @@ b32 ResetOnClick(UIContext *c, void *data)
         currID          += -1;
     }
     
-    for(u32 i = 0; i < ALLY_NUM; i++)  
+    for(u32 i = 0; i < ally_count; i++)  
     { 
         InitField *f = Page->AllyFields + i;
         
@@ -886,7 +885,7 @@ b32 ResetOnClick(UIContext *c, void *data)
         currID          += -1;
     }
     
-    for(u32 i = 0; i < ORDER_NUM; i++)
+    for(u32 i = 0; i < order_count; i++)
     {
         Order *f = Page->OrderFields + i;
         
@@ -955,7 +954,7 @@ b32 NextOnClick(UIContext *c, void *data)
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - Page->orderAdjust;
     
     Page->currIdx = (Page->currIdx + 1) % visibleOrder;
     
@@ -1073,9 +1072,9 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - Page->orderAdjust;
     
-    if(removeID < PARTY_NUM)
+    if(removeID < party_count)
     {
         Page->orderAdjust += 1;
         
@@ -1094,7 +1093,7 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
     }
     else
     {
-        for(u32 i = 0; i < ALLY_NUM; i++) 
+        for(u32 i = 0; i < ally_count; i++) 
         {
             InitField *ally = Page->AllyFields + i;
             if(removeID == ally->ID) 
@@ -1126,7 +1125,7 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
             }
         }
         
-        for(u32 i = 0; i < MOB_NUM; i++)
+        for(u32 i = 0; i < mob_count; i++)
         {
             InitField *mob = Page->MobFields + i;
             if(removeID == mob->ID)
@@ -1278,7 +1277,7 @@ b32 StartAddingAlly(UIContext *c, void *data)
     //      The entire new mob to be undone/redone in a single action.
     suppressingUndoRecord = TRUE;
     State.Init->isAdding  = TRUE;
-    globalSelectedIndex   = State.Init->Allies.selectedIndex + MOB_NUM;
+    globalSelectedIndex   = State.Init->Allies.selectedIndex + mob_count;
     
     //Clear The Extra
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
@@ -1297,7 +1296,7 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
     s32 visibleAllies = State.Init->Allies.selectedIndex;
-    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    s32 visibleOrder = visibleMobs + visibleAllies + party_count - State.Init->orderAdjust;
     Order *o = State.Init->OrderFields + visibleOrder;
     
     ls_utf32Set(&o->field.text, name);
@@ -1319,7 +1318,7 @@ b32 AddMobOnClick(UIContext *c, void *data)
 {
     s32 visibleMobs = State.Init->Mobs.selectedIndex;
     
-    if(visibleMobs == MOB_NUM) { return FALSE; }
+    if(visibleMobs == mob_count) { return FALSE; }
     
     State.Init->turnsInRound += 1;
     CheckAndFixCounterTurns();
@@ -1354,7 +1353,7 @@ b32 AddAllyOnClick(UIContext *c, void *data)
 {
     s32 visibleAllies = State.Init->Allies.selectedIndex;
     
-    if(visibleAllies == ALLY_NUM) { return FALSE; }
+    if(visibleAllies == ally_count) { return FALSE; }
     
     State.Init->turnsInRound         += 1;
     CheckAndFixCounterTurns();
@@ -1487,10 +1486,10 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     
     globalSelectedIndex = -1;
     
-    for(u32 i = 0; i < MOB_NUM + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Mobs, (char *)Enemies[i]); }
-    for(u32 i = 0; i < ALLY_NUM + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Allies, (char *)Allies[i]); }
+    for(u32 i = 0; i < mob_count + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Mobs, (char *)Enemies[i]); }
+    for(u32 i = 0; i < ally_count + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Allies, (char *)Allies[i]); }
     
-    for(u32 i = 0; i < PARTY_NUM; i++) 
+    for(u32 i = 0; i < MAX_PARTY_NUM; i++) 
     { 
         UITextBox *f = Page->PlayerInit + i;
         ls_uiTextBoxSet(c, f, ls_utf32Constant(U"0"));
@@ -1500,15 +1499,15 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         f->isSingleLine = TRUE;
     }
     
-    s32 currID = PARTY_NUM;
-    for(u32 i = 0; i < MOB_NUM; i++)   
+    s32 currID = party_count;
+    for(u32 i = 0; i < mob_count; i++)   
     { 
         InitField *f = Page->MobFields + i;
         
         InitFieldInit(c, f, &currID, MobName[i]);
     }
     
-    for(u32 i = 0; i < ALLY_NUM; i++)  
+    for(u32 i = 0; i < ally_count; i++)  
     { 
         InitField *f = Page->AllyFields + i;
         
@@ -1518,7 +1517,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     ls_uiButtonInit(c, &Page->addNewMob, UIBUTTON_CLASSIC, U"+", StartAddingMob, NULL, NULL);
     ls_uiButtonInit(c, &Page->addNewAlly, UIBUTTON_CLASSIC, U"+", StartAddingAlly, NULL, NULL);
     
-    for(u32 i = 0; i < ORDER_NUM; i++)
+    for(u32 i = 0; i < MAX_ORDER_NUM; i++)
     {
         Order *f = Page->OrderFields + i;
         
@@ -1858,7 +1857,7 @@ b32 DrawDefaultStyle(UIContext *c)
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - Page->orderAdjust;
     
     b32 inputUse = FALSE;
     
@@ -1884,9 +1883,9 @@ b32 DrawDefaultStyle(UIContext *c)
     
     // Party
     s32 yPos = 638;
-    for(u32 i = 0; i < PARTY_NUM; i++)
+    for(u32 i = 0; i < party_count; i++)
     {
-        ls_uiLabel(c, PartyName[i], 650, yPos+6);
+        ls_uiLabel(c, State.PartyName[i].text, 650, yPos+6);
         inputUse |= ls_uiTextBox(c, Page->PlayerInit + i, 732, yPos, 32, 20);
         yPos -= 20;
     }
@@ -1968,13 +1967,14 @@ b32 DrawPranaStyle(UIContext *c)
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
-    s32 visibleOrder  = visibleMobs + visibleAllies + PARTY_NUM - Page->orderAdjust;
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - Page->orderAdjust;
     
     b32 inputUse = FALSE;
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
     
     s32 yPos = 780;
+    s32 alliesListY = 678 - (party_count*20 + 8);
     //NOTE: Z Layer 1 Input
     {
         if(!State.inBattle)
@@ -1986,7 +1986,10 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, yPos);
             
             inputUse |= ls_uiListBox(c, &Page->Mobs,     50, yPos-65, 100, 20, 1);
-            inputUse |= ls_uiListBox(c, &Page->Allies, 1094, yPos-225, 100, 20, 1);
+            
+            //inputUse |= ls_uiListBox(c, &Page->Allies, 1094, yPos-225, 100, 20, 1);
+            //inputUse |= ls_uiListBox(c, &Page->Allies, 1094, yPos-365, 100, 20, 1);
+            inputUse |= ls_uiListBox(c, &Page->Allies, 1094, alliesListY, 100, 20, 1);
             
             inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40);
             inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40);
@@ -2011,10 +2014,10 @@ b32 DrawPranaStyle(UIContext *c)
     if(!State.inBattle)
     {
         // Party
-        for(u32 i = 0; i < PARTY_NUM; i++)
+        for(u32 i = 0; i < party_count; i++)
         {
-            ls_uiLabel(c, PartyName[i], 1109, yPos+6);
-            inputUse |= ls_uiTextBox(c, Page->PlayerInit + i, 1194, yPos, 32, 20);
+            ls_uiLabel(c, State.PartyName[i].text, 1109, yPos+6);
+            inputUse |= ls_uiTextBox(c, Page->PlayerInit + i, 1217, yPos, 32, 20);
             yPos -= 20;
         }
         
@@ -2026,10 +2029,12 @@ b32 DrawPranaStyle(UIContext *c)
             yPos -= 20;
         }
         
-        yPos = 678;
+        yPos = alliesListY - 36;
         for(u32 i = 0; i < visibleAllies; i++)
         {
-            inputUse |= DrawInitField(c, Page->AllyFields + i, 1063, yPos-160, i+MOB_NUM, 136);
+            //inputUse |= DrawInitField(c, Page->AllyFields + i, 1063, yPos-160, i+mob_count, 136);
+            //inputUse |= DrawInitField(c, Page->AllyFields + i, 1063, yPos-300, i+mob_count, 136);
+            inputUse |= DrawInitField(c, Page->AllyFields + i, 1063, yPos, i+mob_count, 136);
             yPos -= 20;
         }
         
@@ -2037,20 +2042,20 @@ b32 DrawPranaStyle(UIContext *c)
         if(State.Init->isAdding)
         {
             AssertMsgF(globalSelectedIndex >= 0, "Selected Index %d is not set\n", globalSelectedIndex);
-            AssertMsgF(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+MOB_NUM);
+            AssertMsgF(globalSelectedIndex <= visibleAllies+mob_count, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+mob_count);
             
             InitField *f = 0;
-            if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
+            if(globalSelectedIndex >= mob_count) { f = Page->AllyFields + (globalSelectedIndex - mob_count); }
             else                               { f = Page->MobFields + globalSelectedIndex; }
             
             inputUse |= DrawInitExtra(c, f, 436, yPos);
         }
         else if(globalSelectedIndex >= 0)
         {
-            AssertMsgF(globalSelectedIndex < visibleAllies+MOB_NUM, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+MOB_NUM);
+            AssertMsgF(globalSelectedIndex < visibleAllies+mob_count, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+mob_count);
             
             InitField *f = 0;
-            if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
+            if(globalSelectedIndex >= mob_count) { f = Page->AllyFields + (globalSelectedIndex - mob_count); }
             else                               { f = Page->MobFields + globalSelectedIndex; }
             
             if(f->compendiumIdx == -1)
@@ -2087,16 +2092,16 @@ b32 DrawPranaStyle(UIContext *c)
         }
         
         //Add New
-        if(visibleMobs <= MOB_NUM)
+        if(visibleMobs <= mob_count)
         {
-            if(!(State.Init->isAdding && globalSelectedIndex >= MOB_NUM))
+            if(!(State.Init->isAdding && globalSelectedIndex >= mob_count))
             { inputUse |= ls_uiButton(c, &Page->addNewMob, 180, 715); }
         }
         
-        if(visibleAllies <= ALLY_NUM)
+        if(visibleAllies <= ally_count)
         {
-            if(!(State.Init->isAdding && globalSelectedIndex < MOB_NUM))
-            { inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, 780-225); }
+            if(!(State.Init->isAdding && globalSelectedIndex < mob_count))
+            { inputUse |= ls_uiButton(c, &Page->addNewAlly, 1224, alliesListY); }
         }
     }
     else //In Battle == TRUE
@@ -2130,10 +2135,10 @@ b32 DrawPranaStyle(UIContext *c)
         if(State.Init->isAdding)
         {
             AssertMsg(globalSelectedIndex >= 0, "Selected Index is not set\n");
-            AssertMsgF(globalSelectedIndex <= visibleAllies+MOB_NUM, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+MOB_NUM);
+            AssertMsgF(globalSelectedIndex <= visibleAllies+mob_count, "Selected Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleAllies+mob_count);
             
             InitField *f = 0;
-            if(globalSelectedIndex >= MOB_NUM) { f = Page->AllyFields + (globalSelectedIndex - MOB_NUM); }
+            if(globalSelectedIndex >= mob_count) { f = Page->AllyFields + (globalSelectedIndex - mob_count); }
             else                               { f = Page->MobFields + globalSelectedIndex; }
             
             inputUse |= DrawInitExtra(c, f, 66, yPos);
@@ -2181,18 +2186,18 @@ b32 DrawPranaStyle(UIContext *c)
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718);
         
         //Add New
-        if(visibleMobs <= MOB_NUM)
+        if(visibleMobs <= mob_count)
         {
-            if(!(State.Init->isAdding && globalSelectedIndex >= MOB_NUM))
+            if(!(State.Init->isAdding && globalSelectedIndex >= mob_count))
             {
                 ls_uiLabel(c, U"Add Enemy", 30, 720);
                 inputUse |= ls_uiButton(c, &Page->addNewMob, 116, 715);
             }
         }
         
-        if(visibleAllies <= ALLY_NUM)
+        if(visibleAllies <= ally_count)
         {
-            if(!(State.Init->isAdding && globalSelectedIndex < MOB_NUM))
+            if(!(State.Init->isAdding && globalSelectedIndex < mob_count))
             {
                 ls_uiLabel(c, U"Add Ally", 157, 720);
                 inputUse |= ls_uiButton(c, &Page->addNewAlly, 235, 715);

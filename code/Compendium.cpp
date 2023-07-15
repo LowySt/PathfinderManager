@@ -2323,7 +2323,7 @@ void AddIncrementalToName(UIContext *c, utf32 name, UITextBox *box)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
     s32 visibleAllies = State.Init->Allies.selectedIndex;
-    s32 visibleOrder = visibleMobs + visibleAllies + PARTY_NUM - State.Init->orderAdjust;
+    s32 visibleOrder = visibleMobs + visibleAllies + party_count - State.Init->orderAdjust;
     
     //NOTE: Determine the number of the new mob/ally
     s32 cleanLen       = name.len;
@@ -2365,7 +2365,7 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     if(!compendium.isViewingPage)  return FALSE;
     if(compendium.pageIndex == -1) return FALSE;
-    if(visibleMobs == MOB_NUM)     return FALSE;
+    if(visibleMobs == mob_count)     return FALSE;
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
     
@@ -2389,7 +2389,7 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     
     if(!compendium.isViewingPage)  return FALSE;
     if(compendium.pageIndex == -1) return FALSE;
-    if(visibleAllies == ALLY_NUM)  return FALSE;
+    if(visibleAllies == ally_count)  return FALSE;
     
     ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
     

@@ -2,6 +2,7 @@
 #ifndef _INIT_H
 #define _INIT_H
 
+/*TODO: Defined but never used. WTF
 utf32 ConstNumberStrings[32] = { {(u32 *)U"0",1,1} , {(u32 *)U"1",1,1}, {(u32 *)U"2",1,1}, {(u32 *)U"3",1,1},
     {(u32 *)U"4",1,1}, {(u32 *)U"5",1,1}, {(u32 *)U"6",1,1}, {(u32 *)U"7",1,1}, {(u32 *)U"8",1,1},
     {(u32 *)U"9",1,1}, {(u32 *)U"10",2,2}, {(u32 *)U"11",2,2}, {(u32 *)U"12",2,2}, {(u32 *)U"13",2,2},
@@ -9,22 +10,20 @@ utf32 ConstNumberStrings[32] = { {(u32 *)U"0",1,1} , {(u32 *)U"1",1,1}, {(u32 *)
     {(u32 *)U"19",2,2}, {(u32 *)U"20",2,2}, {(u32 *)U"21",2,2}, {(u32 *)U"22",2,2}, {(u32 *)U"23",2,2},
     {(u32 *)U"24",2,2}, {(u32 *)U"25",2,2}, {(u32 *)U"26",2,2}, {(u32 *)U"27",2,2}, {(u32 *)U"28",2,2},
     {(u32 *)U"29",2,2}, {(u32 *)U"30",2,2}, {(u32 *)U"31",2,2} };
+*/
 
-const u32 PARTY_NUM = 4;
-const utf32 PartyName[PARTY_NUM] = {
-    {(u32 *)U"Efrea", 5, 5},
-    {(u32 *)U"Nick", 4, 4},
-    {(u32 *)U"Clovis", 6, 6},
-    {(u32 *)U"XXXXX", 5, 5},
-};
+const u32 MAX_PARTY_NUM = 12;
+s32 party_count = 3;
 
-const u32 MOB_NUM = 24;
-const char32_t *MobName[MOB_NUM] = { U"Enemy 1", U"Enemy 2", U"Enemy 3", U"Enemy 4",
+
+const s32 MAX_MOB_NUM = 24;
+s32 mob_count = 24;
+const char32_t *MobName[MAX_MOB_NUM] = { U"Enemy 1", U"Enemy 2", U"Enemy 3", U"Enemy 4",
     U"Enemy 5", U"Enemy 6", U"Enemy 7", U"Enemy 8", U"Enemy 9", U"Enemy 10", U"Enemy 11", U"Enemy 12",
     U"Enemy 13", U"Enemy 14", U"Enemy 15", U"Enemy 16", U"Enemy 17", U"Enemy 18", U"Enemy 19", 
     U"Enemy 20", U"Enemy 21", U"Enemy 22", U"Enemy 23", U"Enemy 24" };
 
-const char *Enemies[MOB_NUM + 1] = {
+const char *Enemies[MAX_MOB_NUM + 1] = {
     "No Enemies", "1 Enemy", "2 Enemies", "3 Enemies", "4 Enemies", "5 Enemies", "6 Enemies",
     "7 Enemies", "8 Enemies", "9 Enemies", "10 Enemies", "11 Enemies", "12 Enemies",
     "13 Enemies", "14 Enemies", "15 Enemies", "16 Enemies", "17 Enemies", "18 Enemies", "19 Enemies",
@@ -32,16 +31,18 @@ const char *Enemies[MOB_NUM + 1] = {
 };
 
 
-const u32 ALLY_NUM = 8;
-const char32_t *AllyName[ALLY_NUM] = { U"Ally 1", U"Ally 2", U"Ally 3", U"Ally 4",
+const s32 MAX_ALLY_NUM = 8;
+s32 ally_count = 8;
+const char32_t *AllyName[MAX_ALLY_NUM] = { U"Ally 1", U"Ally 2", U"Ally 3", U"Ally 4",
     U"Ally 5", U"Ally 6", U"Ally 7", U"Ally 8"
 };
 
-const char *Allies[ALLY_NUM + 1] = {
+const char *Allies[MAX_ALLY_NUM + 1] = {
     "No Allies", "1 Ally", "2 Allies", "3 Allies", "4 Allies", "5 Allies", "6 Allies", "7 Allies", "8 Allies"
 };
 
-const u32 ORDER_NUM = PARTY_NUM + MOB_NUM + ALLY_NUM;
+const u32 MAX_ORDER_NUM = MAX_PARTY_NUM + MAX_MOB_NUM + MAX_ALLY_NUM;
+s32 order_count = party_count + mob_count + ally_count;
 
 const u32 COUNTER_NUM       = 9;
 const u32 DEF_COUNTER_NUM   = 8;
@@ -147,10 +148,10 @@ struct Encounter
     utf32 name;
     
     u32 numMobs;
-    EncounterInitEntry mob[MOB_NUM];
+    EncounterInitEntry mob[MAX_MOB_NUM];
     
     u32 numAllies;
-    EncounterInitEntry ally[ALLY_NUM];
+    EncounterInitEntry ally[MAX_ALLY_NUM];
     
     utf32 throwerName[THROWER_NUM];
     utf32 throwerHit[THROWER_NUM];
@@ -263,10 +264,10 @@ struct InitPage
     UIListBox    Mobs;
     UIListBox    Allies;
     
-    UITextBox    PlayerInit[PARTY_NUM];
+    UITextBox    PlayerInit[MAX_PARTY_NUM];
     
-    InitField    AllyFields[ALLY_NUM];
-    InitField    MobFields[MOB_NUM];
+    InitField    AllyFields[MAX_ALLY_NUM];
+    InitField    MobFields[MAX_MOB_NUM];
     
     UIButton     addNewMob;
     UIButton     addNewAlly;
@@ -277,7 +278,7 @@ struct InitPage
     UIButton     Reset;
     UIButton     Next;
     
-    Order        OrderFields[ORDER_NUM];
+    Order        OrderFields[MAX_ORDER_NUM];
     s32          turnsInRound;
     s32          orderAdjust;
     

@@ -118,8 +118,8 @@ b32 ProgramMinimizeOnButton(UIContext *c, void *data) {
     return FALSE;
 }
 
-b32 ProgramOpenCompendium(UIContext *c, void *data) {
-    
+b32 ProgramOpenCompendium(UIContext *c, void *data)
+{
     if(CompendiumWindow)
     {
         ShowWindow(CompendiumWindow, SW_SHOW);
@@ -128,6 +128,15 @@ b32 ProgramOpenCompendium(UIContext *c, void *data) {
     }
     
     LogMsg(TRUE, "No Compendium Window yet!\n");
+    return FALSE;
+}
+
+b32 ProgramOpenPlayersSettings(UIContext *c, void *data)
+{
+    //TODO: Add a way in Menus to indicated disabled entries
+    if(State.inBattle) { return FALSE; }
+    
+    State.arePlayerSettingsOpen = !State.arePlayerSettingsOpen;
     return FALSE;
 }
 
@@ -140,10 +149,10 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     dest->Mobs.selectedIndex   = curr->Mobs.selectedIndex;
     dest->Allies.selectedIndex = curr->Allies.selectedIndex;
     
-    for(u32 i = 0; i < PARTY_NUM; i++)
+    for(u32 i = 0; i < party_count; i++)
     { ls_uiTextBoxSet(cxt, dest->PlayerInit + i, curr->PlayerInit[i].text); }
     
-    for(u32 i = 0; i < ALLY_NUM; i++)
+    for(u32 i = 0; i < ally_count; i++)
     {
         InitField *From = curr->AllyFields + i;
         InitField *To   = dest->AllyFields + i;
@@ -155,7 +164,7 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         To->ID       = From->ID;
     }
     
-    for(u32 i = 0; i < MOB_NUM; i++)
+    for(u32 i = 0; i < mob_count; i++)
     {
         InitField *From = curr->MobFields + i;
         InitField *To   = dest->MobFields + i;
@@ -167,7 +176,7 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         To->ID = From->ID;
     }
     
-    for(u32 i = 0; i < ORDER_NUM; i++)
+    for(u32 i = 0; i < order_count; i++)
     {
         Order *From = curr->OrderFields + i;
         Order *To   = dest->OrderFields + i;
@@ -303,7 +312,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     compendiumContext->numFonts = uiContext->numFonts;
     compendiumContext->currFont = uiContext->currFont;
     
-    
     UIMenu WindowMenu       = {};
     WindowMenu.closeWindow  = ls_uiMenuButton(ProgramExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
     WindowMenu.minimize     = ls_uiMenuButton(ProgramMinimizeOnButton, minBtnData, minBtnWidth, minBtnHeight);
@@ -320,7 +328,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"User", selectThemeUser, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Customize", openThemeColorPicker, NULL);
     
+    //TODO: Use Menu isVisible to hide PlayerSettings while In Battle!
+    ls_uiMenuAddSub(uiContext, &WindowMenu, U"Settings");
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 2, U"Players", ProgramOpenPlayersSettings, NULL);
+    
     ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
+    
     
     UIMenu CompendiumMenu = {};
     CompendiumMenu.closeWindow  = ls_uiMenuButton(CompendiumExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
@@ -330,8 +343,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add Enemy", CompendiumAddPageToInitMob, NULL);
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add Ally", CompendiumAddPageToInitAlly, NULL);
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"NPC Table", CompendiumOpenNPCTable, NULL);
-    
-    State.isInitialized = TRUE;
     
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
@@ -361,6 +372,20 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         UndoStates[i].Init = UndoInitPages + i;
         SetInitTab(uiContext, UndoStates + i);
     }
+    
+    //NOTE: Set the Party Settings TextBoxes and Buttons
+    for(s32 i = 0; i < MAX_PARTY_NUM; i++)
+    { ls_uiTextBoxInit(uiContext, State.PartyName + i, 16); }
+    ls_uiTextBoxSet(uiContext, &State.PartyName[0], ls_utf32Constant(U"Efrea"));
+    ls_uiTextBoxSet(uiContext, &State.PartyName[1], ls_utf32Constant(U"Nick"));
+    ls_uiTextBoxSet(uiContext, &State.PartyName[2], ls_utf32Constant(U"Clovis"));
+    for(s32 i = party_count; i < MAX_PARTY_NUM; i++)
+    { ls_uiTextBoxSet(uiContext, State.PartyName + i, ls_utf32Constant(U"XXXXX")); }
+    
+    ls_uiButtonInit(uiContext, &State.addPartyMember, UIBUTTON_CLASSIC, U"+", OnClickAddPlayerToState);
+    ls_uiButtonInit(uiContext, &State.removePartyMember, UIBUTTON_CLASSIC, U"-", OnClickRemovePlayerFromState);
+    
+    State.isInitialized = TRUE;
     
     ls_arenaUse(globalArena);
     
@@ -417,7 +442,19 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //NOTE: Custom Theme Color Picker
         userInputConsumed |= DrawThemePicker(uiContext);
         
-        userInputConsumed |= DrawInitTab(uiContext);
+        //NOTE: Player Settings
+        if(State.arePlayerSettingsOpen)
+        {
+            userInputConsumed |= DrawPlayerSettings(uiContext);
+            
+            Input *UserInput = &uiContext->UserInput;
+            if(KeyPress(keyMap::Escape)) { State.arePlayerSettingsOpen = FALSE; }
+        }
+        else
+        {
+            //NOTE: The actual Init Tab
+            userInputConsumed |= DrawInitTab(uiContext);
+        }
         
         if(!uiContext->hasReceivedInput && !uiContext->isDragging && !externalInputReceived)
         {
