@@ -330,7 +330,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     //TODO: Use Menu isVisible to hide PlayerSettings while In Battle!
     ls_uiMenuAddSub(uiContext, &WindowMenu, U"Settings");
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 2, U"Players", ProgramOpenPlayersSettings, NULL);
+    State.playerSettingsMenuItem = ls_uiSubMenuAddItem(uiContext, &WindowMenu, 2, 
+                                                       U"Players", ProgramOpenPlayersSettings, NULL);
     
     ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
     
@@ -392,6 +393,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
     b32 result = LoadState(uiContext);
+    
+    if(State.inBattle) { State.playerSettingsMenuItem->isVisible = FALSE; }
     
     RegionTimer frameTime = {};
     

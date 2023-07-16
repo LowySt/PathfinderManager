@@ -817,6 +817,7 @@ b32 SetOnClick(UIContext *c, void *data)
     Page->turnsInRound  = visibleOrder;
     Page->currIdx       = 0;
     State.inBattle      = TRUE;
+    State.playerSettingsMenuItem->isVisible = FALSE;
     globalSelectedIndex = 0;
     
     return TRUE;
@@ -834,6 +835,7 @@ b32 ResetOnClick(UIContext *c, void *data)
     globalSelectedIndex        = -1;
     
     State.inBattle = FALSE;
+    State.playerSettingsMenuItem->isVisible = TRUE;
     
     utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
     

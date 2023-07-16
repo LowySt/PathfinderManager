@@ -22,6 +22,8 @@ struct ProgramState
     UITextBox PartyName[MAX_PARTY_NUM];
     UIButton  addPartyMember;
     UIButton  removePartyMember;
+    
+    UIMenuItem *playerSettingsMenuItem;
     b32 arePlayerSettingsOpen;
     
     //State Management
