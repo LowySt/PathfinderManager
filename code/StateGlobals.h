@@ -25,6 +25,7 @@ struct ProgramState
     
     UIMenuItem *playerSettingsMenuItem;
     b32 arePlayerSettingsOpen;
+    b32 areInfoSettingsOpen;
     
     //State Management
     b32       inBattle;
@@ -94,6 +95,8 @@ b32 OnClickRemovePlayerFromState(UIContext *c, void *data)
 
 b32 DrawPlayerSettings(UIContext *c)
 {
+    b32 usedInput = FALSE;
+    
     s32 x = 0.37f*c->width;
     s32 y = 0.25f*c->height;
     
@@ -118,19 +121,75 @@ b32 DrawPlayerSettings(UIContext *c)
     if(party_count < MAX_PARTY_NUM)
     {
         s32 addX = x + 0.09f*c->width;
-        ls_uiButton(c, &State.addPartyMember, addX, y, 1);
+        usedInput |= ls_uiButton(c, &State.addPartyMember, addX, y, 1);
     }
     
     if(party_count > 0)
     {
         s32 remX = x + 0.20f*c->width;
         s32 remY = y + boxHeight*1.3f;
-        ls_uiButton(c, &State.removePartyMember, remX, remY, 1);
+        usedInput |= ls_uiButton(c, &State.removePartyMember, remX, remY, 1);
     }
     
-    //ls_uiLabel(c, U"Player Count", x, y, 1);
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    
+    return usedInput;
+}
+
+b32 DrawInfoSettings(UIContext *c)
+{
+    s32 x = 0.15f*c->width;
+    s32 y = 0.20f*c->height;
+    
+    s32 w = 0.70f*c->width;
+    s32 h = 0.60f*c->height;
+    
+    ls_uiRect(c, x, y, w, h, ls_uiLightenRGB(c->widgetColor, 0.25f), c->borderColor);
+    
+    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    
+    x = 0.16f*c->width;
+    y = 0.77f*c->height;
+    s32 boxHeight = c->currFont->pixelHeight*1.1f;
+    
+    ls_uiLabel(c, U"Created by Lorenzo Stramondo 2018 \u00A9", x, y, 1); 
+    y -= 2*boxHeight;
+    
+    ls_uiLabel(c, U"Shortcuts:", x, y, 1);
+    y -= boxHeight;
     
     ls_uiSelectFontByFontSize(c, FS_SMALL);
+    
+    boxHeight = c->currFont->pixelHeight*1.1f;
+    
+    s32 shortcutStartY = y;
+    
+    ls_uiLabel(c, U"Escape", x, y, 1); y -= boxHeight;
+    ls_uiLabel(c, U"   Exits out of many interfaces", x, y, 1); y -= 2*boxHeight;
+    
+    ls_uiLabel(c, U"Ctrl + Z", x, y, 1); y -= boxHeight;
+    ls_uiLabel(c, U"   Undo", x, y, 1);  y -= 2*boxHeight;
+    
+    ls_uiLabel(c, U"Ctrl + Y", x, y, 1); y -= boxHeight;
+    ls_uiLabel(c, U"   Redo", x, y, 1);  y -= 2*boxHeight;
+    
+    ls_uiLabel(c, U"Right Alt + Left Mouse Drag", x, y, 1); y -= boxHeight;
+    ls_uiLabel(c, U"   Drag Window", x, y, 1);              y -= 2*boxHeight;
+    
+    ls_uiLabel(c, U"Enter in Textboxes", x, y, 1);                                 y -= boxHeight;
+    ls_uiLabel(c, U"   Either lose focus or switch to next logical box", x, y, 1); y -= 2*boxHeight;
+    
+    ls_uiLabel(c, U"Down Arrow in Init Field Textboxes", x, y, 1); y -= boxHeight;
+    ls_uiLabel(c, U"   Copy current init field down", x, y, 1);    y -= 2*boxHeight;
+    
+    x = 0.53f*c->width;
+    y = shortcutStartY;
+    
+    ls_uiLabel(c, U"Shift + Down Arrow in Compendium Entry", x, y, 1); y -= boxHeight;
+    ls_uiLabel(c, U"   Move to next entry", x, y, 1);    y -= 2*boxHeight;
+    
+    ls_uiLabel(c, U"Shift + Up Arrow in Compendium Entry", x, y, 1); y -= boxHeight;
+    ls_uiLabel(c, U"   Move to previous entry", x, y, 1);    y -= 2*boxHeight;
     
     return FALSE;
 }

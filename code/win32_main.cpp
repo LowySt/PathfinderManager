@@ -133,10 +133,15 @@ b32 ProgramOpenCompendium(UIContext *c, void *data)
 
 b32 ProgramOpenPlayersSettings(UIContext *c, void *data)
 {
-    //TODO: Add a way in Menus to indicated disabled entries
     if(State.inBattle) { return FALSE; }
     
     State.arePlayerSettingsOpen = !State.arePlayerSettingsOpen;
+    return FALSE;
+}
+
+b32 ProgramOpenInfoSettings(UIContext *c, void *data)
+{
+    State.areInfoSettingsOpen = !State.areInfoSettingsOpen;
     return FALSE;
 }
 
@@ -328,10 +333,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"User", selectThemeUser, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Customize", openThemeColorPicker, NULL);
     
-    //TODO: Use Menu isVisible to hide PlayerSettings while In Battle!
     ls_uiMenuAddSub(uiContext, &WindowMenu, U"Settings");
     State.playerSettingsMenuItem = ls_uiSubMenuAddItem(uiContext, &WindowMenu, 2, 
                                                        U"Players", ProgramOpenPlayersSettings, NULL);
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 2, U"Info", ProgramOpenInfoSettings, NULL);
     
     ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
     
@@ -452,6 +457,13 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             Input *UserInput = &uiContext->UserInput;
             if(KeyPress(keyMap::Escape)) { State.arePlayerSettingsOpen = FALSE; }
+        }
+        else if(State.areInfoSettingsOpen)
+        {
+            userInputConsumed |= DrawInfoSettings(uiContext);
+            
+            Input *UserInput = &uiContext->UserInput;
+            if(KeyPress(keyMap::Escape)) { State.areInfoSettingsOpen = FALSE; }
         }
         else
         {
