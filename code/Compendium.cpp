@@ -3583,7 +3583,15 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         if(page->specialAttacks.len)
         {
             c->textColor = RGB(0xCC, 0x22, 0x22);
+            
+#if _DEBUG
+            __ui_shouldTag = TRUE;
+#endif
             renderAndAlignS(U"Attacchi Speciali: ");
+            
+#if _DEBUG
+            __ui_shouldTag = FALSE;
+#endif
             renderAndAlign(page->specialAttacks);
             c->textColor = RGBg(0xAA);
         }

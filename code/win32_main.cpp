@@ -272,7 +272,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Switch to global memory arena 
     //      for general allocations
     
-    globalArena     = ls_arenaCreate(MBytes(8));
+    globalArena     = ls_arenaCreate(MBytes(12));
     fileArena       = ls_arenaCreate(MBytes(4));
     stateArena      = ls_arenaCreate(MBytes(8));
     saveArena       = ls_arenaCreate(MBytes(4));
@@ -291,6 +291,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
 #if _DEBUG
     ls_vlogRegister("Order", ls_vlogFormatOrder);
+    ls_vlogRegister("UIRect", ls_vlogFormatUIRect);
 #endif
     
     //TODO: Hardcoded Compendium Window
@@ -609,24 +610,28 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(showDebug)
         {
+            //ls_uiGlyph(uiContext, 0, 3, UIRect {0, 0, (s32)uiContext->width, (s32)uiContext->height}, uiContext->scissor, &uiContext->currFont->glyph['M'], RGBg(0xFF));
+            
             ls_uiFillRect(uiContext, 1248, 760, 20, 20, UIRect {0, (s32)uiContext->width, 0, (s32)uiContext->height},
-                          uiContext->scissor, {}, uiContext->backgroundColor);
+                          uiContext->scissor, uiContext->backgroundColor);
             ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
             ls_uiGlyphString(uiContext, uiContext->currFont, 1248, 760,
                              UIRect {(s32)uiContext->width/2, 0, (s32)uiContext->width, (s32)uiContext->height},
-                             uiContext->scissor, {}, frameTimeString, RGBg(0xEE));
+                             uiContext->scissor, frameTimeString, RGBg(0xEE));
             
             ls_uiFillRect(uiContext, windowWidth/2, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, {},RGB(0xFF, 0xFF, 0));
+                          uiContext->scissor, RGB(0xFF, 0xFF, 0));
+            ls_uiFillRect(uiContext, 0, windowHeight/2, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
+                          uiContext->scissor, RGB(0xFF, 0xFF, 0));
             
             ls_uiFillRect(uiContext, 260, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                          uiContext->scissor, RGB(0xFF, 0, 0xFF));
             ls_uiFillRect(uiContext, 1040, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                          uiContext->scissor, RGB(0xFF, 0, 0xFF));
             ls_uiFillRect(uiContext, 0, 218, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                          uiContext->scissor, RGB(0xFF, 0, 0xFF));
             ls_uiFillRect(uiContext, 0, 696, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                          uiContext->scissor, RGB(0xFF, 0, 0xFF));
         }
         
         //-------------------------------
@@ -719,23 +724,26 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             if(showDebug)
             {
                 ls_uiFillRect(compendiumContext, 762, 620, 20, 20, UIRect {0, (s32)compendiumContext->width, 0, (s32)compendiumContext->height},
-                              compendiumContext->scissor, {}, compendiumContext->backgroundColor);
+                              compendiumContext->scissor, compendiumContext->backgroundColor);
                 ls_utf32FromInt_t(&frameTimeString, compendiumContext->dt);
                 ls_uiGlyphString(compendiumContext, compendiumContext->currFont, 762, 620,
                                  UIRect {(s32)compendiumContext->width/2, 0, (s32)compendiumContext->width, (s32)compendiumContext->height},
-                                 compendiumContext->scissor, {}, frameTimeString, RGBg(0xEE));
+                                 compendiumContext->scissor, frameTimeString, RGBg(0xEE));
                 
-                ls_uiFillRect(compendiumContext, windowWidth/2, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                              compendiumContext->scissor, {},RGB(0xFF, 0xFF, 0));
+                ls_uiFillRect(compendiumContext, compendiumWidth/2, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              compendiumContext->scissor, RGB(0xFF, 0xFF, 0));
                 
-                ls_uiFillRect(compendiumContext, windowWidth/4, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                              compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(compendiumContext, 3*windowWidth/4, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                              compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(compendiumContext, 0, windowHeight/3, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
-                              compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(compendiumContext, 0, 2*windowHeight/3, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
-                              compendiumContext->scissor, {}, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(compendiumContext, 0, compendiumHeight/2, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              compendiumContext->scissor, RGB(0xFF, 0xFF, 0));
+                
+                ls_uiFillRect(compendiumContext, compendiumWidth/4, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              compendiumContext->scissor, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(compendiumContext, 3*compendiumWidth/4, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              compendiumContext->scissor, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(compendiumContext, 0, compendiumHeight/3, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              compendiumContext->scissor, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(compendiumContext, 0, 2*compendiumHeight/3, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              compendiumContext->scissor, RGB(0xFF, 0, 0xFF));
             }
             
         }

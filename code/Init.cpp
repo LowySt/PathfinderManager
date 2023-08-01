@@ -23,6 +23,20 @@ s32 ls_vlogFormatOrder(char *dst, va_list *argList)
     return bytesWritten;
 }
 
+s32 ls_vlogFormatUIRect(char *dst, va_list *argList)
+{
+    UIRect rect = va_arg(*argList, UIRect);
+    
+    const s32 buffSize = 256;
+    char buff[buffSize] = {};
+    
+    s32 bytesWritten = ls_slog(buff, buffSize, "[ x: {s32}, y: {s32}, w: {s32}, h: {s32} ]",
+                               rect.x, rect.y, rect.w, rect.h);
+    
+    ls_memcpy(buff, dst, bytesWritten);
+    return bytesWritten;
+}
+
 void DumpOrder(Order *ord)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
