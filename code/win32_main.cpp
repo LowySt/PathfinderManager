@@ -318,10 +318,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     compendiumContext->numFonts = uiContext->numFonts;
     compendiumContext->currFont = uiContext->currFont;
     
-    UIMenu WindowMenu       = {};
-    WindowMenu.closeWindow  = ls_uiMenuButton(ProgramExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
-    WindowMenu.minimize     = ls_uiMenuButton(ProgramMinimizeOnButton, minBtnData, minBtnWidth, minBtnHeight);
-    WindowMenu.itemWidth    = 100;
+    UIMenu WindowMenu      = {};
+    WindowMenu.closeWindow = ls_uiMenuButton(ProgramExitOnButton, closeBtnDataPremulti, closeBtnWidth, closeBtnHeight);
+    WindowMenu.minimize    = ls_uiMenuButton(ProgramMinimizeOnButton, minBtnDataPremulti, minBtnWidth, minBtnHeight);
+    WindowMenu.itemWidth   = 100;
     
     ls_uiMenuAddSub(uiContext, &WindowMenu, U"Style");
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 0, U"Default", selectStyleDefault, NULL);
