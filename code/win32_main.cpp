@@ -402,7 +402,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     if(State.inBattle) { State.playerSettingsMenuItem->isVisible = FALSE; }
     
-    RegionTimer frameTime = {};
+    RegionTimer frameTime     = {};
     
     b32 Running               = TRUE;
     utf32 frameTimeString     = ls_utf32Alloc(8);
@@ -601,7 +601,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_arenaClear(renderArena);
             //
             // ----------------
-            
         }
         
         //NOTETODO: just annoying non global user input bullshit.
