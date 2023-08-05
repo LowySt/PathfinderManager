@@ -2483,7 +2483,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->specialAttacks    = ls_utf32Alloc(1536);
     cachedPage->psych             = ls_utf32Alloc(2048);
     cachedPage->magics            = ls_utf32Alloc(2048);
-    cachedPage->spells            = ls_utf32Alloc(2048);
+    cachedPage->spells            = ls_utf32Alloc(2560);
     
     cachedPage->tactics_before    = ls_utf32Alloc(448);
     cachedPage->tactics_during    = ls_utf32Alloc(832);
@@ -2819,17 +2819,17 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
-    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name);
-    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs);
-    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe);
+    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
+    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs, "gs");
+    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe, "pe");
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->INT, page.INT);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR, "str");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX, "dex");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON, "con");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->INT, page.INT, "int");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS, "wis");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA, "cha");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
     
     cachedPage->origSTR = ls_utf32ToInt(cachedPage->STR);
     cachedPage->origDEX = ls_utf32ToInt(cachedPage->DEX);
@@ -2868,13 +2868,13 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         ls_utf32FromInt_t(&cachedPage->DEX, dex);
     }
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure, "treasure");
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc);
-    GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "shortDesc");
+    GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
     
-    GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type);
+    GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type, "type");
     
     ls_utf32Clear(&cachedPage->subtype);
     if(page.subtype[0])
@@ -2910,7 +2910,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&cachedPage->talents);
     if(page.talents[0])
     {
-        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0]);
+        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0], "talents");
         
         u32 i = 1;
         while(page.talents[i] && i < 24)
@@ -2921,50 +2921,50 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     }
     
     //NOTE: Racial Mods, Special Qualities
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racialMods");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
     
     //NOTE: General Battle Stats. AC, HP, Saving Throws, BMC/DMC, Initiative, RD/RI
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC);
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "ac");
     CalculateAndCacheAC(tempString, cachedPage, FALSE, status);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP);
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "hp");
     CalculateAndCacheHP(tempString, cachedPage);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST);
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "st");
     CalculateAndCacheST(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC);
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC, "bmc");
     CalculateAndCacheBMC(tempString, cachedPage);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC);
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC, "dmc");
     CalculateAndCacheDMC(tempString, cachedPage);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative);
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative, "initiative");
     CalculateAndCacheInitiative(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD, "rd");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI, "ri");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "defensiveCapacity");
     
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee);
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee, "melee");
     CalculateAndCacheMelee(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged);
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged, "ranged");
     CalculateAndCacheRanged(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "specialAttacks");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych, "psych");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics, "magics");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells, "spells");
     
     //NOTE: Mobs don't have tactics/equip/properties or boons. We need to clear it to
     //      avoid pollution from the previous cachedPage
@@ -2979,7 +2979,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&cachedPage->specials);
     if(page.specials[0])
     {
-        GetEntryFromBuffer_t(&c->specials, &cachedPage->specials, page.specials[0]);
+        GetEntryFromBuffer_t(&c->specials, &cachedPage->specials, page.specials[0], "specials");
         u32 i = 1;
         while(page.specials[i] && i < 24)
         {
@@ -2988,17 +2988,17 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         }
     }
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->org, page.org);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc);
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source);
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->org, page.org, "org");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
     
     
-    GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment);
+    GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "alignment");
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
     {
-        GetEntryFromBuffer_t(&c->senses, &cachedPage->senses, page.senses[0]);
+        GetEntryFromBuffer_t(&c->senses, &cachedPage->senses, page.senses[0], "senses");
         u32 i = 1;
         while(page.senses[i] && i < 8)
         {
@@ -3008,13 +3008,13 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     }
     
     //TODO :StatusPerception
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception);
-    GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception, "perception");
+    GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura, "aura");
     
     ls_utf32Clear(&cachedPage->immunities);
     if(page.immunities[0])
     {
-        GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0]);
+        GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0], "immunities");
         u32 i = 1;
         while(page.immunities[i] && i < 16)
         {
@@ -3026,7 +3026,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&cachedPage->resistances);
     if(page.resistances[0])
     {
-        GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0]);
+        GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0], "resistances");
         u32 i = 1;
         while(page.resistances[i] && i < 16)
         {
@@ -3038,7 +3038,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&cachedPage->weaknesses);
     if(page.weaknesses[0])
     {
-        GetEntryFromBuffer_t(&c->weaknesses, &cachedPage->weaknesses, page.weaknesses[0]);
+        GetEntryFromBuffer_t(&c->weaknesses, &cachedPage->weaknesses, page.weaknesses[0], "weaknesses");
         u32 i = 1;
         while(page.weaknesses[i] && i < 16)
         {
@@ -3047,15 +3047,15 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         }
     }
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->speed, page.speed);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space);
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach);
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->speed, page.speed, "speed");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space, "space");
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach, "reach");
     
     ls_utf32Clear(&cachedPage->skills);
     s32 i = 0;
     while(page.skills[i])
     {
-        GetEntryFromBuffer_t(&c->skills, &tempString, page.skills[i]);
+        GetEntryFromBuffer_t(&c->skills, &tempString, page.skills[i], "skills");
         CalculateAndCacheSkill(tempString, cachedPage, status);
         if(i < 23 && page.skills[i+1] != 0) { ls_utf32Append(&cachedPage->skills, ls_utf32Constant(U", ")); }
         ls_utf32Clear(&tempString);
@@ -3065,7 +3065,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&cachedPage->languages);
     if(page.languages[0])
     {
-        GetEntryFromBuffer_t(&c->languages, &cachedPage->languages, page.languages[0]);
+        GetEntryFromBuffer_t(&c->languages, &cachedPage->languages, page.languages[0], "languages");
         u32 i = 1;
         while(page.languages[i] && i < 24)
         {
@@ -3074,7 +3074,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         }
     }
     
-    GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment);
+    GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment, "environment");
 }
 
 void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
