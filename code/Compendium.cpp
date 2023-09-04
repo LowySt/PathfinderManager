@@ -271,7 +271,7 @@ void GetPageEntryAndCache(s32 compendiumIdx, CachedPageEntry *page, Status *stat
     else
     { 
         NPCPageEntry pEntry = compendium.codex.npcPages[compendiumIdx - NPC_PAGE_INDEX_OFFSET];
-        CachePage(pEntry, compendiumIdx, page, NULL);
+        CachePage(pEntry, compendiumIdx, page, status);
     }
 }
 
