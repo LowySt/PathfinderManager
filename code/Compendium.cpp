@@ -1815,8 +1815,14 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
         parenOpenIdx = ls_utf32LeftFind(Melee, parenCloseIdx, '(');
     }
     
-    //NOTE: It's mostly formatting errors because of fucking golarion!
-    LogMsgF(Melee.len - stringIndex == 0, "Stuff left at the end of the original string: %d\n", Melee.len - stringIndex);
+    s32 remaining_len = Melee.len - stringIndex;
+    if(remaining_len != 0)
+    {
+        //NOTE: Something went wrong. For security append it so that we don't miss possibly important data
+        LogMsgF(remaining_len == 0, "Stuff left at the end of the original string: %d\n", remaining_len);
+        ls_utf32Append(&cachedPage->melee, {Melee.data + stringIndex, remaining_len, remaining_len});
+    }
+    
 }
 
 void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *status = NULL)
@@ -2076,7 +2082,8 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
         }
     }
     
-    AssertMsg(skillCat != SK_UNDEFINED, "Unable to find Skill AS Category!\n");
+    
+    LogMsg(skillCat != SK_UNDEFINED, "Unable to find Skill AS Category!\n");
     
     s32 asBonusNew = 0;
     s32 asBonusOld = 0;
@@ -2485,7 +2492,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     const u32 maxSpecials    = 24;
     
     cachedPage->origin            = ls_utf32Alloc(128);
-    cachedPage->shortDesc         = ls_utf32Alloc(512);
+    cachedPage->shortDesc         = ls_utf32Alloc(768);
     cachedPage->AC                = ls_utf32Alloc(192);
     cachedPage->HP                = ls_utf32Alloc(128);
     cachedPage->ST                = ls_utf32Alloc(128);
