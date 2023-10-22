@@ -1036,6 +1036,20 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         flatAC = (flatAC - oldNatArmor) + newNatArmor;
     }
     
+    //NOTETODO: Technically an incorporeal creature can't have nat armor bonus. Check?
+    b32 isIncorporeal = (ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1);
+    if(isIncorporeal)
+    {
+        s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
+        s32 chaBonusOld = newToOldMap[cachedPage->origCHA - 10];
+        
+        s32 chaBonusToAC     = chaBonusNew < 1 ? 1 : chaBonusNew;
+        s32 chaBonusOldToAC  = chaBonusOld < 1 ? 1 : chaBonusOld;
+        totAC   = (totAC - chaBonusOldToAC) + chaBonusToAC;
+        flatAC  = (flatAC - chaBonusOldToAC) + chaBonusToAC;
+        touchAC = (touchAC - chaBonusOldToAC) + chaBonusToAC;
+    }
+    
     //NOTE: Apply status conditions if present
     b32 hasSchivareProdigioso = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Schivare Prodigioso")) != -1;
     if(status)
