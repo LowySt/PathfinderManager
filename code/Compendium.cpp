@@ -26,7 +26,7 @@ struct CachedPageEntry
     utf32 tactics_before;
     utf32 tactics_during;
     utf32 tactics_stats;
-    utf32 skills; //TODO Separate type from value
+    utf32 skills;
     utf32 racialMods;
     utf32 spec_qual;
     utf32 given_equip;
@@ -70,6 +70,12 @@ struct CachedPageEntry
     utf32 environment;
 };
 
+const u32 PAREN_BIT_U32 = 0x40000000;
+const u16 PAREN_BIT_U16 = 0x4000;
+
+const u32 INTERN_BIT_U32 = 0x80000000;
+const u16 INTERN_BIT_U16 = 0x8000;
+
 struct NPCPageEntry
 {
     u32 origin;
@@ -87,7 +93,7 @@ struct NPCPageEntry
     u32 magics;
     u32 spells;
     u32 tactics[3];
-    u32 skills[24]; //TODO Separate type from value
+    u32 skills[24];
     u32 racialMods;
     u32 spec_qual;
     u32 given_equip;
@@ -144,7 +150,7 @@ struct PageEntry
     u32 psych;             //48
     u32 magics;            //52
     u32 spells;            //56
-    u32 skills[24];        //152    //TODO Separate type from value
+    u32 skills[24];        //152
     u32 racialMods;        //156
     u32 spec_qual;         //160
     u32 specials[24];      //256
@@ -2288,7 +2294,7 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
         ls_utf32Append(&cachedPage->skills, {Skill.data, bonus, bonus});
         
         ls_utf32FromInt_t(&tmpString, bonusValue);
-        if(bonusValue > 0) { ls_utf32AppendChar(&cachedPage->skills, '+'); }
+        if(bonusValue >= 0) { ls_utf32AppendChar(&cachedPage->skills, '+'); }
         
         ls_utf32Append(&cachedPage->skills, tmpString);
         ls_utf32Append(&cachedPage->skills, {Skill.data + end, Skill.len - end, Skill.len - end});
@@ -3074,9 +3080,16 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     ls_utf32Clear(&cachedPage->skills);
     s32 i = 0;
-    while(page.skills[i])
+    while(page.skills[i] && i < 24)
     {
-        GetEntryFromBuffer_t(&c->skills, &tempString, page.skills[i], "skills");
+        if((page.skills[i] & INTERN_BIT_U32) != 0)
+        { GetEntryFromBuffer_t(&c->skills, &tempString, (page.skills[i] & (~INTERN_BIT_U32)), "skills"); }
+        else
+        { 
+            i = BuildSkillFromPacked_t(page.skills, i, &tempString);
+            AssertMsgF(i <= 23, "When unpacking skill, got invalid index: %d\n", i);
+        }
+        
         CalculateAndCacheSkill(tempString, cachedPage, status);
         if(i < 23 && page.skills[i+1] != 0) { ls_utf32Append(&cachedPage->skills, ls_utf32Constant(U", ")); }
         ls_utf32Clear(&tempString);
@@ -3349,9 +3362,16 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     
     ls_utf32Clear(&cachedPage->skills);
     s32 i = 0;
-    while(page.skills[i])
+    while(page.skills[i] && i < 24)
     {
-        GetEntryFromBuffer_t(&c->skills, &tempString, page.skills[i]);
+        if((page.skills[i] & INTERN_BIT_U32) != 0)
+        { GetEntryFromBuffer_t(&c->skills, &tempString, (page.skills[i] & (~INTERN_BIT_U32)), "skills"); }
+        else
+        { 
+            i = BuildSkillFromPacked_t(page.skills, i, &tempString);
+            AssertMsgF(i <= 23, "When unpacking skill, got invalid index: %d\n", i);
+        }
+        
         CalculateAndCacheSkill(tempString, cachedPage, status);
         if(i < 23 && page.skills[i+1] != 0) { ls_utf32Append(&cachedPage->skills, ls_utf32Constant(U", ")); }
         ls_utf32Clear(&tempString);

@@ -9,6 +9,7 @@
 *.png
 *.otf
 *.ttf
+Compendium_old
 back*
 code/asset_main.cpp
 testState
