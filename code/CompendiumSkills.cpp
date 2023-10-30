@@ -27,7 +27,6 @@ s32 BuildSkillFromPacked_t(u32 *entries, s32 index, utf32 *tmp)
         { 
             ls_utf32Append(tmp, ls_utf32Constant(U" ("));
             
-            //TODO: Add Sentinel Value for value. (We have the bits now!)
             while(nextParen == TRUE)
             {
                 AssertMsgF(index < 24, "Iterated too many times while searching for paren skills");
@@ -39,7 +38,7 @@ s32 BuildSkillFromPacked_t(u32 *entries, s32 index, utf32 *tmp)
                 const char32_t *nextName = SkillTypeToName[(nextEntry & SKILL_TYPE_MASK)];
                 s32 nextValue = (s32)((s8)(nextEntry >> SKILL_BITS));
                 
-                if(nextValue == 0)
+                if(nextValue == SKILL_SENTINEL_VALUE)
                 {
                     ls_utf32Append(tmp, ls_utf32Constant(nextName));
                     if(index < 23 && nextParen) ls_utf32Append(tmp, ls_utf32Constant(U", "));
@@ -49,7 +48,7 @@ s32 BuildSkillFromPacked_t(u32 *entries, s32 index, utf32 *tmp)
                     if(nextValue >= 0) { ls_utf32AppendChar(tmp, '+');}
                     ls_utf32AppendInt(tmp, nextValue);
                     ls_utf32AppendChar(tmp, ' ');
-                    ls_utf32Append(tmp, ls_utf32Constant(name));
+                    ls_utf32Append(tmp, ls_utf32Constant(nextName));
                     if(index < 23 && nextParen) ls_utf32Append(tmp, ls_utf32Constant(U", "));
                 }
                 

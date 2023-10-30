@@ -143,6 +143,7 @@ enum SkillType
 
 const u32 SKILL_BITS = 7;
 const u32 SKILL_TYPE_MASK = 0x7F;
+const s32 SKILL_SENTINEL_VALUE = -127;
 
 const char32_t *SkillTypeToName[SkillType::SkillTypeCount] = {
     U"Acrobazia", U"Saltare", U"Saltare", U"Addestrare Animali", U"Artigianato", U"Alchimia", U"Calligrafia",
