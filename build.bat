@@ -24,7 +24,7 @@ SET TOOLDIR=F:\ProgrammingProjects\IncludeDir\Tools
 SET PLATDIR=F:\ProgrammingProjects\IncludeDir\Platform
 
 SET OPTS= -favor:ATOM %DEPLOY% -I %TOOLDIR% -I %PLATDIR% /MT /GR- -FC -EHa- -nologo -diagnostics:column -Zi /std:c++latest
-SET LIBS=kernel32.lib user32.lib gdi32.lib winmm.lib %DBGONLY%
+SET LIBS=kernel32.lib user32.lib gdi32.lib Msimg32.lib winmm.lib %DBGONLY%
 
 REM SET ASMDIR=F:\ProgrammingProjects\AddIncludes\PlatformAndTools\tools\asm
 SET ASMDIR=%cd%\code\asm
