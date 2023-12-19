@@ -70,6 +70,24 @@ struct CachedPageEntry
     utf32 environment;
 };
 
+const u32 TALENT_INTERN_BIT_U32   = 0x80000000;
+const u32 TALENT_BONUS_BIT_U32    = 0x40000000;
+const u32 TALENT_MITHIC_BIT_U32   = 0x20000000;
+const u32 TALENT_INTERN_IDX_SHIFT = 12;
+const u32 TALENT_INTERN_MASK      = 0x0FFFF000;
+const u32 TALENT_MODULE_IDX_MASK  = 0x00000FFF;
+
+struct TalentEntry
+{
+    u32 name;
+    u32 desc;
+    u32 pre;
+    u32 gain;
+    u32 norm;
+    u32 spec;
+    u32 source;
+};
+
 const u32 PAREN_BIT_U32 = 0x40000000;
 const u16 PAREN_BIT_U16 = 0x4000;
 
@@ -94,6 +112,7 @@ struct NPCPageEntry
     u32 spells;
     u32 tactics[3];
     u32 skills[24];
+    u32 talents[24];
     u32 racialMods;
     u32 spec_qual;
     u32 given_equip;
@@ -130,7 +149,6 @@ struct NPCPageEntry
     u16 BAB;
     u16 BMC;
     u16 DMC;
-    u16 talents[24];
     u16 languages[24];
 };
 
@@ -151,44 +169,44 @@ struct PageEntry
     u32 magics;            //52
     u32 spells;            //56
     u32 skills[24];        //152
-    u32 racialMods;        //156
-    u32 spec_qual;         //160
-    u32 specials[24];      //256
-    u32 org;               //260
-    u32 treasure;          //264
-    u32 desc;              //268
-    u32 source;            //272
+    u32 talents[24];       //248
+    u32 racialMods;        //
+    u32 spec_qual;         //
+    u32 specials[24];      //
+    u32 org;               //
+    u32 treasure;          //
+    u32 desc;              //
+    u32 source;            //
     
-    u16 name;              //274
-    u16 gs;                //276
-    u16 pe;                //278
-    u16 alignment;         //280
-    u16 type;              //282
-    u16 subtype[8];        //298
-    u16 archetype[4];      //306
-    u16 size;              //308
-    u16 initiative;        //310
-    u16 senses[8];         //326
-    u16 perception;        //328
-    u16 aura;              //330
-    u16 immunities[16];    //362
-    u16 resistances[16];   //394
-    u16 weaknesses[16];    //426
-    u16 speed;             //428
-    u16 space;             //430
-    u16 reach;             //432
-    u16 STR;               //434
-    u16 DEX;               //436
-    u16 CON;               //438
-    u16 INT;               //440
-    u16 WIS;               //442
-    u16 CHA;               //444
-    u16 BAB;               //446
-    u16 BMC;               //448
-    u16 DMC;               //450
-    u16 talents[24];       //498
-    u16 languages[24];     //546
-    u16 environment;       //548
+    u16 name;              //
+    u16 gs;                //
+    u16 pe;                //
+    u16 alignment;         //
+    u16 type;              //
+    u16 subtype[8];        //
+    u16 archetype[4];      //
+    u16 size;              //
+    u16 initiative;        //
+    u16 senses[8];         //
+    u16 perception;        //
+    u16 aura;              //
+    u16 immunities[16];    //
+    u16 resistances[16];   //
+    u16 weaknesses[16];    //
+    u16 speed;             //
+    u16 space;             //
+    u16 reach;             //
+    u16 STR;               //
+    u16 DEX;               //
+    u16 CON;               //
+    u16 INT;               //
+    u16 WIS;               //
+    u16 CHA;               //
+    u16 BAB;               //
+    u16 BMC;               //
+    u16 DMC;               //
+    u16 languages[24];     //
+    u16 environment;       //596
 };
 
 struct Codex
@@ -217,9 +235,12 @@ struct Codex
     buffer environment;
     buffer specials;
     
-    //TODO: Change this to a FixedArray
+    buffer talentsModule;
+    
+    //TODO: Change these to FixedArray
     Array<PageEntry>    pages;
     Array<NPCPageEntry> npcPages;
+    Array<TalentEntry>  talentPages;
 };
 
 const s32 NPC_PAGE_INDEX_OFFSET = 5000;
@@ -245,8 +266,8 @@ struct Compendium
     Array<u16> npcViewIndices;
 };
 
-Compendium      compendium        = {};
-CachedPageEntry cachedPage        = {};
+Compendium         compendium     = {};
+CachedPageEntry    cachedPage     = {};
 UIScrollableRegion pageScroll     = {};
 UIScrollableRegion tableScroll    = {};
 UIScrollableRegion npcTableScroll = {};
@@ -2600,6 +2621,8 @@ void LoadCompendium(string path)
         compendium.codex.languages      = ls_bufferInit(128);
         compendium.codex.environment    = ls_bufferInit(128);
         compendium.codex.specials       = ls_bufferInit(128);
+        
+        compendium.codex.talentsModule  = ls_bufferInit(128);
     }
     else
     {
@@ -2615,6 +2638,16 @@ void LoadCompendium(string path)
             ls_bufferReadSkip(src, blockSize);
         };
         
+        //NOTE: First we map the talents module
+        viewIntoBuffer(&CompendiumBuff, &compendium.codex.talentsModule);
+        
+        //TODO: Change this to a FixedArray
+        u32 talentsCount = ls_bufferReadDWord(&CompendiumBuff);
+        u8 *talentsSrc   = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
+        ls_arrayFromPointer(&compendium.codex.talentPages, (void *)talentsSrc, talentsCount);
+        ls_bufferReadSkip(&CompendiumBuff, talentsCount * sizeof(TalentEntry));
+        
+        //NOTE: Then map the general buffers and mob/npc entries.
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.generalStrings);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.numericValues);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.names);
@@ -2638,7 +2671,7 @@ void LoadCompendium(string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.environment);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.specials);
         
-        //TODO: Change these to a FixedArray 
+        //TODO: Change these to a FixedArray
         u32 entryCount = ls_bufferReadDWord(&CompendiumBuff);
         u8 *pagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
         ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
@@ -2932,19 +2965,69 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     }
     
     //NOTE: Early talents are for attack modifiers!
-    //TODO: I should create an enum and save the existence of certain talents
-    //      into an array, to be more efficiently used later!!
+    s32 talentsIdx = 0;
     ls_utf32Clear(&cachedPage->talents);
-    if(page.talents[0])
+    while(page.talents[talentsIdx] && talentsIdx < 24)
     {
-        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0], "talents");
-        
-        u32 i = 1;
-        while(page.talents[i] && i < 24)
+        if((page.talents[talentsIdx] & TALENT_INTERN_BIT_U32) != 0)
         {
-            AppendEntryFromBuffer(&c->talents, &cachedPage->talents, U", ", page.talents[i]);
-            i += 1;
+            u16 internedIdx = (u16)((page.talents[talentsIdx] & TALENT_INTERN_MASK) >> TALENT_INTERN_IDX_SHIFT);
+            GetEntryFromBuffer_t(&c->talents, &tempString, internedIdx, "talents");
         }
+        else
+        {
+            u32 moduleIdx       = page.talents[talentsIdx] & TALENT_MODULE_IDX_MASK;
+            u32 nameIdxInModule = c->talentPages[moduleIdx].name;
+            GetEntryFromBuffer_t(&c->talentsModule, &tempString, nameIdxInModule, "talentsMod");
+        }
+        
+        //TODO: Temporary. Until we find a better solution for superscripts/subscripts OR font glyph caching.
+        s32 findIdx = -1;
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D2E')) >= 0)
+        { tempString.data[findIdx] = U'B'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00002E34')) >= 0)
+        { ls_utf32RmIdx(&tempString, findIdx); findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00002009')) >= 0)
+        { ls_utf32RmIdx(&tempString, findIdx); findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D39')) >= 0)
+        { tempString.data[findIdx] = U'M'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D30')) >= 0)
+        { tempString.data[findIdx] = U'D'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U000002E2')) >= 0)
+        { tempString.data[findIdx] = U'S'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D3C')) >= 0)
+        { tempString.data[findIdx] = U'O'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D40')) >= 0)
+        { tempString.data[findIdx] = U'T'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D41')) >= 0)
+        { tempString.data[findIdx] = U'U'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D35')) >= 0)
+        { tempString.data[findIdx] = U'I'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B1')) >= 0)
+        { tempString.data[findIdx] = U'1'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B2')) >= 0)
+        { tempString.data[findIdx] = U'2'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B3')) >= 0)
+        { tempString.data[findIdx] = U'3'; findIdx = -1; }
+        
+        ls_utf32Append(&cachedPage->talents, tempString);
+        
+        if(talentsIdx < 23 && page.talents[talentsIdx+1] != 0)
+        { ls_utf32Append(&cachedPage->talents, ls_utf32Constant(U", ")); }
+        ls_utf32Clear(&tempString);
+        talentsIdx += 1;
     }
     
     //NOTE: Racial Mods, Special Qualities
@@ -3220,18 +3303,69 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     }
     
     //NOTE: Early talents are for attack modifiers!
-    //TODO: I should create an enum and save the existence of certain talents
-    //      into an array, to be more efficiently used later!!
+    s32 talentsIdx = 0;
     ls_utf32Clear(&cachedPage->talents);
-    if(page.talents[0])
+    while(page.talents[talentsIdx] && talentsIdx < 24)
     {
-        GetEntryFromBuffer_t(&c->talents, &cachedPage->talents, page.talents[0], "talents");
-        u32 i = 1;
-        while(page.talents[i] && i < 24)
+        if((page.talents[talentsIdx] & TALENT_INTERN_BIT_U32) != 0)
         {
-            AppendEntryFromBuffer(&c->talents, &cachedPage->talents, U", ", page.talents[i], "talents");
-            i += 1;
+            u16 internedIdx = (u16)((page.talents[talentsIdx] & TALENT_INTERN_MASK) >> TALENT_INTERN_IDX_SHIFT);
+            GetEntryFromBuffer_t(&c->talents, &tempString, internedIdx, "talents");
         }
+        else
+        {
+            u32 moduleIdx       = page.talents[talentsIdx] & TALENT_MODULE_IDX_MASK;
+            u32 nameIdxInModule = c->talentPages[moduleIdx].name;
+            GetEntryFromBuffer_t(&c->talentsModule, &tempString, nameIdxInModule, "talentsMod");
+        }
+        
+        //TODO: Temporary. Until we find a better solution for superscripts/subscripts OR font glyph caching.
+        s32 findIdx = -1;
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D2E')) >= 0)
+        { tempString.data[findIdx] = U'B'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00002E34')) >= 0)
+        { ls_utf32RmIdx(&tempString, findIdx); findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00002009')) >= 0)
+        { ls_utf32RmIdx(&tempString, findIdx); findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D39')) >= 0)
+        { tempString.data[findIdx] = U'M'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D30')) >= 0)
+        { tempString.data[findIdx] = U'D'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U000002E2')) >= 0)
+        { tempString.data[findIdx] = U'S'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D3C')) >= 0)
+        { tempString.data[findIdx] = U'O'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D40')) >= 0)
+        { tempString.data[findIdx] = U'T'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D41')) >= 0)
+        { tempString.data[findIdx] = U'U'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D35')) >= 0)
+        { tempString.data[findIdx] = U'I'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B1')) >= 0)
+        { tempString.data[findIdx] = U'1'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B2')) >= 0)
+        { tempString.data[findIdx] = U'2'; findIdx = -1; }
+        
+        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B3')) >= 0)
+        { tempString.data[findIdx] = U'3'; findIdx = -1; }
+        
+        ls_utf32Append(&cachedPage->talents, tempString);
+        
+        if(talentsIdx < 23 && page.talents[talentsIdx+1] != 0)
+        { ls_utf32Append(&cachedPage->talents, ls_utf32Constant(U", ")); }
+        ls_utf32Clear(&tempString);
+        talentsIdx += 1;
     }
     
     //NOTE: Racial Mods, Special Qualities
