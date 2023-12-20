@@ -1,7 +1,7 @@
 void BuildTalentFromPacked_t(Codex *c, u32 entry, utf32 *tmp)
 {
-    u32 tempUTF32Buffer[256] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 256 };
+    u32 tempUTF32Buffer[512] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 512 };
     
     b32 isMithic   = (entry & TALENT_MITHIC_BIT_U32) != 0;
     b32 isBonus    = (entry & TALENT_BONUS_BIT_U32)  != 0;
