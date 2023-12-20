@@ -1381,6 +1381,9 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
     //TODO: Fix cases like +12 (+99 Maremma Maiala)
     //      Those cases trip the M detection, so we need a first pass to make sure the M isn't between
     //      A couple of parentheses.
+    //
+    //      UPDATE:
+    //      Should've been auto-solved by the unicode superscript M
     
     if(Init.len == 0) { ls_utf32Set(&cachedPage->initiative, Init); return; }
     
@@ -1388,7 +1391,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
     s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
     
     s32 multiToken  = ls_utf32LeftFind(Init, (u32)'/');
-    s32 mithicToken = ls_utf32LeftFind(Init, (u32)'M');
+    //s32 mithicToken = ls_utf32LeftFind(Init, (u32)'M');
+    s32 mithicToken = ls_utf32LeftFind(Init, U'\U00001D39');
     
     s32 commaIdx = ls_utf32LeftFind(Init, (u32)',');
     s32 semiIdx  = ls_utf32LeftFind(Init, (u32)';');
@@ -2487,6 +2491,11 @@ b32 onStatusChange(UIContext *c, void *data)
     return TRUE;
 }
 
+//TODO: Using a normal utf32 string is a PROBLEM (especially when mixed with arenas).
+//      The reason is, we don't really want these strings in the cachedPage to be re-allocated, or grown.
+//      We want the memory to be the same size all the time, and never be handled.
+//      What we should really do is make a `StaticUTF32` kind of string, that is only allocated once,
+//      And never again. It can't be grown, and will give a runtime error when the space is not enough.
 void initCachedPage(CachedPageEntry *cachedPage)
 {
     const u32 maxSubtypes    = 8;
@@ -2504,7 +2513,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->shortDesc         = ls_utf32Alloc(768);
     cachedPage->AC                = ls_utf32Alloc(192);
     cachedPage->HP                = ls_utf32Alloc(128);
-    cachedPage->ST                = ls_utf32Alloc(128);
+    cachedPage->ST                = ls_utf32Alloc(256);
     cachedPage->RD                = ls_utf32Alloc(128);
     cachedPage->RI                = ls_utf32Alloc(128);
     cachedPage->defensiveCapacity = ls_utf32Alloc(256);
@@ -2846,8 +2855,10 @@ void SetNPCTable(UIContext *c)
 
 void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
-    u32 tempUTF32Buffer[1024] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 1024 };
+    u32 tempUTF32Buffer[4096] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 4096 };
+    
+    Arena prevArena = ls_arenaUse(compTempArena);
     
     Codex *c = &compendium.codex;
     
@@ -3002,9 +3013,40 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "specialAttacks");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych, "psych");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics, "magics");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells, "spells");
+    
+    //NOTE: Spells need a little of pre-processing to handle superscripts (D and S for Dominio and Stirpe)
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.psych, "psych");
+    {
+        ls_utf32Replace(&tempString, U"\U00001D30", U"[D]");
+        ls_utf32Replace(&tempString, U"\U000002E2", U"[S]");
+        ls_utf32Replace(&tempString, U"\U00001D2E", U"[B]");
+        ls_utf32Replace(&tempString, U"\U00001D39", U"[M]");
+        ls_utf32Replace(&tempString, U"\U00002E34", U"");
+    }
+    ls_utf32Set(&cachedPage->psych, tempString);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.magics, "magics");
+    {
+        ls_utf32Replace(&tempString, U"\U00001D30", U"[D]");
+        ls_utf32Replace(&tempString, U"\U000002E2", U"[S]");
+        ls_utf32Replace(&tempString, U"\U00001D2E", U"[B]");
+        ls_utf32Replace(&tempString, U"\U00001D39", U"[M]");
+        ls_utf32Replace(&tempString, U"\U00002E34", U"");
+    }
+    ls_utf32Set(&cachedPage->magics, tempString);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.spells, "spells");
+    {
+        ls_utf32Replace(&tempString, U"\U00001D30", U"[D]");
+        ls_utf32Replace(&tempString, U"\U000002E2", U"[S]");
+        ls_utf32Replace(&tempString, U"\U00001D2E", U"[B]");
+        ls_utf32Replace(&tempString, U"\U00001D39", U"[M]");
+        ls_utf32Replace(&tempString, U"\U00002E34", U"");
+    }
+    ls_utf32Set(&cachedPage->spells, tempString);
+    ls_utf32Clear(&tempString);
     
     //NOTE: Mobs don't have tactics/equip/properties or boons. We need to clear it to
     //      avoid pollution from the previous cachedPage
@@ -3122,12 +3164,17 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     }
     
     GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment, "environment");
+    
+    ls_arenaClear(compTempArena);
+    ls_arenaUse(prevArena);
 }
 
 void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
-    u32 tempUTF32Buffer[1024] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 1024 };
+    u32 tempUTF32Buffer[4096] = {};
+    utf32 tempString = { tempUTF32Buffer, 0, 4096 };
+    
+    Arena prevArena = ls_arenaUse(compTempArena);
     
     Codex *c = &compendium.codex;
     
@@ -3288,9 +3335,42 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "Spec.Atk");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->psych, page.psych, "Psych");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->magics, page.magics, "Magics");
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spells, page.spells, "Spells");
+    
+    //NOTE: Spells need a little of pre-processing to handle superscripts (D and S for Dominio and Stirpe)
+    //      All the preprocessing sould eventually become obsolete, as I replace them with packed bits
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.psych, "Psych");
+    {
+        ls_utf32Replace(&tempString, U"\U00001D30", U"[D]");
+        ls_utf32Replace(&tempString, U"\U000002E2", U"[S]");
+        ls_utf32Replace(&tempString, U"\U00001D2E", U"[B]");
+        ls_utf32Replace(&tempString, U"\U00001D39", U"[M]");
+        ls_utf32Replace(&tempString, U"\U00002E34", U"");
+    }
+    ls_utf32Set(&cachedPage->psych, tempString);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.magics, "Magics");
+    {
+        ls_utf32Replace(&tempString, U"\U00001D30", U"[D]");
+        ls_utf32Replace(&tempString, U"\U000002E2", U"[S]");
+        ls_utf32Replace(&tempString, U"\U00001D2E", U"[B]");
+        ls_utf32Replace(&tempString, U"\U00001D39", U"[M]");
+        ls_utf32Replace(&tempString, U"\U00002E34", U"");
+    }
+    ls_utf32Set(&cachedPage->magics, tempString);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.spells, "Spells");
+    {
+        ls_utf32Replace(&tempString, U"\U00001D30", U"[D]");
+        ls_utf32Replace(&tempString, U"\U000002E2", U"[S]");
+        ls_utf32Replace(&tempString, U"\U00001D2E", U"[B]");
+        ls_utf32Replace(&tempString, U"\U00001D39", U"[M]");
+        ls_utf32Replace(&tempString, U"\U00002E34", U"");
+    }
+    ls_utf32Set(&cachedPage->spells, tempString);
+    ls_utf32Clear(&tempString);
+    
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_before, page.tactics[0], "tactics-before");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->tactics_during, page.tactics[1], "tactics-during");
@@ -3404,6 +3484,9 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     
     //NOTE: NPCs don't have an environment field. We need to clear it to avoid pollution from the previous cachedPage
     ls_utf32Clear(&cachedPage->environment);
+    
+    ls_arenaClear(compTempArena);
+    ls_arenaUse(prevArena);
 }
 
 //TODO: Make Certain Fields modifiable directly??
@@ -3504,6 +3587,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         //      So that we have a minimumX and a baseX, to know where to position the newline. @NewLayout
         
         //TODO: This is because the hypergol parser will miss Perception, if the golarion input is not perfect.
+        //      Example Meladaemon
         if(page->perception.len)
         {
             offset = ls_uiLabelLayout(c, U"Percezione ", alignR); alignR.x = offset.x;
