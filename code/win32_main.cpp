@@ -86,12 +86,14 @@ static Arena compTempArena;
 #include "Equip.h"
 
 #include "CompendiumSkills.h"
+#include "CompendiumTalents.h"
 
 #include "themePicker.cpp"
 #include "diceRoller.cpp"
 
 #include "Compendium.cpp"
 #include "CompendiumSkills.cpp"
+#include "CompendiumTalents.cpp"
 
 #include "Class.cpp"
 #include "Feats.cpp"

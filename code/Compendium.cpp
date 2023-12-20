@@ -70,24 +70,6 @@ struct CachedPageEntry
     utf32 environment;
 };
 
-const u32 TALENT_INTERN_BIT_U32   = 0x80000000;
-const u32 TALENT_BONUS_BIT_U32    = 0x40000000;
-const u32 TALENT_MITHIC_BIT_U32   = 0x20000000;
-const u32 TALENT_INTERN_IDX_SHIFT = 12;
-const u32 TALENT_INTERN_MASK      = 0x0FFFF000;
-const u32 TALENT_MODULE_IDX_MASK  = 0x00000FFF;
-
-struct TalentEntry
-{
-    u32 name;
-    u32 desc;
-    u32 pre;
-    u32 gain;
-    u32 norm;
-    u32 spec;
-    u32 source;
-};
-
 const u32 PAREN_BIT_U32 = 0x40000000;
 const u16 PAREN_BIT_U16 = 0x4000;
 
@@ -2812,7 +2794,7 @@ void SetMonsterTable(UIContext *c)
     compendium.searchBarTypeMobs.data         = typeSearchMob;
     compendium.searchBarTypeMobs.isSingleLine = TRUE;
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiSelectFontByPixelHeight(c, 18);
     
     return;
 }
@@ -2857,7 +2839,7 @@ void SetNPCTable(UIContext *c)
     type->data         = typeSearchNPC;
     type->isSingleLine = TRUE;
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiSelectFontByPixelHeight(c, 18);
     
     return;
 }
@@ -2969,59 +2951,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&cachedPage->talents);
     while(page.talents[talentsIdx] && talentsIdx < 24)
     {
-        if((page.talents[talentsIdx] & TALENT_INTERN_BIT_U32) != 0)
-        {
-            u16 internedIdx = (u16)((page.talents[talentsIdx] & TALENT_INTERN_MASK) >> TALENT_INTERN_IDX_SHIFT);
-            GetEntryFromBuffer_t(&c->talents, &tempString, internedIdx, "talents");
-        }
-        else
-        {
-            u32 moduleIdx       = page.talents[talentsIdx] & TALENT_MODULE_IDX_MASK;
-            u32 nameIdxInModule = c->talentPages[moduleIdx].name;
-            GetEntryFromBuffer_t(&c->talentsModule, &tempString, nameIdxInModule, "talentsMod");
-        }
-        
-        //TODO: Temporary. Until we find a better solution for superscripts/subscripts OR font glyph caching.
-        s32 findIdx = -1;
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D2E')) >= 0)
-        { tempString.data[findIdx] = U'B'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00002E34')) >= 0)
-        { ls_utf32RmIdx(&tempString, findIdx); findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00002009')) >= 0)
-        { ls_utf32RmIdx(&tempString, findIdx); findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D39')) >= 0)
-        { tempString.data[findIdx] = U'M'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D30')) >= 0)
-        { tempString.data[findIdx] = U'D'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U000002E2')) >= 0)
-        { tempString.data[findIdx] = U'S'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D3C')) >= 0)
-        { tempString.data[findIdx] = U'O'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D40')) >= 0)
-        { tempString.data[findIdx] = U'T'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D41')) >= 0)
-        { tempString.data[findIdx] = U'U'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D35')) >= 0)
-        { tempString.data[findIdx] = U'I'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B1')) >= 0)
-        { tempString.data[findIdx] = U'1'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B2')) >= 0)
-        { tempString.data[findIdx] = U'2'; findIdx = -1; }
-        
-        if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B3')) >= 0)
-        { tempString.data[findIdx] = U'3'; findIdx = -1; }
-        
+        BuildTalentFromPacked_t(c, page.talents[talentsIdx], &tempString);
         ls_utf32Append(&cachedPage->talents, tempString);
         
         if(talentsIdx < 23 && page.talents[talentsIdx+1] != 0)
@@ -3320,6 +3250,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
         }
         
         //TODO: Temporary. Until we find a better solution for superscripts/subscripts OR font glyph caching.
+        /*
         s32 findIdx = -1;
         if((findIdx = ls_utf32LeftFind(tempString, U'\U00001D2E')) >= 0)
         { tempString.data[findIdx] = U'B'; findIdx = -1; }
@@ -3359,7 +3290,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
         
         if((findIdx = ls_utf32LeftFind(tempString, U'\U000000B3')) >= 0)
         { tempString.data[findIdx] = U'3'; findIdx = -1; }
-        
+        */
         ls_utf32Append(&cachedPage->talents, tempString);
         
         if(talentsIdx < 23 && page.talents[talentsIdx+1] != 0)
@@ -3639,7 +3570,6 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
             renderAndAlign(page->aura);
         }
     }
-    
     
     //---------------//
     //    DEFENSE    //

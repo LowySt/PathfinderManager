@@ -108,7 +108,7 @@ b32 DrawPlayerSettings(UIContext *c)
     x = 0.39f*c->width;
     y = 0.70f*c->height;
     
-    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiSelectFontByPixelHeight(c, 24);
     
     s32 boxHeight = c->currFont->pixelHeight*1.1f;
     
@@ -131,7 +131,7 @@ b32 DrawPlayerSettings(UIContext *c)
         usedInput |= ls_uiButton(c, &State.removePartyMember, remX, remY, 1);
     }
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiSelectFontByPixelHeight(c, 18);
     
     return usedInput;
 }
@@ -146,7 +146,7 @@ b32 DrawInfoSettings(UIContext *c)
     
     ls_uiRect(c, x, y, w, h, ls_uiLightenRGB(c->widgetColor, 0.25f), c->borderColor);
     
-    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiSelectFontByPixelHeight(c, 24);
     
     x = 0.16f*c->width;
     y = 0.77f*c->height;
@@ -158,7 +158,7 @@ b32 DrawInfoSettings(UIContext *c)
     ls_uiLabel(c, U"Shortcuts:", x, y, 1);
     y -= boxHeight;
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiSelectFontByPixelHeight(c, 18);
     
     boxHeight = c->currFont->pixelHeight*1.1f;
     

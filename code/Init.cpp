@@ -1987,7 +1987,7 @@ b32 DrawPranaStyle(UIContext *c)
     
     b32 inputUse = FALSE;
     
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiSelectFontByPixelHeight(c, 18);
     
     s32 yPos = 780;
     s32 alliesListY = 678 - (party_count*20 + 8);
