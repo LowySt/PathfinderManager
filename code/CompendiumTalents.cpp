@@ -45,3 +45,10 @@ void BuildTalentFromPacked_t(Codex *c, u32 entry, utf32 *tmp)
     
     return;
 }
+
+void DrawTalentTooltip(UIContext *c, u32 entry, s32 x, s32 y)
+{
+    s32 width  = c->width*0.4f;
+    s32 height = c->height*0.2f;
+    ls_uiRect(c, x, y, width, height, 3);
+}

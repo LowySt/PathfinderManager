@@ -65,7 +65,7 @@ struct CachedPageEntry
     utf32 BAB;
     utf32 BMC;
     utf32 DMC;
-    utf32 talents;
+    utf32 talents[24];
     utf32 languages;
     utf32 environment;
 };
@@ -1060,7 +1060,17 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     }
     
     //NOTE: Apply status conditions if present
-    b32 hasSchivareProdigioso = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Schivare Prodigioso")) != -1;
+    //TODO: Maybe make it a flag?
+    b32 hasSchivareProdigioso = FALSE;
+    s32 talentsIdx = 0;
+    while(cachedPage->talents[talentsIdx].len)
+    {
+        if(ls_utf32LeftFind(cachedPage->talents[talentsIdx], ls_utf32Constant(U"Schivare Prodigioso")) != -1)
+        { hasSchivareProdigioso = TRUE; break; }
+        
+        talentsIdx += 1;
+    }
+    
     if(status)
     {
         b32 hasLostDexBonus = FALSE;
@@ -1610,7 +1620,18 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
     b32 hasChangelingMod = ls_utf32LeftFind(cachedPage->spec_qual, ls_utf32Constant(U"Changeling Imponente")) != -1;
     
     //TODO: Mithic Arma Accurata
-    b32 hasWeaponFinesse = ls_utf32LeftFind(cachedPage->talents, ls_utf32Constant(U"Arma Accurata")) != -1;
+    b32 hasWeaponFinesse = FALSE;
+    s32 talentsIdx = 0;
+    while(cachedPage->talents[talentsIdx].len)
+    {
+        if(ls_utf32LeftFind(cachedPage->talents[talentsIdx], ls_utf32Constant(U"Arma Accurata")) != -1)
+        { hasWeaponFinesse = TRUE; break; }
+        
+        if(ls_utf32LeftFind(cachedPage->talents[talentsIdx], ls_utf32Constant(U"Arma Accurata[M]")) != -1)
+        { hasWeaponFinesse = TRUE; break; }
+        
+        talentsIdx += 1;
+    }
     
     //NOTE: Special Enemies with special bullshit!
     b32 isTiyanak = ls_utf32AreEqual(cachedPage->name, ls_utf32Constant(U"Tiyanak"));
@@ -2572,7 +2593,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->BMC               = ls_utf32Alloc(64);
     cachedPage->DMC               = ls_utf32Alloc(96);
     
-    cachedPage->talents           = ls_utf32Alloc(maxTalents   * 32);
+    for(s32 i = 0; i < maxTalents; i++) { cachedPage->talents[i] = ls_utf32Alloc(64); }
     cachedPage->skills            = ls_utf32Alloc(maxSkills    * 32);
     cachedPage->languages         = ls_utf32Alloc(maxLanguages * 64);
     cachedPage->environment       = ls_utf32Alloc(96);
@@ -2959,14 +2980,11 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     //NOTE: Early talents are for attack modifiers!
     s32 talentsIdx = 0;
-    ls_utf32Clear(&cachedPage->talents);
+    for(s32 tIdx = 0; tIdx < 24; tIdx++) { ls_utf32Clear(&cachedPage->talents[tIdx]); }
     while(page.talents[talentsIdx] && talentsIdx < 24)
     {
         BuildTalentFromPacked_t(c, page.talents[talentsIdx], &tempString);
-        ls_utf32Append(&cachedPage->talents, tempString);
-        
-        if(talentsIdx < 23 && page.talents[talentsIdx+1] != 0)
-        { ls_utf32Append(&cachedPage->talents, ls_utf32Constant(U", ")); }
+        ls_utf32Set(&cachedPage->talents[talentsIdx], tempString);
         ls_utf32Clear(&tempString);
         talentsIdx += 1;
     }
@@ -3281,14 +3299,11 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     
     //NOTE: Early talents are for attack modifiers!
     s32 talentsIdx = 0;
-    ls_utf32Clear(&cachedPage->talents);
+    for(s32 tIdx = 0; tIdx < 24; tIdx++) { ls_utf32Clear(&cachedPage->talents[tIdx]); }
     while(page.talents[talentsIdx] && talentsIdx < 24)
     {
         BuildTalentFromPacked_t(c, page.talents[talentsIdx], &tempString);
-        ls_utf32Append(&cachedPage->talents, tempString);
-        
-        if(talentsIdx < 23 && page.talents[talentsIdx+1] != 0)
-        { ls_utf32Append(&cachedPage->talents, ls_utf32Constant(U", ")); }
+        ls_utf32Set(&cachedPage->talents[talentsIdx], tempString);
         ls_utf32Clear(&tempString);
         talentsIdx += 1;
     }
@@ -3490,7 +3505,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
 }
 
 //TODO: Make Certain Fields modifiable directly??
-s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW, s32 minY)
+s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 width, s32 minY)
 {
     //NOTE: Used to adjust the next line position when changing font size, because
     //      a change in pixel height will make the next line too close / too far from the ideal position.
@@ -3501,36 +3516,31 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     Color pureWhite         = RGBg(0xFF);
     c->textColor            = RGBg(0xAA);
     
-    UIRect baseR  = { c->scroll.x + 10, baseY, maxW, minY };
-    UIRect alignR = { baseX, baseY, maxW, minY };
-    UIRect offset = {};
+    //NOTE: Currently layout.maxY shouldn't even be used...
+    UILayoutRect baseR  = { c->scroll.x + 10, baseY, c->scroll.x + 10 + width, 0xFEFE, c->scroll.x + 10, baseY };
+    UILayoutRect alignR = { baseX, baseY, baseX + width, minY, baseX, baseY };
+    UILayoutRect offset = {};
     
-    s32 hSepWidth = maxW - baseX;
+    s32 hSepWidth = width;
     
     auto renderAndAlignWS = [&](const char32_t *s) {
-        offset   = ls_uiLabelLayout(c, s, alignR);
-        alignR.x = offset.x;
-        alignR.y = offset.y;
-        baseR.y  = offset.y;
+        alignR = ls_uiLabelLayout(c, s, alignR);
+        //baseR.startY  = offset.startY;
     };
     
     auto renderAndAlignW = [&](utf32 s) {
-        offset   = ls_uiLabelLayout(c, s, alignR);
-        alignR.x = offset.x;
-        alignR.y = offset.y;
-        baseR.y  = offset.y;
+        alignR  = ls_uiLabelLayout(c, s, alignR);
+        //baseR.startY = alignR.startY;
     };
     
     auto renderAndAlignS = [&](const char32_t *s) {
-        alignR   = baseR;
-        offset   = ls_uiLabelLayout(c, s, alignR, pureWhite);
-        alignR.x = offset.x;
-        alignR.y = offset.y;
+        alignR = baseR;
+        alignR = ls_uiLabelLayout(c, s, alignR, pureWhite);
     };
     
     auto renderAndAlign = [&](utf32 s) {
         offset   = ls_uiLabelLayout(c, s, alignR);
-        baseR.y -= offset.h;
+        baseR.startY -= offset.maxY;
     };
     
     //---------------//
@@ -3539,26 +3549,27 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     ls_uiLabelLayout(c, page->name, baseR, pureWhite);
     {
-        ls_uiLabelLayout(c, U"GS", UIRect { baseR.x + 455, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, page->gs, UIRect { baseR.x + 485, baseR.y, maxW, minY }, pureWhite);
-        ls_uiLabelLayout(c, U"PE", UIRect { baseR.x + 580, baseR.y, maxW, minY }, pureWhite);
-        offset = ls_uiLabelLayout(c, page->pe, UIRect { baseR.x + 615, baseR.y, maxW, minY }, pureWhite);
-        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+        UILayoutRect headerLayout = baseR; headerLayout.startX += 465;
+        ls_uiLabelLayout(c, U"GS", headerLayout, pureWhite); headerLayout.startX += 30;
+        ls_uiLabelLayout(c, page->gs, headerLayout, pureWhite); headerLayout.startX += 100;
+        ls_uiLabelLayout(c, U"PE", headerLayout, pureWhite); headerLayout.startX += 35;
+        offset = ls_uiLabelLayout(c, page->pe, headerLayout, pureWhite);
+        ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseR.y -= offset.h;
+        baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.startY -= offset.maxY;
         
         if(page->origin.len)
         {
             offset = ls_uiLabelLayout(c, page->origin, baseR, pureWhite);
-            baseR.y -= offset.h;
+            baseR.startY -= offset.maxY;
         }
         
         if(page->shortDesc.len)
         {
             offset = ls_uiLabelLayout(c, page->shortDesc, baseR);
-            baseR.y -= (offset.h + 4);
+            baseR.startY -= (offset.maxY + 4);
         }
         
         renderAndAlignS(U"Allineamento: ");
@@ -3573,14 +3584,14 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         else                    renderAndAlignWS(U" ");
         if(page->size.len)      renderAndAlignW(page->size);
         
-        baseR.y -= offset.h;
+        baseR.startY -= offset.maxY;
         
         renderAndAlignS(U"Iniziativa: ");
         renderAndAlign(page->initiative);
         
         alignR = baseR;
         renderAndAlignS(U"Sensi: ");
-        if(page->senses.len) renderAndAlignW(page->senses);
+        if(page->senses.len) { renderAndAlignW(page->senses); }
         
         //TODO: This breaks when Perception starts too close to the limit line,
         //      To be fixed the layout system has to use a 6 point bound, rather than just 4 points
@@ -3590,10 +3601,11 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         //      Example Meladaemon
         if(page->perception.len)
         {
-            offset = ls_uiLabelLayout(c, U"Percezione ", alignR); alignR.x = offset.x;
+            alignR = ls_uiLabelLayout(c, U"Percezione ", alignR);
+            baseR.startY = alignR.startY;
             renderAndAlign(page->perception);
         }
-        else { baseR.y -= offset.h; }
+        else { baseR.startY -= offset.maxY; }
         
         if(page->aura.len)
         {
@@ -3606,16 +3618,16 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     //    DEFENSE    //
     //---------------//
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseR.y -= 4;
-    baseX  = 164;
+    baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.startY -= 8;
+    //baseX  = 164;
     {
         offset = ls_uiLabelLayout(c, U"Difesa", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseR.y -= offset.h;
+        baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.startY -= offset.maxY;
         
         if(page->acError == TRUE)
         {
@@ -3677,16 +3689,15 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseR.y -= 4;
-    baseX  = 200;
+    baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.startY -= 8;
     {
         offset = ls_uiLabelLayout(c, U"Attacco", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseR.y -= offset.h;
+        baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.startY -= offset.maxY;
         
         if(page->speed.len)
         {
@@ -3747,18 +3758,21 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         if(page->psych.len)
         {
             renderAndAlignS(U"Magia Psichica: ");
+            alignR.minX = baseR.minX + (0.03f*c->width);
             renderAndAlign(page->psych);
         }
         
         if(page->magics.len)
         {
             renderAndAlignS(U"Capacit\U000000E0 Magiche: ");
+            alignR.minX = baseR.minX + (0.03f*c->width);
             renderAndAlign(page->magics);
         }
         
         if(page->spells.len)
         {
             renderAndAlignS(U"Incantesimi Conosciuti: ");
+            alignR.minX = baseR.minX + (0.03f*c->width);
             renderAndAlign(page->spells);
         }
     }
@@ -3770,16 +3784,15 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     if(page->tactics_before.len || page->tactics_during.len || page->tactics_stats.len)
     {
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-        baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-        baseR.y -= 4;
-        baseX    = 148;
+        baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.startY -= 8;
         {
             offset = ls_uiLabelLayout(c, U"Tattiche", baseR, pureWhite);
-            ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+            ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
             
             currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-            baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-            baseR.y -= offset.h;
+            baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+            baseR.startY -= offset.maxY;
             
             if(page->tactics_before.len)
             {
@@ -3806,16 +3819,15 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     //---------------//
     
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseR.y -= 4;
-    baseX  = 148;
+    baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.startY -= 8;
     {
         offset = ls_uiLabelLayout(c, U"Statistiche", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+        ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-        baseR.y -= offset.h;
+        baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.startY -= offset.maxY;
         
         renderAndAlignS(U"Caratteristiche: ");
         renderAndAlignWS(U"FOR ");   renderAndAlignW(page->STR);
@@ -3834,15 +3846,27 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         renderAndAlignS(U"DMC: ");
         renderAndAlign(page->DMC);
         
-        if(page->talents.len)
+        s32 talentsIdx = 0;
+        if(page->talents[talentsIdx].len)
         {
             renderAndAlignS(U"Talenti: ");
-            renderAndAlign(page->talents);
+            alignR.minX = baseR.minX + (0.03f*c->width);
+            while(TRUE)
+            {
+                if(talentsIdx == 23 || page->talents[talentsIdx+1].len == 0)
+                { renderAndAlign(page->talents[talentsIdx]); break; }
+                
+                renderAndAlignW(page->talents[talentsIdx]);
+                renderAndAlignWS(U", ");
+                baseR.startY = alignR.startY;
+                talentsIdx += 1;
+            }
         }
         
         if(page->skills.len)
         {
             renderAndAlignS(U"Abilit\U000000E0: ");
+            alignR.minX = baseR.minX + (0.03f*c->width);
             renderAndAlign(page->skills);
         }
         
@@ -3890,19 +3914,19 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     if(page->specials.len)
     {
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-        baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-        baseR.y -= 4;
+        baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.startY -= 8;
         {
             offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", baseR, pureWhite);
-            ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+            ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
             
             currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-            baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
-            baseR.y -= offset.maxY;
-            baseR.y -= 8; //NOTE: Random spacing because it feels cramped
+            baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+            baseR.startY -= offset.maxY;
+            baseR.startY -= 8; //NOTE: Random spacing because it feels cramped
             
             offset = ls_uiLabelLayout(c, page->specials, baseR);
-            baseR.y -= (offset.h + 8);
+            baseR.startY -= (offset.maxY + 8);
         }
     }
     
@@ -3913,16 +3937,15 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     if(page->environment.len || page->org.len || page->treasure.len)
     {
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-        baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-        baseR.y -= 4;
-        baseX  = 148;
+        baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.startY -= 8;
         {
             offset = ls_uiLabelLayout(c, U"Ecologia", baseR, pureWhite);
-            ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
-            baseR.y -= offset.h;
+            ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
+            baseR.startY -= offset.maxY;
             
             currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-            baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+            baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
             
             renderAndAlignS(U"Ambiente: ");
             renderAndAlign(page->environment);
@@ -3939,21 +3962,21 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
     //     FINAL     //
     //---------------//
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
-    baseR.y -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
-    baseR.y -= 4;
+    baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
+    baseR.startY -= 8;
     {
         offset = ls_uiLabelLayout(c, U"Descrizione", baseR, pureWhite);
-        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
-        baseR.y -= offset.maxY;
+        ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
+        baseR.startY -= offset.maxY;
         
         currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
-        baseR.y += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
+        baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         
         offset = ls_uiLabelLayout(c, page->desc, baseR);
-        baseR.y -= offset.maxY;
+        baseR.startY -= offset.maxY;
         
-        baseR.y += (currPixelHeight-1);
-        ls_uiHSeparator(c, baseR.x, baseR.y-4, hSepWidth, 1, RGB(0, 0, 0));
+        baseR.startY += (currPixelHeight-1);
+        ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
         
         //TODO: Make these links openable.
@@ -3967,15 +3990,14 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 maxW
         //      that opens whatever path you give it with the appropriate command. So an http link should get
         //      opened in the default browser.
         
-        baseR.y -= (currPixelHeight+8);
-        ls_uiLabelLayout(c, U"Fonte: ", baseR, pureWhite);
-        offset = ls_uiLabelLayout(c, page->source, UIRect { baseR.x + 58, baseR.y, maxW, minY });
-        baseR.y -= offset.maxY;
+        baseR.startY -= (currPixelHeight+8);
+        renderAndAlignS(U"Fonte: ");
+        renderAndAlign(page->source);
     }
     
     c->textColor = originalTextColor;
     
-    return baseR.y;
+    return baseR.startY;
 }
 
 void DrawNPCTable(UIContext *c)
