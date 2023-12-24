@@ -1977,7 +1977,6 @@ b32 DrawDefaultStyle(UIContext *c)
     return inputUse;
 }
 
-//TODO: Fix page not being re-cached according to statuses.
 b32 DrawPranaStyle(UIContext *c)
 {
     InitPage *Page = State.Init;
@@ -2073,7 +2072,7 @@ b32 DrawPranaStyle(UIContext *c)
             
             InitField *f = 0;
             if(globalSelectedIndex >= mob_count) { f = Page->AllyFields + (globalSelectedIndex - mob_count); }
-            else                               { f = Page->MobFields + globalSelectedIndex; }
+            else                                 { f = Page->MobFields + globalSelectedIndex; }
             
             if(f->compendiumIdx == -1)
             {
@@ -2163,7 +2162,7 @@ b32 DrawPranaStyle(UIContext *c)
         else if(globalSelectedIndex >= 0)
         {
             AssertMsgF(globalSelectedIndex < visibleOrder, "Selected Order Index %d is out of bounds (%d)\n", globalSelectedIndex, visibleOrder);
-            Order *ord = Page->OrderFields + globalSelectedIndex;
+            Order *ord   = Page->OrderFields + globalSelectedIndex;
             InitField *f = GetInitFieldByID(ord->ID);
             
             if(ord->compendiumIdx == -1) {
@@ -2173,9 +2172,9 @@ b32 DrawPranaStyle(UIContext *c)
             { 
                 static UIScrollableRegion viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
                 
-                if(mainCachedPage.pageIndex != ord->compendiumIdx)
+                if((mainCachedPage.pageIndex != ord->compendiumIdx) || (mainCachedPage.orderID != ord->ID))
                 { 
-                    GetPageEntryAndCache(ord->compendiumIdx, &mainCachedPage, ord->status);
+                    GetPageEntryAndCache(ord->compendiumIdx, ord->ID, &mainCachedPage, ord->status);
                     viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
                 }
                 

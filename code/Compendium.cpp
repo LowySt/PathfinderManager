@@ -1,6 +1,7 @@
 struct CachedPageEntry
 {
     s32 pageIndex   = -1;
+    s32 orderID     = -1;
     
     b32 acError     = FALSE;
     b32 meleeError  = FALSE;
@@ -255,7 +256,8 @@ UIScrollableRegion tableScroll    = {};
 UIScrollableRegion npcTableScroll = {};
 
 //NOTE: Used in Init.cpp
-CachedPageEntry mainCachedPage = {};
+CachedPageEntry mainCachedPage   = {};
+b32 mainCachedPageNeedsReCaching = FALSE;
 
 //NOTE: Kinda hacky but okay.
 s32 internal_newToOldMap[] = { 
@@ -270,7 +272,7 @@ s32 *newToOldMap = internal_newToOldMap + 10;
 
 void CachePage(PageEntry, s32, CachedPageEntry *, Status *);
 void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *);
-void GetPageEntryAndCache(s32 compendiumIdx, CachedPageEntry *page, Status *status = NULL)
+void GetPageEntryAndCache(s32 compendiumIdx, s32 ordID, CachedPageEntry *page, Status *status = NULL)
 {
     if(compendiumIdx < NPC_PAGE_INDEX_OFFSET)
     { 
@@ -282,6 +284,8 @@ void GetPageEntryAndCache(s32 compendiumIdx, CachedPageEntry *page, Status *stat
         NPCPageEntry pEntry = compendium.codex.npcPages[compendiumIdx - NPC_PAGE_INDEX_OFFSET];
         CachePage(pEntry, compendiumIdx, page, status);
     }
+    
+    page->orderID = ordID;
 }
 
 b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
@@ -2507,7 +2511,7 @@ b32 onStatusChange(UIContext *c, void *data)
     }
     
     //NOTE: We re-cache the page to apply the changes.
-    GetPageEntryAndCache(ord->compendiumIdx, &mainCachedPage, ord->status);
+    GetPageEntryAndCache(ord->compendiumIdx, ord->ID, &mainCachedPage, ord->status);
     
     return TRUE;
 }
