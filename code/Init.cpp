@@ -1977,6 +1977,7 @@ b32 DrawDefaultStyle(UIContext *c)
     return inputUse;
 }
 
+//TODO: Fix page not being re-cached according to statuses.
 b32 DrawPranaStyle(UIContext *c)
 {
     InitPage *Page = State.Init;
@@ -2099,7 +2100,7 @@ b32 DrawPranaStyle(UIContext *c)
                 }
                 
                 ls_uiStartScrollableRegion(c, &initViewScroll);
-                initViewScroll.minY = DrawPage(c , &mainCachedPage, 260, 676, 998, 218);
+                initViewScroll.minY = DrawPage(c , &mainCachedPage, 260, 676, 740, 218);
                 if(initViewScroll.minY > -19) { initViewScroll.minY = -1; }
                 ls_uiEndScrollableRegion(c);
                 
@@ -2179,7 +2180,7 @@ b32 DrawPranaStyle(UIContext *c)
                 }
                 
                 ls_uiStartScrollableRegion(c, &viewScroll);
-                viewScroll.minY = DrawPage(c, &mainCachedPage, 40, 676, 758, 218);
+                viewScroll.minY = DrawPage(c, &mainCachedPage, 40, 676, 720, 218);
                 if(viewScroll.minY > -19) { viewScroll.minY = -1; }
                 ls_uiEndScrollableRegion(c);
                 
