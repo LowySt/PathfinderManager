@@ -303,6 +303,7 @@ b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
     compendium.isViewingTalentPage = FALSE;
     compendium.pageIndex           = -1;
     compendium.talentIndex         = -1;
+    cachedPage.talentIndex         = -1;
     
     return FALSE;
 }
@@ -315,6 +316,7 @@ b32 CompendiumOpenNPCTable(UIContext *c, void *userData)
     compendium.isViewingTalentPage = FALSE;
     compendium.pageIndex           = -1;
     compendium.talentIndex         = -1;
+    cachedPage.talentIndex         = -1;
     
     return FALSE;
 }
