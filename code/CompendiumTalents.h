@@ -54,15 +54,16 @@ enum TalentDisplayResult
     TSR_MISSING,
 };
 
-CachedTalentEntry cachedTalent = {};
+CachedTalentEntry compendiumCachedTalent = {};
+CachedTalentEntry mainCachedTalent       = {};
 
 void InitCachedTalentEntry(CachedTalentEntry *cachedEntry);
-void CacheTalentEntry(CachedTalentEntry *cachedEntry, TalentEntry *entry);
+void CacheTalentEntry(CachedTalentEntry *cachedEntry, s32 talentIndex);
 
 void BuildTalentFromPacked_t(struct Codex *c, u32 entry, utf32 *tmp);
-TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, UILayoutRect oldLayout,
+TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, struct CachedPageEntry *page, UILayoutRect oldLayout,
                                                utf32 talent, s32 talentEntry);
 
-void DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY, s32 width, s32 minY);
+s32 DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY, s32 width, s32 minY);
 
 #endif //_COMPENDIUM_TALENTS_H

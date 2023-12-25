@@ -369,6 +369,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     //NOTE: Initialize the mainCachedPage to display the mob page inside init.
     initCachedPage(&mainCachedPage);
+    InitCachedTalentEntry(&mainCachedTalent);
+    mainCachedPage.talentPage = &mainCachedTalent;
     
     SetMonsterTable(compendiumContext);
     SetNPCTable(compendiumContext);
@@ -548,7 +550,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             }
             
             //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob
-            if(KeyPress(keyMap::Escape) && !State.Init->isAdding) { globalSelectedIndex = -1; }
+            if(KeyPress(keyMap::Escape) && !State.Init->isAdding && (mainCachedPage.talentIndex == -1))
+            { globalSelectedIndex = -1; }
+            
+            //NOTE: If we are showing a talent, we exit out of the talent
+            if(KeyPress(keyMap::Escape) && !State.Init->isAdding && (mainCachedPage.talentIndex != -1))
+            { mainCachedPage.talentIndex = -1; }
             
             //NOTE: We close the theme selector
             if(KeyPress(keyMap::Escape) && State.themePicker.isShown) { State.themePicker.isShown = FALSE; }
@@ -669,6 +676,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
             if(LeftClick && !compendiumContext->focusWasSetThisFrame) { compendiumContext->currentFocus = 0; }
+            
+            //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob
+            if(KeyPress(keyMap::Escape) && (cachedPage.talentIndex != -1))
+            { cachedPage.talentIndex = -1; }
             
             //NOTE: Right-Alt Drag, only when nothing is in focus
             if(KeyHeld(keyMap::RAlt) && LeftClick && compendiumContext->currentFocus == 0)

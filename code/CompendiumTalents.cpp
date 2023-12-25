@@ -23,15 +23,12 @@ void InitCachedTalentEntry(CachedTalentEntry *cachedEntry)
     cachedEntry->source = ls_utf32Alloc(256);
 }
 
-void CacheTalentEntry(CachedTalentEntry *cachedEntry, TalentEntry *entry)
+void CacheTalentEntry(CachedTalentEntry *cachedEntry, s32 talentIndex)
 {
-    /*
-    u32 tempUTF32Buffer[4096] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 4096 };
-    */
     Arena prevArena = ls_arenaUse(compTempArena);
     
-    cachedEntry->entryIndex = compendium.talentIndex;
+    TalentEntry *entry = compendium.codex.talentPages + talentIndex;
+    cachedEntry->entryIndex = talentIndex;
     
     GetEntryFromBuffer_t(&compendium.codex.talentsModule, &cachedEntry->name, entry->name, "talent_name");
     GetEntryFromBuffer_t(&compendium.codex.talentsModule, &cachedEntry->desc, entry->desc, "talent_desc");
@@ -114,7 +111,7 @@ void BuildTalentFromPacked_t(Codex *c, u32 entry, utf32 *tmp)
     return;
 }
 
-TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, UILayoutRect oldLayout,
+TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *page, UILayoutRect oldLayout,
                                                utf32 talent, s32 talentEntry)
 {
     b32 isPresent = (talentEntry & TALENT_MODULE_IDX_MASK) != TALENT_NOT_FOUND;
@@ -143,7 +140,8 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, UILayoutRect oldLay
         {
             if(isPresent)
             {
-                if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
+                //if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
+                if(LeftClick) { page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK; }
                 return TSR_AVAILABLE;
             }
             else { return TSR_MISSING; }
@@ -156,7 +154,8 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, UILayoutRect oldLay
         {
             if(isPresent)
             {
-                if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
+                //if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
+                if(LeftClick) { page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK; }
                 return TSR_AVAILABLE;
             }
             else { return TSR_MISSING; }
@@ -169,7 +168,8 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, UILayoutRect oldLay
         {
             if(isPresent)
             {
-                if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
+                //if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
+                if(LeftClick) { page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK; }
                 return TSR_AVAILABLE;
             }
             else { return TSR_MISSING; }
@@ -179,7 +179,7 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, UILayoutRect oldLay
     return TSR_NORMAL;
 }
 
-void DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY, s32 width, s32 minY)
+s32 DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY, s32 width, s32 minY)
 {
     Color originalTextColor = c->textColor;
     Color pureWhite         = RGBg(0xFF);
@@ -251,4 +251,8 @@ void DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY
         renderAndAlignS(U"Fonte: ");
         renderAndAlign(entry->source);
     }
+    
+    c->textColor = originalTextColor;
+    
+    return baseR.startY;
 }

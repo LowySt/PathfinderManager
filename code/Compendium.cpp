@@ -1,7 +1,10 @@
 struct CachedPageEntry
 {
     s32 pageIndex   = -1;
+    s32 talentIndex = -1;
     s32 orderID     = -1;
+    
+    CachedTalentEntry *talentPage;
     
     b32 acError     = FALSE;
     b32 meleeError  = FALSE;
@@ -2631,7 +2634,8 @@ void LoadCompendium(string path)
     initCachedPage(&cachedPage);
     
     //NOTE: Same initialization for the talent entry page
-    InitCachedTalentEntry(&cachedTalent);
+    InitCachedTalentEntry(&compendiumCachedTalent);
+    cachedPage.talentPage = &compendiumCachedTalent;
     
     //NOTE: Now load the Compendium from file
     buffer CompendiumBuff = ls_bufferInitFromFile(path);
@@ -3542,6 +3546,14 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
 //TODO: Make Certain Fields modifiable directly??
 s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 width, s32 minY)
 {
+    if(page->talentIndex != -1)
+    {
+        if(page->talentPage->entryIndex != page->talentIndex)
+        { CacheTalentEntry(page->talentPage, page->talentIndex); }
+        
+        return DrawTalentPage(c, page->talentPage, baseX, baseY, width, minY);
+    }
+    
     //NOTE: Used to adjust the next line position when changing font size, because
     //      a change in pixel height will make the next line too close / too far from the ideal position.
     s32 prevPixelHeight = 0;
@@ -3891,7 +3903,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
             {
                 if(talentIdx == 23 || page->talents[talentIdx+1].len == 0)
                 { 
-                    TalentDisplayResult res = CheckTalentTooltipAndClick(c, alignR, page->talents[talentIdx],
+                    TalentDisplayResult res = CheckTalentTooltipAndClick(c, page, alignR, page->talents[talentIdx],
                                                                          page->talentEntry[talentIdx]);
                     
                     switch(res) {
@@ -3914,7 +3926,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
                     break;
                 }
                 
-                TalentDisplayResult res = CheckTalentTooltipAndClick(c, alignR, page->talents[talentIdx], 
+                TalentDisplayResult res = CheckTalentTooltipAndClick(c, page, alignR, page->talents[talentIdx], 
                                                                      page->talentEntry[talentIdx]);
                 
                 switch(res) {
@@ -4234,17 +4246,18 @@ void DrawCompendium(UIContext *c)
     {
         DrawMonsterTable(c);
     }
+    /*
     else if(compendium.isViewingTalentPage)
     {
         if(cachedTalent.entryIndex != compendium.talentIndex)
         {
-            CacheTalentEntry(&cachedTalent, compendium.codex.talentPages + compendium.talentIndex);
+            CacheTalentEntry(&cachedTalent, compendium.talentIndex);
         }
         
         DrawTalentPage(c, &cachedTalent, 0, 670, c->width-42, 0 );
         
         if(KeyPress(keyMap::Escape)) { CompendiumOpenPageView(); }
-    }
+    }*/
     else if(compendium.isViewingPage)
     {
         //NOTE: It's a Mob's Page Index

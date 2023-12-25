@@ -832,7 +832,7 @@ b32 SetOnClick(UIContext *c, void *data)
     Page->currIdx       = 0;
     State.inBattle      = TRUE;
     State.playerSettingsMenuItem->isVisible = FALSE;
-    globalSelectedIndex = 0;
+    globalSelectedIndex = 0; //NOTE: Is this correct? Everywhere else resetting this means -1, not 0...
     
     return TRUE;
 }
@@ -1980,6 +1980,7 @@ b32 DrawDefaultStyle(UIContext *c)
 b32 DrawPranaStyle(UIContext *c)
 {
     InitPage *Page = State.Init;
+    Input *UserInput = &c->UserInput;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
@@ -2099,7 +2100,7 @@ b32 DrawPranaStyle(UIContext *c)
                 }
                 
                 ls_uiStartScrollableRegion(c, &initViewScroll);
-                initViewScroll.minY = DrawPage(c , &mainCachedPage, 260, 676, 740, 218);
+                initViewScroll.minY = DrawPage(c, &mainCachedPage, 260, 676, 740, 218);
                 if(initViewScroll.minY > -19) { initViewScroll.minY = -1; }
                 ls_uiEndScrollableRegion(c);
                 
