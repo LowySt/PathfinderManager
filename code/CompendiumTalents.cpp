@@ -136,12 +136,14 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
         //NOTE: Rect 1
         UIRect rect1 = { startX, startY-3, newLayout.maxX-startX, rectHeight };
         
-        if(MouseInRect(rect1.x, rect1.y-c->scroll.deltaY, rect1.w, rect1.h))
+        if(MouseInRect(rect1.x, rect1.y-c->scroll->deltaY, rect1.w, rect1.h))
         {
             if(isPresent)
             {
-                //if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
-                if(LeftClick) { page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK; }
+                if(LeftClick) { 
+                    page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK;
+                    ls_uiResetScrollableRegion(c);
+                }
                 return TSR_AVAILABLE;
             }
             else { return TSR_MISSING; }
@@ -150,12 +152,14 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
         //NOTE: Rect 2
         UIRect rect2 = { newLayout.minX, newLayout.startY-3, newLayout.startX-newLayout.minX, rectHeight };
         
-        if(MouseInRect(rect2.x, rect2.y-c->scroll.deltaY, rect2.w, rect2.h))
+        if(MouseInRect(rect2.x, rect2.y-c->scroll->deltaY, rect2.w, rect2.h))
         {
             if(isPresent)
             {
-                //if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
-                if(LeftClick) { page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK; }
+                if(LeftClick) { 
+                    page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK;
+                    ls_uiResetScrollableRegion(c);
+                }
                 return TSR_AVAILABLE;
             }
             else { return TSR_MISSING; }
@@ -164,12 +168,14 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
     }
     else
     {
-        if(MouseInRect(startX, startY-3-c->scroll.deltaY, newLayout.startX - startX, newLayout.maxY-1))
+        if(MouseInRect(startX, startY-3-c->scroll->deltaY, newLayout.startX - startX, newLayout.maxY-1))
         {
             if(isPresent)
             {
-                //if(LeftClick) { CompendiumOpenTalentPage(talentEntry); }
-                if(LeftClick) { page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK; }
+                if(LeftClick) {
+                    page->talentIndex = talentEntry & TALENT_MODULE_IDX_MASK;
+                    ls_uiResetScrollableRegion(c);
+                }
                 return TSR_AVAILABLE;
             }
             else { return TSR_MISSING; }

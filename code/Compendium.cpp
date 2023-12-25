@@ -3566,7 +3566,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     c->textColor            = RGBg(0xAA);
     
     //NOTE: Currently layout.maxY shouldn't even be used...
-    UILayoutRect baseR  = { c->scroll.x + 10, baseY, c->scroll.x + 10 + width, 0xFEFE, c->scroll.x + 10, baseY };
+    UILayoutRect baseR  = { c->scroll->x + 10, baseY, c->scroll->x + 10 + width, 0xFEFE, c->scroll->x + 10, baseY };
     UILayoutRect alignR = { baseX, baseY, baseX + width, minY, baseX, baseY };
     UILayoutRect offset = {};
     
