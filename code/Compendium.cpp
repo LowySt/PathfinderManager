@@ -3650,6 +3650,8 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
         
         //TODO: This is because the hypergol parser will miss Perception, if the golarion input is not perfect.
         //      Example Meladaemon
+        
+        //TODO: Muntjac Grigiastro, the spacing between senses and Defense is not large enough.
         if(page->perception.len)
         {
             alignR = ls_uiLabelLayout(c, U"Percezione ", alignR);
@@ -3663,6 +3665,8 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
             renderAndAlignS(U"Aura: ");
             renderAndAlign(page->aura);
         }
+        //else
+        //{ baseR.startY -= 8; }
     }
     
     //---------------//

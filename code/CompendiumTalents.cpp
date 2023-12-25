@@ -16,11 +16,15 @@ void InitCachedTalentEntry(CachedTalentEntry *cachedEntry)
 {
     cachedEntry->name   = ls_utf32Alloc(64);
     cachedEntry->desc   = ls_utf32Alloc(1024);
-    cachedEntry->pre    = ls_utf32Alloc(1024);
-    cachedEntry->gain   = ls_utf32Alloc(1024);
-    cachedEntry->norm   = ls_utf32Alloc(1024);
-    cachedEntry->spec   = ls_utf32Alloc(1024);
-    cachedEntry->source = ls_utf32Alloc(256);
+    cachedEntry->pre    = ls_utf32Alloc(4096);
+    cachedEntry->gain   = ls_utf32Alloc(8192);
+    cachedEntry->norm   = ls_utf32Alloc(4096);
+    cachedEntry->spec   = ls_utf32Alloc(4096);
+    
+    //TODO: Fattura_Rituale Actually contains some extra stuff after the source
+    //      which makes it think the source is much longer than it should be!
+    //      256 should me WAAAY more than enough... but it isnt.
+    cachedEntry->source = ls_utf32Alloc(10240);
 }
 
 void CacheTalentEntry(CachedTalentEntry *cachedEntry, s32 talentIndex)

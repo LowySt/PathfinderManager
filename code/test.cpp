@@ -65,5 +65,22 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
     ls_log("Count of Failed AC Fixes: {s32}", failedACCount);
     ls_log("Done With NPCs!");
     
+    CachedTalentEntry dummyTalent = {};
+    InitCachedTalentEntry(&dummyTalent);
+    
+    for(s32 i = 0; i < compendium.codex.talentPages.count; i++)
+    {
+        TalentEntry tEntry = compendium.codex.talentPages[i];
+        CacheTalentEntry(&dummyTalent, i);
+        
+        len = ls_utf32ToAscii_t(&dummyTalent.name, buff, 64);
+        if(logNames) { ls_log("{string}", string({buff, len, len})); }
+    }
+    
+    ls_log("Done With Talents!");
+    
+    //NOTE: By the way, I'm leaking memory, because I'm never deallocating the dummy cached pages.
+    //      But these test won't run in deployed software, so... who cares.
+    
     ls_arenaUse(compTempArena);
 }
