@@ -66,7 +66,7 @@ struct CachedPageEntry
     utf32 BAB;
     utf32 BMC;
     utf32 DMC;
-    utf32 talents[24];
+    utf32 talents[24]; s32 talentEntry[24]; //NOTE: Original talent entries to open the talent page.
     utf32 languages;
     utf32 environment;
 };
@@ -242,11 +242,15 @@ struct Compendium
     
     b32        isViewingPage;
     s32        pageIndex = -1;
+    
+    b32        isViewingMobTable;
     Array<u16> viewIndices;
     
-    //TODO: Hate this, make isViewing* more consistent!
     b32        isViewingNPCTable;
     Array<u16> npcViewIndices;
+    
+    b32        isViewingTalentPage;
+    s32        talentIndex;
 };
 
 Compendium         compendium     = {};
@@ -290,20 +294,36 @@ void GetPageEntryAndCache(s32 compendiumIdx, s32 ordID, CachedPageEntry *page, S
 
 b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
 {
-    compendium.isViewingNPCTable = FALSE;
-    compendium.isViewingPage     = FALSE;
-    compendium.pageIndex         = -1;
+    compendium.isViewingMobTable   = TRUE;
+    compendium.isViewingNPCTable   = FALSE;
+    compendium.isViewingPage       = FALSE;
+    compendium.isViewingTalentPage = FALSE;
+    compendium.pageIndex           = -1;
+    compendium.talentIndex         = -1;
     
     return FALSE;
 }
 
 b32 CompendiumOpenNPCTable(UIContext *c, void *userData)
 {
-    compendium.isViewingNPCTable = TRUE;
-    compendium.isViewingPage     = FALSE;
-    compendium.pageIndex         = -1;
+    compendium.isViewingNPCTable   = TRUE;
+    compendium.isViewingMobTable   = FALSE;
+    compendium.isViewingPage       = FALSE;
+    compendium.isViewingTalentPage = FALSE;
+    compendium.pageIndex           = -1;
+    compendium.talentIndex         = -1;
     
     return FALSE;
+}
+
+void CompendiumOpenPageView()
+{
+    compendium.isViewingPage       = TRUE;
+    compendium.isViewingNPCTable   = FALSE;
+    compendium.isViewingMobTable   = FALSE;
+    compendium.isViewingTalentPage = FALSE;
+    compendium.pageIndex           = cachedPage.pageIndex;
+    compendium.talentIndex         = -1;
 }
 
 enum SearchKind
@@ -2610,6 +2630,9 @@ void LoadCompendium(string path)
     //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
     initCachedPage(&cachedPage);
     
+    //NOTE: Same initialization for the talent entry page
+    InitCachedTalentEntry(&cachedTalent);
+    
     //NOTE: Now load the Compendium from file
     buffer CompendiumBuff = ls_bufferInitFromFile(path);
     
@@ -2707,6 +2730,8 @@ void LoadCompendium(string path)
     compendium.npcViewIndices = ls_arrayAlloc<u16>(currentNPCViewIndicesCount);
     for(u16 i = 0; i < currentNPCViewIndicesCount; i++)
     { ls_arrayAppend(&compendium.npcViewIndices, i); }
+    
+    compendium.isViewingMobTable = TRUE;
     
     ls_arenaUse(globalArena);
     
@@ -2990,6 +3015,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         BuildTalentFromPacked_t(c, page.talents[talentsIdx], &tempString);
         ls_utf32Set(&cachedPage->talents[talentsIdx], tempString);
         ls_utf32Clear(&tempString);
+        
+        cachedPage->talentEntry[talentsIdx] = page.talents[talentsIdx];
+        
         talentsIdx += 1;
     }
     
@@ -3309,6 +3337,9 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
         BuildTalentFromPacked_t(c, page.talents[talentsIdx], &tempString);
         ls_utf32Set(&cachedPage->talents[talentsIdx], tempString);
         ls_utf32Clear(&tempString);
+        
+        cachedPage->talentEntry[talentsIdx] = page.talents[talentsIdx];
+        
         talentsIdx += 1;
     }
     
@@ -3518,6 +3549,8 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     
     Color originalTextColor = c->textColor;
     Color pureWhite         = RGBg(0xFF);
+    Color missingLink       = RGB(0xAB, 0x0B, 0x06);
+    Color availableLink     = RGB(0x47, 0x56, 0xFF);
     c->textColor            = RGBg(0xAA);
     
     //NOTE: Currently layout.maxY shouldn't even be used...
@@ -3624,7 +3657,6 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
     baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseR.startY -= 8;
-    //baseX  = 164;
     {
         offset = ls_uiLabelLayout(c, U"Difesa", baseR, pureWhite);
         ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
@@ -3850,20 +3882,58 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
         renderAndAlignS(U"DMC: ");
         renderAndAlign(page->DMC);
         
-        s32 talentsIdx = 0;
-        if(page->talents[talentsIdx].len)
+        s32 talentIdx = 0;
+        if(page->talents[talentIdx].len)
         {
             renderAndAlignS(U"Talenti: ");
             alignR.minX = baseR.minX + (0.03f*c->width);
             while(TRUE)
             {
-                if(talentsIdx == 23 || page->talents[talentsIdx+1].len == 0)
-                { renderAndAlign(page->talents[talentsIdx]); break; }
+                if(talentIdx == 23 || page->talents[talentIdx+1].len == 0)
+                { 
+                    TalentDisplayResult res = CheckTalentTooltipAndClick(c, alignR, page->talents[talentIdx],
+                                                                         page->talentEntry[talentIdx]);
+                    
+                    switch(res) {
+                        case TSR_NORMAL: {
+                            offset   = ls_uiLabelLayout(c, page->talents[talentIdx], alignR);
+                            baseR.startY -= offset.maxY;
+                        } break;
+                        
+                        case TSR_AVAILABLE: {
+                            offset   = ls_uiLabelLayout(c, page->talents[talentIdx], alignR, availableLink);
+                            baseR.startY -= offset.maxY;
+                        } break;
+                        
+                        case TSR_MISSING: { 
+                            offset   = ls_uiLabelLayout(c, page->talents[talentIdx], alignR, missingLink);
+                            baseR.startY -= offset.maxY;
+                        } break;
+                    }
+                    
+                    break;
+                }
                 
-                renderAndAlignW(page->talents[talentsIdx]);
+                TalentDisplayResult res = CheckTalentTooltipAndClick(c, alignR, page->talents[talentIdx], 
+                                                                     page->talentEntry[talentIdx]);
+                
+                switch(res) {
+                    case TSR_NORMAL: {
+                        alignR = ls_uiLabelLayout(c, page->talents[talentIdx], alignR);
+                    } break;
+                    
+                    case TSR_AVAILABLE: {
+                        alignR = ls_uiLabelLayout(c, page->talents[talentIdx], alignR, availableLink);
+                    } break;
+                    
+                    case TSR_MISSING: { 
+                        alignR = ls_uiLabelLayout(c, page->talents[talentIdx], alignR, missingLink);
+                    } break;
+                }
+                
                 renderAndAlignWS(U", ");
                 baseR.startY = alignR.startY;
-                talentsIdx += 1;
+                talentIdx += 1;
             }
         }
         
@@ -4032,6 +4102,7 @@ void DrawNPCTable(UIContext *c)
         if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
         {
             compendium.isViewingPage = TRUE;
+            compendium.isViewingNPCTable = FALSE;
             compendium.pageIndex  = compendium.npcViewIndices[i] + NPC_PAGE_INDEX_OFFSET;
         }
         
@@ -4096,6 +4167,7 @@ void DrawMonsterTable(UIContext *c)
         if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
         {
             compendium.isViewingPage = TRUE; 
+            compendium.isViewingMobTable = FALSE;
             compendium.pageIndex     = compendium.viewIndices[i];
         }
         
@@ -4154,13 +4226,26 @@ void DrawCompendium(UIContext *c)
     }
 #endif
     
-    
-    if(compendium.pageIndex == -1)
+    if(compendium.isViewingNPCTable)
     {
-        if(compendium.isViewingNPCTable) DrawNPCTable(c); 
-        else                             DrawMonsterTable(c);
+        DrawNPCTable(c); 
     }
-    else
+    else if(compendium.isViewingMobTable)
+    {
+        DrawMonsterTable(c);
+    }
+    else if(compendium.isViewingTalentPage)
+    {
+        if(cachedTalent.entryIndex != compendium.talentIndex)
+        {
+            CacheTalentEntry(&cachedTalent, compendium.codex.talentPages + compendium.talentIndex);
+        }
+        
+        DrawTalentPage(c, &cachedTalent, 0, 670, c->width-42, 0 );
+        
+        if(KeyPress(keyMap::Escape)) { CompendiumOpenPageView(); }
+    }
+    else if(compendium.isViewingPage)
     {
         //NOTE: It's a Mob's Page Index
         if(compendium.pageIndex < NPC_PAGE_INDEX_OFFSET)
@@ -4219,6 +4304,10 @@ void DrawCompendium(UIContext *c)
             if(pageScroll.minY > -19) { pageScroll.minY = -1; }
             ls_uiEndScrollableRegion(c);
         }
+    }
+    else
+    {
+        AssertMsg(FALSE, "Unhandled page viewing in Compendium\n");
     }
     
     return;
