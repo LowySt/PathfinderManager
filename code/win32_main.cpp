@@ -87,6 +87,7 @@ static Arena compTempArena;
 
 #include "CompendiumSkills.h"
 #include "CompendiumTalents.h"
+#include "CompendiumArchetypes.h"
 
 #include "themePicker.cpp"
 #include "diceRoller.cpp"
@@ -94,6 +95,7 @@ static Arena compTempArena;
 #include "Compendium.cpp"
 #include "CompendiumSkills.cpp"
 #include "CompendiumTalents.cpp"
+#include "CompendiumArchetypes.cpp"
 
 #include "Class.cpp"
 #include "Feats.cpp"
@@ -313,14 +315,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
     
     loadAssetFile(uiContext, ls_strConstant("assetFile"));
-    LoadCompendium(ls_strConstant("Compendium"));
-    
     ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
     
     //NOTETODOHACK:
     compendiumContext->fonts    = uiContext->fonts;
     compendiumContext->numFonts = uiContext->numFonts;
     compendiumContext->currFont = uiContext->currFont;
+    
+    LoadCompendium(compendiumContext, ls_strConstant("Compendium"));
     
     UIMenu WindowMenu      = {};
     WindowMenu.closeWindow = ls_uiMenuButton(ProgramExitOnButton, closeBtnDataPremulti, closeBtnWidth, closeBtnHeight);
@@ -351,8 +353,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     CompendiumMenu.itemWidth    = 120;
     
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Monster Table", CompendiumOpenMonsterTable, NULL);
-    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add Enemy", CompendiumAddPageToInitMob, NULL);
-    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Add Ally", CompendiumAddPageToInitAlly, NULL);
     ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"NPC Table", CompendiumOpenNPCTable, NULL);
     
     SYSTEMTIME endT, beginT;
@@ -653,9 +653,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         b32 compendiumInput = ls_uiMenu(compendiumContext, &CompendiumMenu, -1,
                                         compendiumContext->height-20, compendiumContext->width+1, 21);
         
-        if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
+        compendiumInput |= DrawCompendium(compendiumContext);
         
-        DrawCompendium(compendiumContext);
+        if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
         
         if(!compendiumContext->hasReceivedInput && !compendiumContext->isDragging)
         {
@@ -676,6 +676,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
             if(LeftClick && !compendiumContext->focusWasSetThisFrame) { compendiumContext->currentFocus = 0; }
+            
+            //NOTE: Exit out of archetype selection.
+            if(KeyPress(keyMap::Escape) && (compendium.arch.isChoosingArchetype == TRUE))
+            { compendium.arch.isChoosingArchetype = FALSE; }
             
             //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob
             if(KeyPress(keyMap::Escape) && (cachedPage.talentIndex != -1))

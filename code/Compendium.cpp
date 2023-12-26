@@ -229,11 +229,14 @@ struct Codex
     Array<TalentEntry>  talentPages;
 };
 
-const s32 NPC_PAGE_INDEX_OFFSET = 5000;
-
 struct Compendium
 {
     Codex codex;
+    
+    UIButton   addEnemy;
+    UIButton   addAlly;
+    
+    ArchetypeWindow arch;
     
     UITextBox  searchBarNameMobs;
     UITextBox  searchBarGSMobs;
@@ -265,6 +268,8 @@ UIScrollableRegion npcTableScroll = {};
 //NOTE: Used in Init.cpp
 CachedPageEntry mainCachedPage   = {};
 b32 mainCachedPageNeedsReCaching = FALSE;
+
+const s32 NPC_PAGE_INDEX_OFFSET = 5000;
 
 //NOTE: Kinda hacky but okay.
 s32 internal_newToOldMap[] = { 
@@ -1600,6 +1605,10 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
 
 void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *status = NULL)
 {
+    //-----------------------------------------------------------------------------------------//
+    //NOTE: Setup all constants and checks to correctly modify and represent the melee attacks //
+    //-----------------------------------------------------------------------------------------//
+    
     cachedPage->meleeError = FALSE;
     
     const s32 naturalAttacksCount = 39;
@@ -1669,7 +1678,9 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
     if(parenOpenIdx == -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     AssertMsg(parenOpenIdx != -1, "NOOOOOOO!\n");
     
-    //NOTE: Prepare the string
+    //------------------------------------------------------------------//
+    //NOTE: Start separating the string in the main part and paren part //
+    //------------------------------------------------------------------//
     ls_utf32Clear(&cachedPage->melee);
     s32 stringIndex = 0;
     
@@ -1769,6 +1780,7 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
         if(parenCloseIdx == -1) { parenCloseIdx = Melee.len - 1; }
         //AssertMsg(parenCloseIdx != -1, "WHAAAT!?");
         
+        utf32 insideParen = { Melee.data+parenOpenIdx+1, parenCloseIdx-parenOpenIdx-1, parenCloseIdx-parenOpenIdx-1 };
         //NOTE: And now, fix the damage
         {
             b32 isNatural = FALSE;
@@ -1778,6 +1790,21 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
                 if(ls_utf32LeftFind(haystack, naturalAttacks[nIdx]) != -1)
                 { isNatural = TRUE; break; }
             }
+            
+#if 0 //TODO: Fix energy damage being applied the strength bonus on a few creatures like Fuoco Fatuo.
+            const s32 elementalTestCount = 10;
+            utf32 elementalTest[elementalTestCount] = {
+                ls_utf32Constant(U"elettricit\U000000E0"), ls_utf32Constant(U"Elettricit\U000000E0"),
+                ls_utf32Constant(U"fuoco"), ls_utf32Constant(U"Fuoco"),
+                ls_utf32Constant(U"acido"), ls_utf32Constant(U"Acido"),
+                ls_utf32Constant(U"freddo"), ls_utf32Constant(U"Freddo"),
+                ls_utf32Constant(U"sonoro"), ls_utf32Constant(U"Sonoro"),
+            };
+            
+            if(ls_utf32LeftFindAny(insideParen, elementalTest, elementalTestCount) != -1) {
+                ls_log("Found: {utf32}", insideParen);
+            }
+#endif
             
             s64 diceThrowRange = leftFindDiceThrow(Melee, parenOpenIdx, parenCloseIdx);
             s32 diceThrowIdx = s32(diceThrowRange >> 32);
@@ -2146,7 +2173,7 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
     }
     
     
-    LogMsg(skillCat != SK_UNDEFINED, "Unable to find Skill AS Category!\n");
+    //LogMsg(skillCat != SK_UNDEFINED, "Unable to find Skill AS Category!\n");
     
     s32 asBonusNew = 0;
     s32 asBonusOld = 0;
@@ -2463,6 +2490,8 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     AddMobOnClick(NULL, NULL);
     
+    
+    
     return TRUE;
 }
 
@@ -2628,9 +2657,23 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->environment       = ls_utf32Alloc(96);
 }
 
-void LoadCompendium(string path)
+void LoadCompendium(UIContext *c, string path)
 {
     ls_arenaUse(compendiumArena);
+    
+    ls_uiButtonInit(c, &compendium.addEnemy, UIBUTTON_CLASSIC, U"Add Enemy", CompendiumAddPageToInitMob);
+    ls_uiButtonInit(c, &compendium.addAlly, UIBUTTON_CLASSIC, U"Add Ally", CompendiumAddPageToInitAlly);
+    
+    
+    ls_uiButtonInit(c, &compendium.arch.chooseArchetype, UIBUTTON_CLASSIC, 
+                    U"Archetype", CompendiumOpenArchetypeWindow);
+    
+    for(s32 archIdx = 0; archIdx < MAX_ARCHETYPES; archIdx++)
+    { 
+        ls_uiButtonInit(c, &compendium.arch.archetypes[archIdx], UIBUTTON_CLASSIC,
+                        archetypeName[archIdx], CompendiumSelectArchetype);
+        compendium.arch.archetypes[archIdx].data = (void*)((s64)archIdx);
+    }
     
     //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
     initCachedPage(&cachedPage);
@@ -4227,7 +4270,7 @@ void DrawMonsterTable(UIContext *c)
 void testAllCompendiumForAsserts(UIContext *c, b32);
 #endif
 
-void DrawCompendium(UIContext *c)
+b32 DrawCompendium(UIContext *c)
 {
     //NOTE: This arena is cleared every frame,
     //      Because here we store utf32 strings (currently only for the Search Function)
@@ -4235,6 +4278,8 @@ void DrawCompendium(UIContext *c)
     
     Codex *codex = &compendium.codex;
     Input *UserInput = &c->UserInput;
+    
+    b32 userInput = FALSE;
     
 #if _DEBUG
     if(KeyPress(keyMap::F1))
@@ -4266,6 +4311,21 @@ void DrawCompendium(UIContext *c)
     }*/
     else if(compendium.isViewingPage)
     {
+        //NOTE: We draw the buttons only when on an actual creature page.
+        if(cachedPage.talentIndex == -1)
+        {
+            userInput |= ls_uiButton(c, &compendium.addEnemy, 
+                                     0.01f*c->width, c->height - 0.060*c->height, c->menuBarColor);
+            userInput |= ls_uiButton(c, &compendium.addAlly, 
+                                     0.14f*c->width, c->height - 0.060*c->height, c->menuBarColor);
+            userInput |= ls_uiButton(c, &compendium.arch.chooseArchetype, 
+                                     0.27f*c->width, c->height - 0.060*c->height, c->menuBarColor);
+        }
+        
+        ls_uiHSeparator(c, 0.01f*c->width, (c->height - 0.066*c->height)+1, c->width - 0.04f*c->width, 1, RGBg(0));
+        ls_uiHSeparator(c, 0.01f*c->width, c->height - 0.066*c->height, c->width - 0.04f*c->width, 1, RGBg(0xDD));
+        ls_uiHSeparator(c, 0.01f*c->width, (c->height - 0.066*c->height)-1, c->width - 0.04f*c->width, 1, RGBg(0));
+        
         //NOTE: It's a Mob's Page Index
         if(compendium.pageIndex < NPC_PAGE_INDEX_OFFSET)
         {
@@ -4281,14 +4341,14 @@ void DrawCompendium(UIContext *c)
                 CachePage(pEntry, compendium.pageIndex, &cachedPage);
                 
                 //NOTE: Reset the page scroll for the new page (Fuck GCC)
-                pageScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, 0 };
+                pageScroll = { 0, 10, c->width-4, c->height-60, 0, 0, c->width-32, 0 };
             }
             
             //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
             //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
-            pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->width-42, 0);
+            pageScroll.minY = DrawPage(c, &cachedPage, 0, 646, c->width-42, 0);
             //TODO: When the page is smaller than the viewport, it ends up flip-flopping if we don't clamp it.
             //      Kind of annoying. Can we do something like this in endscrollaberegion automatically?
             if(pageScroll.minY > -19) { pageScroll.minY = -1; }
@@ -4310,14 +4370,14 @@ void DrawCompendium(UIContext *c)
                 CachePage(pEntry, compendium.pageIndex, &cachedPage);
                 
                 //NOTE: Reset the page scroll for the new page (Fuck GCC)
-                pageScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, 0 };
+                pageScroll = { 0, 10, c->width-4, c->height-60, 0, 0, c->width-32, 0 };
             }
             
             //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
             //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
-            pageScroll.minY = DrawPage(c, &cachedPage, 0, 670, c->width-42, 0);
+            pageScroll.minY = DrawPage(c, &cachedPage, 0, 646, c->width-42, 0);
             //TODO: When the page is smaller than the viewport, it ends up flip-flopping if we don't clamp it.
             //      Kind of annoying. Can we do something like this in endscrollaberegion automatically?
             if(pageScroll.minY > -19) { pageScroll.minY = -1; }
@@ -4329,5 +4389,32 @@ void DrawCompendium(UIContext *c)
         AssertMsg(FALSE, "Unhandled page viewing in Compendium\n");
     }
     
-    return;
+    if(compendium.arch.isChoosingArchetype == TRUE)
+    {
+        //NOTE: Draw the Archetype Selection Window
+        
+        //NOTE: Darken the Compendium Page to indicate inactiveness
+        ls_uiRect(c, 0, 0, c->width, 0.935f*c->height, RGBA(0, 0, 0, 0xAA), RGBA(0, 0, 0, 0xAA), 1);
+        
+        //NOTE: Draw the Archetype Selection Window
+        ls_uiRect(c, 0.1f*c->width, 0.47f*c->height, 0.8f*c->width, 0.33f*c->height, 2);
+        
+        //NOTE: Draw all the available archetype selection buttons
+        s32 baseX = 0.12f*c->width;
+        s32 baseY = 0.74f*c->height;
+        
+        for(s32 archIdx = 0; archIdx < MAX_ARCHETYPES; archIdx++)
+        {
+            ls_uiButton(c, &compendium.arch.archetypes[archIdx], baseX, baseY, 3);
+            
+            baseX += 0.04f*c->width + compendium.arch.archetypes[archIdx].w;
+            if(archIdx > 5)
+            {
+                baseX  = 0.12f*c->width;
+                baseY -= 0.064f*c->height;
+            }
+        }
+    }
+    
+    return userInput;
 }

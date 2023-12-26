@@ -1,29 +1,6 @@
 #ifndef _EQUIP_H
 #define _EQUIP_H
 
-struct DiceThrow
-{
-    //NOTETODO: 0, 0 indicates something special???
-    s8 numDice;
-    s8 numFaces;
-};
-
-struct CritRange
-{
-    // Range is the distance from 20, so 19-20/x2 would be {range: 1, mul: 2}
-    s8 range;
-    s8 mul;
-};
-
-enum DamageTypeFlag : u8
-{
-    DMG_BLUDGEONING = 1,
-    DMG_SLASHING    = 2,
-    DMG_PIERCING    = 4,
-    
-    DMG_OTHER       = 128
-};
-
 enum ArmorType : s32
 {
     ARMOR_UNDEFINED,
@@ -156,6 +133,29 @@ Armor shieldTablePrana[shieldTableCount] = {
     {{(u32 *)U"Scudo Pesante di Legno", 22, 22},          +4, -1, -2, 15, ARMOR_SHIELD},
     {{(u32 *)U"Scudo Pesante di Metallo", 24, 24},        +5, -1, -2, 15, ARMOR_SHIELD},
     {{(u32 *)U"Scudo Torre", 11, 11},                     +6, +2, -10, 50, ARMOR_SHIELD},
+};
+
+struct DiceThrow
+{
+    //NOTETODO: 0, 0 indicates something special???
+    s8 numDice;
+    s8 numFaces;
+};
+
+struct CritRange
+{
+    // Range is the distance from 20, so 19-20/x2 would be {range: 1, mul: 2}
+    s8 range;
+    s8 mul;
+};
+
+enum DamageTypeFlag : u8
+{
+    DMG_BLUDGEONING = 1,
+    DMG_SLASHING    = 2,
+    DMG_PIERCING    = 4,
+    
+    DMG_OTHER       = 128
 };
 
 enum RangedWeaponCat

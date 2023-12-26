@@ -140,7 +140,8 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
         //NOTE: Rect 1
         UIRect rect1 = { startX, startY-3, newLayout.maxX-startX, rectHeight };
         
-        if(MouseInRect(rect1.x, rect1.y-c->scroll->deltaY, rect1.w, rect1.h))
+        //NOTE: We stop talent interaction when the archetype window is active
+        if(MouseInRect(rect1.x, rect1.y-c->scroll->deltaY, rect1.w, rect1.h) && !compendium.arch.isChoosingArchetype)
         {
             if(isPresent)
             {
@@ -156,7 +157,7 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
         //NOTE: Rect 2
         UIRect rect2 = { newLayout.minX, newLayout.startY-3, newLayout.startX-newLayout.minX, rectHeight };
         
-        if(MouseInRect(rect2.x, rect2.y-c->scroll->deltaY, rect2.w, rect2.h))
+        if(MouseInRect(rect2.x, rect2.y-c->scroll->deltaY, rect2.w, rect2.h) && !compendium.arch.isChoosingArchetype)
         {
             if(isPresent)
             {
@@ -168,11 +169,11 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
             }
             else { return TSR_MISSING; }
         }
-        
     }
     else
     {
-        if(MouseInRect(startX, startY-3-c->scroll->deltaY, newLayout.startX - startX, newLayout.maxY-1))
+        if(MouseInRect(startX, startY-3-c->scroll->deltaY, newLayout.startX - startX, newLayout.maxY-1)
+           && !compendium.arch.isChoosingArchetype)
         {
             if(isPresent)
             {
