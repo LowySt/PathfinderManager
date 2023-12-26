@@ -1,4 +1,6 @@
-void testAllCompendiumForAsserts(b32 logNames = FALSE)
+//TODO: To be able to do an actual rendering test, the function needs to become like a co-procedure
+//      And yield after the drawing of a single page, to allow the actual rendering to happen.
+void testAllCompendiumForAsserts(UIContext *c, b32 logNames = FALSE)
 {
     ls_arenaUse(compendiumArena);
     
@@ -32,6 +34,14 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
         if((fract > 0.33) && (hasMessaged3 == FALSE)) { ls_log("33% of Mobs Done"); hasMessaged3 = TRUE; }
         if((fract > 0.50) && (hasMessaged4 == FALSE)) { ls_log("50% of Mobs Done"); hasMessaged4 = TRUE; }
         if((fract > 0.75) && (hasMessaged5 == FALSE)) { ls_log("75% of Mobs Done"); hasMessaged5 = TRUE; }
+        
+#if 0
+        pageScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, 0 };
+        ls_uiStartScrollableRegion(c, &pageScroll);
+        pageScroll.minY = DrawPage(c, &dummy, 0, 670, c->width-42, 0);
+        if(pageScroll.minY > -19) { pageScroll.minY = -1; }
+        ls_uiEndScrollableRegion(c);
+#endif
     }
     
     ls_log("Count of Failed AC Fixes: {s32}", failedACCount);
@@ -60,6 +70,14 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
         if((fract > 0.33) && (hasMessaged3 == FALSE)) { ls_log("33% of NPCs Done"); hasMessaged3 = TRUE; }
         if((fract > 0.50) && (hasMessaged4 == FALSE)) { ls_log("50% of NPCs Done"); hasMessaged4 = TRUE; }
         if((fract > 0.75) && (hasMessaged5 == FALSE)) { ls_log("75% of NPCs Done"); hasMessaged5 = TRUE; }
+        
+#if 0
+        pageScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, 0 };
+        ls_uiStartScrollableRegion(c, &pageScroll);
+        pageScroll.minY = DrawPage(c, &dummy, 0, 670, c->width-42, 0);
+        if(pageScroll.minY > -19) { pageScroll.minY = -1; }
+        ls_uiEndScrollableRegion(c);
+#endif
     }
     
     ls_log("Count of Failed AC Fixes: {s32}", failedACCount);
@@ -68,13 +86,24 @@ void testAllCompendiumForAsserts(b32 logNames = FALSE)
     CachedTalentEntry dummyTalent = {};
     InitCachedTalentEntry(&dummyTalent);
     
+    dummy.talentPage = &dummyTalent;
+    
     for(s32 i = 0; i < compendium.codex.talentPages.count; i++)
     {
         TalentEntry tEntry = compendium.codex.talentPages[i];
         CacheTalentEntry(&dummyTalent, i);
+        dummy.talentIndex = i;
         
         len = ls_utf32ToAscii_t(&dummyTalent.name, buff, 64);
         if(logNames) { ls_log("{string}", string({buff, len, len})); }
+        
+#if 0
+        pageScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, 0 };
+        ls_uiStartScrollableRegion(c, &pageScroll);
+        pageScroll.minY = DrawPage(c, &dummy, 0, 670, c->width-42, 0);
+        if(pageScroll.minY > -19) { pageScroll.minY = -1; }
+        ls_uiEndScrollableRegion(c);
+#endif
     }
     
     ls_log("Done With Talents!");

@@ -4224,7 +4224,7 @@ void DrawMonsterTable(UIContext *c)
 }
 
 #if _DEBUG
-void testAllCompendiumForAsserts(b32);
+void testAllCompendiumForAsserts(UIContext *c, b32);
 #endif
 
 void DrawCompendium(UIContext *c)
@@ -4240,7 +4240,7 @@ void DrawCompendium(UIContext *c)
     if(KeyPress(keyMap::F1))
     {
         b32 logNames = KeyHeld(keyMap::Shift);
-        testAllCompendiumForAsserts(logNames);
+        testAllCompendiumForAsserts(c, logNames);
     }
 #endif
     

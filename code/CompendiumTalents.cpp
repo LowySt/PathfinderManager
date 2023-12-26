@@ -92,7 +92,7 @@ void BuildTalentFromPacked_t(Codex *c, u32 entry, utf32 *tmp)
     
     //NOTE: Remove the talent tags from the display name.
     const s32 needleArrSize = 7;
-    char32_t *needleArr[needleArrSize] = 
+    const char32_t *needleArr[needleArrSize] = 
     { 
         U" (Combattimento)", U" (Combattimento, Squadra)", U" (Combattimento, Critico)", 
         U" (Combattimento, Occhiata)", U" (Creazione Oggetto)", U" (Creazione Oggetti)", U" (Metamagia)"
