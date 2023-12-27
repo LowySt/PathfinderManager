@@ -4,6 +4,7 @@ struct CachedPageEntry
     s32 talentIndex = -1;
     s32 orderID     = -1;
     
+    //TODO: This feels stupid. It should be moved to a separate cached talent entry in the main app
     CachedTalentEntry *talentPage;
     
     b32 acError     = FALSE;
@@ -236,7 +237,7 @@ struct Compendium
     UIButton   addEnemy;
     UIButton   addAlly;
     
-    ArchetypeWindow arch;
+    ArchetypeInfo arch;
     
     UITextBox  searchBarNameMobs;
     UITextBox  searchBarGSMobs;
@@ -282,19 +283,20 @@ s32 internal_newToOldMap[] = {
 };
 s32 *newToOldMap = internal_newToOldMap + 10;
 
-void CachePage(PageEntry, s32, CachedPageEntry *, Status *);
-void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *);
-void GetPageEntryAndCache(s32 compendiumIdx, s32 ordID, CachedPageEntry *page, Status *status = NULL)
+void CachePage(PageEntry, s32, CachedPageEntry *, Status *, ArchetypeDiff *);
+void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *, ArchetypeDiff *);
+void GetPageEntryAndCache(s32 compendiumIdx, s32 ordID, CachedPageEntry *page, 
+                          Status *status = NULL, ArchetypeDiff *archetype = NULL)
 {
     if(compendiumIdx < NPC_PAGE_INDEX_OFFSET)
     { 
         PageEntry pEntry = compendium.codex.pages[compendiumIdx];
-        CachePage(pEntry, compendiumIdx, page, status);
+        CachePage(pEntry, compendiumIdx, page, status, archetype);
     }
     else
     { 
         NPCPageEntry pEntry = compendium.codex.npcPages[compendiumIdx - NPC_PAGE_INDEX_OFFSET];
-        CachePage(pEntry, compendiumIdx, page, status);
+        CachePage(pEntry, compendiumIdx, page, status, archetype);
     }
     
     page->orderID = ordID;
@@ -2952,7 +2954,8 @@ void SetNPCTable(UIContext *c)
     return;
 }
 
-void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
+void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
+               Status *status = NULL, ArchetypeDiff *archetype = NULL)
 {
     u32 tempUTF32Buffer[4096] = {};
     utf32 tempString = { tempUTF32Buffer, 0, 4096 };
@@ -3268,7 +3271,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_arenaUse(prevArena);
 }
 
-void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
+void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
+               Status *status = NULL, ArchetypeDiff *archetype = NULL)
 {
     u32 tempUTF32Buffer[4096] = {};
     utf32 tempString = { tempUTF32Buffer, 0, 4096 };

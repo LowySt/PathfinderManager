@@ -2088,12 +2088,12 @@ b32 DrawPranaStyle(UIContext *c)
                     if(f->compendiumIdx < NPC_PAGE_INDEX_OFFSET)
                     { 
                         PageEntry pEntry = compendium.codex.pages[f->compendiumIdx];
-                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL);
+                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL, NULL);
                     }
                     else
                     {
                         NPCPageEntry pEntry = compendium.codex.npcPages[f->compendiumIdx - NPC_PAGE_INDEX_OFFSET];
-                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL);
+                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL, NULL);
                     }
                     
                     initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};

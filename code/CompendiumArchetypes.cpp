@@ -1,16 +1,3 @@
-b32 CompendiumOpenArchetypeWindow(UIContext *c, void *user)
-{
-    compendium.arch.isChoosingArchetype = !compendium.arch.isChoosingArchetype;
-    return FALSE;
-}
-
-b32 CompendiumSelectArchetype(UIContext *c, void *user)
-{
-    s32 index = (s32)((s64)user);
-    
-    return FALSE;
-}
-
 void advancedCreatureGS(s32 *oldGS)
 {
     *oldGS += 1;
@@ -32,3 +19,22 @@ void advancedCreatureAC(s32 ac[AC_TYPES_COUNT])
 }
 
 ArchetypeDiff AdvancedCreature = { advancedCreatureGS, advancedCreatureAS, advancedCreatureAC };
+
+ArchetypeDiff allArchetypeDiffs[MAX_ARCHETYPES] = {
+    AdvancedCreature,
+};
+
+
+b32 CompendiumOpenArchetypeWindow(UIContext *c, void *user)
+{
+    compendium.arch.isChoosingArchetype = !compendium.arch.isChoosingArchetype;
+    return FALSE;
+}
+
+b32 CompendiumSelectArchetype(UIContext *c, void *user)
+{
+    s32 index = (s32)((s64)user);
+    GetPageEntryAndCache(compendium.pageIndex, -1, &cachedPage, NULL, allArchetypeDiffs + index);
+    compendium.arch.isChoosingArchetype = FALSE;
+    return FALSE;
+}

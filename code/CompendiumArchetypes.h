@@ -7,12 +7,13 @@ const char32_t *archetypeName[MAX_ARCHETYPES] = {
     U"Avanzato", U"Celestiale", U"Immondo", U"Gigante"
 };
 
-struct ArchetypeWindow
+struct ArchetypeInfo
 {
     UIButton   chooseArchetype;
     b32        isChoosingArchetype;
     
     UIButton   archetypes[MAX_ARCHETYPES];
+    s32        archetypeIndex = -1;
 };
 
 
