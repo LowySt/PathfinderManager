@@ -14,11 +14,11 @@ void testAllCompendiumForAsserts(UIContext *c, b32 logNames = FALSE)
     for(s32 i = 0; i < compendium.codex.pages.count; i++)
     {
         PageEntry pEntry = compendium.codex.pages[i];
-        CachePage(pEntry, i, &dummy, NULL, NULL);
+        CachePage(pEntry, i, &dummy, NULL);
         
         if(dummy.acError == TRUE) { failedACCount += 1; }
         
-        len = ls_utf32ToAscii_t(&dummy.name, buff, 64);
+        len = ls_utf32ToAscii_t(dummy.name, buff, 64);
         
         if(logNames) { ls_log("{string}", string({buff, len, len})); }
         
@@ -38,11 +38,11 @@ void testAllCompendiumForAsserts(UIContext *c, b32 logNames = FALSE)
     for(s32 i = 0; i < compendium.codex.npcPages.count; i++)
     {
         NPCPageEntry pEntry = compendium.codex.npcPages[i];
-        CachePage(pEntry, i, &dummy, NULL, NULL);
+        CachePage(pEntry, i, &dummy, NULL);
         
         if(dummy.acError == TRUE) { failedACCount += 1; }
         
-        len = ls_utf32ToAscii_t(&dummy.name, buff, 64);
+        len = ls_utf32ToAscii_t(dummy.name, buff, 64);
         if(logNames) { ls_log("{string}", string({buff, len, len})); }
         
 #if 0
@@ -68,7 +68,7 @@ void testAllCompendiumForAsserts(UIContext *c, b32 logNames = FALSE)
         CacheTalentEntry(&dummyTalent, i);
         dummy.talentIndex = i;
         
-        len = ls_utf32ToAscii_t(&dummyTalent.name, buff, 64);
+        len = ls_utf32ToAscii_t(dummyTalent.name, buff, 64);
         if(logNames) { ls_log("{string}", string({buff, len, len})); }
         
 #if 0

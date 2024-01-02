@@ -11,13 +11,16 @@ struct CachedPageEntry
     b32 meleeError  = FALSE;
     b32 rangedError = FALSE;
     
-    //Ability scores of the page without any status effect / modifications applied.
-    s32 origSTR, origDEX, origCON, origINT, origWIS, origCHA;
+    //Ability scores of the page without any modifications applied.
+    s32 origAS[AS_COUNT];
+    
+    //Ability scores after modifications (status effects, archetypes)
+    s32 modAS[AS_COUNT];
     
     utf32 origin;
     utf32 shortDesc;
     utf32 AC;
-    utf32 HP; utf32 totHP;
+    utf32 HP; utf32 totHP; s32 hitDice;
     utf32 ST;
     utf32 RD;
     utf32 RI;
@@ -238,6 +241,7 @@ struct Compendium
     UIButton   addAlly;
     
     ArchetypeInfo arch;
+    StaticArray<ArchetypeDiff, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes;
     
     UITextBox  searchBarNameMobs;
     UITextBox  searchBarGSMobs;
@@ -283,20 +287,20 @@ s32 internal_newToOldMap[] = {
 };
 s32 *newToOldMap = internal_newToOldMap + 10;
 
-void CachePage(PageEntry, s32, CachedPageEntry *, Status *, ArchetypeDiff *);
-void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *, ArchetypeDiff *);
+void CachePage(PageEntry, s32, CachedPageEntry *, Status *);
+void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *);
 void GetPageEntryAndCache(s32 compendiumIdx, s32 ordID, CachedPageEntry *page, 
-                          Status *status = NULL, ArchetypeDiff *archetype = NULL)
+                          Status *status = NULL)
 {
     if(compendiumIdx < NPC_PAGE_INDEX_OFFSET)
     { 
         PageEntry pEntry = compendium.codex.pages[compendiumIdx];
-        CachePage(pEntry, compendiumIdx, page, status, archetype);
+        CachePage(pEntry, compendiumIdx, page, status);
     }
     else
     { 
         NPCPageEntry pEntry = compendium.codex.npcPages[compendiumIdx - NPC_PAGE_INDEX_OFFSET];
-        CachePage(pEntry, compendiumIdx, page, status, archetype);
+        CachePage(pEntry, compendiumIdx, page, status);
     }
     
     page->orderID = ordID;
@@ -312,6 +316,8 @@ b32 CompendiumOpenMonsterTable(UIContext *c, void *userData)
     compendium.talentIndex         = -1;
     cachedPage.talentIndex         = -1;
     
+    ls_staticArrayClear(&compendium.appliedArchetypes);
+    
     return FALSE;
 }
 
@@ -325,10 +331,13 @@ b32 CompendiumOpenNPCTable(UIContext *c, void *userData)
     compendium.talentIndex         = -1;
     cachedPage.talentIndex         = -1;
     
+    ls_staticArrayClear(&compendium.appliedArchetypes);
+    
     return FALSE;
 }
 
-void CompendiumOpenPageView()
+#if 0
+void CompendiumOpenTalentPageView()
 {
     compendium.isViewingPage       = TRUE;
     compendium.isViewingNPCTable   = FALSE;
@@ -337,6 +346,7 @@ void CompendiumOpenPageView()
     compendium.pageIndex           = cachedPage.pageIndex;
     compendium.talentIndex         = -1;
 }
+#endif
 
 enum SearchKind
 {
@@ -795,6 +805,28 @@ s64 leftFindDiceBonus(utf32 s, s32 off, s32 max)
     
     return ((s64)beginIdx << 32 | endIdx);
 };
+
+b32 CompendiumPageHasTalent(CachedPageEntry *page, utf32 needle)
+{
+    s32 talentIndex = 0;
+    while(page->talents[talentIndex].len)
+    {
+        if(ls_utf32LeftFind(page->talents[talentIndex], needle) != -1) { return TRUE; }
+        talentIndex += 1;
+    }
+    
+    return FALSE;
+}
+
+s32 CompendiumPageMithicalRank(utf32 gs)
+{
+    s32 rmIdx = 0;
+    for(s32 i = rmSetCount-1; i >= 0; i--)
+    { if(ls_utf32LeftFind(gs, rmSet[i]) != -1) { return i+1; } }
+    
+    return 0;
+}
+
 //
 //-------------------------------------------
 
@@ -830,14 +862,14 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     s32 natArmorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Naturale"));
     if(natArmorBonusIdx == -1) { natArmorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"naturale")); }
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
+    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX]];
     
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
-    s32 strBonusOld = newToOldMap[cachedPage->origSTR - 10];
+    s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
+    s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR]];
     
-    s32 conBonusNew = ls_utf32ToInt(cachedPage->CON)  - 10;
-    s32 conBonusOld = newToOldMap[cachedPage->origCON - 10];
+    s32 conBonusNew = cachedPage->modAS[AS_CON] - 10;
+    s32 conBonusOld = newToOldMap[cachedPage->origAS[AS_CON] - 10];
     
     s32 newMaxDex      = 999;
     s32 newArmorBonus  = -1;
@@ -1085,8 +1117,8 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     b32 isIncorporeal = (ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1);
     if(isIncorporeal)
     {
-        s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
-        s32 chaBonusOld = newToOldMap[cachedPage->origCHA - 10];
+        s32 chaBonusNew = cachedPage->modAS[AS_CHA] - 10;
+        s32 chaBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
         
         s32 chaBonusToAC     = chaBonusNew < 1 ? 1 : chaBonusNew;
         s32 chaBonusOldToAC  = chaBonusOld < 1 ? 1 : chaBonusOld;
@@ -1095,18 +1127,11 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         touchAC = (touchAC - chaBonusOldToAC) + chaBonusToAC;
     }
     
-    //NOTE: Apply status conditions if present
     //TODO: Maybe make it a flag?
-    b32 hasSchivareProdigioso = FALSE;
-    s32 talentsIdx = 0;
-    while(cachedPage->talents[talentsIdx].len)
-    {
-        if(ls_utf32LeftFind(cachedPage->talents[talentsIdx], ls_utf32Constant(U"Schivare Prodigioso")) != -1)
-        { hasSchivareProdigioso = TRUE; break; }
-        
-        talentsIdx += 1;
-    }
+    b32 hasSchivareProdigioso = ls_utf32LeftFind(cachedPage->defensiveCapacity, 
+                                                 ls_utf32Constant(U"Schivare Prodigioso"));
     
+    //NOTE: Apply status conditions if present
     if(status)
     {
         b32 hasLostDexBonus = FALSE;
@@ -1171,20 +1196,19 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
 
 void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status = NULL)
 {
-    s32 conBonusNew = ls_utf32ToInt(cachedPage->CON)  - 10;
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
-    s32 wisBonusNew = ls_utf32ToInt(cachedPage->WIS)  - 10;
-    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
-    s32 conBonusOld = newToOldMap[cachedPage->origCON - 10];
-    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
-    s32 wisBonusOld = newToOldMap[cachedPage->origWIS - 10];
-    s32 chaBonusOld = newToOldMap[cachedPage->origCHA - 10];
+    s32 conBonusNew = cachedPage->modAS[AS_CON] - 10;
+    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
+    s32 wisBonusNew = cachedPage->modAS[AS_WIS] - 10;
+    s32 chaBonusNew = cachedPage->modAS[AS_CHA] - 10;
+    s32 conBonusOld = newToOldMap[cachedPage->origAS[AS_CON] - 10];
+    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
+    s32 wisBonusOld = newToOldMap[cachedPage->origAS[AS_WIS] - 10];
+    s32 chaBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
     
-    //NOTE: Fix for Constructs
-    if(ls_utf32AreEqual(cachedPage->CON, ls_utf32Constant(U"-")))
-    { conBonusNew = 0; conBonusOld = 0; }
+    b32 isConstruct = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Costrutto")) != -1;
+    if(isConstruct) { conBonusNew = 0; conBonusOld = 0; }
     
-    b32 isUndead = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Non Morto")) != -1;
+    b32 isUndead    = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Non Morto")) != -1;
     
     //TODO: Make these not hardcoded like that
     s32 conSaveBegin = 7;
@@ -1219,7 +1243,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
     dexSave = (dexSave - dexBonusOld) + dexBonusNew;
     wisSave = (wisSave - wisBonusOld) + wisBonusNew;
     
-    //Handle Status Conditions
+    //NOTE: Handle Status Conditions
     if(status)
     {
         for(s32 i = 0; i < STATUS_COUNT; i++)
@@ -1240,7 +1264,6 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
             }
         }
     }
-    
     
     u32 buff[32] = {};
     utf32 tmpString = { buff, 32, 32 };
@@ -1312,6 +1335,8 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
     
     //NOTE: We should have found ALL dice throws, and the bonus if it exists.
     s32 finalHP = 0;
+    s32 totalHpDice = 0;
+    s32 totalHpDiceMul = 0;
     s32 currIdx = 0;
     for(s32 i = 0; i < dIdx; i++)
     {
@@ -1326,14 +1351,66 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
         currIdx  = throwEnd;
         
         finalHP += dieValue*dieMul;
+        totalHpDice += dieValue;
+        totalHpDiceMul += dieMul;
     }
+    
+    //NOTE: Set this integer to be used in certain calculations.
+    cachedPage->hitDice = totalHpDice;
     
     s32 flatBegin = throwBonus >> 32;
     s32 flatEnd   = (s32)throwBonus;
-    
     s32 flatVal   = ls_utf32ToIntIgnoreWhitespace({hpExpr.data + flatBegin, flatEnd - flatBegin, flatEnd - flatBegin});
     
-    finalHP      += flatVal * 2;
+    b32 hasToughness       = CompendiumPageHasTalent(cachedPage, ls_utf32Constant(U"Robustezza"));
+    b32 hasMithicToughness = CompendiumPageHasTalent(cachedPage, ls_utf32Constant(U"Robustezza[M]"));
+    
+    b32 isUndead = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Non Morto")) != -1;
+    b32 isConstruct = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Costrutto")) != -1;
+    
+    //TODO: Class Level can give bonus HP (seems like most monsters do.)
+    if(isConstruct) {
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccola")))      { flatVal += 5; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Media")))        { flatVal += 10; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Grande")))       { flatVal += 15; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Enorme")))       { flatVal += 20; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Mastodontica"))) { flatVal += 30; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Colossale")))    { flatVal += 40; }
+    }
+    else if(isUndead) { 
+        flatVal -= totalHpDice*(newToOldMap[cachedPage->origAS[AS_CHA] - 10]);
+        flatVal += totalHpDice*(cachedPage->modAS[AS_CHA] - 10);
+    }
+    else { 
+        flatVal -= totalHpDice*(newToOldMap[cachedPage->origAS[AS_CON] - 10]);
+        flatVal += totalHpDice*(cachedPage->modAS[AS_CON] - 10);
+    }
+    
+    //NOTE: Mithical Creatures get extra HP based on Hit Die Kind and mithical rank.
+    s32 rmRank = CompendiumPageMithicalRank(cachedPage->gs);
+    if(rmRank > 0) { 
+        flatVal -= rmRank*totalHpDiceMul;
+        flatVal += (s32)((rmRank*totalHpDiceMul)*1.5f);
+    }
+    
+    if(hasMithicToughness)
+    {
+        if(totalHpDice >= 3) {
+            flatVal -= 2*totalHpDice;
+            flatVal += 4*totalHpDice;
+        }
+        else { flatVal -= 6; flatVal += 12; }
+    }
+    else if(hasToughness)
+    {
+        if(totalHpDice >= 3) {
+            flatVal -= totalHpDice;
+            flatVal += 2*totalHpDice;
+        }
+        else { flatVal -= 3; flatVal += 6; }
+    }
+    
+    finalHP += flatVal;
     
     ls_utf32FromInt_t(&cachedPage->HP, finalHP);
     
@@ -1367,12 +1444,12 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     s32 statBonusOld = -1;
     
     if(useDex == TRUE) {
-        statBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
-        statBonusOld = newToOldMap[cachedPage->origDEX - 10];
+        statBonusNew = cachedPage->modAS[AS_DEX] - 10;
+        statBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
     }
     else {
-        statBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
-        statBonusOld = newToOldMap[cachedPage->origSTR - 10];
+        statBonusNew = cachedPage->modAS[AS_STR] - 10;
+        statBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
     }
     
     s32 bmcVal = ls_utf32ToInt({BMC.data, endIdx, endIdx});
@@ -1399,11 +1476,11 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
     s32 endIdx = ls_utf32LeftFind(DMC, (u32)'(');
     if(endIdx == -1) endIdx = DMC.len;
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
+    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
     
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
-    s32 strBonusOld = newToOldMap[cachedPage->origSTR - 10];
+    s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
+    s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
     
     s32 dmcVal = ls_utf32ToInt({DMC.data, endIdx, endIdx});
     
@@ -1428,13 +1505,10 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
     //      Those cases trip the M detection, so we need a first pass to make sure the M isn't between
     //      A couple of parentheses.
     //
-    //      UPDATE:
-    //      Should've been auto-solved by the unicode superscript M
-    
     if(Init.len == 0) { ls_utf32Set(&cachedPage->initiative, Init); return; }
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
+    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
     
     s32 multiToken  = ls_utf32LeftFind(Init, (u32)'/');
     //s32 mithicToken = ls_utf32LeftFind(Init, (u32)'M');
@@ -1644,14 +1718,14 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
     if(sciame2Idx != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     if(truppaIdx  != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
-    s32 strBonusOld = newToOldMap[cachedPage->origSTR - 10];
+    s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
+    s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
+    s32 dexBonusNew = cachedPage->modAS[AS_STR] - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
     
-    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
-    s32 chaBonusOld = newToOldMap[cachedPage->origCHA - 10];
+    s32 chaBonusNew = cachedPage->modAS[AS_CHA] - 10;
+    s32 chaBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
     
     s32 bab = ls_utf32ToInt(cachedPage->BAB);
     
@@ -1659,19 +1733,8 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
     b32 isIncorporeal    = ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1;
     b32 hasChangelingMod = ls_utf32LeftFind(cachedPage->spec_qual, ls_utf32Constant(U"Changeling Imponente")) != -1;
     
-    //TODO: Mithic Arma Accurata
-    b32 hasWeaponFinesse = FALSE;
-    s32 talentsIdx = 0;
-    while(cachedPage->talents[talentsIdx].len)
-    {
-        if(ls_utf32LeftFind(cachedPage->talents[talentsIdx], ls_utf32Constant(U"Arma Accurata")) != -1)
-        { hasWeaponFinesse = TRUE; break; }
-        
-        if(ls_utf32LeftFind(cachedPage->talents[talentsIdx], ls_utf32Constant(U"Arma Accurata[M]")) != -1)
-        { hasWeaponFinesse = TRUE; break; }
-        
-        talentsIdx += 1;
-    }
+    b32 hasWeaponFinesse = CompendiumPageHasTalent(cachedPage, ls_utf32Constant(U"Arma Accurata"));
+    b32 hasMithicWeaponFinesse = CompendiumPageHasTalent(cachedPage, ls_utf32Constant(U"Arma Accurata[M]"));
     
     //NOTE: Special Enemies with special bullshit!
     b32 isTiyanak = ls_utf32AreEqual(cachedPage->name, ls_utf32Constant(U"Tiyanak"));
@@ -1848,20 +1911,27 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
                         //TODO: Felino Marino, WTF!?!?!?
                         //TODO: Mastino Ombra, WTF!?!?!?
                         //TODO: Rakshasa Mitico, WTF!?!?!? Mithic Arma Accurata
-                        s32 halfOld = strBonusOld / 2;
                         s32 halfNew = strBonusNew / 2;
+                        s32 halfOld = strBonusOld / 2;
                         if(oldDBonus == strBonusOld + add) //NOTE: It's primary
-                        { newDBonus = oldDBonus - strBonusOld + strBonusNew; }
+                        { 
+                            newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                        }
                         else if(oldDBonus == halfOld + add)  //NOTE: It's secondary
-                        { newDBonus = oldDBonus - halfOld + halfNew; }
+                        { 
+                            newDBonus = oldDBonus - halfOld + halfNew;
+                        }
                         else if(oldDBonus == strBonusOld + halfOld + add)  //NOTE: It's SINGLE ONLY attack
                         { 
                             s32 oldBon = strBonusOld + halfOld;
                             s32 newBon = strBonusNew + halfNew;
                             newDBonus = oldDBonus - oldBon + newBon;
                         }
-                        else if(oldDBonus == strBonusOld*2 + add) //NOTE: Many have special attacks that give them 2*STR bonus!
-                        { newDBonus = oldDBonus - strBonusOld*2 + strBonusNew*2; }
+                        //NOTE: Many have special attacks that give them 2*STR bonus!
+                        else if(oldDBonus == strBonusOld*2 + add)
+                        { 
+                            newDBonus = oldDBonus - strBonusOld*2 + strBonusNew*2;
+                        }
                         else
                         {
                             //NOTE: Escaped From Unhandled case
@@ -1875,8 +1945,16 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
                     }
                     else
                     {
-                        //TODO: Broken Weapons!!
-                        newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                        if(hasMithicWeaponFinesse)
+                        {
+                            //TODO: Also when wearing a shield there's no penalty on damage or throw bonus.
+                            newDBonus = oldDBonus - dexBonusOld + dexBonusNew;
+                        }
+                        else
+                        {
+                            //TODO: Broken Weapons!!
+                            newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                        }
                     }
                 }
                 
@@ -1921,18 +1999,20 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *
 {
     cachedPage->rangedError = FALSE;
     
-    s32 strBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
-    s32 strBonusOld = newToOldMap[cachedPage->origSTR - 10];
+    s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
+    s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
     
-    s32 dexBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origDEX - 10];
+    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
+    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
     
-    s32 chaBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
-    s32 chaBonusOld = newToOldMap[cachedPage->origCHA - 10];
+    s32 chaBonusNew = cachedPage->modAS[AS_CHA] - 10;
+    s32 chaBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
     
     s32 bab = ls_utf32ToInt(cachedPage->BAB);
     
-    b32 hasAdvancedArch  = ls_utf32LeftFind(cachedPage->archetype, ls_utf32Constant(U"Avanzato")) != -1;
+    //TODO: This is unused, but it should be used.
+    //      +2 to DEX should mean an increase in TxC / Dmg with certain weapons/talents
+    //b32 hasAdvancedArch  = ls_utf32LeftFind(cachedPage->archetype, ls_utf32Constant(U"Avanzato")) != -1;
     b32 isIncorporeal    = ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1;
     
     s32 parenOpenIdx = ls_utf32LeftFind(Ranged, '(');
@@ -1957,7 +2037,6 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *
             }
         }
         
-        //LogMsg(weapon != NULL, "Ranged Weapon not found!");
         if(weapon == NULL) { cachedPage->rangedError = TRUE; ls_utf32Set(&cachedPage->ranged, Ranged); return; }
         
         s32 slashIdx = ls_utf32LeftFind(Ranged, stringIndex, '/');
@@ -2184,38 +2263,38 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
     {
         case SK_STR:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->STR)  - 10;
-            asBonusOld = newToOldMap[cachedPage->origSTR - 10];
+            asBonusNew = cachedPage->modAS[AS_STR] - 10;
+            asBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
         } break;
         
         case SK_DEX:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->DEX)  - 10;
-            asBonusOld = newToOldMap[cachedPage->origDEX - 10];
+            asBonusNew = cachedPage->modAS[AS_DEX] - 10;
+            asBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
         } break;
         
         case SK_CON:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->CON)  - 10;
-            asBonusOld = newToOldMap[cachedPage->origCON - 10];
+            asBonusNew = cachedPage->modAS[AS_CON] - 10;
+            asBonusOld = newToOldMap[cachedPage->origAS[AS_CON] - 10];
         } break;
         
         case SK_INT:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->INT)  - 10;
-            asBonusOld = newToOldMap[cachedPage->origINT - 10];
+            asBonusNew = cachedPage->modAS[AS_INT] - 10;
+            asBonusOld = newToOldMap[cachedPage->origAS[AS_INT] - 10];
         } break;
         
         case SK_WIS:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->WIS)  - 10;
-            asBonusOld = newToOldMap[cachedPage->origWIS - 10];
+            asBonusNew = cachedPage->modAS[AS_WIS] - 10;
+            asBonusOld = newToOldMap[cachedPage->origAS[AS_WIS] - 10];
         } break;
         
         case SK_CHA:
         {
-            asBonusNew = ls_utf32ToInt(cachedPage->CHA)  - 10;
-            asBonusOld = newToOldMap[cachedPage->origCHA - 10];
+            asBonusNew = cachedPage->modAS[AS_CHA] - 10;
+            asBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
         } break;
     }
     
@@ -2243,8 +2322,9 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
                 
                 case STATUS_AFFASCINATO:
                 {
-                    //TODO
-                    Assert(FALSE);
+                    //TODO: -4 to `Reaction` skill checks (like Perception)
+                    //      I'd prefer to modify the entire skill row itself to show both values?
+                    //Assert(FALSE);
                 } break;
                 
                 case STATUS_INFERMO:
@@ -2276,7 +2356,6 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
         ls_utf32Append(&cleanBlock,{Skill.data + closeParenIdx + 1, Skill.len-closeParenIdx-1, Skill.len-closeParenIdx-1});
         
         //NOTE: Now find the bonuses
-        
         s64 mainBonusRange = leftFindBonus(cleanBlock, 0, cleanBlock.len);
         if(mainBonusRange == -1)
         {
@@ -2393,8 +2472,10 @@ void ShortenAndCacheName(utf32 orig_name, utf32 *out)
 {
     if(orig_name.len < 17) { ls_utf32Set(out, orig_name); return; }
     
-    //TODO: Can we avoid this?
-    utf32 name = ls_utf32Copy(orig_name);
+    //TODO: Can't we operate directly on `out` ?
+    u32 tmpNameBuff[128] = {};
+    utf32 name = { tmpNameBuff, 0, 128 };
+    ls_utf32Copy_t(orig_name, &name);
     
     //NOTE: First remove the articles which are redundant to understanding the name
     utf32 articles[6] = {{(u32 *)U" di ", 4, 4}, {(u32 *)U" del ", 5, 5}, {(u32 *)U" della ", 7, 7}, 
@@ -2411,7 +2492,7 @@ void ShortenAndCacheName(utf32 orig_name, utf32 *out)
         }
     }
     
-    if(name.len < 17) { ls_utf32Set(out, name); ls_utf32Free(&name); return; }
+    if(name.len < 17) { ls_utf32Set(out, name); return; }
     
     //NOTE: If that was not enough, we shorten each word of the name by removing all vowels.
     u32 vowels[5] = { (u32)'a', (u32)'e', (u32)'i', (u32)'o', (u32)'u' };
@@ -2425,11 +2506,10 @@ void ShortenAndCacheName(utf32 orig_name, utf32 *out)
         }
     }
     
-    //NOTE: If the name is still too long, shorten it to length 17
+    //NOTE: If the name is still too long, shorten it to length 16
     if(name.len > 16) { name.len = 16; }
     
     ls_utf32Set(out, name);
-    ls_utf32Free(&name); 
 }
 
 void AddIncrementalToName(UIContext *c, utf32 name, UITextBox *box)
@@ -2447,9 +2527,9 @@ void AddIncrementalToName(UIContext *c, utf32 name, UITextBox *box)
         
         if(ls_utf32AreEqualUpTo(o->field.text, name, cleanLen))
         {
-            s32 lenDiff = (o->field.text.len - name.len) - 1;
+            s32 lenDiff         = (o->field.text.len - name.len) - 1;
             utf32 justTheNumber = { o->field.text.data + cleanLen + 1, lenDiff, lenDiff}; //Skip the space
-            s32 incremental = ls_utf32ToInt(justTheNumber);
+            s32 incremental     = ls_utf32ToInt(justTheNumber);
             if(incremental > maxIncremental) maxIncremental = incremental;
         }
     }
@@ -2665,7 +2745,6 @@ void LoadCompendium(UIContext *c, string path)
     
     ls_uiButtonInit(c, &compendium.addEnemy, UIBUTTON_CLASSIC, U"Add Enemy", CompendiumAddPageToInitMob);
     ls_uiButtonInit(c, &compendium.addAlly, UIBUTTON_CLASSIC, U"Add Ally", CompendiumAddPageToInitAlly);
-    
     
     ls_uiButtonInit(c, &compendium.arch.chooseArchetype, UIBUTTON_CLASSIC, 
                     U"Archetype", CompendiumOpenArchetypeWindow);
@@ -2954,8 +3033,7 @@ void SetNPCTable(UIContext *c)
     return;
 }
 
-void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
-               Status *status = NULL, ArchetypeDiff *archetype = NULL)
+void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     u32 tempUTF32Buffer[4096] = {};
     utf32 tempString = { tempUTF32Buffer, 0, 4096 };
@@ -2963,6 +3041,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     Arena prevArena = ls_arenaUse(compTempArena);
     
     Codex *c = &compendium.codex;
+    
+    b32 hasArchetype = compendium.appliedArchetypes.count > 0;
     
     cachedPage->pageIndex    = viewIndex;
     
@@ -2974,31 +3054,54 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
-    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
-    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs, "gs");
-    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe, "pe");
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR, "str");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX, "dex");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON, "con");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->INT, page.INT, "int");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS, "wis");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA, "cha");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
+    //NOTE: GS and PE are moved down below because certain archetypes need those info to determine GS change
+    if(hasArchetype)
+    {
+        GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
+        CompendiumApplyAllArchetypeNames(&cachedPage->name);
+    }
+    else
+    {
+        GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
+    }
     
-    cachedPage->origSTR = ls_utf32ToInt(cachedPage->STR);
-    cachedPage->origDEX = ls_utf32ToInt(cachedPage->DEX);
-    cachedPage->origCON = ls_utf32ToInt(cachedPage->CON);
-    cachedPage->origINT = ls_utf32ToInt(cachedPage->INT);
-    cachedPage->origWIS = ls_utf32ToInt(cachedPage->WIS);
-    cachedPage->origCHA = ls_utf32ToInt(cachedPage->CHA);
+    //TODO: Remember irrelevant AS (dash instead of a number)
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.STR, "str");
+    cachedPage->origAS[AS_STR] = ls_utf32ToInt(tempString);
+    ls_utf32Clear(&tempString);
     
-    //NOTE: Cache Status Conditions
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DEX, "dex");
+    cachedPage->origAS[AS_DEX] = ls_utf32ToInt(tempString);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.CON, "con");
+    cachedPage->origAS[AS_CON] = ls_utf32ToInt(tempString);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.INT, "int");
+    cachedPage->origAS[AS_INT] = ls_utf32ToInt(tempString);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.WIS, "wis");
+    cachedPage->origAS[AS_WIS] = ls_utf32ToInt(tempString);
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.CHA, "cha");
+    cachedPage->origAS[AS_CHA] = ls_utf32ToInt(tempString);
+    ls_utf32Clear(&tempString);
+    
+    ls_memcpy(cachedPage->origAS, cachedPage->modAS, AS_COUNT*sizeof(s32));
+    
+    //NOTE: Apply the archetype on the Ability Scores
+    if(hasArchetype) { CompendiumApplyAllArchetypeAS(cachedPage->modAS); }
+    
+    //NOTE: Apply Status Conditions on the Ability Scores
     //TODO: Perception is not being modified by statuses! :StatusPerception
     if(status)
     {
-        s32 str = cachedPage->origSTR;
-        s32 dex = cachedPage->origDEX;
+        s32 str = cachedPage->modAS[AS_STR];
+        s32 dex = cachedPage->modAS[AS_DEX];
         
         for(s32 i = 0; i < STATUS_COUNT; i++)
         {
@@ -3023,8 +3126,17 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         ls_utf32FromInt_t(&cachedPage->DEX, dex);
     }
     
-    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure, "treasure");
+    //NOTE: Now that the statuses and archetypes have been applied, we cache the AS into strings
+    ls_utf32FromInt_t(&cachedPage->STR, cachedPage->modAS[AS_STR]);
+    ls_utf32FromInt_t(&cachedPage->DEX, cachedPage->modAS[AS_DEX]);
+    ls_utf32FromInt_t(&cachedPage->CON, cachedPage->modAS[AS_CON]);
+    ls_utf32FromInt_t(&cachedPage->INT, cachedPage->modAS[AS_INT]);
+    ls_utf32FromInt_t(&cachedPage->WIS, cachedPage->modAS[AS_WIS]);
+    ls_utf32FromInt_t(&cachedPage->CHA, cachedPage->modAS[AS_CHA]);
     
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
+    
+    GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure, "treasure");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "shortDesc");
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
@@ -3045,18 +3157,26 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
     }
     
-    ls_utf32Clear(&cachedPage->archetype);
-    if(page.archetype[0])
+    if(hasArchetype)
     {
-        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
-        AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
-        u32 i = 1;
-        while(page.archetype[i] && i < 4)
+        CompendiumAddAllArchetypesToList(&cachedPage->archetype);
+    }
+    else
+    {
+        ls_utf32Clear(&cachedPage->archetype);
+        if(page.archetype[0])
         {
-            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i]);
-            i += 1;
+            ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
+            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
+            u32 i = 1;
+            while(page.archetype[i] && i < 4)
+            {
+                AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i]);
+                i += 1;
+            }
+            
+            ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
         }
-        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
     }
     
     //NOTE: Early talents are for attack modifiers!
@@ -3105,6 +3225,19 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD, "rd");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI, "ri");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "defensiveCapacity");
+    
+    //NOTE: GS and PE are moved here because certain archetypes need previous info to determine GS change
+    if(hasArchetype)
+    {
+        GetEntryFromBuffer_t(&c->gs, &tempString, page.gs, "gs");
+        CompendiumApplyAllArchetypeGS(tempString, cachedPage->hitDice, &cachedPage->gs, &cachedPage->pe);
+        ls_utf32Clear(&tempString);
+    }
+    else
+    {
+        GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs, "gs");
+        GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe, "pe");
+    }
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee, "melee");
     CalculateAndCacheMelee(tempString, cachedPage, status);
@@ -3191,6 +3324,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         }
     }
     
+    if(hasArchetype) { CompendiumApplyAllArchetypeSenses(&cachedPage->senses); }
+    
+    
     //TODO :StatusPerception
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception, "perception");
     GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura, "aura");
@@ -3271,8 +3407,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     ls_arenaUse(prevArena);
 }
 
-void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
-               Status *status = NULL, ArchetypeDiff *archetype = NULL)
+void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     u32 tempUTF32Buffer[4096] = {};
     utf32 tempString = { tempUTF32Buffer, 0, 4096 };
@@ -3302,18 +3437,18 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA, "cha");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
     
-    cachedPage->origSTR = ls_utf32ToInt(cachedPage->STR);
-    cachedPage->origDEX = ls_utf32ToInt(cachedPage->DEX);
-    cachedPage->origCON = ls_utf32ToInt(cachedPage->CON);
-    cachedPage->origINT = ls_utf32ToInt(cachedPage->INT);
-    cachedPage->origWIS = ls_utf32ToInt(cachedPage->WIS);
-    cachedPage->origCHA = ls_utf32ToInt(cachedPage->CHA);
+    cachedPage->origAS[AS_STR] = ls_utf32ToInt(cachedPage->STR);
+    cachedPage->origAS[AS_DEX] = ls_utf32ToInt(cachedPage->DEX);
+    cachedPage->origAS[AS_CON] = ls_utf32ToInt(cachedPage->CON);
+    cachedPage->origAS[AS_INT] = ls_utf32ToInt(cachedPage->INT);
+    cachedPage->origAS[AS_WIS] = ls_utf32ToInt(cachedPage->WIS);
+    cachedPage->origAS[AS_CHA] = ls_utf32ToInt(cachedPage->CHA);
     
     //NOTE: Cache Status Conditions
     if(status)
     {
-        s32 str = cachedPage->origSTR;
-        s32 dex = cachedPage->origDEX;
+        s32 str = cachedPage->origAS[AS_STR];
+        s32 dex = cachedPage->origAS[AS_DEX];
         
         for(s32 i = 0; i < STATUS_COUNT; i++)
         {
@@ -4334,10 +4469,10 @@ b32 DrawCompendium(UIContext *c)
         if(compendium.pageIndex < NPC_PAGE_INDEX_OFFSET)
         {
             if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.pageIndex < (codex->pages.count-1))
-            { compendium.pageIndex += 1; }
+            { compendium.pageIndex += 1; ls_staticArrayClear(&compendium.appliedArchetypes); }
             
             if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && compendium.pageIndex > 0)
-            { compendium.pageIndex -= 1; }
+            { compendium.pageIndex -= 1; ls_staticArrayClear(&compendium.appliedArchetypes); }
             
             if(cachedPage.pageIndex != compendium.pageIndex)
             { 
@@ -4363,10 +4498,10 @@ b32 DrawCompendium(UIContext *c)
             s32 npcPageIndex = compendium.pageIndex - NPC_PAGE_INDEX_OFFSET;
             
             if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && npcPageIndex < (codex->npcPages.count-1))
-            { compendium.pageIndex += 1; npcPageIndex += 1; }
+            { compendium.pageIndex += 1; npcPageIndex += 1; ls_staticArrayClear(&compendium.appliedArchetypes); }
             
             if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::UArrow) && npcPageIndex > 0)
-            { compendium.pageIndex -= 1; npcPageIndex -= 1; }
+            { compendium.pageIndex -= 1; npcPageIndex -= 1; ls_staticArrayClear(&compendium.appliedArchetypes); }
             
             if(cachedPage.pageIndex != compendium.pageIndex)
             { 
@@ -4393,6 +4528,8 @@ b32 DrawCompendium(UIContext *c)
         AssertMsg(FALSE, "Unhandled page viewing in Compendium\n");
     }
     
+    //TODO: Disallow selecting the same archetype multiple times.
+    //TODO: Put a limit to the number of archetypes that can be selected at once (probably around 4)
     if(compendium.arch.isChoosingArchetype == TRUE)
     {
         //NOTE: Draw the Archetype Selection Window

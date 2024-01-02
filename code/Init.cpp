@@ -8,11 +8,11 @@ s32 ls_vlogFormatOrder(char *dst, va_list *argList)
     
     char tmpNameBuff[64] = {};
     string tmpName = { tmpNameBuff, 0, 64 };
-    tmpName.len = ls_utf32ToAscii_t(&ord.field.text, tmpNameBuff, 64);
+    tmpName.len = ls_utf32ToAscii_t(ord.field.text, tmpNameBuff, 64);
     
     char tmpPosBuff[16] = {};
     string tmpPos = { tmpPosBuff, 0, 16 };
-    tmpPos.len = ls_utf32ToAscii_t(&ord.pos.text, tmpPosBuff, 16);
+    tmpPos.len = ls_utf32ToAscii_t(ord.pos.text, tmpPosBuff, 16);
     
     s32 bytesWritten = ls_slog(buff, buffSize, "[\n\tname: {string}\n\tpos: {string}\n\tmaxLife: {s32}\n\tcurrLife:"
                                "{s32}\n\tcompendiumIdx: {s32}\n\tID: {s32}\n]", 
@@ -660,7 +660,7 @@ b32 ThrowDiceOnClick(UIContext *c, void *data)
     if(f == &State.Init->GeneralThrower.throwDie)
     {
         char toThrow[128] = {};
-        s32 len = ls_utf32ToAscii_t(&State.Init->GeneralThrower.toHit.text, toThrow, 128);
+        s32 len = ls_utf32ToAscii_t(State.Init->GeneralThrower.toHit.text, toThrow, 128);
         s32 result = (s32)diceRoll(toThrow, len);
         
         ls_utf32FromInt_t(&State.Init->GeneralThrower.hitRes.text, result);
@@ -676,13 +676,13 @@ b32 ThrowDiceOnClick(UIContext *c, void *data)
         DiceThrowBox *f = State.Init->Throwers + idx;
         
         char toThrow[128] = {};
-        s32 len = ls_utf32ToAscii_t(&f->toHit.text, toThrow, 128);
+        s32 len = ls_utf32ToAscii_t(f->toHit.text, toThrow, 128);
         s32 result = (s32)diceRoll(toThrow, len);
         
         ls_utf32FromInt_t(&f->hitRes.text, result);
         
         char dmgThrow[128] = {};
-        len = ls_utf32ToAscii_t(&f->damage.text, dmgThrow, 128);
+        len = ls_utf32ToAscii_t(f->damage.text, dmgThrow, 128);
         result = (s32)diceRoll(dmgThrow, len);
         
         ls_utf32FromInt_t(&f->dmgRes.text, result);
@@ -2088,12 +2088,12 @@ b32 DrawPranaStyle(UIContext *c)
                     if(f->compendiumIdx < NPC_PAGE_INDEX_OFFSET)
                     { 
                         PageEntry pEntry = compendium.codex.pages[f->compendiumIdx];
-                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL, NULL);
+                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL);
                     }
                     else
                     {
                         NPCPageEntry pEntry = compendium.codex.npcPages[f->compendiumIdx - NPC_PAGE_INDEX_OFFSET];
-                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL, NULL);
+                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL);
                     }
                     
                     initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
