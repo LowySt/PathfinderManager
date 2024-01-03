@@ -1080,6 +1080,16 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         return;
     }
     
+    s32 acDiff[AC_TYPES_COUNT] = {};
+    //NOTE: Apply Archetypes
+    if(compendium.appliedArchetypes.count > 0)
+    { CompendiumApplyAllArchetypeAC(acDiff); }
+    
+    //TODO: Dodge and other AC types
+    newArmorBonus += acDiff[AC_ARMOR];
+    newNatArmor   += acDiff[AC_NATURAL];
+    
+    
     s32 totAC   = ls_utf32ToInt({AC.data, firstValEnd, firstValEnd});
     s32 touchAC = ls_utf32ToInt({AC.data + secondValBegin, secondValLen, secondValLen});
     s32 flatAC  = ls_utf32ToInt({AC.data + thirdValBegin, thirdValLen, thirdValLen});
@@ -2708,7 +2718,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->alignment         = ls_utf32Alloc(32);
     cachedPage->type              = ls_utf32Alloc(32);
     cachedPage->subtype           = ls_utf32Alloc(maxSubtypes * 16);
-    cachedPage->archetype         = ls_utf32Alloc(maxArchetypes * 16);
+    cachedPage->archetype         = ls_utf32Alloc(maxArchetypes * 32);
     cachedPage->size              = ls_utf32Alloc(32);
     cachedPage->initiative        = ls_utf32Alloc(32);
     cachedPage->senses            = ls_utf32Alloc(maxSenses * 32);
@@ -3139,7 +3149,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure, "treasure");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "shortDesc");
+    
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
+    if(hasArchetype) { CompendiumApplyAllArchetypeSize(&cachedPage->size); }
     
     GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type, "type");
     
@@ -3157,27 +3169,28 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
     }
     
-    if(hasArchetype)
+    
+    ls_utf32Clear(&cachedPage->archetype);
+    if(page.archetype[0])
+    {
+        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
+        AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
+        u32 i = 1;
+        while(page.archetype[i] && i < 4)
+        {
+            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i]);
+            i += 1;
+        }
+        
+        if(hasArchetype) { CompendiumAddAllArchetypesToList(&cachedPage->archetype); }
+        
+        ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
+    }
+    else if(hasArchetype)
     {
         CompendiumAddAllArchetypesToList(&cachedPage->archetype);
     }
-    else
-    {
-        ls_utf32Clear(&cachedPage->archetype);
-        if(page.archetype[0])
-        {
-            ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
-            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
-            u32 i = 1;
-            while(page.archetype[i] && i < 4)
-            {
-                AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i]);
-                i += 1;
-            }
-            
-            ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
-        }
-    }
+    
     
     //NOTE: Early talents are for attack modifiers!
     s32 talentsIdx = 0;
@@ -3246,6 +3259,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee, "melee");
     CalculateAndCacheMelee(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
+    
+    if(hasArchetype) { CompendiumApplyAllArchetypeMelee(&cachedPage->melee); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged, "ranged");
     CalculateAndCacheRanged(tempString, cachedPage, status);
@@ -4538,6 +4553,8 @@ b32 DrawCompendium(UIContext *c)
     
     //TODO: Disallow selecting the same archetype multiple times.
     //TODO: Put a limit to the number of archetypes that can be selected at once (probably around 4)
+    //TODO: Certain archetypes can't be allowed on certain creatures. 
+    //      Example: Giant can't be applied to Colossal Creatures.
     if(compendium.arch.isChoosingArchetype == TRUE)
     {
         //NOTE: Draw the Archetype Selection Window

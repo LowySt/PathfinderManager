@@ -144,6 +144,8 @@ typedef void (*ArchRDProc)(s32, utf32 *);
 typedef void (*ArchResProc)(s32, utf32 *);
 typedef void (*ArchRIProc)(utf32, utf32 *);
 typedef void (*ArchSpecAtkProc)(utf32 *);
+typedef void (*ArchSizeProc)(utf32 *);
+typedef void (*ArchMeleeProc)(utf32 *);
 
 //TODO: Temporary. Will need to be moved somewhere more appropriate someday
 enum AbilityScoreType
@@ -158,6 +160,7 @@ enum AbilityScoreType
     AS_COUNT,
 };
 
+//TODO: Dodge and other AC types
 enum ArmorClassType
 {
     AC_ARMOR,
@@ -166,6 +169,32 @@ enum ArmorClassType
     
     AC_TYPES_COUNT,
 };
+
+enum SizeType
+{
+    SIZE_FINE,
+    SIZE_DIMINUTIVE,
+    SIZE_TINY,
+    SIZE_SMALL,
+    SIZE_MEDIUM,
+    SIZE_LARGE,
+    SIZE_HUGE,
+    SIZE_GARGANTUAN,
+    SIZE_COLOSSAL,
+    
+    SIZE_COUNT,
+};
+
+//NOTETODO: Fucking golarion is not consistent. When Size is int-mapped it will not be a problem...
+const utf32 sizeSet[SIZE_COUNT*2] =
+{
+    U"Piccolissima"_W, U"Minuta"_W, U"Minuscola"_W, U"Piccola"_W, U"Media"_W,
+    U"Grande"_W, U"Enorme"_W, U"Mastodontica"_W, U"Colossale"_W,
+    
+    U"Piccolissimo"_W, U"Minuto"_W, U"Minuscolo"_W, U"Piccolo"_W, U"Medio"_W,
+    U"Grande"_W, U"Enorme"_W, U"Mastodontico"_W, U"Colossale"_W,
+};
+
 
 struct ArchetypeDiff
 {
@@ -179,6 +208,8 @@ struct ArchetypeDiff
     ArchResProc     resistances;
     ArchRIProc      ri;
     ArchSpecAtkProc specialAtk;
+    ArchSizeProc    size;
+    ArchMeleeProc   melee;
 };
 
 b32 CompendiumOpenArchetypeWindow(UIContext *c, void *user);
@@ -186,11 +217,14 @@ b32 CompendiumSelectArchetype(UIContext *c, void *user);
 void CompendiumApplyAllArchetypeNames(utf32 *newName);
 void CompendiumApplyAllArchetypeGS(utf32 oldGS, s32 hitDice, utf32 *newGS, utf32 *newPE);
 void CompendiumApplyAllArchetypeAS(s32 as[AS_COUNT]);
+void CompendiumApplyAllArchetypeAC(s32 acDiff[AC_TYPES_COUNT]);
 void CompendiumAddAllArchetypesToList(utf32 *archetypeList);
 void CompendiumApplyAllArchetypeSenses(utf32 *old);
 void CompendiumApplyAllArchetypeRD(s32 hitDice, utf32 *old);
 void CompendiumApplyAllArchetypeResistances(s32 hitDice, utf32 *old);
 void CompendiumApplyAllArchetypeRI(utf32 gs, utf32 *ri);
 void CompendiumApplyAllArchetypeSpecAtk(utf32 *spec);
+void CompendiumApplyAllArchetypeSize(utf32 *size);
+void CompendiumApplyAllArchetypeMelee(utf32 *melee);
 
 #endif //_COMPENDIUM_ARCHETYPES_H
