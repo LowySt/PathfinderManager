@@ -140,6 +140,10 @@ typedef void (*ArchGSProc)(s32, s32 *, s32 *);
 typedef void (*ArchASProc)(s32 *);
 typedef void (*ArchACProc)(s32 *);
 typedef void (*ArchSensesProc)(utf32 *);
+typedef void (*ArchRDProc)(s32, utf32 *);
+typedef void (*ArchResProc)(s32, utf32 *);
+typedef void (*ArchRIProc)(utf32, utf32 *);
+typedef void (*ArchSpecAtkProc)(utf32 *);
 
 //TODO: Temporary. Will need to be moved somewhere more appropriate someday
 enum AbilityScoreType
@@ -167,10 +171,14 @@ struct ArchetypeDiff
 {
     utf32 nameStr;
     
-    ArchGSProc     gs;
-    ArchASProc     abilityScores;
-    ArchACProc     armorClass;
-    ArchSensesProc senses;
+    ArchGSProc      gs;
+    ArchASProc      abilityScores;
+    ArchACProc      armorClass;
+    ArchSensesProc  senses;
+    ArchRDProc      rd;
+    ArchResProc     resistances;
+    ArchRIProc      ri;
+    ArchSpecAtkProc specialAtk;
 };
 
 b32 CompendiumOpenArchetypeWindow(UIContext *c, void *user);
@@ -180,5 +188,9 @@ void CompendiumApplyAllArchetypeGS(utf32 oldGS, s32 hitDice, utf32 *newGS, utf32
 void CompendiumApplyAllArchetypeAS(s32 as[AS_COUNT]);
 void CompendiumAddAllArchetypesToList(utf32 *archetypeList);
 void CompendiumApplyAllArchetypeSenses(utf32 *old);
+void CompendiumApplyAllArchetypeRD(s32 hitDice, utf32 *old);
+void CompendiumApplyAllArchetypeResistances(s32 hitDice, utf32 *old);
+void CompendiumApplyAllArchetypeRI(utf32 gs, utf32 *ri);
+void CompendiumApplyAllArchetypeSpecAtk(utf32 *spec);
 
 #endif //_COMPENDIUM_ARCHETYPES_H

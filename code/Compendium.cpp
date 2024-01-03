@@ -59,7 +59,7 @@ struct CachedPageEntry
     utf32 perception;
     utf32 aura;
     utf32 immunities;
-    utf32 resistances;
+    utf32 resistances; //TODO: Parse this cooler in hyperGol. Can make it in a single u32 I think.
     utf32 weaknesses;
     utf32 speed;
     utf32 space;
@@ -3223,7 +3223,11 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD, "rd");
+    if(hasArchetype) { CompendiumApplyAllArchetypeRD(cachedPage->hitDice, &cachedPage->RD); }
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI, "ri");
+    if(hasArchetype) { CompendiumApplyAllArchetypeRI(cachedPage->gs, &cachedPage->RI); }
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "defensiveCapacity");
     
     //NOTE: GS and PE are moved here because certain archetypes need previous info to determine GS change
@@ -3248,6 +3252,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "specialAttacks");
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecAtk(&cachedPage->specialAttacks); }
     
     //NOTE: Spells need a little of pre-processing to handle superscripts (D and S for Dominio and Stirpe)
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.psych, "psych");
@@ -3354,6 +3359,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
             i += 1;
         }
     }
+    
+    if(hasArchetype) { CompendiumApplyAllArchetypeResistances(cachedPage->hitDice, &cachedPage->resistances); }
+    
     
     ls_utf32Clear(&cachedPage->weaknesses);
     if(page.weaknesses[0])

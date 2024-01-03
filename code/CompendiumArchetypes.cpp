@@ -36,6 +36,18 @@ void archetypeACStub(s32 ac[AC_TYPES_COUNT])
 void archetypeSensesStub(utf32 *old)
 { return; }
 
+void archetypeRDStub(s32 hitDice, utf32 *old)
+{ return; }
+
+void archetypeResistanceStub(s32 hitDice, utf32 *old)
+{ return; }
+
+void archetypeRIStub(utf32 gs, utf32 *ri)
+{ return; }
+
+void archetypeSpecAtkStub(utf32 *spec)
+{ return; }
+
 //-------------------------//
 //   ADVANCED ARCHETYPE    //
 //-------------------------//
@@ -62,7 +74,8 @@ void advancedCreatureAC(s32 ac[AC_TYPES_COUNT])
 }
 
 ArchetypeDiff AdvancedCreature = {
-    U"Avanzata"_W, advancedCreatureGS, advancedCreatureAS, advancedCreatureAC, archetypeSensesStub
+    U"Avanzata"_W, advancedCreatureGS, advancedCreatureAS, advancedCreatureAC, archetypeSensesStub,
+    archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub
 };
 
 //-------------------------//
@@ -82,19 +95,211 @@ void celestialCreatureSenses(utf32 *old)
 {
     AssertMsg(old, "Null utf32 pointer\n");
     
-    if(ls_utf32LeftFind(*old, U"Scurovisione 18 m"_W) == -1)
+    const utf32 toAdd = U"Scurovisione 18 m"_W;
+    if(ls_utf32LeftFind(*old, toAdd) == -1)
     {
-        AssertMsg(old->len + 19 < old->size, "Insufficient space in senses string.\n");
+        AssertMsg(old->len + toAdd.len+2 < old->size, "Insufficient space in senses string.\n");
+        if(old->len + toAdd.len+2 >= old->size) { return; }
         ls_utf32Prepend(old, U"Scurovisione 18 m, "_W);
     }
 }
 
+//TODO: This actually sucks. The way it's setup now it would need parsing to properly find old rd,
+//      and replace them with better ones if necessary. Need to update hyperGol
+void celestialCreatureRD(s32 hitDice, utf32 *oldRD)
+{
+    if(hitDice < 5) { return; }
+    else if(hitDice < 11)
+    {
+        const utf32 toAdd = U"5/male"_W;
+        if(ls_utf32LeftFind(*oldRD, toAdd) == -1)
+        {
+            AssertMsg(oldRD->len + toAdd.len+2 < oldRD->size, "Insufficient space in rd string.\n");
+            if(oldRD->len + toAdd.len+2 >= oldRD->size) { return; }
+            ls_utf32Prepend(oldRD, U"5/male, "_W);
+        }
+    }
+    else
+    {
+        const utf32 toAdd = U"10/male"_W;
+        if(ls_utf32LeftFind(*oldRD, toAdd) == -1)
+        {
+            AssertMsg(oldRD->len + toAdd.len+2 < oldRD->size, "Insufficient space in rd string.\n");
+            if(oldRD->len + toAdd.len+2 >= oldRD->size) { return; }
+            ls_utf32Prepend(oldRD, U"10/male, "_W);
+        }
+    }
+}
+
+//TODO: This actually sucks. The way it's setup now it would need parsing to properly find old resistances,
+//      and replace them with better ones if necessary. Need to update hyperGol
+void celestialCreatureResistance(s32 hitDice, utf32 *oldRes)
+{
+    if(hitDice < 5) {
+        const utf32 toAdd = U"Acido 5, Elettricit\U000000E0 5, Freddo 5"_W;
+        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
+        {
+            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
+            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
+            ls_utf32Prepend(oldRes, U"Acido 5, Elettricit\U000000E0 5, Freddo 5, "_W);
+        }
+        
+        return;
+    }
+    else if(hitDice < 11)
+    {
+        const utf32 toAdd = U"Acido 10, Elettricit\U000000E0 10, Freddo 10"_W;
+        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
+        {
+            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
+            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
+            ls_utf32Prepend(oldRes, U"Acido 10, Elettricit\U000000E0 10, Freddo 10, "_W);
+        }
+    }
+    else
+    {
+        const utf32 toAdd = U"Acido 15, Elettricit\U000000E0 15, Freddo 15"_W;
+        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
+        {
+            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
+            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
+            ls_utf32Prepend(oldRes, U"Acido 15, Elettricit\U000000E0 15, Freddo 15, "_W);
+        }
+    }
+}
+
+void celestialCreatureRI(utf32 gs, utf32 *ri)
+{
+    s32 index = ls_utf32FirstEqual(gs, (utf32 *)gsSet, gsSetCount);
+    
+    AssertMsg(((index != -1) || (index < gsSetCount)), "Invalid GS when applying Advanced archetype\n");
+    if((index == -1) || (index >= gsSetCount)) { return; }
+    
+    s64 oldRI = ls_utf32ToInt(*ri);
+    
+    s32 gsVal = (index - 4);
+    if(gsVal <= 0) {
+        const utf32 toAdd = U"5"_W;
+        if(oldRI < 5) {
+            ls_utf32Clear(ri);
+            ls_utf32Append(ri, toAdd);
+        }
+        else { return; }
+    }
+    else
+    {
+        gsVal %= 36;
+        if(oldRI < (gsVal + 5))
+        {
+            ls_utf32Clear(ri);
+            ls_utf32AppendInt(ri, gsVal+5);
+        }
+        else { return; }
+    }
+}
+
+void celestialCreatureSpecAtk(utf32 *spec)
+{
+    const utf32 toAdd = U"Punire il Male 1/giorno, "_W;
+    AssertMsg(spec->len + toAdd.len < spec->size, "Insufficient space in special attack string.\n");
+    if(spec->len + toAdd.len >= spec->size) { return; }
+    
+    ls_utf32Prepend(spec, toAdd);
+}
+
 ArchetypeDiff CelestialCreature = {
-    U"Celestiale"_W, celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses
+    U"Celestiale"_W, celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses,
+    celestialCreatureRD, celestialCreatureResistance, celestialCreatureRI, celestialCreatureSpecAtk
 };
 
+//-------------------------//
+//   FIENDISH ARCHETYPE    //
+//-------------------------//
+
+//TODO: This actually sucks. The way it's setup now it would need parsing to properly find old rd,
+//      and replace them with better ones if necessary. Need to update hyperGol
+void fiendishCreatureRD(s32 hitDice, utf32 *oldRD)
+{
+    if(hitDice < 5) { return; }
+    else if(hitDice < 11)
+    {
+        const utf32 toAdd = U"5/bene"_W;
+        if(ls_utf32LeftFind(*oldRD, toAdd) == -1)
+        {
+            AssertMsg(oldRD->len + toAdd.len+2 < oldRD->size, "Insufficient space in rd string.\n");
+            if(oldRD->len + toAdd.len+2 >= oldRD->size) { return; }
+            ls_utf32Prepend(oldRD, U"5/bene, "_W);
+        }
+    }
+    else
+    {
+        const utf32 toAdd = U"10/bene"_W;
+        if(ls_utf32LeftFind(*oldRD, toAdd) == -1)
+        {
+            AssertMsg(oldRD->len + toAdd.len+2 < oldRD->size, "Insufficient space in rd string.\n");
+            if(oldRD->len + toAdd.len+2 >= oldRD->size) { return; }
+            ls_utf32Prepend(oldRD, U"10/bene, "_W);
+        }
+    }
+}
+
+//TODO: This actually sucks. The way it's setup now it would need parsing to properly find old resistances,
+//      and replace them with better ones if necessary. Need to update hyperGol
+void fiendishCreatureResistance(s32 hitDice, utf32 *oldRes)
+{
+    if(hitDice < 5) {
+        const utf32 toAdd = U"Freddo 5, Fuoco 5"_W;
+        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
+        {
+            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
+            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
+            ls_utf32Prepend(oldRes, U"Freddo 5, Fuoco 5, "_W);
+        }
+        
+        return;
+    }
+    else if(hitDice < 11)
+    {
+        const utf32 toAdd = U"Freddo 10, Fuoco 10"_W;
+        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
+        {
+            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
+            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
+            ls_utf32Prepend(oldRes, U"Freddo 10, Fuoco 10, "_W);
+        }
+    }
+    else
+    {
+        const utf32 toAdd = U"Freddo 15, Fuoco 15"_W;
+        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
+        {
+            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
+            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
+            ls_utf32Prepend(oldRes, U"Freddo 15, Fuoco 15, "_W);
+        }
+    }
+}
+
+void fiendishCreatureSpecAtk(utf32 *spec)
+{
+    const utf32 toAdd = U"Punire il Bene 1/giorno, "_W;
+    AssertMsg(spec->len + toAdd.len < spec->size, "Insufficient space in special attack string.\n");
+    if(spec->len + toAdd.len >= spec->size) { return; }
+    
+    ls_utf32Prepend(spec, toAdd);
+}
+
+ArchetypeDiff FiendishCreature = {
+    U"Immonda"_W, celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses,
+    fiendishCreatureRD, fiendishCreatureResistance, celestialCreatureRI, fiendishCreatureSpecAtk
+};
+
+//-------------------------//
+//  ARCHETYPE APPLICATION  //
+//-------------------------//
+
 ArchetypeDiff allArchetypeDiffs[MAX_ARCHETYPES] = {
-    AdvancedCreature, CelestialCreature
+    AdvancedCreature, CelestialCreature, FiendishCreature
 };
 
 
@@ -198,5 +403,41 @@ void CompendiumApplyAllArchetypeSenses(utf32 *old)
     {
         ArchetypeDiff *curr = compendium.appliedArchetypes + i;
         curr->senses(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeRD(s32 hitDice, utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->rd(hitDice, old);
+    }
+}
+
+void CompendiumApplyAllArchetypeResistances(s32 hitDice, utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->resistances(hitDice, old);
+    }
+}
+
+void CompendiumApplyAllArchetypeRI(utf32 gs, utf32 *ri)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->ri(gs, ri);
+    }
+}
+
+void CompendiumApplyAllArchetypeSpecAtk(utf32 *spec)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->specialAtk(spec);
     }
 }
