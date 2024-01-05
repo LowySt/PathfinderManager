@@ -1,3 +1,12 @@
+#if 0
+//NOTE: Stubbed Archetype
+ArchetypeDiff stub = {
+    U"Name"_W, archetypeGSStub, archetypeASStub, archetypeACStub, archetypeSensesStub,
+    archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
+    archetypeSizeStub, archetypeMeleeStub
+};
+#endif
+
 void CompendiumIncreaseGS(utf32 oldGS, s32 gsDiff, s32 rmDiff, utf32 *newGS, utf32 *newPE)
 {
     AssertMsg(((gsDiff >= 0) && (gsDiff < rmIncreaseStride)), "Invalid GS Increase\n");
@@ -363,13 +372,47 @@ ArchetypeDiff GiantCreature = {
     giantCreatureSize, giantCreatureMelee
 };
 
+//-------------------------//
+//   SCHELETON ARCHETYPE   //
+//-------------------------//
+#if 0
+void scheletonCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
+{
+    //1/2	1/6	65
+    switch(hitDice)
+    {
+        case 1: 
+    }
+    /*
+    1	1/3	135
+    2-3	1	400
+    4-5	2	600
+    6‒7	3	800
+    8‒9	4	1.200
+    10-11	5	1.600
+    12-14	6	2.400
+    15-17	7	3.200
+    18-20	8	4.800
+*/
+}
+
+ArchetypeDiff ScheletonCreature = {
+    U"Scheletro"_W, scheletonCreatureGS, archetypeASStub, archetypeACStub, archetypeSensesStub,
+    archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
+    archetypeSizeStub, archetypeMeleeStub
+};
+#endif
+//-------------------------//
+//    ZOMBIE ARCHETYPE     //
+//-------------------------//
+
 
 //-------------------------//
 //  ARCHETYPE APPLICATION  //
 //-------------------------//
 
 ArchetypeDiff allArchetypeDiffs[MAX_ARCHETYPES] = {
-    AdvancedCreature, CelestialCreature, FiendishCreature, GiantCreature
+    AdvancedCreature, CelestialCreature, FiendishCreature, GiantCreature//, ScheletonCreature
 };
 
 

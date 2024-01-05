@@ -2,10 +2,10 @@
 #define _COMPENDIUM_ARCHETYPES_H
 
 const s32 MAX_CONCURRENT_ARCHETYPES = 4;
-const s32 MAX_ARCHETYPES = 4;
+const s32 MAX_ARCHETYPES = 5;
 
 const char32_t *archetypeName[MAX_ARCHETYPES] = {
-    U"Avanzato", U"Celestiale", U"Immondo", U"Gigante"
+    U"Avanzato", U"Celestiale", U"Immondo", U"Gigante", U"Scheletro"
 };
 
 const s32 gsSetCount = 396;

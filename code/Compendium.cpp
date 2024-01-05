@@ -209,7 +209,6 @@ struct Codex
     buffer generalStrings;
     buffer numericValues;
     buffer pe;
-    buffer alignment;
     buffer archetypes;
     buffer sizes;
     buffer senses;
@@ -2786,7 +2785,6 @@ void LoadCompendium(UIContext *c, string path)
         
         compendium.codex.numericValues  = ls_bufferInit(128);
         compendium.codex.pe             = ls_bufferInit(128);
-        compendium.codex.alignment      = ls_bufferInit(128);
         compendium.codex.archetypes     = ls_bufferInit(128);
         compendium.codex.senses         = ls_bufferInit(128);
         compendium.codex.auras          = ls_bufferInit(128);
@@ -2832,7 +2830,6 @@ void LoadCompendium(UIContext *c, string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.names);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.gs);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.pe);
-        viewIntoBuffer(&CompendiumBuff, &compendium.codex.alignment);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.types);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.subtypes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.archetypes);
@@ -3329,8 +3326,9 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
     
-    
-    GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "alignment");
+    //GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "alignment");
+    ls_utf32Clear(&cachedPage->alignment);
+    BuildAlignmentFromPacked_t(page.alignment, &cachedPage->alignment);
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
@@ -3655,8 +3653,9 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
     
-    
-    GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "align");
+    //GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "align");
+    ls_utf32Clear(&cachedPage->alignment);
+    BuildAlignmentFromPacked_t(page.alignment, &cachedPage->alignment);
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
