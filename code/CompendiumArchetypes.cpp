@@ -7,26 +7,31 @@ ArchetypeDiff stub = {
 };
 #endif
 
-void CompendiumIncreaseGS(utf32 oldGS, s32 gsDiff, s32 rmDiff, utf32 *newGS, utf32 *newPE)
+void CompendiumIncreaseGS(u16 gsEntry, s32 gsDiff, s32 rmDiff, utf32 *newGS, utf32 *newPE)
 {
     AssertMsg(((gsDiff >= 0) && (gsDiff < rmIncreaseStride)), "Invalid GS Increase\n");
     AssertMsg(((rmDiff >= 0) && (rmDiff < rmSetCount)), "Invalid RM Increase\n");
     
-    s32 index = ls_utf32FirstEqual(oldGS, (utf32 *)gsSet, gsSetCount);
+    u16 gsBase = gsEntry & 0x003F;
+    if(gsDiff) { gsBase += gsDiff; }
     
-    AssertMsg(((index != -1) || (index < gsSetCount)), "Invalid GS when applying Advanced archetype\n");
-    if((index == -1) || (index >= gsSetCount)) { return; }
+    s32 indexInGSSet = gsBase;
     
-    //TODO: Bound checking gs increase going over GS 31
-    if(gsDiff) { index += gsDiff; }
+    u16 rmBase = 999;
+    if((gsEntry & GS_RM_VALUE_BIT) != 0)
+    {
+        rmBase = (gsEntry & 0x0FC0) >> GS_RM_BIT_OFFSET;
+        if(rmDiff) { rmBase += rmDiff; }
+        
+        indexInGSSet += (rmBase * rmIncreaseStride);
+    }
     
-    //TODO: Bound checking rm increase going over RM 10
-    if(rmDiff) { index += rmIncreaseStride; }
+    AssertMsgF((indexInGSSet >= 0) && (indexInGSSet < gsSetCount),
+               "Invalid Index (%d) for GS (%d) RM (%d) when Applying Archetype\n", indexInGSSet, gsBase, rmBase);
+    if((indexInGSSet < 0) || (indexInGSSet >= gsSetCount)) { return; }
     
-    AssertMsgF(index < gsSetCount, "While increasing GS went over the maximum valid index: %d\n", index);
-    
-    ls_utf32Set(newGS, gsSet[index]);
-    ls_utf32Set(newPE, peSet[index%peSetCount]);
+    ls_utf32Append(newGS, gsSet[indexInGSSet]);
+    ls_utf32Append(newPE, peSet[gsBase]);
 }
 
 //-------------------------//
@@ -447,8 +452,10 @@ void CompendiumApplyAllArchetypeNames(utf32 *name)
     }
 }
 
-void CompendiumApplyAllArchetypeGS(utf32 oldGS, s32 hitDice, utf32 *newGS, utf32 *newPE)
+void CompendiumApplyAllArchetypeGS(u16 gsEntry, s32 hitDice, utf32 *newGS, utf32 *newPE)
 {
+    if(gsEntry == GS_SENTINEL_VALUE) { return; }
+    
     s32 totalGSDiff = 0;
     s32 totalRMDiff = 0;
     
@@ -464,7 +471,7 @@ void CompendiumApplyAllArchetypeGS(utf32 oldGS, s32 hitDice, utf32 *newGS, utf32
         totalRMDiff += rmDiff;
     }
     
-    CompendiumIncreaseGS(oldGS, totalGSDiff, totalRMDiff, newGS, newPE);
+    CompendiumIncreaseGS(gsEntry, totalGSDiff, totalRMDiff, newGS, newPE);
 }
 
 void CompendiumApplyAllArchetypeAS(s32 as[AS_COUNT])

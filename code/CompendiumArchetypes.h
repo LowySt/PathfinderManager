@@ -8,6 +8,11 @@ const char32_t *archetypeName[MAX_ARCHETYPES] = {
     U"Avanzato", U"Celestiale", U"Immondo", U"Gigante", U"Scheletro"
 };
 
+const u16 GS_RM_VALUE_BIT      = 0x8000;
+const u16 GS_FRACTIONAL_OFFSET = 4;
+const u16 GS_RM_BIT_OFFSET     = 6;
+const u16 GS_SENTINEL_VALUE    = 0xFFFF;
+
 const s32 gsSetCount = 396;
 const s32 rmIncreaseStride = 36;
 const utf32 gsSet[gsSetCount] = {
@@ -215,7 +220,7 @@ struct ArchetypeDiff
 b32 CompendiumOpenArchetypeWindow(UIContext *c, void *user);
 b32 CompendiumSelectArchetype(UIContext *c, void *user);
 void CompendiumApplyAllArchetypeNames(utf32 *newName);
-void CompendiumApplyAllArchetypeGS(utf32 oldGS, s32 hitDice, utf32 *newGS, utf32 *newPE);
+void CompendiumApplyAllArchetypeGS(u16 gsEntry, s32 hitDice, utf32 *newGS, utf32 *newPE);
 void CompendiumApplyAllArchetypeAS(s32 as[AS_COUNT]);
 void CompendiumApplyAllArchetypeAC(s32 acDiff[AC_TYPES_COUNT]);
 void CompendiumAddAllArchetypesToList(utf32 *archetypeList);

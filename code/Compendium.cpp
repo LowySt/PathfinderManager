@@ -111,10 +111,9 @@ struct NPCPageEntry
     u32 specials[24];
     u32 desc;
     u32 source;
+    u32 name;
     
-    u16 name;
     u16 gs;
-    u16 pe;
     u16 alignment;
     u16 type;
     u16 subtype[8];
@@ -167,10 +166,9 @@ struct PageEntry
     u32 treasure;          //
     u32 desc;              //
     u32 source;            //
+    u32 name;              //
     
-    u16 name;              //
     u16 gs;                //
-    u16 pe;                //
     u16 alignment;         //
     u16 type;              //
     u16 subtype[8];        //
@@ -202,13 +200,11 @@ struct PageEntry
 struct Codex
 {
     buffer names;
-    buffer gs;
     buffer types;
     buffer subtypes;
     
     buffer generalStrings;
     buffer numericValues;
-    buffer pe;
     buffer archetypes;
     buffer sizes;
     buffer senses;
@@ -333,6 +329,27 @@ b32 CompendiumOpenNPCTable(UIContext *c, void *userData)
     ls_staticArrayClear(&compendium.appliedArchetypes);
     
     return FALSE;
+}
+
+utf32 CompendiumGetGSEntryFromSet(u16 gsEntry)
+{
+    if(gsEntry == GS_SENTINEL_VALUE) { return U""_W; }
+    
+    u16 gsBase = gsEntry & 0x003F;
+    s32 indexInGSSet = gsBase;
+    
+    u16 rmBase = 999;
+    if((gsEntry & GS_RM_VALUE_BIT) != 0)
+    {
+        rmBase = (gsEntry & 0x0FC0) >> GS_RM_BIT_OFFSET;
+        indexInGSSet += (rmBase * rmIncreaseStride);
+    }
+    
+    AssertMsgF((indexInGSSet >= 0) && (indexInGSSet < gsSetCount),
+               "Invalid Index (%d) for GS (%d) RM (%d) when Applying Archetype\n", indexInGSSet, gsBase, rmBase);
+    if((indexInGSSet < 0) || (indexInGSSet >= gsSetCount)) { return U"NOT_FOUND"_W; }
+    
+    return gsSet[indexInGSSet];
 }
 
 #if 0
@@ -2779,12 +2796,10 @@ void LoadCompendium(UIContext *c, string path)
     if(CompendiumBuff.data == 0)
     {
         compendium.codex.names          = ls_bufferInit(128);
-        compendium.codex.gs             = ls_bufferInit(128);
         compendium.codex.types          = ls_bufferInit(128);
         compendium.codex.subtypes       = ls_bufferInit(128);
         
         compendium.codex.numericValues  = ls_bufferInit(128);
-        compendium.codex.pe             = ls_bufferInit(128);
         compendium.codex.archetypes     = ls_bufferInit(128);
         compendium.codex.senses         = ls_bufferInit(128);
         compendium.codex.auras          = ls_bufferInit(128);
@@ -2828,8 +2843,6 @@ void LoadCompendium(UIContext *c, string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.generalStrings);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.numericValues);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.names);
-        viewIntoBuffer(&CompendiumBuff, &compendium.codex.gs);
-        viewIntoBuffer(&CompendiumBuff, &compendium.codex.pe);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.types);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.subtypes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.archetypes);
@@ -2972,7 +2985,7 @@ void SetMonsterTable(UIContext *c)
     
     CompendiumSearchData *gsSearchMob = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
     gsSearchMob->searchBar            = &compendium.searchBarGSMobs;
-    gsSearchMob->searchBuffer         = &compendium.codex.gs;
+    //gsSearchMob->searchBuffer         = &compendium.codex.gs;
     gsSearchMob->kind                 = SEARCH_GS;
     
     compendium.searchBarGSMobs.text         = ls_utf32Alloc(8);
@@ -3015,7 +3028,7 @@ void SetNPCTable(UIContext *c)
     
     CompendiumSearchData *gsSearchNPC = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
     gsSearchNPC->searchBar            = &compendium.searchBarGSNPCs;
-    gsSearchNPC->searchBuffer         = &compendium.codex.gs;
+    //gsSearchNPC->searchBuffer         = &compendium.codex.gs;
     gsSearchNPC->kind                 = SEARCH_GS;
     
     UITextBox *gs    = &compendium.searchBarGSNPCs;
@@ -3241,16 +3254,26 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "defensiveCapacity");
     
     //NOTE: GS and PE are moved here because certain archetypes need previous info to determine GS change
+    ls_utf32Clear(&cachedPage->gs);
+    ls_utf32Clear(&cachedPage->pe);
     if(hasArchetype)
     {
-        GetEntryFromBuffer_t(&c->gs, &tempString, page.gs, "gs");
-        CompendiumApplyAllArchetypeGS(tempString, cachedPage->hitDice, &cachedPage->gs, &cachedPage->pe);
-        ls_utf32Clear(&tempString);
+        CompendiumApplyAllArchetypeGS(page.gs, cachedPage->hitDice, &cachedPage->gs, &cachedPage->pe);
     }
     else
     {
-        GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs, "gs");
-        GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe, "pe");
+        //TODO: Check gsValue and rmValue are in range!
+        if(page.gs != GS_SENTINEL_VALUE)
+        {
+            u16 gsValue = page.gs & 0x003F;
+            ls_utf32Set(&cachedPage->gs, CompendiumGetGSEntryFromSet(page.gs));
+            ls_utf32Set(&cachedPage->pe, peSet[gsValue]);
+        }
+        else
+        {
+            ls_utf32Set(&cachedPage->gs, U"0"_W);
+            ls_utf32Set(&cachedPage->pe, U"0"_W);
+        }
     }
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee, "melee");
@@ -3447,8 +3470,20 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
     GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
-    GetEntryFromBuffer_t(&c->gs, &cachedPage->gs, page.gs, "gs");
-    GetEntryFromBuffer_t(&c->pe, &cachedPage->pe, page.pe, "pe");
+    
+    ls_utf32Clear(&cachedPage->gs);
+    ls_utf32Clear(&cachedPage->pe);
+    if(page.gs != GS_SENTINEL_VALUE)
+    {
+        u16 gsValue = page.gs & 0x003F;
+        ls_utf32Set(&cachedPage->gs, CompendiumGetGSEntryFromSet(page.gs));
+        ls_utf32Set(&cachedPage->pe, peSet[gsValue]);
+    }
+    else
+    {
+        ls_utf32Set(&cachedPage->gs, U"0"_W);
+        ls_utf32Set(&cachedPage->pe, U"0"_W);
+    }
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR, "str");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX, "dex");
@@ -4340,7 +4375,7 @@ void DrawNPCTable(UIContext *c)
         baseX += 299;
         
         ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY+npcTableScroll.deltaY, 1);
+        ls_uiLabel(c, CompendiumGetGSEntryFromSet(entry.gs), baseX, baseY+npcTableScroll.deltaY, 1);
         baseX += 79;
         
         ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 180, 20, bkgColor, c->borderColor);
@@ -4405,7 +4440,7 @@ void DrawMonsterTable(UIContext *c)
         baseX += 299;
         
         ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 80, 20, bkgColor, c->borderColor);
-        ls_uiLabel(c, GetEntryFromBuffer_8(&codex->gs, entry.gs), baseX, baseY+tableScroll.deltaY, 1);
+        ls_uiLabel(c, CompendiumGetGSEntryFromSet(entry.gs), baseX, baseY+tableScroll.deltaY, 1);
         baseX += 79;
         
         ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 180, 20, bkgColor, c->borderColor);
