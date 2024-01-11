@@ -89,6 +89,7 @@ static Arena compTempArena;
 #include "CompendiumTalents.h"
 #include "CompendiumArchetypes.h"
 #include "CompendiumAlignment.h"
+#include "CompendiumHP.h"
 
 #include "themePicker.cpp"
 #include "diceRoller.cpp"
@@ -98,6 +99,7 @@ static Arena compTempArena;
 #include "CompendiumTalents.cpp"
 #include "CompendiumArchetypes.cpp"
 #include "CompendiumAlignment.cpp"
+#include "CompendiumHP.cpp"
 
 #include "Class.cpp"
 #include "Feats.cpp"

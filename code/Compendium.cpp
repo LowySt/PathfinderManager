@@ -86,10 +86,11 @@ const u16 INTERN_BIT_U16 = 0x8000;
 
 struct NPCPageEntry
 {
+    u64 HP;
+    
     u32 origin;
     u32 shortDesc;
     u32 AC;
-    u32 HP;
     u32 ST;
     u32 RD;
     u32 RI;
@@ -143,22 +144,23 @@ struct NPCPageEntry
 
 struct PageEntry
 {
-    u32 origin;            //4
-    u32 shortDesc;         //8
-    u32 AC;                //12
-    u32 HP;                //16
-    u32 ST;                //20
-    u32 RD;                //24
-    u32 RI;                //28
-    u32 defensiveCapacity; //32
-    u32 melee;             //36
-    u32 ranged;            //40
-    u32 specialAttacks;    //44
-    u32 psych;             //48
-    u32 magics;            //52
-    u32 spells;            //56
-    u32 skills[24];        //152
-    u32 talents[24];       //248
+    u64 HP;                //
+    
+    u32 origin;            //
+    u32 shortDesc;         //
+    u32 AC;                //
+    u32 ST;                //
+    u32 RD;                //
+    u32 RI;                //
+    u32 defensiveCapacity; //
+    u32 melee;             //
+    u32 ranged;            //
+    u32 specialAttacks;    //
+    u32 psych;             //
+    u32 magics;            //
+    u32 spells;            //
+    u32 skills[24];        //
+    u32 talents[24];       //
     u32 racialMods;        //
     u32 spec_qual;         //
     u32 specials[24];      //
@@ -194,7 +196,7 @@ struct PageEntry
     u16 BMC;               //
     u16 DMC;               //
     u16 languages[24];     //
-    u16 environment;       //596
+    u16 environment;       //600
 };
 
 struct Codex
@@ -1322,6 +1324,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
     ls_utf32AppendBuffer(&cachedPage->ST, ST.data + wisSaveEnd+1, ST.len - (wisSaveEnd+1));
 }
 
+#if 0
 void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
 {
     s32 hpEndIndex  = ls_utf32LeftFind(hp, (u32)' ');
@@ -1447,6 +1450,84 @@ void CalculateAndCacheHP(utf32 hp, CachedPageEntry *cachedPage)
     ls_utf32Append(&cachedPage->HP, {hp.data + hpEndIndex, hp.len - hpEndIndex, hp.len - hpEndIndex });
     
     return;
+}
+#endif
+
+s32 CalculateAndCacheHP(CachedPageEntry *cachedPage, u64 hp)
+{
+    //TODO: Not sure if for Mithic Rank we get the sum of all HD faces, or just the race dice.
+    s32 totalHpDiceFace = 0;
+    s32 totalHpDice = 0;
+    s32 finalHp = 0;
+    
+    for(s32 i = 0; i < HP_MAX_DICE_COUNT; i++)
+    {
+        s32 count = ((hp >> (HP_DIE_BITLEN*i)) & HP_DIE_COUNT_MASK) >> HP_DIE_FACE_BITLEN;
+        s32 face  = ((hp >> (HP_DIE_BITLEN*i)) & HP_DIE_FACE_MASK);
+        
+        if(face == 0) { break; }
+        
+        totalHpDice     += count;
+        finalHp         += count*dieFacesToInt[face];
+        totalHpDiceFace += dieFacesToInt[face];
+    }
+    
+    //NOTE: Set this integer to be used in certain calculations.
+    cachedPage->hitDice = totalHpDice;
+    
+    s32 flatVal = (hp & HP_FLAT_MASK) >> HP_FLAT_OFFSET;
+    
+    b32 hasToughness       = CompendiumPageHasTalent(cachedPage, ls_utf32Constant(U"Robustezza"));
+    b32 hasMithicToughness = CompendiumPageHasTalent(cachedPage, ls_utf32Constant(U"Robustezza[M]"));
+    
+    b32 isUndead = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Non Morto")) != -1;
+    b32 isConstruct = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Costrutto")) != -1;
+    
+    //TODO: Class Level can give bonus HP (seems like most monsters do.)
+    if(isConstruct) {
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccola")))      { flatVal += 5; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Media")))        { flatVal += 10; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Grande")))       { flatVal += 15; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Enorme")))       { flatVal += 20; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Mastodontica"))) { flatVal += 30; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Colossale")))    { flatVal += 40; }
+    }
+    else if(isUndead) { 
+        flatVal -= totalHpDice*(newToOldMap[cachedPage->origAS[AS_CHA] - 10]);
+        flatVal += totalHpDice*(cachedPage->modAS[AS_CHA] - 10);
+    }
+    else { 
+        flatVal -= totalHpDice*(newToOldMap[cachedPage->origAS[AS_CON] - 10]);
+        flatVal += totalHpDice*(cachedPage->modAS[AS_CON] - 10);
+    }
+    
+    //NOTE: Mithical Creatures get extra HP based on Hit Die Kind and mithical rank.
+    s32 rmRank = CompendiumPageMithicalRank(cachedPage->gs);
+    if(rmRank > 0) { 
+        flatVal -= rmRank*totalHpDiceFace;
+        flatVal += (s32)((rmRank*totalHpDiceFace)*1.5f);
+    }
+    
+    if(hasMithicToughness)
+    {
+        if(totalHpDice >= 3) {
+            flatVal -= 2*totalHpDice;
+            flatVal += 4*totalHpDice;
+        }
+        else { flatVal -= 6; flatVal += 12; }
+    }
+    else if(hasToughness)
+    {
+        if(totalHpDice >= 3) {
+            flatVal -= totalHpDice;
+            flatVal += 2*totalHpDice;
+        }
+        else { flatVal -= 3; flatVal += 6; }
+    }
+    
+    finalHp += flatVal;
+    
+    return finalHp;
 }
 
 void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
@@ -3053,6 +3134,7 @@ void SetNPCTable(UIContext *c)
     return;
 }
 
+//TODO: IMPORTANT! Status Conditions that apply to AC MUST be applied to DMC as well!!
 void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     u32 tempUTF32Buffer[4096] = {};
@@ -3225,9 +3307,10 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     CalculateAndCacheAC(tempString, cachedPage, FALSE, status);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "hp");
-    CalculateAndCacheHP(tempString, cachedPage);
-    ls_utf32Clear(&tempString);
+    //GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "hp");
+    ls_utf32Clear(&cachedPage->HP);
+    s32 totalHP = CalculateAndCacheHP(cachedPage, page.HP);
+    BuildHPFromPacked_t(cachedPage, page.HP, totalHP);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "st");
     CalculateAndCacheST(tempString, cachedPage, status);
@@ -3596,9 +3679,13 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     CalculateAndCacheAC(tempString, cachedPage, TRUE, status);
     ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "HP");
-    CalculateAndCacheHP(tempString, cachedPage);
-    ls_utf32Clear(&tempString);
+    //GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "HP");
+    //CalculateAndCacheHP(tempString, cachedPage);
+    //ls_utf32Clear(&tempString);
+    
+    ls_utf32Clear(&cachedPage->HP);
+    s32 totalHP = CalculateAndCacheHP(cachedPage, page.HP);
+    BuildHPFromPacked_t(cachedPage, page.HP, totalHP);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "ST");
     CalculateAndCacheST(tempString, cachedPage, status);
