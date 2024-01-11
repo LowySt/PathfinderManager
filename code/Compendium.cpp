@@ -411,6 +411,7 @@ u16 findNeedleAndFillIndexBuffer(utf8 needle, u16 *indexBuffer, buffer *buf, u32
     return nibCount;
 }
 
+//TODO: Fix gs search!!
 b32 CompendiumSearchFunctionMobs(UIContext *c, void *userData)
 {
     ls_arenaUse(compTempArena);
@@ -3307,7 +3308,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     CalculateAndCacheAC(tempString, cachedPage, FALSE, status);
     ls_utf32Clear(&tempString);
     
-    //GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "hp");
     ls_utf32Clear(&cachedPage->HP);
     s32 totalHP = CalculateAndCacheHP(cachedPage, page.HP);
     BuildHPFromPacked_t(cachedPage, page.HP, totalHP);
@@ -3583,11 +3583,13 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     cachedPage->origAS[AS_WIS] = ls_utf32ToInt(cachedPage->WIS);
     cachedPage->origAS[AS_CHA] = ls_utf32ToInt(cachedPage->CHA);
     
+    ls_memcpy(cachedPage->origAS, cachedPage->modAS, AS_COUNT*sizeof(s32));
+    
     //NOTE: Cache Status Conditions
     if(status)
     {
-        s32 str = cachedPage->origAS[AS_STR];
-        s32 dex = cachedPage->origAS[AS_DEX];
+        s32 str = cachedPage->modAS[AS_STR];
+        s32 dex = cachedPage->modAS[AS_DEX];
         
         for(s32 i = 0; i < STATUS_COUNT; i++)
         {
@@ -3678,10 +3680,6 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "AC");
     CalculateAndCacheAC(tempString, cachedPage, TRUE, status);
     ls_utf32Clear(&tempString);
-    
-    //GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.HP, "HP");
-    //CalculateAndCacheHP(tempString, cachedPage);
-    //ls_utf32Clear(&tempString);
     
     ls_utf32Clear(&cachedPage->HP);
     s32 totalHP = CalculateAndCacheHP(cachedPage, page.HP);
