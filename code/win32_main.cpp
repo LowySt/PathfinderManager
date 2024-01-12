@@ -85,16 +85,20 @@ static Arena compTempArena;
 #include "status_icons.h"
 #include "Equip.h"
 
+#include "CompendiumSearch.h"
+#include "CompendiumGS.h"
 #include "CompendiumSkills.h"
 #include "CompendiumTalents.h"
-#include "CompendiumArchetypes.h"
 #include "CompendiumAlignment.h"
+#include "CompendiumArchetypes.h"
 #include "CompendiumHP.h"
 
 #include "themePicker.cpp"
 #include "diceRoller.cpp"
 
 #include "Compendium.cpp"
+#include "CompendiumSearch.cpp"
+#include "CompendiumGS.cpp"
 #include "CompendiumSkills.cpp"
 #include "CompendiumTalents.cpp"
 #include "CompendiumArchetypes.cpp"
