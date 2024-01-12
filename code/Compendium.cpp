@@ -1159,7 +1159,7 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     ls_utf32AppendBuffer(&cachedPage->BMC, BMC.data + endIdx, BMC.len - endIdx);
 }
 
-void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
+void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     if(ls_utf32AreEqual(DMC, ls_utf32Constant(U"-"))) { ls_utf32Set(&cachedPage->DMC, DMC); return; }
     
@@ -1172,12 +1172,64 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage)
     s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
     s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
     
+    b32 hasSchivareProdigioso = ls_utf32LeftFind(cachedPage->defensiveCapacity,
+                                                 ls_utf32Constant(U"Schivare Prodigioso"));
+    
     s32 dmcVal = ls_utf32ToInt({DMC.data, endIdx, endIdx});
     
     dmcVal = (dmcVal - dexBonusOld - strBonusOld) + dexBonusNew + strBonusNew;
     
+    //NOTE: Apply status conditions if present
+    if(status)
+    {
+        b32 hasLostDexBonus = FALSE;
+        for(s32 i = 0; i < STATUS_COUNT; i++)
+        {
+            if(!status[i].check.isActive) { continue; }
+            
+            s32 dexBon = dexBonusNew > 0 ? dexBonusNew : 0;
+            switch(status[i].type)
+            {
+                case STATUS_ACCECATO:
+                case STATUS_ACCOVACCIATO:
+                case STATUS_STORDITO:
+                {
+                    dmcVal -= 2;
+                    if(!hasLostDexBonus) {
+                        hasLostDexBonus = TRUE;
+                        dmcVal -= dexBon;
+                    }
+                } break;
+                
+                case STATUS_IMMOBILIZZATO:
+                {
+                    if(!hasSchivareProdigioso) {
+                        dmcVal -= 4;
+                        if(!hasLostDexBonus) {
+                            hasLostDexBonus = TRUE;
+                            dmcVal -= dexBon;
+                        }
+                    }
+                } break;
+                
+                case STATUS_IMPREPARATO:
+                {
+                    if(!hasSchivareProdigioso && !hasLostDexBonus) {
+                        hasLostDexBonus = TRUE;
+                        dmcVal -= dexBon;
+                    }
+                } break;
+                
+                case STATUS_PRONO:
+                { //TODO
+                    Assert(FALSE);
+                } break;
+            }
+        }
+    }
+    
     u32 buff[32] = {};
-    utf32 tmpString = { buff, 32, 32 };
+    utf32 tmpString = { buff, 32, 32};
     
     ls_utf32Clear(&cachedPage->DMC);
     
@@ -2566,8 +2618,11 @@ void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 in
     if(sep) { sepLen = ls_utf32Len(sep); }
     
     if(base->len + toAppend.len + sepLen > base->size)
-    { ls_printf("%cs: Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", name, base->size, toAppend.len, byteLen, index);
-        AssertMsg(FALSE, ""); }
+    { 
+        ls_printf("%cs: Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n",
+                  name, base->size, toAppend.len, byteLen, index);
+        AssertMsg(FALSE, "");
+    }
     
     if(sep)
     {
@@ -2737,9 +2792,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     //      Maybe DC for Channeling Energy on clerics with Carisma?
     //TODO: Perception is not being modified by statuses! :StatusPerception
     
-    //NOTE: Everything tries to be ordered like the struct, to be organized
-    //      But I need to have these stats earlier because other paramaters depend on them
-    
     //NOTE: GS and PE are moved down below because certain archetypes need those info to determine GS change
     if(hasArchetype)
     {
@@ -2751,6 +2803,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
     }
     
+    //NOTE: Everything tries to be ordered like the struct, to be organized
+    //      But I need to have these stats earlier because other paramaters depend on them
     //TODO: Remember irrelevant AS (dash instead of a number)
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.STR, "str");
     cachedPage->origAS[AS_STR] = ls_utf32ToInt(tempString);
@@ -2903,7 +2957,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC, "dmc");
-    CalculateAndCacheDMC(tempString, cachedPage);
+    CalculateAndCacheDMC(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative, "initiative");
@@ -3275,7 +3329,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DMC, "DMC");
-    CalculateAndCacheDMC(tempString, cachedPage);
+    CalculateAndCacheDMC(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.initiative, "initiative");
