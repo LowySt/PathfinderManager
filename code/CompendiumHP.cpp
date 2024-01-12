@@ -2,6 +2,10 @@ void BuildHPFromPacked_t(CachedPageEntry *page, u64 entry, s32 totalHP)
 {
     utf32 *hp = &page->HP;
     ls_utf32AppendInt(hp, totalHP);
+    
+    //NOTE: We save the HP string here to have it available when Adding Mobs from the Compendium
+    page->totHP = page->HP;
+    
     ls_utf32Append(hp, U" ("_W);
     
     s32 totHpStringLen = hp->len;

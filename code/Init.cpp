@@ -237,8 +237,13 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     };
     
     //NOTE: We lost focus, let's reset the box
-    //TODO: We stop editing, but we're not resetting the box's previous text!
-    if((c->lastFocus != (u64 *)f) && h->isEditing) { h->isEditing = FALSE; }
+    //TODO: Would be better to perform these changes when changing focus,
+    //      rather than after the focus was re-obtained. This would need to happen outside.
+    if((c->lastFocus != (u64 *)f) && h->isEditing) {
+        ls_uiTextBoxClear(c, f);
+        ls_uiTextBoxSet(c, f, h->previous);
+        h->isEditing = FALSE;
+    }
     
     if(LeftClick && !h->isEditing && State.inBattle)
     { 
