@@ -224,10 +224,9 @@ struct Codex
     
     buffer talentsModule;
     
-    //TODO: Change these to FixedArray
-    Array<PageEntry>    pages;
-    Array<NPCPageEntry> npcPages;
-    Array<TalentEntry>  talentPages;
+    FixedArray<PageEntry>    pages;
+    FixedArray<NPCPageEntry> npcPages;
+    FixedArray<TalentEntry>  talentPages;
 };
 
 struct Compendium
@@ -2549,10 +2548,9 @@ void LoadCompendium(UIContext *c, string path)
         //NOTE: First we map the talents module
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.talentsModule);
         
-        //TODO: Change this to a FixedArray
         u32 talentsCount = ls_bufferReadDWord(&CompendiumBuff);
         u8 *talentsSrc   = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
-        ls_arrayFromPointer(&compendium.codex.talentPages, (void *)talentsSrc, talentsCount);
+        ls_fixedArrayFromPointer(&compendium.codex.talentPages, (void *)talentsSrc, talentsCount);
         ls_bufferReadSkip(&CompendiumBuff, talentsCount * sizeof(TalentEntry));
         
         //NOTE: Then map the general buffers and mob/npc entries.
@@ -2576,15 +2574,14 @@ void LoadCompendium(UIContext *c, string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.environment);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.specials);
         
-        //TODO: Change these to a FixedArray
         u32 entryCount = ls_bufferReadDWord(&CompendiumBuff);
         u8 *pagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
-        ls_arrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
+        ls_fixedArrayFromPointer(&compendium.codex.pages, (void *)pagesSrc, entryCount);
         ls_bufferReadSkip(&CompendiumBuff, entryCount * sizeof(PageEntry));
         
         u32 npcEntryCount = ls_bufferReadDWord(&CompendiumBuff);
         u8 *npcPagesSrc = (u8 *)CompendiumBuff.data + CompendiumBuff.cursor;
-        ls_arrayFromPointer(&compendium.codex.npcPages, (void *)npcPagesSrc, npcEntryCount);
+        ls_fixedArrayFromPointer(&compendium.codex.npcPages, (void *)npcPagesSrc, npcEntryCount);
     }
     
     const u32 currentViewIndicesCount = 3200;
@@ -2772,7 +2769,6 @@ void SetNPCTable(UIContext *c)
     return;
 }
 
-//TODO: IMPORTANT! Status Conditions that apply to AC MUST be applied to DMC as well!!
 void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     u32 tempUTF32Buffer[4096] = {};
