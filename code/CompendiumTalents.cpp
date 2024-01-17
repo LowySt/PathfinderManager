@@ -138,10 +138,11 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
         s32 rectHeight = (newLayout.maxY / 2)-1;
         
         //NOTE: Rect 1
-        UIRect rect1 = { startX, startY-3, newLayout.maxX-startX, rectHeight };
+        UIRect rect1 = { startX, startY-3-c->scroll->deltaY, newLayout.maxX-startX, rectHeight };
         
         //NOTE: We stop talent interaction when the archetype window is active
-        if(MouseInRect(rect1.x, rect1.y-c->scroll->deltaY, rect1.w, rect1.h) && !compendium.arch.isChoosingArchetype)
+        if(MouseInRect(rect1.x, rect1.y, rect1.w, rect1.h) && !compendium.arch.isChoosingArchetype
+           && (rect1.y > c->scroll->y) && (rect1.y < (c->scroll->y + c->scroll->h)))
         {
             if(isPresent)
             {
@@ -155,9 +156,11 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
         }
         
         //NOTE: Rect 2
-        UIRect rect2 = { newLayout.minX, newLayout.startY-3, newLayout.startX-newLayout.minX, rectHeight };
+        UIRect rect2 = { newLayout.minX, newLayout.startY-3-c->scroll->deltaY, 
+            newLayout.startX-newLayout.minX, rectHeight };
         
-        if(MouseInRect(rect2.x, rect2.y-c->scroll->deltaY, rect2.w, rect2.h) && !compendium.arch.isChoosingArchetype)
+        if(MouseInRect(rect2.x, rect2.y, rect2.w, rect2.h) && !compendium.arch.isChoosingArchetype
+           && (rect2.y > c->scroll->y) && (rect2.y < (c->scroll->y + c->scroll->h)))
         {
             if(isPresent)
             {
@@ -172,8 +175,10 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
     }
     else
     {
-        if(MouseInRect(startX, startY-3-c->scroll->deltaY, newLayout.startX - startX, newLayout.maxY-1)
-           && !compendium.arch.isChoosingArchetype)
+        s32 adjY = startY-3-c->scroll->deltaY;
+        if(MouseInRect(startX, adjY, newLayout.startX - startX, newLayout.maxY-1)
+           && !compendium.arch.isChoosingArchetype
+           && (adjY > c->scroll->y) && (adjY < (c->scroll->y + c->scroll->h)))
         {
             if(isPresent)
             {
