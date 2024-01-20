@@ -2861,6 +2861,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     //NOTE: Apply Status Conditions on the Ability Scores
     //TODO: Perception is not being modified by statuses! :StatusPerception
+    //TODO: Flat-footed doesn't update DMC
     if(status)
     {
         s32 str = cachedPage->modAS[AS_STR];

@@ -413,7 +413,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Set the Party Settings TextBoxes and Buttons
     for(s32 i = 0; i < MAX_PARTY_NUM; i++)
     { ls_uiTextBoxInit(uiContext, State.PartyName + i, 16); }
-    ls_uiTextBoxSet(uiContext, &State.PartyName[0], ls_utf32Constant(U"Efrea"));
+    ls_uiTextBoxSet(uiContext, &State.PartyName[0], ls_utf32Constant(U"Doulos"));
     ls_uiTextBoxSet(uiContext, &State.PartyName[1], ls_utf32Constant(U"Nick"));
     ls_uiTextBoxSet(uiContext, &State.PartyName[2], ls_utf32Constant(U"Clovis"));
     for(s32 i = party_count; i < MAX_PARTY_NUM; i++)
