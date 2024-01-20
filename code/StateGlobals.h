@@ -3,7 +3,7 @@
 #ifndef _STATE_GLOBALS_H
 #define _STATE_GLOBALS_H
 
-const u32 global_saveVersion = 9;
+const u32 global_saveVersion = 10;
 
 //NOTE This is here rather than in themePicker.cpp because fuck c++ and ordered compilation.
 struct ThemePicker

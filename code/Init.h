@@ -211,7 +211,10 @@ struct InitField
     //NOTE: This makes referring to other boxes in the same InitField much easier
     //      For things like: CustomInitFieldText Handler.
     UITextBox editFields[IF_IDX_COUNT];
-    UITextBox maxLife;
+    UITextBox maxLifeDisplay;
+    UITextBox nonLethalDisplay;
+    s32 maxLife;
+    s32 nonLethal;
     
     s32 compendiumIdx;
     s32 ID;

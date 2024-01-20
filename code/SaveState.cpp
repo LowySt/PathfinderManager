@@ -20,7 +20,11 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_bufferAddUTF32(buf, ally->editFields[j].text); }
         
-        ls_bufferAddUTF32(buf, ally->maxLife.text);
+        ls_bufferAddUTF32(buf, ally->maxLifeDisplay.text);
+        ls_bufferAddUTF32(buf, ally->nonLethalDisplay.text);
+        ls_bufferAddDWord(buf, ally->maxLife);
+        ls_bufferAddDWord(buf, ally->nonLethal);
+        
         ls_bufferAddDWord(buf, ally->compendiumIdx);
         ls_bufferAddDWord(buf, ally->ID);
     }
@@ -33,7 +37,11 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_bufferAddUTF32(buf, mob->editFields[j].text); }
         
-        ls_bufferAddUTF32(buf, mob->maxLife.text);
+        ls_bufferAddUTF32(buf, mob->maxLifeDisplay.text);
+        ls_bufferAddUTF32(buf, mob->nonLethalDisplay.text);
+        ls_bufferAddDWord(buf, mob->maxLife);
+        ls_bufferAddDWord(buf, mob->nonLethal);
+        
         ls_bufferAddDWord(buf, mob->compendiumIdx);
         ls_bufferAddDWord(buf, mob->ID);
     }
@@ -136,7 +144,7 @@ void CopyStateFromBufferV6(ProgramState *curr, buffer *buf, u32 saveV = global_s
             ally->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &ally->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &ally->maxLifeDisplay.text);
         ally->compendiumIdx = ls_bufferReadDWord(buf);
         ally->ID            = ls_bufferReadDWord(buf);
     }
@@ -154,7 +162,7 @@ void CopyStateFromBufferV6(ProgramState *curr, buffer *buf, u32 saveV = global_s
             mob->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &mob->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &mob->maxLifeDisplay.text);
         mob->compendiumIdx = ls_bufferReadDWord(buf);
         mob->ID            = ls_bufferReadDWord(buf);
     }
@@ -172,6 +180,133 @@ void CopyStateFromBufferV6(ProgramState *curr, buffer *buf, u32 saveV = global_s
         //Status Conditions, we store the check isActive status
         for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++) // @V7
         { order->status[statusIdx].check.isActive = FALSE; }
+        
+        ls_bufferReadData32(buf, &order->field.lColor);
+        ls_bufferReadData32(buf, &order->field.rColor);
+        
+        order->compendiumIdx = ls_bufferReadDWord(buf);
+        order->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    init->turnsInRound = ls_bufferReadDWord(buf);
+    init->orderAdjust = ls_bufferReadDWord(buf);
+    
+    ls_bufferReadIntoUTF32(buf, &init->RoundCounter.text);
+    init->roundCount = ls_bufferReadDWord(buf);
+    
+    ls_bufferReadIntoUTF32(buf, &init->Current.text);
+    init->currIdx = ls_bufferReadDWord(buf);
+    
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *counter = init->Counters + i;
+        
+        ls_bufferReadIntoUTF32(buf, &counter->name.text);
+        ls_bufferReadIntoUTF32(buf, &counter->rounds.text);
+        
+        counter->roundsLeft = ls_bufferReadDWord(buf);
+        counter->startIdxInOrder = ls_bufferReadDWord(buf);
+        counter->turnCounter = ls_bufferReadDWord(buf);
+        counter->isActive = ls_bufferReadDWord(buf);
+    }
+    
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrowBox *thrower = init->Throwers + i;
+        
+        ls_bufferReadIntoUTF32(buf, &thrower->name.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->toHit.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->hitRes.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->damage.text);
+        ls_bufferReadIntoUTF32(buf, &thrower->dmgRes.text);
+    }
+    
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.name.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.toHit.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.hitRes.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.damage.text);
+    ls_bufferReadIntoUTF32(buf, &init->GeneralThrower.dmgRes.text);
+    
+    
+    init->EncounterSel.selectedIndex = ls_bufferReadDWord(buf);
+    
+    //NOTE: Copy General Info
+    curr->inBattle = ls_bufferReadDWord(buf);
+    addID          = ls_bufferReadDWord(buf);
+}
+
+void CopyStateFromBuffer7_9(ProgramState *curr, buffer *buf, u32 saveV = global_saveVersion)
+{
+    //NOTE: Copy Init Page
+    InitPage *init = curr->Init;
+    
+    init->Mobs.selectedIndex   = (s32)ls_bufferReadDWord(buf);
+    init->Allies.selectedIndex = (s32)ls_bufferReadDWord(buf);
+    
+    for(u32 i = 0; i < party_count; i++)
+    { ls_bufferReadIntoUTF32(buf, &init->PlayerInit[i].text); }
+    
+    for(u32 i = 0; i < ally_count; i++)
+    {
+        InitField *ally = init->AllyFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_bufferReadIntoUTF32(buf, &ally->editFields[j].text); }
+        
+        if(ally->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(ally->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            ally->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
+        ls_bufferReadIntoUTF32(buf, &ally->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal V10-V*
+        ls_utf32Set(&ally->nonLethalDisplay.text, U"0"_W);
+        ally->maxLife       = 999;
+        ally->nonLethal     = 0;
+        
+        ally->compendiumIdx = ls_bufferReadDWord(buf);
+        ally->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    for(u32 i = 0; i < mob_count; i++)
+    {
+        InitField *mob = init->MobFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { ls_bufferReadIntoUTF32(buf, &mob->editFields[j].text); }
+        
+        if(mob->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(mob->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            mob->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
+        ls_bufferReadIntoUTF32(buf, &mob->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal V10-V*
+        ls_utf32Set(&mob->nonLethalDisplay.text, U"0"_W);
+        mob->maxLife       = 999;
+        mob->nonLethal     = 0;
+        
+        mob->compendiumIdx = ls_bufferReadDWord(buf);
+        mob->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    for(u32 i = 0; i < order_count; i++)
+    {
+        Order *order = init->OrderFields + i;
+        
+        ls_bufferReadIntoUTF32(buf, &order->field.text);
+        order->field.currValue = ls_bufferReadDWord(buf);
+        order->field.maxValue  = ls_bufferReadDWord(buf);
+        order->field.minValue  = ls_bufferReadDWord(buf);
+        order->field.currPos   = ls_bufferReadDouble(buf);
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+        { order->status[statusIdx].check.isActive = ls_bufferReadDWord(buf); }
         
         ls_bufferReadData32(buf, &order->field.lColor);
         ls_bufferReadData32(buf, &order->field.rColor);
@@ -251,7 +386,11 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
             ally->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &ally->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &ally->maxLifeDisplay.text);
+        ls_bufferReadIntoUTF32(buf, &ally->nonLethalDisplay.text);
+        ally->maxLife   = ls_bufferReadDWord(buf);
+        ally->nonLethal = ls_bufferReadDWord(buf);
+        
         ally->compendiumIdx = ls_bufferReadDWord(buf);
         ally->ID            = ls_bufferReadDWord(buf);
     }
@@ -269,7 +408,11 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
             mob->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &mob->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &mob->maxLifeDisplay.text);
+        ls_bufferReadIntoUTF32(buf, &mob->nonLethalDisplay.text);
+        mob->maxLife   = ls_bufferReadDWord(buf);
+        mob->nonLethal = ls_bufferReadDWord(buf);
+        
         mob->compendiumIdx = ls_bufferReadDWord(buf);
         mob->ID            = ls_bufferReadDWord(buf);
     }
@@ -474,7 +617,12 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
             f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal @V10-V*
+        ls_utf32Set(&f->nonLethalDisplay.text, U"0"_W);
+        f->maxLife = 999;
+        f->nonLethal = 0;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -501,7 +649,12 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
             f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal @V10-V*
+        ls_utf32Set(&f->nonLethalDisplay.text, U"0"_W);
+        f->maxLife = 999;
+        f->nonLethal = 0;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -544,9 +697,11 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
         f->pos.isReadonly = TRUE;
         
         //HP Slider
-        f->field.maxValue = ls_bufferReadDWord(buf);
-        f->field.minValue = ls_bufferReadDWord(buf);
-        f->field.currPos  = ls_bufferReadDouble(buf);
+        //NOTE: Unserialize field.currValue V10-V*
+        f->field.currValue = 0;
+        f->field.maxValue  = ls_bufferReadDWord(buf);
+        f->field.minValue  = ls_bufferReadDWord(buf);
+        f->field.currPos   = ls_bufferReadDouble(buf);
         
         //Status Conditions, we store the check isActive status
         for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++) // @V7
@@ -555,15 +710,16 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
         
-        s32 currVal = ls_uiSliderGetValue(c, &f->field);
+        //NOTE: Unserialize field.currValue V10-V*
+        f->field.currValue = ls_uiSliderCalculateValueFromPosition(c, &f->field);
         
-        if(currVal == 0)
+        if(f->field.currValue == 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
         
-        else if(currVal < 0)
+        else if(f->field.currValue < 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
         
-        else if(currVal > 0)
+        else if(f->field.currValue > 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
     }
     
@@ -719,7 +875,7 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
         for(u32 i = 0; i < MAX_UNDO_STATES; i++)
         {
             ProgramState *curr = UndoStates + i;
-            CopyStateFromBuffer(curr, buf);
+            CopyStateFromBuffer7_9(curr, buf);
         }
     }
     
@@ -752,7 +908,12 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
             f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal @V10-V*
+        ls_utf32Set(&f->nonLethalDisplay.text, U"0"_W);
+        f->maxLife = 999;
+        f->nonLethal = 0;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -779,7 +940,12 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
             f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal @V10-V*
+        ls_utf32Set(&f->nonLethalDisplay.text, U"0"_W);
+        f->maxLife = 999;
+        f->nonLethal = 0;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -822,6 +988,9 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
         f->pos.isReadonly = TRUE;
         
         //HP Slider
+        //NOTE: Unserialize field.currValue V10-V*
+        f->field.currValue = 0;
+        
         f->field.maxValue = ls_bufferReadDWord(buf);
         f->field.minValue = ls_bufferReadDWord(buf);
         f->field.currPos  = ls_bufferReadDouble(buf);
@@ -833,15 +1002,16 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
         
-        s32 currVal = ls_uiSliderGetValue(c, &f->field);
+        //NOTE: Unserialize field.currValue V10-V*
+        f->field.currValue = ls_uiSliderCalculateValueFromPosition(c, &f->field);
         
-        if(currVal == 0)
+        if(f->field.currValue == 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
         
-        else if(currVal < 0)
+        else if(f->field.currValue < 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
         
-        else if(currVal > 0)
+        else if(f->field.currValue > 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
     }
     
@@ -996,7 +1166,7 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
         for(u32 i = 0; i < MAX_UNDO_STATES; i++)
         {
             ProgramState *curr = UndoStates + i;
-            CopyStateFromBuffer(curr, buf);
+            CopyStateFromBuffer7_9(curr, buf);
         }
     }
     
@@ -1029,7 +1199,12 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
             f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal @V10-V*
+        ls_utf32Set(&f->nonLethalDisplay.text, U"0"_W);
+        f->maxLife = 999;
+        f->nonLethal = 0;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -1056,7 +1231,12 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
             f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal @V10-V*
+        ls_utf32Set(&f->nonLethalDisplay.text, U"0"_W);
+        f->maxLife = 999;
+        f->nonLethal = 0;
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -1099,6 +1279,9 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
         f->pos.isReadonly = TRUE;
         
         //HP Slider
+        //NOTE: Unserialize field.currValue V10-V*
+        f->field.currValue = 0;
+        
         f->field.maxValue = ls_bufferReadDWord(buf);
         f->field.minValue = ls_bufferReadDWord(buf);
         f->field.currPos  = ls_bufferReadDouble(buf);
@@ -1110,15 +1293,16 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
         
-        s32 currVal = ls_uiSliderGetValue(c, &f->field);
+        //NOTE: Unserialize field.currValue V10-V*
+        f->field.currValue = ls_uiSliderCalculateValueFromPosition(c, &f->field);
         
-        if(currVal == 0)
+        if(f->field.currValue == 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
         
-        else if(currVal < 0)
+        else if(f->field.currValue < 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
         
-        else if(currVal > 0)
+        else if(f->field.currValue > 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
     }
     
@@ -1170,6 +1354,299 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
     
     return TRUE;
 }
+
+b32 LoadStateV9(UIContext *c, buffer *buf)
+{
+    //NOTETODO: Changed this from saveArena. It was so stupid
+    //          I am allocating a lot of data, on an arena that will be cleared at the end of the function
+    //          It was working just out of pure luck
+    //ls_arenaUse(saveArena);
+    ls_arenaUse(globalArena);
+    
+    ls_bufferSeekBegin(buf);
+    
+    u32 fileVersion = ls_bufferReadDWord(buf);
+    AssertMsg(fileVersion == 9, "Save File version is not 9. How could we have reached here?\n");
+    if(fileVersion != 9) { ls_bufferDestroy(buf); return FALSE; }
+    
+    //NOTE: Deserialize party_count, max_mob_count, max_ally_count
+    party_count = ls_bufferReadDWord(buf);
+    mob_count   = ls_bufferReadDWord(buf);
+    ally_count  = ls_bufferReadDWord(buf);
+    order_count = party_count + mob_count + ally_count;
+    
+    for(s32 i = 0; i < party_count; i++)
+    { ls_bufferReadIntoUTF32(buf, &State.PartyName[i].text); }
+    
+    //NOTE: Random stuff to de-serialize
+    currentStyle = (InitStyle)ls_bufferReadDWord(buf);
+    currentTheme = (ProgramTheme)ls_bufferReadDWord(buf);
+    
+    //NOTE: Custom Theme Colors.
+    State.backgroundColor.value = ls_bufferReadDWord(buf);
+    State.borderColor.value     = ls_bufferReadDWord(buf);
+    State.menuBarColor.value    = ls_bufferReadDWord(buf);
+    State.highliteColor.value   = ls_bufferReadDWord(buf);
+    State.pressedColor.value    = ls_bufferReadDWord(buf);
+    State.widgetColor.value     = ls_bufferReadDWord(buf);
+    State.textColor.value       = ls_bufferReadDWord(buf);
+    State.invWidgetColor.value  = ls_bufferReadDWord(buf);
+    State.invTextColor.value    = ls_bufferReadDWord(buf);
+    
+    selectThemeProcs[currentTheme](c, NULL);
+    
+    //NOTE: Init Starts Here
+    addID                          = ls_bufferReadDWord(buf);
+    State.inBattle                 = ls_bufferReadDWord(buf);
+    State.encounters.numEncounters = ls_bufferReadDWord(buf);
+    
+    InitPage *Page = State.Init;
+    
+    //TODO: Make Encounter's memory management better.
+    //      They are currently allocated here during loading.
+    //Unserialize Encounters
+    for(u32 i = 0; i < State.encounters.numEncounters; i++)
+    {
+        Encounter *curr = State.encounters.Enc + i;
+        
+        curr->name = ls_bufferReadUTF32(buf);
+        
+        curr->numMobs = ls_bufferReadDWord(buf);
+        for(u32 j = 0; j < curr->numMobs; j++)
+        {
+            EncounterInitEntry *e = curr->mob + j;
+            
+            for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
+            { e->fields[k] = ls_bufferReadUTF32(buf); }
+            
+            e->compendiumIdx = ls_bufferReadDWord(buf);
+        }
+        
+        curr->numAllies = ls_bufferReadDWord(buf);
+        for(u32 j = 0; j < curr->numAllies; j++)
+        {
+            EncounterInitEntry *e = curr->ally + j;
+            
+            for(u32 k = 0; k < MOB_INIT_ENC_FIELDS; k++)
+            { e->fields[k] = ls_bufferReadUTF32(buf); }
+            
+            e->compendiumIdx = ls_bufferReadDWord(buf);
+        }
+        
+        for(u32 j = 0; j < THROWER_NUM; j++)
+        {
+            curr->throwerName[j]   = ls_bufferReadUTF32(buf);
+            curr->throwerHit[j]    = ls_bufferReadUTF32(buf);
+            curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
+        }
+        
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, curr->name);
+    }
+    
+    
+    //NOTE: UnSerialize Undo Chain
+    {
+        u32 maxUndos = ls_bufferReadDWord(buf);
+        AssertMsg(maxUndos == MAX_UNDO_STATES, "Save File not converted properly. Max Undo States don't coincide\n");
+        
+        matchingUndoIdx = ls_bufferReadDWord(buf);
+        distanceFromOld = ls_bufferReadDWord(buf);
+        distanceFromNow = ls_bufferReadDWord(buf);
+        
+        for(u32 i = 0; i < MAX_UNDO_STATES; i++)
+        {
+            ProgramState *curr = UndoStates + i;
+            CopyStateFromBuffer7_9(curr, buf);
+        }
+    }
+    
+    //NOTE: UnSerialize Player Initiative
+    u32 currPartyNum = ls_bufferReadDWord(buf);
+    u32 unserializePartyNum = currPartyNum < party_count ? currPartyNum : party_count;
+    for(u32 i = 0; i < unserializePartyNum; i++)
+    {
+        ls_bufferReadIntoUTF32(buf, &Page->PlayerInit[i].text);
+    }
+    
+    
+    //NOTE: UnSerialize Mob Initiative
+    s32 visibleMobs          = ls_bufferReadDWord(buf);
+    Page->Mobs.selectedIndex = visibleMobs;
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        InitField *f = Page->MobFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        {
+            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
+        }
+        
+        //NOTE: For the EXTRA editField, because it is multi-line 
+        //      we need to count how many lines there are, and set it.
+        if(f->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(f->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal @V10-V*
+        ls_utf32Set(&f->nonLethalDisplay.text, U"0"_W);
+        f->maxLife = 999;
+        f->nonLethal = 0;
+        
+        f->compendiumIdx = ls_bufferReadDWord(buf);
+        f->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    
+    //NOTE: UnSerialize Ally Initiative
+    s32 visibleAllies          = ls_bufferReadDWord(buf);
+    Page->Allies.selectedIndex = visibleAllies;
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        InitField *f = Page->AllyFields + i;
+        
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        {
+            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
+        }
+        
+        //NOTE: For the EXTRA editField, because it is multi-line 
+        //      we need to count how many lines there are, and set it.
+        if(f->editFields[IF_IDX_EXTRA].text.len > 0)
+        {
+            s32 newlines = ls_utf32CountOccurrences(f->editFields[IF_IDX_EXTRA].text, (u32)'\n');
+            f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
+        }
+        
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        
+        //NOTE: Unserialize nonLethalDisplay, maxLife and nonLethal @V10-V*
+        ls_utf32Set(&f->nonLethalDisplay.text, U"0"_W);
+        f->maxLife = 999;
+        f->nonLethal = 0;
+        
+        f->compendiumIdx = ls_bufferReadDWord(buf);
+        f->ID            = ls_bufferReadDWord(buf);
+    }
+    
+    //NOTE: Quick Exit if not in battle after the save.
+    if(State.inBattle == FALSE) 
+    { 
+        ls_bufferDestroy(buf);
+        //ls_arenaUse(globalArena);
+        //ls_arenaClear(saveArena);
+        return TRUE;
+    }
+    
+    //NOTE: Set all Init Fields to ReadOnly because we are in battle
+    for(u32 i = 0; i < unserializePartyNum; i++)
+    { Page->PlayerInit[i].isReadonly = TRUE; }
+    
+    for(u32 i = 0; i < visibleMobs; i++)
+    {
+        InitField *f = Page->MobFields + i;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { f->editFields[j].isReadonly = TRUE; }
+    }
+    
+    for(u32 i = 0; i < visibleAllies; i++)
+    {
+        InitField *f = Page->AllyFields + i;
+        for(u32 j = 0; j < IF_IDX_COUNT; j++)
+        { f->editFields[j].isReadonly = TRUE; }
+    }
+    
+    //NOTE: UnSerialize Order
+    Page->orderAdjust = ls_bufferReadDWord(buf);
+    s32 visibleOrder  = visibleMobs + visibleAllies + party_count - Page->orderAdjust;
+    for(u32 i = 0; i < visibleOrder; i++)
+    {
+        Order *f = Page->OrderFields + i;
+        
+        ls_bufferReadIntoUTF32(buf, &f->field.text);
+        
+        f->pos.isReadonly = TRUE;
+        
+        //HP Slider
+        //NOTE: Unserialize field.currValue V10-V*
+        f->field.currValue = 0;
+        
+        f->field.maxValue  = ls_bufferReadDWord(buf);
+        f->field.minValue  = ls_bufferReadDWord(buf);
+        f->field.currPos   = ls_bufferReadDouble(buf);
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+        { f->status[statusIdx].check.isActive = ls_bufferReadDWord(buf); }
+        
+        f->compendiumIdx  = ls_bufferReadDWord(buf);
+        f->ID             = ls_bufferReadDWord(buf);
+        
+        //NOTE: Unserialize field.currValue V10-V*
+        f->field.currValue = ls_uiSliderCalculateValueFromPosition(c, &f->field);
+        
+        if(f->field.currValue == 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
+        
+        else if(f->field.currValue < 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
+        
+        else if(f->field.currValue > 0)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
+    }
+    
+    Page->turnsInRound = ls_bufferReadDWord(buf);
+    
+    //NOTE: Current In Battle
+    {
+        Page->currIdx = ls_bufferReadDWord(buf);
+        
+        ls_bufferReadIntoUTF32(buf, &Page->Current.text);
+    }
+    
+    
+    //NOTE: Round Counter
+    {
+        Page->roundCount = ls_bufferReadDWord(buf);
+        ls_bufferReadIntoUTF32(buf, &Page->RoundCounter.text);
+    }
+    
+    //NOTE: Counters
+    for(u32 i = 0; i < COUNTER_NUM; i++)
+    {
+        Counter *C = Page->Counters + i;
+        
+        ls_bufferReadIntoUTF32(buf, &C->name.text);
+        
+        ls_bufferReadIntoUTF32(buf, &C->rounds.text);
+        
+        C->roundsLeft      = ls_bufferReadDWord(buf);
+        C->isActive        = ls_bufferReadDWord(buf);
+        C->turnCounter     = ls_bufferReadDWord(buf);
+        C->startIdxInOrder = ls_bufferReadDWord(buf);
+    }
+    
+    
+    //NOTE: Throwers
+    for(u32 i = 0; i < THROWER_NUM; i++)
+    {
+        DiceThrowBox *f = Page->Throwers + i;
+        
+        ls_bufferReadIntoUTF32(buf, &f->name.text);
+        ls_bufferReadIntoUTF32(buf, &f->toHit.text);
+        ls_bufferReadIntoUTF32(buf, &f->hitRes.text);
+        ls_bufferReadIntoUTF32(buf, &f->damage.text);
+        ls_bufferReadIntoUTF32(buf, &f->dmgRes.text);
+    }
+    
+    ls_bufferDestroy(buf);
+    
+    return TRUE;
+}
+
 
 void SaveState(UIContext *c)
 {
@@ -1284,7 +1761,10 @@ void SaveState(UIContext *c)
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_bufferAddUTF32(buf, f->editFields[j].text); }
         
-        ls_bufferAddUTF32(buf, f->maxLife.text);
+        ls_bufferAddUTF32(buf, f->maxLifeDisplay.text);
+        ls_bufferAddUTF32(buf, f->nonLethalDisplay.text);
+        ls_bufferAddDWord(buf, f->maxLife);
+        ls_bufferAddDWord(buf, f->nonLethal);
         
         ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
@@ -1300,7 +1780,10 @@ void SaveState(UIContext *c)
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_bufferAddUTF32(buf, f->editFields[j].text); }
         
-        ls_bufferAddUTF32(buf, f->maxLife.text);
+        ls_bufferAddUTF32(buf, f->maxLifeDisplay.text);
+        ls_bufferAddUTF32(buf, f->nonLethalDisplay.text);
+        ls_bufferAddDWord(buf, f->maxLife);
+        ls_bufferAddDWord(buf, f->nonLethal);
         
         ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
@@ -1318,6 +1801,7 @@ void SaveState(UIContext *c)
         ls_bufferAddUTF32(buf, f->field.text);
         
         //HP Slider
+        ls_bufferAddDWord(buf,  f->field.currValue);
         ls_bufferAddDWord(buf,  f->field.maxValue);
         ls_bufferAddDWord(buf,  f->field.minValue);
         ls_bufferAddDouble(buf, f->field.currPos);
@@ -1387,7 +1871,7 @@ void SaveState(UIContext *c)
 
 typedef b32(*LoadFunc)(UIContext *c, buffer *buff);
 
-const LoadFunc loadFunctions[] = { 0, 0, 0, 0, 0, LoadStateV6, LoadStateV7, LoadStateV8 };
+const LoadFunc loadFunctions[] = { 0, 0, 0, 0, 0, LoadStateV6, LoadStateV7, LoadStateV8, LoadStateV9 };
 
 b32 LoadState(UIContext *c)
 {
@@ -1436,6 +1920,7 @@ b32 LoadState(UIContext *c)
         {
             case 7: { return loadFunctions[6](c, buf); } break;
             case 8: { return loadFunctions[7](c, buf); } break;
+            case 9: { return loadFunctions[8](c, buf); } break;
             
             default: { ls_bufferDestroy(buf); return FALSE; }
         }
@@ -1561,7 +2046,10 @@ b32 LoadState(UIContext *c)
             f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        ls_bufferReadIntoUTF32(buf, &f->nonLethalDisplay.text);
+        f->maxLife   = ls_bufferReadDWord(buf);
+        f->nonLethal = ls_bufferReadDWord(buf);
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -1588,7 +2076,10 @@ b32 LoadState(UIContext *c)
             f->editFields[IF_IDX_EXTRA].lineCount = newlines + 1;
         }
         
-        ls_bufferReadIntoUTF32(buf, &f->maxLife.text);
+        ls_bufferReadIntoUTF32(buf, &f->maxLifeDisplay.text);
+        ls_bufferReadIntoUTF32(buf, &f->nonLethalDisplay.text);
+        f->maxLife   = ls_bufferReadDWord(buf);
+        f->nonLethal = ls_bufferReadDWord(buf);
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
@@ -1633,9 +2124,10 @@ b32 LoadState(UIContext *c)
         f->pos.isReadonly = TRUE;
         
         //HP Slider
-        f->field.maxValue = ls_bufferReadDWord(buf);
-        f->field.minValue = ls_bufferReadDWord(buf);
-        f->field.currPos  = ls_bufferReadDouble(buf);
+        f->field.currValue = ls_bufferReadDWord(buf);
+        f->field.maxValue  = ls_bufferReadDWord(buf);
+        f->field.minValue  = ls_bufferReadDWord(buf);
+        f->field.currPos   = ls_bufferReadDouble(buf);
         
         //Status Conditions, we store the check isActive status
         for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
@@ -1644,7 +2136,7 @@ b32 LoadState(UIContext *c)
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
         
-        s32 currVal = ls_uiSliderGetValue(c, &f->field);
+        s32 currVal = f->field.currValue;
         
         if(currVal == 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }

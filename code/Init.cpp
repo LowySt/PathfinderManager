@@ -133,96 +133,6 @@ b32 CustomPlayerText(UIContext *c, void *data)
     return inputUse;
 }
 
-b32 CustomInitFieldText(UIContext *c, void *data)
-{
-    Input *UserInput = &c->UserInput;
-    b32 inputUse = FALSE;
-    
-    CustomFieldTextHandler *f = (CustomFieldTextHandler *)data;
-    
-    InitPage *Page = State.Init;
-    
-    if((c->lastFocus != (u64 *)f->field) && (c->currentFocus == (u64 *)f->field))
-    { ls_uiTextBoxClear(c, f->field); inputUse = TRUE; }
-    
-    InitField *lastMob  = State.Init->MobFields  + (mob_count-1);
-    InitField *lastAlly = State.Init->AllyFields + (ally_count-1);
-    
-    if(KeyPress(keyMap::Enter))
-    {
-        //NOTE: Clear up the '\n' printable key
-        ClearPrintableKey();
-        
-        if(f->parent == lastMob)  { ls_uiFocusChange(c, 0x0); return inputUse; }
-        if(f->parent == lastAlly) { ls_uiFocusChange(c, 0x0); return inputUse; }
-        
-        //NOTE: The maxLife field gets handled specially using the index 999
-        if(f->if_idx == 999) {
-            UITextBox *next = &((f->parent + 1)->maxLife);
-            ls_uiTextBoxClear(c, next);
-            ls_uiFocusChange(c, (u64 *)next);
-            
-            return TRUE;
-        }
-        
-        AssertMsg(f->if_idx < INIT_FIELD_EDITFIELDS_NUM, "Out of bounds index\n");
-        
-        UITextBox *next = &((f->parent + 1)->editFields[f->if_idx]);
-        ls_uiTextBoxClear(c, next);
-        ls_uiFocusChange(c, (u64 *)next);
-        
-        return TRUE;
-    }
-    
-    UITextBox *parentFields = f->parent->editFields;
-    
-    if(KeyPress(keyMap::DArrow))
-    {
-        if(f->parent == lastMob)  { ls_uiFocusChange(c, 0x0); return inputUse; }
-        if(f->parent == lastAlly) { ls_uiFocusChange(c, 0x0); return inputUse; }
-        
-        u32 numStrings = 0;
-        utf32 *words = ls_utf32SeparateByNumber(parentFields[IF_IDX_NAME].text, &numStrings);
-        
-        AssertMsg(words, "The returned words array was null.\n");
-        if(!words) { ls_uiFocusChange(c, 0x0); return inputUse; }
-        
-        if(numStrings != 2) { ls_uiFocusChange(c, 0x0); return inputUse; }
-        
-        s64 newNumber = ls_utf32ToInt(words[1]) + 1;
-        ls_utf32FromInt_t(&words[1], newNumber);
-        
-        InitField *next = f->parent + 1;
-        UITextBox *nextFields = next->editFields;
-        
-        ls_uiTextBoxClear(c, &nextFields[IF_IDX_NAME]);
-        ls_utf32Set(&nextFields[IF_IDX_NAME].text, words[0]);
-        ls_utf32Append(&nextFields[IF_IDX_NAME].text, words[1]);
-        
-        //NOTE: We start at i == 1, because the name field has already been handled,
-        //      We stop at COUNT-1 because the last field is 'final' which should not be modified by this routine.
-        for(u32 i = 1; i < IF_IDX_COUNT-1; i++)
-        {
-            ls_uiTextBoxClear(c, &nextFields[i]);
-            ls_uiTextBoxSet(c, &nextFields[i], parentFields[i].text);
-        }
-        
-        ls_uiTextBoxClear(c, &next->maxLife);
-        ls_uiTextBoxSet(c, &next->maxLife, f->parent->maxLife.text);
-        
-        //NOTE: The maxLife field gets handled specially using the index 999
-        if(f->if_idx == 999) { ls_uiFocusChange(c, (u64 *)&(next->maxLife)); return inputUse; }
-        
-        AssertMsg(f->if_idx < INIT_FIELD_EDITFIELDS_NUM, "Out of bounds index\n");
-        ls_uiFocusChange(c, (u64 *)&(nextFields[f->if_idx]));
-        
-        return TRUE;
-    }
-    
-    return inputUse;
-}
-
-
 b32 CustomMobLifeField(UIContext *c, void *data)
 {
     Input *UserInput = &c->UserInput;
@@ -231,10 +141,29 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     MobLifeHandler *h = (MobLifeHandler *)data;
     UITextBox *f = h->parent;
     
-    if(!State.inBattle) {
-        CustomFieldTextHandler dummy = {h->mob, h->parent, 999};
-        inputUse |= CustomInitFieldText(c, &dummy);
-    };
+    if(State.Init->isAdding)
+    {
+        if((c->lastFocus != (u64 *)f) && (c->currentFocus == (u64 *)f))
+        { ls_uiTextBoxClear(c, f); }
+        
+        return FALSE;
+    }
+    
+    if(!State.inBattle)
+    {
+        if((c->lastFocus != (u64 *)f) && (c->currentFocus == (u64 *)f))
+        { ls_uiTextBoxClear(c, f); }
+        
+        //NOTE: We're setting up the InitField maxLife
+        if(KeyPress(keyMap::Enter))
+        {
+            //NOTE: Clear up the '\n' printable key
+            ClearPrintableKey();
+            
+            h->mob->maxLife = ls_utf32ToInt(h->mob->maxLifeDisplay.text);
+            ls_uiFocusChange(c, 0x0);
+        }
+    }
     
     //NOTE: We lost focus, let's reset the box
     //TODO: Would be better to perform these changes when changing focus,
@@ -258,12 +187,18 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     {
         Order *order = GetOrderByID(h->mob->ID);
         AssertMsg(order, "Could not find order by ID. Fucked up ID?\n");
+        if(order == NULL) { 
+            ls_uiTextBoxClear(c, f);
+            ls_uiTextBoxSet(c, f, h->previous);
+            h->isEditing = FALSE;
+            return FALSE;
+        }
         
         s32 diff = ls_utf32ToInt(f->text);
         
         ls_uiSliderChangeValueBy(c, &order->field, diff);
         
-        s32 currVal = ls_uiSliderGetValue(c, &order->field);
+        s32 currVal = order->field.currValue;
         if(currVal == 0)
         { order->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
         
@@ -274,7 +209,75 @@ b32 CustomMobLifeField(UIContext *c, void *data)
         { order->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
         
         ls_uiTextBoxClear(c, f);
+        
+        u32 tmpBuf[32] = {};
+        utf32 tmpString = { tmpBuf, 0, 32 };
+        ls_utf32FromInt_t(&tmpString, currVal);
+        ls_utf32Append(&tmpString, U"/"_W);
+        ls_utf32AppendInt(&tmpString, h->mob->maxLife);
+        
+        ls_uiTextBoxSet(c, f, tmpString);
+        
+        h->isEditing = FALSE;
+        ls_uiFocusChange(c, NULL);
+        
+        inputUse = TRUE;
+    }
+    
+    return inputUse;
+}
+
+b32 CustomMobNonLethalField(UIContext *c, void *data)
+{
+    Input *UserInput = &c->UserInput;
+    b32 inputUse = FALSE;
+    
+    MobLifeHandler *h = (MobLifeHandler *)data;
+    UITextBox *f = h->parent;
+    
+    AssertMsg(State.inBattle, "Can't select this outside of battle!");
+    if(!State.inBattle) { return FALSE; }
+    
+    //NOTE: We lost focus, let's reset the box
+    //TODO: Would be better to perform these changes when changing focus,
+    //      rather than after the focus was re-obtained. This would need to happen outside.
+    if((c->lastFocus != (u64 *)f) && h->isEditing) {
+        ls_uiTextBoxClear(c, f);
         ls_uiTextBoxSet(c, f, h->previous);
+        h->isEditing = FALSE;
+    }
+    
+    if(LeftClick && !h->isEditing)
+    { 
+        ls_utf32Set(&h->previous, f->text);
+        ls_uiTextBoxClear(c, f);
+        
+        h->isEditing = TRUE;
+        inputUse = TRUE;
+    }
+    
+    if(h->isEditing && KeyPress(keyMap::Enter))
+    {
+        Order *order = GetOrderByID(h->mob->ID);
+        AssertMsg(order, "Could not find order by ID. Fucked up ID?\n");
+        if(order == NULL) { 
+            ls_uiTextBoxClear(c, f);
+            ls_uiTextBoxSet(c, f, h->previous);
+            h->isEditing = FALSE;
+            return FALSE;
+        }
+        
+        s32 diff = ls_utf32ToInt(f->text);
+        h->mob->nonLethal += diff;
+        if(h->mob->nonLethal < 0) { h->mob->nonLethal = 0; }
+        if(h->mob->nonLethal > 9001) { h->mob->nonLethal = 9001; }
+        
+        ls_uiTextBoxClear(c, f);
+        
+        u32 tmpBuf[32] = {};
+        utf32 tmpString = { tmpBuf, 0, 32 };
+        ls_utf32FromInt_t(&tmpString, h->mob->nonLethal);
+        ls_uiTextBoxSet(c, f, tmpString);
         
         h->isEditing = FALSE;
         ls_uiFocusChange(c, NULL);
@@ -444,7 +447,7 @@ void OnEncounterSelect(UIContext *c, void *data)
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_uiTextBoxSet(c, &m->editFields[j], entry->fields[j]); }
         
-        ls_uiTextBoxSet(c, &m->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        ls_uiTextBoxSet(c, &m->maxLifeDisplay, entry->fields[MOB_INIT_ENC_FIELDS-1]);
         m->compendiumIdx = entry->compendiumIdx;
         m->ID            = addID;
         
@@ -459,7 +462,7 @@ void OnEncounterSelect(UIContext *c, void *data)
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_uiTextBoxSet(c, &a->editFields[j], entry->fields[j]); }
         
-        ls_uiTextBoxSet(c, &a->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        ls_uiTextBoxSet(c, &a->maxLifeDisplay, entry->fields[MOB_INIT_ENC_FIELDS-1]);
         a->compendiumIdx = entry->compendiumIdx;
         a->ID            = addID;
         
@@ -508,7 +511,7 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_utf32Set(&e->fields[j], currMob->editFields[j].text); }
         
-        ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currMob->maxLife.text);
+        ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currMob->maxLifeDisplay.text);
         e->compendiumIdx = currMob->compendiumIdx;
     }
     
@@ -520,7 +523,7 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
         { ls_utf32Set(&e->fields[j], currAlly->editFields[j].text); }
         
-        ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currAlly->maxLife.text);
+        ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currAlly->maxLifeDisplay.text);
         e->compendiumIdx = currAlly->compendiumIdx;
     }
     
@@ -612,6 +615,9 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
     
     if((newMobsCount > mob_count) || (newAlliesCount > ally_count)) { return FALSE; }
     
+    u32 tmpBuff[32] = {};
+    utf32 lifeText = {tmpBuff, 0, 32};
+    
     for(u32 i = currMobs, j = 0; i < newMobsCount; i++, j++)
     {
         InitField *m = State.Init->MobFields + i;
@@ -620,14 +626,21 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
         for(u32 k = 0; k < IF_IDX_COUNT; k++)
         { ls_uiTextBoxSet(c, &m->editFields[k], entry->fields[k]); }
         
-        ls_uiTextBoxSet(c, &m->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        //NOTE: Setting the max life display to show current / max 
+        ls_utf32Set(&lifeText, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        ls_utf32Append(&lifeText, U"/"_W);
+        ls_utf32Append(&lifeText, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        ls_uiTextBoxSet(c, &m->maxLifeDisplay, lifeText);
+        
+        m->maxLife = ls_utf32ToInt(entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        
         m->compendiumIdx = entry->compendiumIdx;
         m->ID            = addID;
         
         State.Init->turnsInRound       += 1;
         CheckAndFixCounterTurns();
         
-        AddToOrder(ls_utf32ToInt(m->maxLife.text), m->editFields[IF_IDX_NAME].text, addID, m->compendiumIdx);
+        AddToOrder(m->maxLife, m->editFields[IF_IDX_NAME].text, addID, m->compendiumIdx);
         
         State.Init->Mobs.selectedIndex += 1;
         addID                          += 1;
@@ -641,14 +654,21 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
         for(u32 k = 0; k < IF_IDX_COUNT; k++)
         { ls_uiTextBoxSet(c, &a->editFields[k], entry->fields[k]); }
         
-        ls_uiTextBoxSet(c, &a->maxLife, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        //NOTE: Setting the max life display to show current / max 
+        ls_utf32Set(&lifeText, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        ls_utf32Append(&lifeText, U"/"_W);
+        ls_utf32Append(&lifeText, entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        ls_uiTextBoxSet(c, &a->maxLifeDisplay, lifeText);
+        
+        a->maxLife = ls_utf32ToInt(entry->fields[MOB_INIT_ENC_FIELDS-1]);
+        
         a->compendiumIdx = entry->compendiumIdx;
         a->ID            = addID;
         
         State.Init->turnsInRound         += 1;
         CheckAndFixCounterTurns();
         
-        AddToOrder(ls_utf32ToInt(a->maxLife.text), a->editFields[IF_IDX_NAME].text, addID, a->compendiumIdx);
+        AddToOrder(a->maxLife, a->editFields[IF_IDX_NAME].text, addID, a->compendiumIdx);
         
         State.Init->Allies.selectedIndex += 1;
         addID                            += 1;
@@ -758,30 +778,43 @@ b32 SetOnClick(UIContext *c, void *data)
     tmp_order ord[MAX_ORDER_NUM] = {};
     u32 idx = 0;
     
-    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
+    u32 tmpBuf[32] = {};
+    utf32 tmpString = { tmpBuf, 0, 32 };
+    
     for(u32 i = 0; i < visibleMobs; i++)
     {
         InitField *f = Page->MobFields + i;
         
         ord[idx].init          = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         ord[idx].name          = &f->editFields[IF_IDX_NAME].text;
-        ord[idx].maxLife       = ls_utf32ToInt(f->maxLife.text);
+        ord[idx].maxLife       = f->maxLife;
         ord[idx].compendiumIdx = f->compendiumIdx;
         ord[idx].ID            = f->ID;
+        
+        ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
+        ls_utf32Append(&tmpString, U"/"_W);
+        ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
+        
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
         
         idx += 1;
     }
     
-    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
     for(u32 i = 0; i < visibleAllies; i++)
     {
         InitField *f = Page->AllyFields + i;
         
         ord[idx].init          = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         ord[idx].name          = &f->editFields[IF_IDX_NAME].text;
-        ord[idx].maxLife       = ls_utf32ToInt(f->maxLife.text);
+        ord[idx].maxLife       = f->maxLife;
         ord[idx].compendiumIdx = f->compendiumIdx;
         ord[idx].ID            = f->ID;
+        
+        ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
+        ls_utf32Append(&tmpString, U"/"_W);
+        ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
+        
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
         
         idx += 1;
     }
@@ -804,14 +837,12 @@ b32 SetOnClick(UIContext *c, void *data)
         Order *f = Page->OrderFields + i;
         
         ls_utf32Set(&f->field.text, *ord[j].name);
-        f->field.maxValue = ord[j].maxLife;
-        f->compendiumIdx  = ord[j].compendiumIdx;
-        f->ID             = ord[j].ID;
+        f->field.currValue = ord[j].maxLife;
+        f->field.maxValue  = ord[j].maxLife;
+        f->compendiumIdx   = ord[j].compendiumIdx;
+        f->ID              = ord[j].ID;
         
-        if(i == 0) 
-        { 
-            ls_utf32Set(&Page->Current.text, *ord[j].name); 
-        }
+        if(i == 0) { ls_utf32Set(&Page->Current.text, *ord[j].name); }
     }
     
     for(u32 i = 0; i < party_count; i++)
@@ -843,6 +874,7 @@ b32 SetOnClick(UIContext *c, void *data)
     return TRUE;
 }
 
+//TODO: Remove the redundant ls_uiTextBoxClear() before every ls_uiTextBoxSet()
 b32 ResetOnClick(UIContext *c, void *data)
 {
     InitPage *Page = State.Init;
@@ -881,8 +913,8 @@ b32 ResetOnClick(UIContext *c, void *data)
             ls_uiTextBoxSet(c, &f->editFields[j], zeroUTF32);
         }
         
-        ls_uiTextBoxClear(c, &f->maxLife);
-        ls_uiTextBoxSet(c, &f->maxLife, zeroUTF32);
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
+        f->maxLife = 0;
         
         f->compendiumIdx = -1;
         f->ID            = currID;
@@ -901,6 +933,9 @@ b32 ResetOnClick(UIContext *c, void *data)
         
         ls_uiTextBoxClear(c, &f->editFields[IF_IDX_FINAL]);
         ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FINAL], zeroUTF32);
+        
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
+        f->maxLife = 0;
         
         f->compendiumIdx = -1;
         f->ID            = currID;
@@ -1075,7 +1110,8 @@ void CopyInitField(UIContext *c, InitField *From, InitField *To)
     for(u32 i = 0; i < IF_IDX_COUNT; i++)
     { ls_uiTextBoxSet(c, &To->editFields[i], From->editFields[i].text); }
     
-    ls_uiTextBoxSet(c, &To->maxLife, From->maxLife.text);
+    ls_uiTextBoxSet(c, &To->maxLifeDisplay, From->maxLifeDisplay.text);
+    To->maxLife       = From->maxLife;
     
     To->compendiumIdx = From->compendiumIdx;
     To->ID            = From->ID;
@@ -1128,7 +1164,8 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
                 ls_uiTextBoxClear(c, &B->editFields[IF_IDX_BONUS]);
                 ls_uiTextBoxClear(c, &B->editFields[IF_IDX_FINAL]);
                 
-                ls_uiTextBoxClear(c, &B->maxLife);
+                ls_uiTextBoxClear(c, &B->maxLifeDisplay);
+                B->maxLife = 0;
                 
                 B->ID = 0;
                 B->compendiumIdx = -1;
@@ -1159,7 +1196,8 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
                 for(u32 j = 0; j < IF_IDX_COUNT; j++)
                 { ls_uiTextBoxClear(c, &B->editFields[j]); }
                 
-                ls_uiTextBoxClear(c, &B->maxLife);
+                ls_uiTextBoxClear(c, &B->maxLifeDisplay);
+                B->maxLife = 0;
                 
                 B->ID = 0;
                 B->compendiumIdx = -1;
@@ -1284,7 +1322,8 @@ b32 StartAddingMob(UIContext *c, void *data)
     //Clear The Extra
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
     for(u32 i = 0; i < IF_IDX_COUNT; i++) { ls_uiTextBoxClear(c, &f->editFields[i]); }
-    ls_uiTextBoxClear(c, &f->maxLife);
+    ls_uiTextBoxClear(c, &f->maxLifeDisplay);
+    f->maxLife = 0;
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewMob.name, ls_utf32Constant(U"Ok"));
@@ -1304,7 +1343,8 @@ b32 StartAddingAlly(UIContext *c, void *data)
     //Clear The Extra
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
     for(u32 i = 0; i < IF_IDX_COUNT; i++) { ls_uiTextBoxClear(c, &f->editFields[i]); }
-    ls_uiTextBoxClear(c, &f->maxLife);
+    ls_uiTextBoxClear(c, &f->maxLifeDisplay);
+    f->maxLife = 0;
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewAlly.name, ls_utf32Constant(U"Ok"));
@@ -1313,7 +1353,6 @@ b32 StartAddingAlly(UIContext *c, void *data)
     return FALSE;
 }
 
-//TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
 void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
@@ -1322,7 +1361,8 @@ void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
     Order *o = State.Init->OrderFields + visibleOrder;
     
     ls_utf32Set(&o->field.text, name);
-    o->field.maxValue = maxLife;
+    o->field.currValue = maxLife;
+    o->field.maxValue  = maxLife;
     //TODO: o->field.minValue = -CONstitution
     o->compendiumIdx  = compendiumIdx;
     
@@ -1352,8 +1392,7 @@ b32 AddMobOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
-    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
-    AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
+    AddToOrder(f->maxLife, f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
     
     State.Init->Mobs.selectedIndex += 1;
     addID                          += 1;
@@ -1387,8 +1426,7 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
-    //TODO: Already have HP as a number, why am I converting back and forth? @ConvertNation
-    AddToOrder(ls_utf32ToInt(f->maxLife.text), f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
+    AddToOrder(f->maxLife, f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
     
     State.Init->Allies.selectedIndex += 1;
     addID                            += 1;
@@ -1408,92 +1446,95 @@ b32 AddAllyOnClick(UIContext *c, void *data)
 
 void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name)
 {
-    //TODO: I hate the init fields, and how we have a different CustomFieldTextHandler for every piece
-    //      of the init fields.
-    CustomFieldTextHandler *textHandler = 
-        (CustomFieldTextHandler *)ls_alloc(sizeof(CustomFieldTextHandler)*INIT_FIELD_EDITFIELDS_NUM);
-    for(u32 i = 0; i < IF_IDX_COUNT; i++)
-    {
-        textHandler[i].parent = f;
-        textHandler[i].field = f->editFields + i;
-        textHandler[i].if_idx = i;
-    }
-    
     utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], ls_utf32Constant(name));
-    f->editFields[IF_IDX_NAME].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_NAME].data         = &textHandler[0];
+    f->editFields[IF_IDX_NAME].preInput     = NULL;
+    f->editFields[IF_IDX_NAME].data         = NULL;
     f->editFields[IF_IDX_NAME].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], zeroUTF32);
     f->editFields[IF_IDX_BONUS].maxLen       = 3; //NOTE: Allow for sign!
-    f->editFields[IF_IDX_BONUS].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_BONUS].data         = &textHandler[1];
+    f->editFields[IF_IDX_BONUS].preInput     = NULL;
+    f->editFields[IF_IDX_BONUS].data         = NULL;
     f->editFields[IF_IDX_BONUS].isSingleLine = TRUE;
     
     f->editFields[IF_IDX_EXTRA].text         = ls_utf32Alloc(16);
-    f->editFields[IF_IDX_EXTRA].preInput     = NULL; //CustomInitFieldText;
-    f->editFields[IF_IDX_EXTRA].data         = NULL; //&textHandler[2];
+    f->editFields[IF_IDX_EXTRA].preInput     = NULL;
+    f->editFields[IF_IDX_EXTRA].data         = NULL;
     f->editFields[IF_IDX_EXTRA].isSingleLine = FALSE;
     
     MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
-    handler->parent   = &f->maxLife;
+    handler->parent   = &f->maxLifeDisplay;
     handler->mob      = f;
     handler->previous = ls_utf32Alloc(16);
     
-    ls_uiTextBoxSet(c, &f->maxLife, zeroUTF32);
-    f->maxLife.maxLen       = 4;
-    f->maxLife.preInput     = CustomMobLifeField;
-    f->maxLife.data         = handler;
-    f->maxLife.isSingleLine = TRUE;
+    ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
+    f->maxLifeDisplay.maxLen       = 9;
+    f->maxLifeDisplay.preInput     = CustomMobLifeField;
+    f->maxLifeDisplay.data         = handler;
+    f->maxLifeDisplay.isSingleLine = TRUE;
+    
+    MobLifeHandler *nlHandler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
+    nlHandler->parent   = &f->nonLethalDisplay;
+    nlHandler->mob      = f;
+    nlHandler->previous = ls_utf32Alloc(16);
+    
+    ls_uiTextBoxSet(c, &f->nonLethalDisplay, zeroUTF32);
+    f->nonLethalDisplay.maxLen       = 4;
+    f->nonLethalDisplay.preInput     = CustomMobNonLethalField;
+    f->nonLethalDisplay.data         = nlHandler;
+    f->nonLethalDisplay.isSingleLine = TRUE;
+    
+    f->maxLife   = 0;
+    f->nonLethal = 0;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_TOTALAC], zeroUTF32);
     f->editFields[IF_IDX_TOTALAC].maxLen       = 2;
-    f->editFields[IF_IDX_TOTALAC].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_TOTALAC].data         = &textHandler[3];
+    f->editFields[IF_IDX_TOTALAC].preInput     = NULL;
+    f->editFields[IF_IDX_TOTALAC].data         = NULL;
     f->editFields[IF_IDX_TOTALAC].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_TOUCHAC], zeroUTF32);
     f->editFields[IF_IDX_TOUCHAC].maxLen       = 2;
-    f->editFields[IF_IDX_TOUCHAC].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_TOUCHAC].data         = &textHandler[4];
+    f->editFields[IF_IDX_TOUCHAC].preInput     = NULL;
+    f->editFields[IF_IDX_TOUCHAC].data         = NULL;
     f->editFields[IF_IDX_TOUCHAC].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FLATAC], zeroUTF32);
     f->editFields[IF_IDX_FLATAC].maxLen       = 2;
-    f->editFields[IF_IDX_FLATAC].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_FLATAC].data         = &textHandler[5];
+    f->editFields[IF_IDX_FLATAC].preInput     = NULL;
+    f->editFields[IF_IDX_FLATAC].data         = NULL;
     f->editFields[IF_IDX_FLATAC].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_LOWAC], zeroUTF32);
     f->editFields[IF_IDX_LOWAC].maxLen       = 2;
-    f->editFields[IF_IDX_LOWAC].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_LOWAC].data         = &textHandler[6];
+    f->editFields[IF_IDX_LOWAC].preInput     = NULL;
+    f->editFields[IF_IDX_LOWAC].data         = NULL;
     f->editFields[IF_IDX_LOWAC].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_CONSAVE], zeroUTF32);
     f->editFields[IF_IDX_CONSAVE].maxLen       = 2;
-    f->editFields[IF_IDX_CONSAVE].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_CONSAVE].data         = &textHandler[7];
+    f->editFields[IF_IDX_CONSAVE].preInput     = NULL;
+    f->editFields[IF_IDX_CONSAVE].data         = NULL;
     f->editFields[IF_IDX_CONSAVE].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_DEXSAVE], zeroUTF32);
     f->editFields[IF_IDX_DEXSAVE].maxLen       = 2;
-    f->editFields[IF_IDX_DEXSAVE].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_DEXSAVE].data         = &textHandler[8];
+    f->editFields[IF_IDX_DEXSAVE].preInput     = NULL;
+    f->editFields[IF_IDX_DEXSAVE].data         = NULL;
     f->editFields[IF_IDX_DEXSAVE].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_WISSAVE], zeroUTF32);
     f->editFields[IF_IDX_WISSAVE].maxLen       = 2;
-    f->editFields[IF_IDX_WISSAVE].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_WISSAVE].data         = &textHandler[9];
+    f->editFields[IF_IDX_WISSAVE].preInput     = NULL;
+    f->editFields[IF_IDX_WISSAVE].data         = NULL;
     f->editFields[IF_IDX_WISSAVE].isSingleLine = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FINAL], zeroUTF32);
     f->editFields[IF_IDX_FINAL].maxLen       = 2;
-    f->editFields[IF_IDX_FINAL].preInput     = CustomInitFieldText;
-    f->editFields[IF_IDX_FINAL].data         = &textHandler[10];
+    f->editFields[IF_IDX_FINAL].preInput     = NULL;
+    f->editFields[IF_IDX_FINAL].data         = NULL;
     f->editFields[IF_IDX_FINAL].isSingleLine = TRUE;
     
     f->compendiumIdx      = -1;
@@ -1677,6 +1718,8 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     Page->tooltipMouseY    = -999;
 }
 
+//TODO: When adding new enemy the large extra info textbox doesn't save to order??
+//TODO: Strange copying of compendium page into custom mob page?? Was it a non-reset problem?
 b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
 {
     b32 inputUse = FALSE;
@@ -1687,9 +1730,29 @@ b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
     ls_uiLabel(c, U"Nome", x-45, y+5);
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME], x, y, 156, 20);
     
-    c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
-    ls_uiLabel(c, U"PF", x+257, y+5);
-    inputUse |= ls_uiTextBox(c, &F->maxLife, x+282, y, 42, 20);
+    if(State.inBattle)
+    {
+        c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
+        ls_uiLabel(c, U"PF", x+182, y+5);
+        inputUse |= ls_uiTextBox(c, &F->maxLifeDisplay, x+203, y, 44, 20);
+        
+        Order *ord = GetOrderByID(F->ID);
+        if(ord)
+        {
+            s32 currVal = ord->field.currValue;
+            if(currVal > 0 && F->nonLethal > 0 && F->nonLethal >= currVal)
+            { c->widgetColor = ls_uiAlphaBlend(RGBA(0x33, 0x33, 0xCC, 150), base); }
+        }
+        
+        ls_uiLabel(c, U"NL", x+257, y+5);
+        inputUse |= ls_uiTextBox(c, &F->nonLethalDisplay, x+282, y, 44, 20);
+    }
+    else
+    {
+        c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
+        ls_uiLabel(c, U"PF", x+257, y+5);
+        inputUse |= ls_uiTextBox(c, &F->maxLifeDisplay, x+282, y, 82, 20);
+    }
     
     y -= 40;
     c->widgetColor = ls_uiAlphaBlend(RGBA(0x61, 0x3B, 0x09, 150), base);
@@ -1751,6 +1814,8 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
 {
     b32 inputUse = FALSE;
     
+    InitField *initF = GetInitFieldByID(f->ID);
+    
     Color original = c->borderColor;
     if(posIdx == State.Init->currIdx) c->borderColor = RGB(0xBB, 0, 0);
     
@@ -1760,7 +1825,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     
     if(inputUse)
     {
-        s32 currVal = ls_uiSliderGetValue(c, &f->field);
+        s32 currVal = f->field.currValue;
         
         if(currVal == 0)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0x97, 0x12, 0x99), c->widgetColor); }
@@ -1769,7 +1834,27 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
         { f->field.rColor = ls_uiAlphaBlend(RGBA(0xDD, 0x10, 0x20, 0x99), c->widgetColor); }
         
         else if(currVal > 0)
-        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor); }
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0xFF, 0xFF, 0x3D, 0x99), c->widgetColor); }
+        
+        if(initF)
+        {
+            //NOTE: Unfortunately I'm forced to update the life display here as well, since you can
+            //      Modify it from both the textbox and the slider.
+            u32 tmpBuf[32] = {};
+            utf32 tmpString = { tmpBuf, 0, 32 };
+            ls_utf32FromInt_t(&tmpString, currVal);
+            ls_utf32Append(&tmpString, U"/"_W);
+            ls_utf32AppendInt(&tmpString, initF->maxLife);
+            ls_uiTextBoxSet(c, &initF->maxLifeDisplay, tmpString);
+        }
+    }
+    
+    if(initF)
+    {
+        s32 currVal = f->field.currValue;
+        
+        if(currVal > 0 && initF->nonLethal > 0 && initF->nonLethal >= currVal)
+        { f->field.rColor = ls_uiAlphaBlend(RGBA(0x33, 0x33, 0xCC, 0x99), c->widgetColor); }
     }
     
     inputUse |= ls_uiTextBox(c, &f->pos, xPos + 25, yPos, 25, 20);
@@ -1865,8 +1950,7 @@ void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
         s32 x = State.Init->tooltipMouseX + 12;
         s32 y = State.Init->tooltipMouseY;
         
-        ls_uiLabel(c, label, x, y - c->currFont->pixelHeight, c->textColor, 3);
-        ls_uiRect(c, x - 8, y - labelRect.h - 5, labelRect.w + 16, labelRect.h + 6, 3);
+        ls_uiLabelInRect(c, label, x, y - labelRect.h, c->backgroundColor, c->borderColor, c->textColor, 3);
         
         if(firstShow == TRUE) { c->hasReceivedInput = TRUE; }
         firstShow = FALSE;
@@ -2197,7 +2281,15 @@ b32 DrawPranaStyle(UIContext *c)
                     Color base = c->widgetColor;
                     c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
                     ls_uiLabel(c, U"PF", 307, 720);
-                    inputUse |= ls_uiTextBox(c, &f->maxLife, 332, 715, 48, 20);
+                    inputUse |= ls_uiTextBox(c, &f->maxLifeDisplay, 332, 715, 88, 20);
+                    
+                    s32 currVal = ord->field.currValue;
+                    if(currVal > 0 && f->nonLethal > 0 && f->nonLethal >= currVal)
+                    { c->widgetColor = ls_uiAlphaBlend(RGBA(0x33, 0x33, 0xCC, 150), base); }
+                    
+                    //NOTE: Draw Non Lethal Damage
+                    ls_uiLabel(c, U"NL", 442, 720);
+                    inputUse |= ls_uiTextBox(c, &f->nonLethalDisplay, 462, 715, 88, 20);
                     c->widgetColor = base;
                 }
                 

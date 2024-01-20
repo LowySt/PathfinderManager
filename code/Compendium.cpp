@@ -2301,7 +2301,21 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     if(compendium.pageIndex == -1) return FALSE;
     if(visibleMobs == mob_count)     return FALSE;
     
-    ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
+    if(State.inBattle)
+    {
+        u32 tmpBuff[32] = {};
+        utf32 lifeText = {tmpBuff, 0, 32};
+        ls_utf32Append(&lifeText, cachedPage.totHP);
+        ls_utf32Append(&lifeText, U"/"_W);
+        ls_utf32Append(&lifeText, cachedPage.totHP);
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, lifeText);
+    }
+    else
+    {
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, cachedPage.totHP);
+    }
+    
+    f->maxLife = ls_utf32ToInt(cachedPage.totHP);
     
     u32 buff[32] = {};
     utf32 tmp = { buff, 0, 32 };
@@ -2327,7 +2341,21 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     if(compendium.pageIndex == -1) return FALSE;
     if(visibleAllies == ally_count)  return FALSE;
     
-    ls_uiTextBoxSet(c, &f->maxLife, cachedPage.totHP);
+    if(State.inBattle)
+    {
+        u32 tmpBuff[32] = {};
+        utf32 lifeText = {tmpBuff, 0, 32};
+        ls_utf32Append(&lifeText, cachedPage.totHP);
+        ls_utf32Append(&lifeText, U"/"_W);
+        ls_utf32Append(&lifeText, cachedPage.totHP);
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, lifeText);
+    }
+    else
+    {
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, cachedPage.totHP);
+    }
+    
+    f->maxLife = ls_utf32ToInt(cachedPage.totHP);
     
     u32 buff[32] = {};
     utf32 tmp = { buff, 0, 32 };
