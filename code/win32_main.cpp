@@ -523,7 +523,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             //NOTETODO: annoying non-global user input
             Input *UserInput = &uiContext->UserInput;
             
-            //TODO: Undo-Redo for StatusConditions
+            //TODO: If a page was open in initiative, keep it open after the undo/redo.
+            //      Although that only makes sense in specific cases.
+            //
+            //      Either we make the globalSelectedIndex a part of the State.
+            //         Which means possibly changing the opened page for every undo/redo.
+            //
+            //      Or it's still a global. Which means we only keep it around if the gobalSelectedIndex
+            //      was the same in the previous/next state. Which would mean recording it anyway.
+            //      But only showing it if it matches? Not sure how useful it is...
             if((KeyPress(keyMap::Z) && KeyHeld(keyMap::Control)) || undoRequest)
             {
                 undoRequest = FALSE;
@@ -543,6 +551,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 //NOTETODO: All globals that affect the state of the program have to be
                 //          Set to a valid state, otherwise it will not work.
                 globalSelectedIndex = -1;
+                mainCachedPage.pageIndex = -1; //Force a recache of the page
                 suppressingUndoRecord = FALSE;
             }
             
@@ -564,6 +573,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 //NOTETODO: All globals that affect the state of the program have to be
                 //          Set to a valid state, otherwise it will not work.
                 globalSelectedIndex = -1;
+                mainCachedPage.pageIndex = -1; //Force a recache of the page
                 suppressingUndoRecord = FALSE;
             }
             
