@@ -1866,7 +1866,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     return inputUse;
 }
 
-void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
+b32 DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
 {
     Input *UserInput = &c->UserInput;
     
@@ -1874,15 +1874,16 @@ void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
     s32 mouseX = -999;
     s32 mouseY = -999;
     
-    static b32 firstShow = TRUE;
+    b32 inputUse = FALSE;
     
+    static b32 firstShow = TRUE;
     
     for(u32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
     {
         Status *status = ord->status + statusIdx;
         
         if(statusIdx % 2 == 0) { 
-            ls_uiCheck(c, &status->check, statusX, statusY + 40);
+            inputUse |= ls_uiCheck(c, &status->check, statusX, statusY + 40);
             
             if(MouseInRect(statusX, statusY + 40, status->check.w, status->check.h))
             { 
@@ -1892,7 +1893,8 @@ void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
             }
         }
         else {
-            ls_uiCheck(c, &status->check, statusX, statusY);
+            inputUse |= ls_uiCheck(c, &status->check, statusX, statusY);
+            
             if(MouseInRect(statusX, statusY, status->check.w, status->check.h))
             { 
                 tooltipIndex = statusIdx;
@@ -1920,7 +1922,7 @@ void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
             State.Init->tooltipMouseX          = -999;
             State.Init->tooltipMouseY          = -999;
             firstShow                          = TRUE;
-            return;
+            return inputUse;
         }
         
         if(State.Init->tooltipCurrentDT != 0)
@@ -1941,7 +1943,7 @@ void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
             State.Init->tooltipMouseX          = -999;
             State.Init->tooltipMouseY          = -999;
             firstShow                          = TRUE;
-            return;
+            return inputUse;
         }
         
         utf32 label      = ls_utf32Constant(statusTooltips[tooltipIndex]);
@@ -1955,6 +1957,8 @@ void DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
         if(firstShow == TRUE) { c->hasReceivedInput = TRUE; }
         firstShow = FALSE;
     }
+    
+    return inputUse;
 }
 
 b32 DrawDefaultStyle(UIContext *c)
@@ -2295,7 +2299,7 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 
                 //NOTE: Draw the Status Check-circles
-                DrawStatusIcons(c, ord, 30, 750);
+                inputUse |= DrawStatusIcons(c, ord, 30, 750);
             }
         }
         inputUse |= ls_uiButton(c, &Page->Reset, 1212, 718);
