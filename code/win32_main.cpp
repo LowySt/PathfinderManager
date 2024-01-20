@@ -159,7 +159,7 @@ b32 ProgramOpenInfoSettings(UIContext *c, void *data)
     return FALSE;
 }
 
-void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
+void CopyState(UIContext *c, ProgramState *FromState, ProgramState *ToState)
 {
     //NOTE: Copy Init Page
     InitPage *curr = FromState->Init;
@@ -169,7 +169,7 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
     dest->Allies.selectedIndex = curr->Allies.selectedIndex;
     
     for(u32 i = 0; i < party_count; i++)
-    { ls_uiTextBoxSet(cxt, dest->PlayerInit + i, curr->PlayerInit[i].text); }
+    { ls_uiTextBoxSet(c, dest->PlayerInit + i, curr->PlayerInit[i].text); }
     
     for(u32 i = 0; i < ally_count; i++)
     {
@@ -177,10 +177,15 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         InitField *To   = dest->AllyFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_uiTextBoxSet(cxt, To->editFields + j, From->editFields[j].text); }
+        { ls_uiTextBoxSet(c, To->editFields + j, From->editFields[j].text); }
         
-        ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
-        To->ID       = From->ID;
+        ls_uiTextBoxSet(c, &To->maxLifeDisplay, From->maxLifeDisplay.text);
+        ls_uiTextBoxSet(c, &To->nonLethalDisplay, From->nonLethalDisplay.text);
+        To->maxLife       = From->maxLife;
+        To->nonLethal     = From->nonLethal;
+        
+        To->compendiumIdx = From->compendiumIdx;
+        To->ID            = From->ID;
     }
     
     for(u32 i = 0; i < mob_count; i++)
@@ -189,10 +194,15 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         InitField *To   = dest->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        { ls_uiTextBoxSet(cxt, To->editFields + j, From->editFields[j].text); }
+        { ls_uiTextBoxSet(c, To->editFields + j, From->editFields[j].text); }
         
-        ls_uiTextBoxSet(cxt, &To->maxLife, From->maxLife.text);
-        To->ID = From->ID;
+        ls_uiTextBoxSet(c, &To->maxLifeDisplay, From->maxLifeDisplay.text);
+        ls_uiTextBoxSet(c, &To->nonLethalDisplay, From->nonLethalDisplay.text);
+        To->maxLife       = From->maxLife;
+        To->nonLethal     = From->nonLethal;
+        
+        To->compendiumIdx = From->compendiumIdx;
+        To->ID            = From->ID;
     }
     
     for(u32 i = 0; i < order_count; i++)
@@ -205,19 +215,25 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         To->field.maxValue  = From->field.maxValue;
         To->field.minValue  = From->field.minValue;
         To->field.currPos   = From->field.currPos;
+        
+        //Status Conditions, we store the check isActive status
+        for(s32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+        { To->status[statusIdx].check.isActive = From->status[statusIdx].check.isActive; }
+        
         To->field.lColor    = From->field.lColor;
         To->field.rColor    = From->field.rColor;
         
-        To->ID = From->ID;
+        To->compendiumIdx   = From->compendiumIdx;
+        To->ID              = From->ID;
     }
     
     dest->turnsInRound = curr->turnsInRound;
     dest->orderAdjust  = curr->orderAdjust;
     
-    ls_uiTextBoxSet(cxt, &dest->RoundCounter, curr->RoundCounter.text);
+    ls_uiTextBoxSet(c, &dest->RoundCounter, curr->RoundCounter.text);
     dest->roundCount = curr->roundCount;
     
-    ls_uiTextBoxSet(cxt, &dest->Current, curr->Current.text);
+    ls_uiTextBoxSet(c, &dest->Current, curr->Current.text);
     dest->currIdx = curr->currIdx;
     
     for(u32 i = 0; i < COUNTER_NUM; i++)
@@ -225,8 +241,8 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         Counter *From = curr->Counters + i;
         Counter *To   = dest->Counters + i;
         
-        ls_uiTextBoxSet(cxt, &To->name, From->name.text);
-        ls_uiTextBoxSet(cxt, &To->rounds, From->rounds.text);
+        ls_uiTextBoxSet(c, &To->name, From->name.text);
+        ls_uiTextBoxSet(c, &To->rounds, From->rounds.text);
         
         To->roundsLeft      = From->roundsLeft;
         To->startIdxInOrder = From->startIdxInOrder;
@@ -239,18 +255,18 @@ void CopyState(UIContext *cxt, ProgramState *FromState, ProgramState *ToState)
         DiceThrowBox *From = curr->Throwers + i;
         DiceThrowBox *To   = dest->Throwers + i;
         
-        ls_uiTextBoxSet(cxt, &To->name,   From->name.text);
-        ls_uiTextBoxSet(cxt, &To->toHit,  From->toHit.text);
-        ls_uiTextBoxSet(cxt, &To->hitRes, From->hitRes.text);
-        ls_uiTextBoxSet(cxt, &To->damage, From->damage.text);
-        ls_uiTextBoxSet(cxt, &To->dmgRes, From->dmgRes.text);
+        ls_uiTextBoxSet(c, &To->name,   From->name.text);
+        ls_uiTextBoxSet(c, &To->toHit,  From->toHit.text);
+        ls_uiTextBoxSet(c, &To->hitRes, From->hitRes.text);
+        ls_uiTextBoxSet(c, &To->damage, From->damage.text);
+        ls_uiTextBoxSet(c, &To->dmgRes, From->dmgRes.text);
     }
     
-    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.name,   curr->GeneralThrower.name.text);
-    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.toHit,  curr->GeneralThrower.toHit.text);
-    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.hitRes, curr->GeneralThrower.hitRes.text);
-    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.damage, curr->GeneralThrower.damage.text);
-    ls_uiTextBoxSet(cxt, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
+    ls_uiTextBoxSet(c, &dest->GeneralThrower.name,   curr->GeneralThrower.name.text);
+    ls_uiTextBoxSet(c, &dest->GeneralThrower.toHit,  curr->GeneralThrower.toHit.text);
+    ls_uiTextBoxSet(c, &dest->GeneralThrower.hitRes, curr->GeneralThrower.hitRes.text);
+    ls_uiTextBoxSet(c, &dest->GeneralThrower.damage, curr->GeneralThrower.damage.text);
+    ls_uiTextBoxSet(c, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
     
     dest->EncounterSel.selectedIndex = curr->EncounterSel.selectedIndex;
     
