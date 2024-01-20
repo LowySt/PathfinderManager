@@ -1157,8 +1157,9 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
             if(removeID == ally->ID) 
             {
                 //NOTE: We remove the ally from the allies list by moving the last one in its place
+                //      Except if it is the last one itself
                 InitField *B = Page->AllyFields + (visibleAllies - 1);
-                CopyInitField(c, B, ally);
+                if(B != ally) { CopyInitField(c, B, ally); }
                 
                 ls_uiTextBoxClear(c, &B->editFields[IF_IDX_NAME]);
                 ls_uiTextBoxClear(c, &B->editFields[IF_IDX_BONUS]);
@@ -1190,8 +1191,9 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
             if(removeID == mob->ID)
             {
                 //NOTE: We remove the Mob from the mobs list by moving the last one in its place
+                //      Except if it is the last one itself
                 InitField *B = Page->MobFields + (visibleMobs - 1);
-                CopyInitField(c, B, mob);
+                if(B != mob) { CopyInitField(c, B, mob); }
                 
                 for(u32 j = 0; j < IF_IDX_COUNT; j++)
                 { ls_uiTextBoxClear(c, &B->editFields[j]); }
@@ -1734,7 +1736,7 @@ b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
     {
         c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
         ls_uiLabel(c, U"PF", x+182, y+5);
-        inputUse |= ls_uiTextBox(c, &F->maxLifeDisplay, x+203, y, 44, 20);
+        inputUse |= ls_uiTextBox(c, &F->maxLifeDisplay, x+203, y, 80, 20);
         
         Order *ord = GetOrderByID(F->ID);
         if(ord)
@@ -1744,8 +1746,8 @@ b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
             { c->widgetColor = ls_uiAlphaBlend(RGBA(0x33, 0x33, 0xCC, 150), base); }
         }
         
-        ls_uiLabel(c, U"NL", x+257, y+5);
-        inputUse |= ls_uiTextBox(c, &F->nonLethalDisplay, x+282, y, 44, 20);
+        ls_uiLabel(c, U"NL", x+297, y+5);
+        inputUse |= ls_uiTextBox(c, &F->nonLethalDisplay, x+322, y, 44, 20);
     }
     else
     {
