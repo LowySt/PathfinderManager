@@ -280,6 +280,9 @@ void CopyState(UIContext *c, ProgramState *FromState, ProgramState *ToState)
     
     ls_utf32Set(&dest->addNewAlly.name, curr->addNewAlly.name);
     dest->addNewAlly.callback1 = curr->addNewAlly.callback1;
+    
+    //NOTE: Misc Menu info
+    ToState->playerSettingsMenuItem->isVisible = !ToState->inBattle;
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -407,6 +410,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     for(u32 i = 0; i < MAX_UNDO_STATES; i++)
     {
         UndoStates[i].Init = UndoInitPages + i;
+        UndoStates[i].playerSettingsMenuItem = State.playerSettingsMenuItem;
         SetInitTab(uiContext, UndoStates + i);
     }
     
