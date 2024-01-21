@@ -141,10 +141,23 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     MobLifeHandler *h = (MobLifeHandler *)data;
     UITextBox *f = h->parent;
     
+    //TODO: If we lose focus without pressing Enter, it's a failure state
+    //      and mob->maxLife will not be recored. Which mean the order will be fucked!
+    //      Maybe through lsUI have an "OnFocusLost" callback assignable to UI elements (like the textbox) ?
     if(State.Init->isAdding)
     {
         if((c->lastFocus != (u64 *)f) && (c->currentFocus == (u64 *)f))
         { ls_uiTextBoxClear(c, f); }
+        
+        //NOTE: We're setting up the InitField maxLife
+        if(KeyPress(keyMap::Enter))
+        {
+            //NOTE: Clear up the '\n' printable key
+            ClearPrintableKey();
+            
+            h->mob->maxLife = ls_utf32ToInt(h->mob->maxLifeDisplay.text);
+            ls_uiFocusChange(c, 0x0);
+        }
         
         return FALSE;
     }
@@ -420,9 +433,9 @@ b32 ChangeOrder(UIContext *c, void *data)
 }
 
 b32 ResetOnClick(UIContext *, void *);
-void OnEncounterSelect(UIContext *c, void *data)
+b32 OnEncounterSelect(UIContext *c, void *data)
 {
-    if(State.inBattle) return;
+    if(State.inBattle) return FALSE;
     
     //NOTE: This is to avoid the program never being reset. I don't think it's necessary,
     //      but for "security" reasons we'll have it.
@@ -432,7 +445,7 @@ void OnEncounterSelect(UIContext *c, void *data)
     
     u32 idx = b->selectedIndex;
     
-    if(idx == 0) { ResetOnClick(c, 0); return; }
+    if(idx == 0) { ResetOnClick(c, 0); return FALSE; }
     
     Encounter *e = &State.encounters.Enc[idx-1];
     
@@ -484,7 +497,7 @@ void OnEncounterSelect(UIContext *c, void *data)
         ls_utf32Set(&t->damage.text, e->throwerDamage[i]);
     }
     
-    return;
+    return FALSE;
 }
 
 //TODO: When saving multiple new encounters, and no encounter is selected without resetting, the names get fucked.
@@ -988,10 +1001,10 @@ b32 ResetOnClick(UIContext *c, void *data)
     b32 StartAddingMob(UIContext *, void *);
     b32 StartAddingAlly(UIContext *, void *);
     ls_utf32Set(&Page->addNewMob.name, ls_utf32Constant(U"+"));
-    Page->addNewMob.onClick = StartAddingMob;
+    Page->addNewMob.callback1 = StartAddingMob;
     
     ls_utf32Set(&Page->addNewAlly.name, ls_utf32Constant(U"+"));
-    Page->addNewAlly.onClick = StartAddingAlly;
+    Page->addNewAlly.callback1 = StartAddingAlly;
     
     Page->EncounterSel.selectedIndex = 0;
     
@@ -1329,7 +1342,7 @@ b32 StartAddingMob(UIContext *c, void *data)
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewMob.name, ls_utf32Constant(U"Ok"));
-    State.Init->addNewMob.onClick = AddMobOnClick;
+    State.Init->addNewMob.callback1 = AddMobOnClick;
     
     return FALSE;
 }
@@ -1350,7 +1363,7 @@ b32 StartAddingAlly(UIContext *c, void *data)
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewAlly.name, ls_utf32Constant(U"Ok"));
-    State.Init->addNewAlly.onClick = AddAllyOnClick;
+    State.Init->addNewAlly.callback1 = AddAllyOnClick;
     
     return FALSE;
 }
@@ -1394,6 +1407,19 @@ b32 AddMobOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
+    //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
+    if(State.inBattle)
+    {
+        u32 tmpBuf[32] = {};
+        utf32 tmpString = { tmpBuf, 0, 32 };
+        
+        ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
+        ls_utf32Append(&tmpString, U"/"_W);
+        ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
+        
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
+    }
+    
     AddToOrder(f->maxLife, f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
     
     State.Init->Mobs.selectedIndex += 1;
@@ -1403,7 +1429,7 @@ b32 AddMobOnClick(UIContext *c, void *data)
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewMob.name, ls_utf32Constant(U"+"));
-    State.Init->addNewMob.onClick = StartAddingMob;
+    State.Init->addNewMob.callback1 = StartAddingMob;
     
     //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
     //      The entire new mob to be undone/redone in a single action.
@@ -1428,6 +1454,19 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
+    //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
+    if(State.inBattle)
+    {
+        u32 tmpBuf[32] = {};
+        utf32 tmpString = { tmpBuf, 0, 32 };
+        
+        ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
+        ls_utf32Append(&tmpString, U"/"_W);
+        ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
+        
+        ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
+    }
+    
     AddToOrder(f->maxLife, f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
     
     State.Init->Allies.selectedIndex += 1;
@@ -1437,7 +1476,7 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewAlly.name, ls_utf32Constant(U"+"));
-    State.Init->addNewAlly.onClick = StartAddingAlly;
+    State.Init->addNewAlly.callback1 = StartAddingAlly;
     
     //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
     //      The entire new mob to be undone/redone in a single action.
@@ -1451,20 +1490,20 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], ls_utf32Constant(name));
-    f->editFields[IF_IDX_NAME].preInput     = NULL;
-    f->editFields[IF_IDX_NAME].data         = NULL;
-    f->editFields[IF_IDX_NAME].isSingleLine = TRUE;
+    f->editFields[IF_IDX_NAME].callback1     = NULL;
+    f->editFields[IF_IDX_NAME].callback1Data = NULL;
+    f->editFields[IF_IDX_NAME].isSingleLine  = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], zeroUTF32);
-    f->editFields[IF_IDX_BONUS].maxLen       = 3; //NOTE: Allow for sign!
-    f->editFields[IF_IDX_BONUS].preInput     = NULL;
-    f->editFields[IF_IDX_BONUS].data         = NULL;
-    f->editFields[IF_IDX_BONUS].isSingleLine = TRUE;
+    f->editFields[IF_IDX_BONUS].maxLen        = 3; //NOTE: Allow for sign!
+    f->editFields[IF_IDX_BONUS].callback1     = NULL;
+    f->editFields[IF_IDX_BONUS].callback1Data = NULL;
+    f->editFields[IF_IDX_BONUS].isSingleLine  = TRUE;
     
-    f->editFields[IF_IDX_EXTRA].text         = ls_utf32Alloc(16);
-    f->editFields[IF_IDX_EXTRA].preInput     = NULL;
-    f->editFields[IF_IDX_EXTRA].data         = NULL;
-    f->editFields[IF_IDX_EXTRA].isSingleLine = FALSE;
+    f->editFields[IF_IDX_EXTRA].text          = ls_utf32Alloc(16);
+    f->editFields[IF_IDX_EXTRA].callback1     = NULL;
+    f->editFields[IF_IDX_EXTRA].callback1Data = NULL;
+    f->editFields[IF_IDX_EXTRA].isSingleLine  = FALSE;
     
     MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     handler->parent   = &f->maxLifeDisplay;
@@ -1472,10 +1511,10 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     handler->previous = ls_utf32Alloc(16);
     
     ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
-    f->maxLifeDisplay.maxLen       = 9;
-    f->maxLifeDisplay.preInput     = CustomMobLifeField;
-    f->maxLifeDisplay.data         = handler;
-    f->maxLifeDisplay.isSingleLine = TRUE;
+    f->maxLifeDisplay.maxLen        = 9;
+    f->maxLifeDisplay.callback1     = CustomMobLifeField;
+    f->maxLifeDisplay.callback1Data = handler;
+    f->maxLifeDisplay.isSingleLine  = TRUE;
     
     MobLifeHandler *nlHandler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     nlHandler->parent   = &f->nonLethalDisplay;
@@ -1483,61 +1522,61 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     nlHandler->previous = ls_utf32Alloc(16);
     
     ls_uiTextBoxSet(c, &f->nonLethalDisplay, zeroUTF32);
-    f->nonLethalDisplay.maxLen       = 4;
-    f->nonLethalDisplay.preInput     = CustomMobNonLethalField;
-    f->nonLethalDisplay.data         = nlHandler;
-    f->nonLethalDisplay.isSingleLine = TRUE;
+    f->nonLethalDisplay.maxLen        = 4;
+    f->nonLethalDisplay.callback1     = CustomMobNonLethalField;
+    f->nonLethalDisplay.callback1Data = nlHandler;
+    f->nonLethalDisplay.isSingleLine  = TRUE;
     
     f->maxLife   = 0;
     f->nonLethal = 0;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_TOTALAC], zeroUTF32);
-    f->editFields[IF_IDX_TOTALAC].maxLen       = 2;
-    f->editFields[IF_IDX_TOTALAC].preInput     = NULL;
-    f->editFields[IF_IDX_TOTALAC].data         = NULL;
-    f->editFields[IF_IDX_TOTALAC].isSingleLine = TRUE;
+    f->editFields[IF_IDX_TOTALAC].maxLen        = 2;
+    f->editFields[IF_IDX_TOTALAC].callback1     = NULL;
+    f->editFields[IF_IDX_TOTALAC].callback1Data = NULL;
+    f->editFields[IF_IDX_TOTALAC].isSingleLine  = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_TOUCHAC], zeroUTF32);
-    f->editFields[IF_IDX_TOUCHAC].maxLen       = 2;
-    f->editFields[IF_IDX_TOUCHAC].preInput     = NULL;
-    f->editFields[IF_IDX_TOUCHAC].data         = NULL;
-    f->editFields[IF_IDX_TOUCHAC].isSingleLine = TRUE;
+    f->editFields[IF_IDX_TOUCHAC].maxLen        = 2;
+    f->editFields[IF_IDX_TOUCHAC].callback1     = NULL;
+    f->editFields[IF_IDX_TOUCHAC].callback1Data = NULL;
+    f->editFields[IF_IDX_TOUCHAC].isSingleLine  = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FLATAC], zeroUTF32);
-    f->editFields[IF_IDX_FLATAC].maxLen       = 2;
-    f->editFields[IF_IDX_FLATAC].preInput     = NULL;
-    f->editFields[IF_IDX_FLATAC].data         = NULL;
-    f->editFields[IF_IDX_FLATAC].isSingleLine = TRUE;
+    f->editFields[IF_IDX_FLATAC].maxLen        = 2;
+    f->editFields[IF_IDX_FLATAC].callback1     = NULL;
+    f->editFields[IF_IDX_FLATAC].callback1Data = NULL;
+    f->editFields[IF_IDX_FLATAC].isSingleLine  = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_LOWAC], zeroUTF32);
-    f->editFields[IF_IDX_LOWAC].maxLen       = 2;
-    f->editFields[IF_IDX_LOWAC].preInput     = NULL;
-    f->editFields[IF_IDX_LOWAC].data         = NULL;
-    f->editFields[IF_IDX_LOWAC].isSingleLine = TRUE;
+    f->editFields[IF_IDX_LOWAC].maxLen        = 2;
+    f->editFields[IF_IDX_LOWAC].callback1     = NULL;
+    f->editFields[IF_IDX_LOWAC].callback1Data = NULL;
+    f->editFields[IF_IDX_LOWAC].isSingleLine  = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_CONSAVE], zeroUTF32);
-    f->editFields[IF_IDX_CONSAVE].maxLen       = 2;
-    f->editFields[IF_IDX_CONSAVE].preInput     = NULL;
-    f->editFields[IF_IDX_CONSAVE].data         = NULL;
-    f->editFields[IF_IDX_CONSAVE].isSingleLine = TRUE;
+    f->editFields[IF_IDX_CONSAVE].maxLen        = 2;
+    f->editFields[IF_IDX_CONSAVE].callback1     = NULL;
+    f->editFields[IF_IDX_CONSAVE].callback1Data = NULL;
+    f->editFields[IF_IDX_CONSAVE].isSingleLine  = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_DEXSAVE], zeroUTF32);
-    f->editFields[IF_IDX_DEXSAVE].maxLen       = 2;
-    f->editFields[IF_IDX_DEXSAVE].preInput     = NULL;
-    f->editFields[IF_IDX_DEXSAVE].data         = NULL;
-    f->editFields[IF_IDX_DEXSAVE].isSingleLine = TRUE;
+    f->editFields[IF_IDX_DEXSAVE].maxLen        = 2;
+    f->editFields[IF_IDX_DEXSAVE].callback1     = NULL;
+    f->editFields[IF_IDX_DEXSAVE].callback1Data = NULL;
+    f->editFields[IF_IDX_DEXSAVE].isSingleLine  = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_WISSAVE], zeroUTF32);
-    f->editFields[IF_IDX_WISSAVE].maxLen       = 2;
-    f->editFields[IF_IDX_WISSAVE].preInput     = NULL;
-    f->editFields[IF_IDX_WISSAVE].data         = NULL;
-    f->editFields[IF_IDX_WISSAVE].isSingleLine = TRUE;
+    f->editFields[IF_IDX_WISSAVE].maxLen        = 2;
+    f->editFields[IF_IDX_WISSAVE].callback1     = NULL;
+    f->editFields[IF_IDX_WISSAVE].callback1Data = NULL;
+    f->editFields[IF_IDX_WISSAVE].isSingleLine  = TRUE;
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FINAL], zeroUTF32);
-    f->editFields[IF_IDX_FINAL].maxLen       = 2;
-    f->editFields[IF_IDX_FINAL].preInput     = NULL;
-    f->editFields[IF_IDX_FINAL].data         = NULL;
-    f->editFields[IF_IDX_FINAL].isSingleLine = TRUE;
+    f->editFields[IF_IDX_FINAL].maxLen        = 2;
+    f->editFields[IF_IDX_FINAL].callback1     = NULL;
+    f->editFields[IF_IDX_FINAL].callback1Data = NULL;
+    f->editFields[IF_IDX_FINAL].isSingleLine  = TRUE;
     
     f->compendiumIdx      = -1;
     
@@ -1558,10 +1597,10 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     { 
         UITextBox *f = Page->PlayerInit + i;
         ls_uiTextBoxSet(c, f, ls_utf32Constant(U"0"));
-        f->maxLen       = 2;
-        f->preInput     = CustomPlayerText;
-        f->data         = f;
-        f->isSingleLine = TRUE;
+        f->maxLen        = 2;
+        f->callback1     = CustomPlayerText;
+        f->callback1Data = f;
+        f->isSingleLine  = TRUE;
     }
     
     s32 currID = party_count;
@@ -1595,12 +1634,12 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         orderHandler->order  = f;
         
         //TODO: Cannot use a constant string here, because it HAS to be modifiable to change the order
-        f->pos.text         = ls_utf32FromInt(i);
-        f->pos.maxLen       = 2;
-        f->pos.preInput     = ChangeOrder;
-        f->pos.data         = orderHandler;
-        f->pos.isReadonly   = TRUE;
-        f->pos.isSingleLine = TRUE;
+        f->pos.text          = ls_utf32FromInt(i);
+        f->pos.maxLen        = 2;
+        f->pos.callback1     = ChangeOrder;
+        f->pos.callback1Data = orderHandler;
+        f->pos.isReadonly    = TRUE;
+        f->pos.isSingleLine  = TRUE;
         
         ls_uiButtonInit(c, &f->remove, UIBUTTON_CLASSIC, ls_utf32Constant(U"X"), RemoveOrderOnClick, NULL, (void *)((u64)i));
         
@@ -1683,8 +1722,8 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     
     //Encounter Selector
     {
-        Page->EncounterSel.onSelect = OnEncounterSelect;
-        Page->EncounterSel.data     = &Page->EncounterSel;
+        Page->EncounterSel.callback1     = OnEncounterSelect;
+        Page->EncounterSel.callback1Data = &Page->EncounterSel;
         ls_uiListBoxAddEntry(c, &Page->EncounterSel, ls_utf32Constant(NoEncounterStr));
         for(u32 i = 0; i < PState->encounters.numEncounters; i++)
         { ls_uiListBoxAddEntry(c, &Page->EncounterSel, PState->encounters.Enc[i].name); }

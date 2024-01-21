@@ -115,7 +115,7 @@ b32 DrawThemePicker(UIContext *c)
         //NOTE: Background example rect
         rect = { previewX + xMargin, topY - yMargin - rectH, (s32)(0.2f*previewW), rectH };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 0; theme->wheel.apply.onClick = themeApplyToBackground; }
+        { theme->selected = 0; theme->wheel.apply.callback1 = themeApplyToBackground; }
         
         if(theme->selected == 0) 
         { ls_uiRect(c, rect.x, rect.y, rect.w, rect.h, theme->wheel.pickedColor, RGBg(0xFF), 2); }
@@ -126,7 +126,7 @@ b32 DrawThemePicker(UIContext *c)
         rect = ls_uiLabelRect(c, ls_utf32Constant(U"Example"), previewX + 2*xMargin + (s32)(0.2f*previewW), 
                               topY - yMargin - (s32)(0.7f*rectH));
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 1; theme->wheel.apply.onClick = themeApplyToText; }
+        { theme->selected = 1; theme->wheel.apply.callback1 = themeApplyToText; }
         
         if(theme->selected == 1)
         {
@@ -143,7 +143,7 @@ b32 DrawThemePicker(UIContext *c)
         rect = ls_uiLabelRect(c, ls_utf32Constant(U"Inverted"), previewX + 2*xMargin + (s32)(0.45f*previewW), 
                               topY - yMargin - (s32)(0.7f*rectH));
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 2; theme->wheel.apply.onClick = themeApplyToInvertedText; }
+        { theme->selected = 2; theme->wheel.apply.callback1 = themeApplyToInvertedText; }
         
         if(theme->selected == 2)
         {
@@ -159,7 +159,7 @@ b32 DrawThemePicker(UIContext *c)
         //NOTE: Border Color
         rect = { previewX + xMargin, topY - 2*yMargin - 2*rectH, (s32)(0.2f*previewW), rectH };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 3; theme->wheel.apply.onClick = themeApplyToBorder; }
+        { theme->selected = 3; theme->wheel.apply.callback1 = themeApplyToBorder; }
         
         UIRect smaller = { rect.x+(s32)(0.1f*rect.w), rect.y+(s32)(0.1f*rect.h), (s32)(0.8f*rect.w), (s32)(0.8f*rect.h) };
         if(theme->selected == 3)
@@ -179,7 +179,7 @@ b32 DrawThemePicker(UIContext *c)
         
         rect = { previewX + 2*xMargin + (s32)(0.2f*previewW), topY - 2*yMargin - rectH-buttHi.h, buttHi.w, buttHi.h };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 4; theme->wheel.apply.onClick = themeApplyToHighlite; }
+        { theme->selected = 4; theme->wheel.apply.callback1 = themeApplyToHighlite; }
         
         if(theme->selected == 4)
         {
@@ -201,7 +201,7 @@ b32 DrawThemePicker(UIContext *c)
         static UIButton buttPr = ls_uiButtonInit(c, UIBUTTON_CLASSIC, ls_utf32Constant(U"Pressed"), NULL, NULL, NULL);
         rect = { rect.x + (s32)(0.5f*xMargin) + buttHi.w, topY - 2*yMargin - rectH - buttPr.h, buttPr.w, buttPr.h };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 5; theme->wheel.apply.onClick = themeApplyToPressed; }
+        { theme->selected = 5; theme->wheel.apply.callback1 = themeApplyToPressed; }
         
         if(theme->selected == 5)
         {
@@ -222,7 +222,7 @@ b32 DrawThemePicker(UIContext *c)
         //NOTE: Inverted Widget Color
         rect = { previewX + xMargin, topY - 3*yMargin - 3*rectH, (s32)(0.2f*previewW), rectH };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 6; theme->wheel.apply.onClick = themeApplyToInvertedWidget; }
+        { theme->selected = 6; theme->wheel.apply.callback1 = themeApplyToInvertedWidget; }
         
         if(theme->selected == 6) 
         { ls_uiRect(c, rect.x, rect.y, rect.w, rect.h, theme->wheel.pickedColor, RGBg(0xFF), 2); }
@@ -232,7 +232,7 @@ b32 DrawThemePicker(UIContext *c)
         //NOTE: Widget Color
         rect = { previewX + 2*xMargin + rect.w, topY - 3*yMargin - 3*rectH, (s32)(0.2f*previewW), rectH };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 7; theme->wheel.apply.onClick = themeApplyToWidget; }
+        { theme->selected = 7; theme->wheel.apply.callback1 = themeApplyToWidget; }
         
         if(theme->selected == 7) 
         { ls_uiRect(c, rect.x, rect.y, rect.w, rect.h, theme->wheel.pickedColor, RGBg(0xFF), 2); }
@@ -243,7 +243,7 @@ b32 DrawThemePicker(UIContext *c)
         //NOTE: Menu Bar Color
         rect = { previewX + 3*xMargin + 2*rect.w, topY - 3*yMargin - 3*rectH, (s32)(0.2f*previewW), rectH };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
-        { theme->selected = 8; theme->wheel.apply.onClick = themeApplyToMenu; }
+        { theme->selected = 8; theme->wheel.apply.callback1 = themeApplyToMenu; }
         
         if(theme->selected == 8) 
         { ls_uiRect(c, rect.x, rect.y, rect.w, rect.h, theme->wheel.pickedColor, RGBg(0xFF), 2); }

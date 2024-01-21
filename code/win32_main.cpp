@@ -276,10 +276,10 @@ void CopyState(UIContext *c, ProgramState *FromState, ProgramState *ToState)
     
     //NOTE: Restore state of Add New Buttons
     ls_utf32Set(&dest->addNewMob.name, curr->addNewMob.name);
-    dest->addNewMob.onClick = curr->addNewMob.onClick;
+    dest->addNewMob.callback1 = curr->addNewMob.callback1;
     
     ls_utf32Set(&dest->addNewAlly.name, curr->addNewAlly.name);
-    dest->addNewAlly.onClick = curr->addNewAlly.onClick;
+    dest->addNewAlly.callback1 = curr->addNewAlly.callback1;
 }
 
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
@@ -304,7 +304,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     globalArena     = ls_arenaCreate(MBytes(12));
     fileArena       = ls_arenaCreate(MBytes(4));
-    stateArena      = ls_arenaCreate(MBytes(8));
+    stateArena      = ls_arenaCreate(MBytes(10));
     saveArena       = ls_arenaCreate(MBytes(4));
     renderArena     = ls_arenaCreate(KBytes(8));
     
@@ -593,7 +593,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             //NOTE: We close the theme selector
             if(KeyPress(keyMap::Escape) && State.themePicker.isShown) { State.themePicker.isShown = FALSE; }
-            
             
             //NOTE: Right-Alt Drag, only when nothing is in focus
             if(KeyHeld(keyMap::RAlt) && LeftClick && uiContext->currentFocus == 0)

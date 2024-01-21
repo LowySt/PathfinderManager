@@ -2522,7 +2522,7 @@ void LoadCompendium(UIContext *c, string path)
     { 
         ls_uiButtonInit(c, &compendium.arch.archetypes[archIdx], UIBUTTON_CLASSIC,
                         archetypeName[archIdx], CompendiumSelectArchetype);
-        compendium.arch.archetypes[archIdx].data = (void*)((s64)archIdx);
+        compendium.arch.archetypes[archIdx].callback1Data = (void*)((s64)archIdx);
     }
     
     //NOTE: First Initialize the cached page to avoid constant alloc/free when setting it
@@ -2722,30 +2722,30 @@ void SetMonsterTable(UIContext *c)
     nameSearchMob->searchBuffer         = &compendium.codex.names;
     nameSearchMob->kind                 = SEARCH_NAME;
     
-    compendium.searchBarNameMobs.text         = ls_utf32Alloc(64);
-    compendium.searchBarNameMobs.postInput    = CompendiumSearchFunctionMobs;
-    compendium.searchBarNameMobs.data         = nameSearchMob;
-    compendium.searchBarNameMobs.isSingleLine = TRUE;
+    compendium.searchBarNameMobs.text          = ls_utf32Alloc(64);
+    compendium.searchBarNameMobs.callback2     = CompendiumSearchFunctionMobs;
+    compendium.searchBarNameMobs.callback2Data = nameSearchMob;
+    compendium.searchBarNameMobs.isSingleLine  = TRUE;
     
     CompendiumSearchData *gsSearchMob = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
     gsSearchMob->searchBar            = &compendium.searchBarGSMobs;
     gsSearchMob->searchBuffer         = NULL; //NOTE: Not Used.
     gsSearchMob->kind                 = SEARCH_GS;
     
-    compendium.searchBarGSMobs.text         = ls_utf32Alloc(8);
-    compendium.searchBarGSMobs.postInput    = CompendiumSearchFunctionMobs;
-    compendium.searchBarGSMobs.data         = gsSearchMob;
-    compendium.searchBarGSMobs.isSingleLine = TRUE;
+    compendium.searchBarGSMobs.text          = ls_utf32Alloc(8);
+    compendium.searchBarGSMobs.callback2     = CompendiumSearchFunctionMobs;
+    compendium.searchBarGSMobs.callback2Data = gsSearchMob;
+    compendium.searchBarGSMobs.isSingleLine  = TRUE;
     
     CompendiumSearchData *typeSearchMob = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
     typeSearchMob->searchBar            = &compendium.searchBarTypeMobs;
     typeSearchMob->searchBuffer         = &compendium.codex.types;
     typeSearchMob->kind                 = SEARCH_TYPE;
     
-    compendium.searchBarTypeMobs.text         = ls_utf32Alloc(64);
-    compendium.searchBarTypeMobs.postInput    = CompendiumSearchFunctionMobs;
-    compendium.searchBarTypeMobs.data         = typeSearchMob;
-    compendium.searchBarTypeMobs.isSingleLine = TRUE;
+    compendium.searchBarTypeMobs.text          = ls_utf32Alloc(64);
+    compendium.searchBarTypeMobs.callback2     = CompendiumSearchFunctionMobs;
+    compendium.searchBarTypeMobs.callback2Data = typeSearchMob;
+    compendium.searchBarTypeMobs.isSingleLine  = TRUE;
     
     ls_uiSelectFontByPixelHeight(c, 18);
     
@@ -2764,33 +2764,33 @@ void SetNPCTable(UIContext *c)
     nameSearchNPC->searchBuffer         = &compendium.codex.names;
     nameSearchNPC->kind                 = SEARCH_NAME;
     
-    UITextBox *name    = &compendium.searchBarNameNPCs;
-    name->text         = ls_utf32Alloc(64);
-    name->postInput    = CompendiumSearchFunctionNPCs;
-    name->data         = nameSearchNPC;
-    name->isSingleLine = TRUE;
+    UITextBox *name     = &compendium.searchBarNameNPCs;
+    name->text          = ls_utf32Alloc(64);
+    name->callback2     = CompendiumSearchFunctionNPCs;
+    name->callback2Data = nameSearchNPC;
+    name->isSingleLine  = TRUE;
     
     CompendiumSearchData *gsSearchNPC = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
     gsSearchNPC->searchBar            = &compendium.searchBarGSNPCs;
     gsSearchNPC->searchBuffer         = NULL; //NOTE: Not Used.
     gsSearchNPC->kind                 = SEARCH_GS;
     
-    UITextBox *gs    = &compendium.searchBarGSNPCs;
-    gs->text         = ls_utf32Alloc(8);
-    gs->postInput    = CompendiumSearchFunctionNPCs;
-    gs->data         = gsSearchNPC;
-    gs->isSingleLine = TRUE;
+    UITextBox *gs     = &compendium.searchBarGSNPCs;
+    gs->text          = ls_utf32Alloc(8);
+    gs->callback2     = CompendiumSearchFunctionNPCs;
+    gs->callback2Data = gsSearchNPC;
+    gs->isSingleLine  = TRUE;
     
     CompendiumSearchData *typeSearchNPC = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
     typeSearchNPC->searchBar            = &compendium.searchBarTypeNPCs;
     typeSearchNPC->searchBuffer         = &compendium.codex.types;
     typeSearchNPC->kind                 = SEARCH_TYPE;
     
-    UITextBox *type    = &compendium.searchBarTypeNPCs;
-    type->text         = ls_utf32Alloc(64);
-    type->postInput    = CompendiumSearchFunctionNPCs;
-    type->data         = typeSearchNPC;
-    type->isSingleLine = TRUE;
+    UITextBox *type     = &compendium.searchBarTypeNPCs;
+    type->text          = ls_utf32Alloc(64);
+    type->callback2     = CompendiumSearchFunctionNPCs;
+    type->callback2Data = typeSearchNPC;
+    type->isSingleLine  = TRUE;
     
     ls_uiSelectFontByPixelHeight(c, 18);
     
