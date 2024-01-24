@@ -699,7 +699,30 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
         addID                            += 1;
     }
     
-    //TODO: I'm not updating throwers. Need to work on this.
+    //NOTETODO: Currently Encounters don't know if there are any throwers set. So we just... guess
+    //          Also the InitPage doesn't know if there are any throwers set... Kinda stupid.
+    s32 thIdx = 0;
+    if((e->throwerName[0].len != 0) || (e->throwerHit[0].len != 0) || (e->throwerDamage[0].len != 0))
+    {
+        for(s32 i = 0; i < THROWER_NUM; i++)
+        {
+            DiceThrowBox *t = State.Init->Throwers + i;
+            if((t->name.text.len != 0) || (t->toHit.text.len != 0) || (t->damage.text.len != 0))
+            { continue; }
+            
+            ls_uiTextBoxClear(c, &t->name);
+            ls_uiTextBoxClear(c, &t->toHit);
+            ls_uiTextBoxClear(c, &t->hitRes);
+            ls_uiTextBoxClear(c, &t->damage);
+            ls_uiTextBoxClear(c, &t->dmgRes);
+            
+            ls_utf32Set(&t->name.text,   e->throwerName[thIdx]);
+            ls_utf32Set(&t->toHit.text,  e->throwerHit[thIdx]);
+            ls_utf32Set(&t->damage.text, e->throwerDamage[thIdx]);
+            
+            thIdx += 1;
+        }
+    }
     
     return TRUE;
 }

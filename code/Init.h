@@ -143,6 +143,7 @@ struct EncounterInitEntry
     s32 compendiumIdx;
 };
 
+//TODO: Keep track of how many throwers are set.
 struct Encounter
 {
     utf32 name;
@@ -261,6 +262,7 @@ struct DiceThrowBox
 
 s32 globalSelectedIndex = -1;
 
+//TODO: Keep track of how many throwers are set
 struct InitPage
 {
     UIListBox    Mobs;
