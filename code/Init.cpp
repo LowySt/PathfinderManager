@@ -1818,7 +1818,7 @@ b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
     ls_uiLabel(c, U"Nome", x-45, y+5);
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_NAME], x, y, 156, 20);
     
-    if(State.inBattle)
+    if(State.inBattle && !State.Init->isAdding)
     {
         c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
         ls_uiLabel(c, U"PF", x+182, y+5);
