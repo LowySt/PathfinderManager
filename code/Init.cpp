@@ -109,6 +109,26 @@ b32 selectStylePrana(UIContext *c, void *data)
     return FALSE;
 }
 
+b32 CustomMobLifeFieldFocusLost(UIContext *c, void *data)
+{
+    MobLifeHandler *h = (MobLifeHandler *)data;
+    
+    if(State.inBattle && !State.Init->isAdding && !h->isEditing) { return FALSE; }
+    
+    //NOTE: We lost focus, let's reset the box
+    if(h->isEditing) {
+        UITextBox *f = h->parent;
+        ls_uiTextBoxClear(c, f);
+        ls_uiTextBoxSet(c, f, h->previous);
+        h->isEditing = FALSE;
+        return TRUE;
+    }
+    
+    //NOTE: We aren't editing. We must be outside of battle and setting-up or we are adding a new init
+    h->mob->maxLife = ls_utf32ToInt(h->mob->maxLifeDisplay.text);
+    return TRUE;
+}
+
 b32 CustomPlayerText(UIContext *c, void *data)
 {
     Input *UserInput = &c->UserInput;
@@ -141,9 +161,6 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     MobLifeHandler *h = (MobLifeHandler *)data;
     UITextBox *f = h->parent;
     
-    //TODO: If we lose focus without pressing Enter, it's a failure state
-    //      and mob->maxLife will not be recored. Which mean the order will be fucked!
-    //      Maybe through lsUI have an "OnFocusLost" callback assignable to UI elements (like the textbox) ?
     if(State.Init->isAdding)
     {
         if((c->lastFocus != (u64 *)f) && (c->currentFocus == (u64 *)f))
@@ -154,8 +171,6 @@ b32 CustomMobLifeField(UIContext *c, void *data)
         {
             //NOTE: Clear up the '\n' printable key
             ClearPrintableKey();
-            
-            h->mob->maxLife = ls_utf32ToInt(h->mob->maxLifeDisplay.text);
             ls_uiFocusChange(c, 0x0);
         }
         
@@ -172,19 +187,8 @@ b32 CustomMobLifeField(UIContext *c, void *data)
         {
             //NOTE: Clear up the '\n' printable key
             ClearPrintableKey();
-            
-            h->mob->maxLife = ls_utf32ToInt(h->mob->maxLifeDisplay.text);
             ls_uiFocusChange(c, 0x0);
         }
-    }
-    
-    //NOTE: We lost focus, let's reset the box
-    //TODO: Would be better to perform these changes when changing focus,
-    //      rather than after the focus was re-obtained. This would need to happen outside.
-    if((c->lastFocus != (u64 *)f) && h->isEditing) {
-        ls_uiTextBoxClear(c, f);
-        ls_uiTextBoxSet(c, f, h->previous);
-        h->isEditing = FALSE;
     }
     
     if(LeftClick && !h->isEditing && State.inBattle)
@@ -240,6 +244,23 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     return inputUse;
 }
 
+b32 CustomMobNonLethalFieldFocusLost(UIContext *c, void *data)
+{
+    MobLifeHandler *h = (MobLifeHandler *)data;
+    
+    //NOTE: We lost focus, let's reset the box
+    if(h->isEditing) {
+        UITextBox *f = h->parent;
+        ls_uiTextBoxClear(c, f);
+        ls_uiTextBoxSet(c, f, h->previous);
+        h->isEditing = FALSE;
+        return TRUE;
+    }
+    
+    return FALSE;
+}
+
+
 b32 CustomMobNonLethalField(UIContext *c, void *data)
 {
     Input *UserInput = &c->UserInput;
@@ -250,15 +271,6 @@ b32 CustomMobNonLethalField(UIContext *c, void *data)
     
     AssertMsg(State.inBattle, "Can't select this outside of battle!");
     if(!State.inBattle) { return FALSE; }
-    
-    //NOTE: We lost focus, let's reset the box
-    //TODO: Would be better to perform these changes when changing focus,
-    //      rather than after the focus was re-obtained. This would need to happen outside.
-    if((c->lastFocus != (u64 *)f) && h->isEditing) {
-        ls_uiTextBoxClear(c, f);
-        ls_uiTextBoxSet(c, f, h->previous);
-        h->isEditing = FALSE;
-    }
     
     if(LeftClick && !h->isEditing)
     { 
@@ -927,7 +939,9 @@ b32 ResetOnClick(UIContext *c, void *data)
         }
         
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
-        f->maxLife = 0;
+        ls_uiTextBoxSet(c, &f->nonLethalDisplay, zeroUTF32);
+        f->maxLife   = 0;
+        f->nonLethal = 0;
         
         f->compendiumIdx = -1;
         f->ID            = currID;
@@ -948,7 +962,9 @@ b32 ResetOnClick(UIContext *c, void *data)
         ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FINAL], zeroUTF32);
         
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
+        ls_uiTextBoxSet(c, &f->nonLethalDisplay, zeroUTF32);
         f->maxLife = 0;
+        f->nonLethal = 0;
         
         f->compendiumIdx = -1;
         f->ID            = currID;
@@ -962,9 +978,13 @@ b32 ResetOnClick(UIContext *c, void *data)
         f->pos.isReadonly = TRUE;
         
         ls_utf32Clear(&f->field.text);
-        f->field.maxValue = 100;
-        f->field.minValue = -30;
-        f->field.currPos  = 1.0;
+        f->field.maxValue  = 100;
+        f->field.minValue  = -30;
+        f->field.currPos   = 1.0;
+        f->field.currValue = 0;
+        
+        for(s32 j = 0; j < MAX_STATUS; j++) { f->status->check.isActive = FALSE; }
+        
         f->compendiumIdx  = -1;
         f->ID             = -1;
     }
@@ -1511,10 +1531,12 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     handler->previous = ls_utf32Alloc(16);
     
     ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
-    f->maxLifeDisplay.maxLen        = 9;
-    f->maxLifeDisplay.callback1     = CustomMobLifeField;
-    f->maxLifeDisplay.callback1Data = handler;
-    f->maxLifeDisplay.isSingleLine  = TRUE;
+    f->maxLifeDisplay.maxLen          = 9;
+    f->maxLifeDisplay.callback1       = CustomMobLifeField;
+    f->maxLifeDisplay.callback1Data   = handler;
+    f->maxLifeDisplay.OnFocusLost     = CustomMobLifeFieldFocusLost;
+    f->maxLifeDisplay.onFocusLostData = handler;
+    f->maxLifeDisplay.isSingleLine    = TRUE;
     
     MobLifeHandler *nlHandler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     nlHandler->parent   = &f->nonLethalDisplay;
@@ -1522,10 +1544,12 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     nlHandler->previous = ls_utf32Alloc(16);
     
     ls_uiTextBoxSet(c, &f->nonLethalDisplay, zeroUTF32);
-    f->nonLethalDisplay.maxLen        = 4;
-    f->nonLethalDisplay.callback1     = CustomMobNonLethalField;
-    f->nonLethalDisplay.callback1Data = nlHandler;
-    f->nonLethalDisplay.isSingleLine  = TRUE;
+    f->nonLethalDisplay.maxLen          = 4;
+    f->nonLethalDisplay.callback1       = CustomMobNonLethalField;
+    f->nonLethalDisplay.callback1Data   = nlHandler;
+    f->nonLethalDisplay.OnFocusLost     = CustomMobNonLethalFieldFocusLost;
+    f->nonLethalDisplay.onFocusLostData = nlHandler;
+    f->nonLethalDisplay.isSingleLine    = TRUE;
     
     f->maxLife   = 0;
     f->nonLethal = 0;

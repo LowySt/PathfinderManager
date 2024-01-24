@@ -581,12 +581,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 suppressingUndoRecord = FALSE;
             }
             
-            //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
-            if(LeftClick && !uiContext->focusWasSetThisFrame)
-            { 
-                uiContext->currentFocus = 0;
-            }
-            
             //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob
             if(KeyPress(keyMap::Escape) && !State.Init->isAdding && (mainCachedPage.talentIndex == -1))
             { globalSelectedIndex = -1; }
