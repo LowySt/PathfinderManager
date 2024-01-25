@@ -815,6 +815,8 @@ b32 SetOnClick(UIContext *c, void *data)
 {
     AssertMsg(!State.inBattle, "Clicking this should be impossible while in Battle\n");
     
+    if(State.Init->isAdding) { return FALSE; }
+    
     InitPage *Page = State.Init;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
@@ -2198,7 +2200,18 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiListBox(c, &Page->Allies, 1094, alliesListY, 100, 20, 1);
             
             inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40);
-            inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40);
+            
+            if(Page->isAdding) { 
+                Color origBkg = c->widgetColor;
+                c->widgetColor = ls_uiDarkenRGB(c->widgetColor, 0.2);
+                inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40);
+                c->widgetColor = origBkg;
+            }
+            else
+            {
+                inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40);
+            }
+            
             inputUse |= ls_uiButton(c, &Page->Reset, 616, yPos-40);
         }
         else
