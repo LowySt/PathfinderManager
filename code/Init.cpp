@@ -124,8 +124,6 @@ b32 CustomMobLifeFieldFocusLost(UIContext *c, void *data)
         return TRUE;
     }
     
-    //NOTE: We aren't editing. We must be outside of battle and setting-up or we are adding a new init
-    h->mob->maxLife = ls_utf32ToInt(h->mob->maxLifeDisplay.text);
     return TRUE;
 }
 
@@ -166,14 +164,6 @@ b32 CustomMobLifeField(UIContext *c, void *data)
         if((c->lastFocus != (u64 *)f) && (c->currentFocus == (u64 *)f))
         { ls_uiTextBoxClear(c, f); }
         
-        //NOTE: We're setting up the InitField maxLife
-        if(KeyPress(keyMap::Enter))
-        {
-            //NOTE: Clear up the '\n' printable key
-            ClearPrintableKey();
-            ls_uiFocusChange(c, 0x0);
-        }
-        
         return FALSE;
     }
     
@@ -182,13 +172,7 @@ b32 CustomMobLifeField(UIContext *c, void *data)
         if((c->lastFocus != (u64 *)f) && (c->currentFocus == (u64 *)f))
         { ls_uiTextBoxClear(c, f); }
         
-        //NOTE: We're setting up the InitField maxLife
-        if(KeyPress(keyMap::Enter))
-        {
-            //NOTE: Clear up the '\n' printable key
-            ClearPrintableKey();
-            ls_uiFocusChange(c, 0x0);
-        }
+        return FALSE;
     }
     
     if(LeftClick && !h->isEditing && State.inBattle)
@@ -311,6 +295,22 @@ b32 CustomMobNonLethalField(UIContext *c, void *data)
     }
     
     return inputUse;
+}
+
+b32 OrderPositionOnFocusLost(UIContext *c, void *data)
+{
+    MobLifeHandler *h = (MobLifeHandler *)data;
+    
+    //NOTE: We lost focus, let's reset the box
+    if(h->isEditing) {
+        UITextBox *f = h->parent;
+        ls_uiTextBoxClear(c, f);
+        ls_uiTextBoxSet(c, f, h->previous);
+        h->isEditing = FALSE;
+        return TRUE;
+    }
+    
+    return FALSE;
 }
 
 b32 ChangeOrder(UIContext *c, void *data)
@@ -833,6 +833,9 @@ b32 SetOnClick(UIContext *c, void *data)
     {
         InitField *f = Page->MobFields + i;
         
+        //NOTE: If it's a custom mob!
+        if(f->compendiumIdx == -1) { f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text); }
+        
         ord[idx].init          = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         ord[idx].name          = &f->editFields[IF_IDX_NAME].text;
         ord[idx].maxLife       = f->maxLife;
@@ -851,6 +854,9 @@ b32 SetOnClick(UIContext *c, void *data)
     for(u32 i = 0; i < visibleAllies; i++)
     {
         InitField *f = Page->AllyFields + i;
+        
+        //NOTE: If it's a custom ally!
+        if(f->compendiumIdx == -1) { f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text); }
         
         ord[idx].init          = ls_utf32ToInt(f->editFields[IF_IDX_FINAL].text);
         ord[idx].name          = &f->editFields[IF_IDX_NAME].text;
@@ -1450,6 +1456,9 @@ b32 AddMobOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
+    //NOTE: Set the maxLife field of the mob
+    f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text);
+    
     //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
     if(State.inBattle)
     {
@@ -1496,6 +1505,9 @@ b32 AddAllyOnClick(UIContext *c, void *data)
         f->editFields[i].isReadonly  = TRUE;
     }
     f->ID = addID;
+    
+    //NOTE: Set the maxLife field of the ally
+    f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text);
     
     //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
     if(State.inBattle)
@@ -1681,12 +1693,14 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         orderHandler->order  = f;
         
         //TODO: Cannot use a constant string here, because it HAS to be modifiable to change the order
-        f->pos.text          = ls_utf32FromInt(i);
-        f->pos.maxLen        = 2;
-        f->pos.callback1     = ChangeOrder;
-        f->pos.callback1Data = orderHandler;
-        f->pos.isReadonly    = TRUE;
-        f->pos.isSingleLine  = TRUE;
+        f->pos.text            = ls_utf32FromInt(i);
+        f->pos.maxLen          = 2;
+        f->pos.callback1       = ChangeOrder;
+        f->pos.callback1Data   = orderHandler;
+        f->pos.OnFocusLost     = OrderPositionOnFocusLost;
+        f->pos.onFocusLostData = orderHandler;
+        f->pos.isReadonly      = TRUE;
+        f->pos.isSingleLine    = TRUE;
         
         ls_uiButtonInit(c, &f->remove, UIBUTTON_CLASSIC, ls_utf32Constant(U"X"), RemoveOrderOnClick, NULL, (void *)((u64)i));
         
@@ -1806,8 +1820,6 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     Page->tooltipMouseY    = -999;
 }
 
-//TODO: When adding new enemy the large extra info textbox doesn't save to order??
-//TODO: Strange copying of compendium page into custom mob page?? Was it a non-reset problem?
 b32 DrawInitExtra(UIContext *c, InitField *F, s32 baseX, s32 y)
 {
     b32 inputUse = FALSE;
@@ -2185,9 +2197,6 @@ b32 DrawPranaStyle(UIContext *c)
             inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, yPos);
             
             inputUse |= ls_uiListBox(c, &Page->Mobs,     50, yPos-65, 100, 20, 1);
-            
-            //inputUse |= ls_uiListBox(c, &Page->Allies, 1094, yPos-225, 100, 20, 1);
-            //inputUse |= ls_uiListBox(c, &Page->Allies, 1094, yPos-365, 100, 20, 1);
             inputUse |= ls_uiListBox(c, &Page->Allies, 1094, alliesListY, 100, 20, 1);
             
             inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40);
@@ -2208,6 +2217,8 @@ b32 DrawPranaStyle(UIContext *c)
     }
     
     
+    //TODO: If start adding outside of battle, should either prevent from entering battle,
+    //      or finish the adding once entering battle.
     yPos = 678;
     //NOTE: Z Layer 0 Input
     if(!State.inBattle)
@@ -2231,8 +2242,6 @@ b32 DrawPranaStyle(UIContext *c)
         yPos = alliesListY - 36;
         for(u32 i = 0; i < visibleAllies; i++)
         {
-            //inputUse |= DrawInitField(c, Page->AllyFields + i, 1063, yPos-160, i+mob_count, 136);
-            //inputUse |= DrawInitField(c, Page->AllyFields + i, 1063, yPos-300, i+mob_count, 136);
             inputUse |= DrawInitField(c, Page->AllyFields + i, 1063, yPos, i+mob_count, 136);
             yPos -= 20;
         }
