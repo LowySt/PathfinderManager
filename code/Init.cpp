@@ -512,8 +512,6 @@ b32 OnEncounterSelect(UIContext *c, void *data)
     return FALSE;
 }
 
-//TODO: When saving multiple new encounters, and no encounter is selected without resetting, the names get fucked.
-//      It is only a display bug, and on program startup it is working
 b32 SaveEncounterOnClick(UIContext *c, void *data)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
@@ -1961,7 +1959,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     inputUse |= ls_uiButton(c, &f->remove, xPos, yPos);
     
     Input *UserInput = &c->UserInput;
-    if(RightClickIn(xPos + 50, yPos, 166, 20)) globalSelectedIndex = (s32)posIdx;
+    if(!State.Init->isAdding && RightClickIn(xPos + 50, yPos, 166, 20)) globalSelectedIndex = (s32)posIdx;
     
     return inputUse;
 }
