@@ -815,7 +815,10 @@ b32 SetOnClick(UIContext *c, void *data)
 {
     AssertMsg(!State.inBattle, "Clicking this should be impossible while in Battle\n");
     
-    if(State.Init->isAdding) { return FALSE; }
+    if(State.Init->isAdding) {
+        if(isAddingFailedSet == FALSE) { isAddingFailedSet = TRUE; isAddingFailedSetTimer = 100; return FALSE; }
+        return FALSE;
+    }
     
     InitPage *Page = State.Init;
     
@@ -2206,6 +2209,16 @@ b32 DrawPranaStyle(UIContext *c)
                 c->widgetColor = ls_uiDarkenRGB(c->widgetColor, 0.2);
                 inputUse |= ls_uiButton(c, &Page->Set,  698, yPos-40);
                 c->widgetColor = origBkg;
+                
+                if(isAddingFailedSet == TRUE)
+                {
+                    isAddingFailedSetTimer -= 1;
+                    if(isAddingFailedSetTimer <= 0) { isAddingFailedSetTimer = 0; isAddingFailedSet = FALSE; }
+                    
+                    u8 alpha = ((f64)isAddingFailedSetTimer / 100.0) * 254;
+                    ls_uiLabel(c, U"Completare la Creatura Personalizzata"_W,
+                               496, yPos-64, RGBA(0xFF, 0x10, 0x10, alpha));
+                }
             }
             else
             {

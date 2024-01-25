@@ -506,7 +506,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             userInputConsumed |= DrawInitTab(uiContext);
         }
         
-        if(!uiContext->hasReceivedInput && !uiContext->isDragging && !externalInputReceived)
+        //NOTE: externalInputReceived is used to update the main window when other windows (like the Compendium)
+        //      require it.
+        //
+        //      isAddingFailedSet is used by the Init Page to update a fader animation, which needs to keep going.
+        if(!uiContext->hasReceivedInput && !uiContext->isDragging && !externalInputReceived && !isAddingFailedSet)
         {
             externalInputReceived = FALSE;
             
