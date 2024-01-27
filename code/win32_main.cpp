@@ -558,9 +558,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 
                 //NOTETODO: All globals that affect the state of the program have to be
                 //          Set to a valid state, otherwise it will not work.
-                globalSelectedIndex = -1;
-                mainCachedPage.pageIndex = -1; //Force a recache of the page
-                suppressingUndoRecord = FALSE;
+                globalSelectedIndex      = -1;
+                mainCachedPage.pageIndex = -1; //Force a re-cache of the page
+                suppressingUndoRecord    = FALSE;
+                isAddingFailedSetTimer   = 0;
+                isAddingFailedSet        = FALSE;
             }
             
             if((KeyPress(keyMap::Y) && KeyHeld(keyMap::Control)) || redoRequest)
@@ -580,9 +582,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 
                 //NOTETODO: All globals that affect the state of the program have to be
                 //          Set to a valid state, otherwise it will not work.
-                globalSelectedIndex = -1;
+                globalSelectedIndex      = -1;
                 mainCachedPage.pageIndex = -1; //Force a recache of the page
-                suppressingUndoRecord = FALSE;
+                suppressingUndoRecord    = FALSE;
+                isAddingFailedSetTimer   = 0;
+                isAddingFailedSet        = FALSE;
             }
             
             //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob

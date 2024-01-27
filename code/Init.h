@@ -262,10 +262,11 @@ struct DiceThrowBox
 
 s32 globalSelectedIndex = -1;
 
-//TODO: Keep track of how many throwers are set
+
 s32 isAddingFailedSetTimer = 0;
 b32 isAddingFailedSet = FALSE;
 
+//TODO: Keep track of how many throwers are set
 struct InitPage
 {
     UIListBox    Mobs;
