@@ -40,5 +40,9 @@ void BuildResistanceFromPacked_t(u64 val, utf32 *out)
         }
     }
     
+    //NOTETODO: This is kind of a shitty check to make sure we're not overwriting
+    //          the cachedPage initial buffer.
+    AssertMsg(out->size == RES_MAX_COUNT * 16, "Out was resized!\n");
+    
     return;
 }

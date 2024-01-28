@@ -126,7 +126,6 @@ struct NPCPageEntry
     u16 perception;
     u16 aura;
     u16 immunities[16];
-    //u16 resistances[16];
     u16 weaknesses[16];
     u16 speed;
     u16 space;
@@ -183,7 +182,6 @@ struct PageEntry
     u16 perception;        //
     u16 aura;              //
     u16 immunities[16];    //
-    //u16 resistances[16];   //
     u16 weaknesses[16];    //
     u16 speed;             //
     u16 space;             //
@@ -214,7 +212,6 @@ struct Codex
     buffer senses;
     buffer auras;
     buffer immunities;
-    buffer resistances;
     buffer weaknesses;
     buffer specialAttacks;
     buffer spells;
@@ -2431,11 +2428,13 @@ b32 onStatusChange(UIContext *c, void *data)
 //      And never again. It can't be grown, and will give a runtime error when the space is not enough.
 void initCachedPage(CachedPageEntry *cachedPage)
 {
+    //TODO: Make all these in constexpr values and AssertCheck that the size of the strings
+    //      does not change during page caching! Or maybe StaticUTF32 I don't fucking know.
     const u32 maxSubtypes    = 8;
     const u32 maxArchetypes  = 4;
     const u32 maxSenses      = 8;
     const u32 maxImmunities  = 16;
-    const u32 maxResistances = 16;
+    const u32 maxResistances = RES_MAX_COUNT;
     const u32 maxWeaknesses  = 16;
     const u32 maxTalents     = 24;
     const u32 maxSkills      = 24;
@@ -2488,8 +2487,8 @@ void initCachedPage(CachedPageEntry *cachedPage)
     cachedPage->aura              = ls_utf32Alloc(128);
     
     cachedPage->immunities        = ls_utf32Alloc(maxImmunities * 32);
-    cachedPage->resistances       = ls_utf32Alloc(maxResistances * 32);;
-    cachedPage->weaknesses        = ls_utf32Alloc(maxWeaknesses * 32);;
+    cachedPage->resistances       = ls_utf32Alloc(maxResistances * 16);
+    cachedPage->weaknesses        = ls_utf32Alloc(maxWeaknesses * 32);
     
     cachedPage->speed             = ls_utf32Alloc(96);
     cachedPage->space             = ls_utf32Alloc(32);
@@ -2550,7 +2549,6 @@ void LoadCompendium(UIContext *c, string path)
         compendium.codex.senses         = ls_bufferInit(128);
         compendium.codex.auras          = ls_bufferInit(128);
         compendium.codex.immunities     = ls_bufferInit(128);
-        compendium.codex.resistances    = ls_bufferInit(128);
         compendium.codex.weaknesses     = ls_bufferInit(128);
         compendium.codex.specialAttacks = ls_bufferInit(128);
         compendium.codex.spells         = ls_bufferInit(128);
@@ -2595,7 +2593,6 @@ void LoadCompendium(UIContext *c, string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.senses);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.auras);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.immunities);
-        viewIntoBuffer(&CompendiumBuff, &compendium.codex.resistances);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.weaknesses);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.specialAttacks);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.spells);
@@ -3096,7 +3093,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
     
-    //GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "alignment");
     ls_utf32Clear(&cachedPage->alignment);
     BuildAlignmentFromPacked_t(page.alignment, &cachedPage->alignment);
     
@@ -3133,18 +3129,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     ls_utf32Clear(&cachedPage->resistances);
     BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
-    /*
-    if(page.resistances[0])
-    {
-        GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0], "resistances");
-        u32 i = 1;
-        while(page.resistances[i] && i < 16)
-        {
-            AppendEntryFromBuffer(&c->resistances, &cachedPage->resistances, U", ", page.resistances[i]);
-            i += 1;
-        }
-    }
-    */
     
     if(hasArchetype) { CompendiumApplyAllArchetypeResistances(cachedPage->hitDice, &cachedPage->resistances); }
     
@@ -3439,7 +3423,6 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
     
-    //GetEntryFromBuffer_t(&c->alignment, &cachedPage->alignment, page.alignment, "align");
     ls_utf32Clear(&cachedPage->alignment);
     BuildAlignmentFromPacked_t(page.alignment, &cachedPage->alignment);
     
@@ -3472,18 +3455,6 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     
     ls_utf32Clear(&cachedPage->resistances);
     BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
-    /*
-    if(page.resistances[0])
-    {
-        GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0], "resistances");
-        u32 i = 1;
-        while(page.resistances[i] && i < 16)
-        {
-            AppendEntryFromBuffer(&c->resistances, &cachedPage->resistances, U", ", page.resistances[i], "resistances");
-            i += 1;
-        }
-    }
-    */
     
     ls_utf32Clear(&cachedPage->weaknesses);
     if(page.weaknesses[0])
