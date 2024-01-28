@@ -87,6 +87,7 @@ const u16 INTERN_BIT_U16 = 0x8000;
 struct NPCPageEntry
 {
     u64 HP;
+    u64 resistances;
     
     u32 origin;
     u32 shortDesc;
@@ -125,7 +126,7 @@ struct NPCPageEntry
     u16 perception;
     u16 aura;
     u16 immunities[16];
-    u16 resistances[16];
+    //u16 resistances[16];
     u16 weaknesses[16];
     u16 speed;
     u16 space;
@@ -145,6 +146,7 @@ struct NPCPageEntry
 struct PageEntry
 {
     u64 HP;                //
+    u64 resistances;
     
     u32 origin;            //
     u32 shortDesc;         //
@@ -181,7 +183,7 @@ struct PageEntry
     u16 perception;        //
     u16 aura;              //
     u16 immunities[16];    //
-    u16 resistances[16];   //
+    //u16 resistances[16];   //
     u16 weaknesses[16];    //
     u16 speed;             //
     u16 space;             //
@@ -3130,6 +3132,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     }
     
     ls_utf32Clear(&cachedPage->resistances);
+    BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
+    /*
     if(page.resistances[0])
     {
         GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0], "resistances");
@@ -3140,6 +3144,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
             i += 1;
         }
     }
+    */
     
     if(hasArchetype) { CompendiumApplyAllArchetypeResistances(cachedPage->hitDice, &cachedPage->resistances); }
     
@@ -3466,6 +3471,8 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     }
     
     ls_utf32Clear(&cachedPage->resistances);
+    BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
+    /*
     if(page.resistances[0])
     {
         GetEntryFromBuffer_t(&c->resistances, &cachedPage->resistances, page.resistances[0], "resistances");
@@ -3476,6 +3483,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
             i += 1;
         }
     }
+    */
     
     ls_utf32Clear(&cachedPage->weaknesses);
     if(page.weaknesses[0])
