@@ -59,7 +59,7 @@ struct CachedPageEntry
     utf32 perception;
     utf32 aura;
     utf32 immunities;
-    utf32 resistances; //TODO: Parse this cooler in hyperGol. Can make it in a single u32 I think.
+    utf32 resistances;
     utf32 weaknesses;
     utf32 speed;
     utf32 space;
@@ -87,6 +87,7 @@ const u16 INTERN_BIT_U16 = 0x8000;
 struct NPCPageEntry
 {
     u64 HP;
+    u64 immunities;
     u64 resistances;
     
     u32 origin;
@@ -125,7 +126,7 @@ struct NPCPageEntry
     u16 senses[8];
     u16 perception;
     u16 aura;
-    u16 immunities[16];
+    //u16 immunities[16];
     u16 weaknesses[16];
     u16 speed;
     u16 space;
@@ -145,6 +146,7 @@ struct NPCPageEntry
 struct PageEntry
 {
     u64 HP;                //
+    u64 immunities;
     u64 resistances;
     
     u32 origin;            //
@@ -181,7 +183,7 @@ struct PageEntry
     u16 senses[8];         //
     u16 perception;        //
     u16 aura;              //
-    u16 immunities[16];    //
+    //u16 immunities[16];    //
     u16 weaknesses[16];    //
     u16 speed;             //
     u16 space;             //
@@ -211,7 +213,7 @@ struct Codex
     buffer sizes;
     buffer senses;
     buffer auras;
-    buffer immunities;
+    //buffer immunities;
     buffer weaknesses;
     buffer specialAttacks;
     buffer spells;
@@ -2433,7 +2435,8 @@ void initCachedPage(CachedPageEntry *cachedPage)
     const u32 maxSubtypes    = 8;
     const u32 maxArchetypes  = 4;
     const u32 maxSenses      = 8;
-    const u32 maxImmunities  = 16;
+    //const u32 maxImmunities  = 16;
+    const u32 maxImmunities  = 8;
     const u32 maxResistances = RES_MAX_COUNT;
     const u32 maxWeaknesses  = 16;
     const u32 maxTalents     = 24;
@@ -2548,7 +2551,7 @@ void LoadCompendium(UIContext *c, string path)
         compendium.codex.archetypes     = ls_bufferInit(128);
         compendium.codex.senses         = ls_bufferInit(128);
         compendium.codex.auras          = ls_bufferInit(128);
-        compendium.codex.immunities     = ls_bufferInit(128);
+        //compendium.codex.immunities     = ls_bufferInit(128);
         compendium.codex.weaknesses     = ls_bufferInit(128);
         compendium.codex.specialAttacks = ls_bufferInit(128);
         compendium.codex.spells         = ls_bufferInit(128);
@@ -2592,7 +2595,7 @@ void LoadCompendium(UIContext *c, string path)
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.sizes);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.senses);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.auras);
-        viewIntoBuffer(&CompendiumBuff, &compendium.codex.immunities);
+        //viewIntoBuffer(&CompendiumBuff, &compendium.codex.immunities);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.weaknesses);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.specialAttacks);
         viewIntoBuffer(&CompendiumBuff, &compendium.codex.spells);
@@ -3116,6 +3119,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura, "aura");
     
     ls_utf32Clear(&cachedPage->immunities);
+    BuildImmunityFromPacked_t(page.immunities, &cachedPage->immunities);
+    /*
     if(page.immunities[0])
     {
         GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0], "immunities");
@@ -3126,6 +3131,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
             i += 1;
         }
     }
+    */
     
     ls_utf32Clear(&cachedPage->resistances);
     BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
@@ -3442,6 +3448,8 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura, "aura");
     
     ls_utf32Clear(&cachedPage->immunities);
+    BuildImmunityFromPacked_t(page.immunities, &cachedPage->immunities);
+    /*
     if(page.immunities[0])
     {
         GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0], "immunities");
@@ -3452,6 +3460,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
             i += 1;
         }
     }
+    */
     
     ls_utf32Clear(&cachedPage->resistances);
     BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
