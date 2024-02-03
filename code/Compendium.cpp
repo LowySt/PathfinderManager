@@ -3120,23 +3120,12 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     ls_utf32Clear(&cachedPage->immunities);
     BuildImmunityFromPacked_t(page.immunities, &cachedPage->immunities);
-    /*
-    if(page.immunities[0])
-    {
-        GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0], "immunities");
-        u32 i = 1;
-        while(page.immunities[i] && i < 16)
-        {
-            AppendEntryFromBuffer(&c->immunities, &cachedPage->immunities, U", ", page.immunities[i]);
-            i += 1;
-        }
-    }
-    */
     
     ls_utf32Clear(&cachedPage->resistances);
     BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
     
-    if(hasArchetype) { CompendiumApplyAllArchetypeResistances(cachedPage->hitDice, &cachedPage->resistances); }
+    if(hasArchetype)
+    { CompendiumApplyAllArchetypeResistances(cachedPage->hitDice, page.resistances, &cachedPage->resistances); }
     
     
     ls_utf32Clear(&cachedPage->weaknesses);

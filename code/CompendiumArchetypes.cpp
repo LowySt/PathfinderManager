@@ -26,7 +26,7 @@ void archetypeSensesStub(utf32 *old)
 void archetypeRDStub(s32 hitDice, utf32 *old)
 { return; }
 
-void archetypeResistanceStub(s32 hitDice, utf32 *old)
+void archetypeResistanceStub(s32 hitDice, u64 orig, utf32 *old)
 { return; }
 
 void archetypeRIStub(utf32 gs, utf32 *ri)
@@ -127,42 +127,27 @@ void celestialCreatureRD(s32 hitDice, utf32 *oldRD)
     }
 }
 
-//TODO: This actually sucks. The way it's setup now it would need parsing to properly find old resistances,
-//      and replace them with better ones if necessary. Need to update hyperGol
-void celestialCreatureResistance(s32 hitDice, utf32 *oldRes)
+void celestialCreatureResistance(s32 hitDice, u64 orig, utf32 *oldRes)
 {
     AssertMsg(oldRes, "Null utf32 pointer\n");
     
-    if(hitDice < 5) {
-        const utf32 toAdd = U"Acido 5, Elettricit\U000000E0 5, Freddo 5"_W;
-        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
-        {
-            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
-            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
-            ls_utf32Prepend(oldRes, U"Acido 5, Elettricit\U000000E0 5, Freddo 5, "_W);
-        }
-        
-        return;
+    if(hitDice < 5)
+    {
+        AppendResistanceStringIfNotPresent(orig, RES_ACID_TYPE, 5, U"Acido 5"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_ELEC_TYPE, 5, U"Elettricit\U000000E0 5"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 5, U"Freddo 5"_W, oldRes);
     }
     else if(hitDice < 11)
     {
-        const utf32 toAdd = U"Acido 10, Elettricit\U000000E0 10, Freddo 10"_W;
-        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
-        {
-            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
-            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
-            ls_utf32Prepend(oldRes, U"Acido 10, Elettricit\U000000E0 10, Freddo 10, "_W);
-        }
+        AppendResistanceStringIfNotPresent(orig, RES_ACID_TYPE, 10, U"Acido 10"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_ELEC_TYPE, 10, U"Elettricit\U000000E0 10"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 10, U"Freddo 10"_W, oldRes);
     }
     else
     {
-        const utf32 toAdd = U"Acido 15, Elettricit\U000000E0 15, Freddo 15"_W;
-        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
-        {
-            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
-            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
-            ls_utf32Prepend(oldRes, U"Acido 15, Elettricit\U000000E0 15, Freddo 15, "_W);
-        }
+        AppendResistanceStringIfNotPresent(orig, RES_ACID_TYPE, 15, U"Acido 15"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_ELEC_TYPE, 15, U"Elettricit\U000000E0 15"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 15, U"Freddo 15"_W, oldRes);
     }
 }
 
@@ -248,42 +233,24 @@ void fiendishCreatureRD(s32 hitDice, utf32 *oldRD)
     }
 }
 
-//TODO: This actually sucks. The way it's setup now it would need parsing to properly find old resistances,
-//      and replace them with better ones if necessary. Need to update hyperGol
-void fiendishCreatureResistance(s32 hitDice, utf32 *oldRes)
+void fiendishCreatureResistance(s32 hitDice, u64 orig, utf32 *oldRes)
 {
     AssertMsg(oldRes, "Null utf32 pointer\n");
     
-    if(hitDice < 5) {
-        const utf32 toAdd = U"Freddo 5, Fuoco 5"_W;
-        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
-        {
-            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
-            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
-            ls_utf32Prepend(oldRes, U"Freddo 5, Fuoco 5, "_W);
-        }
-        
-        return;
+    if(hitDice < 5)
+    {
+        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 5, U"Freddo 5"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_FIRE_TYPE, 5, U"Fuoco 5"_W, oldRes);
     }
     else if(hitDice < 11)
     {
-        const utf32 toAdd = U"Freddo 10, Fuoco 10"_W;
-        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
-        {
-            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
-            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
-            ls_utf32Prepend(oldRes, U"Freddo 10, Fuoco 10, "_W);
-        }
+        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 10, U"Freddo 10"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_FIRE_TYPE, 10, U"Fuoco 10"_W, oldRes);
     }
     else
     {
-        const utf32 toAdd = U"Freddo 15, Fuoco 15"_W;
-        if(ls_utf32LeftFind(*oldRes, toAdd) == -1)
-        {
-            AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
-            if(oldRes->len + toAdd.len+2 >= oldRes->size) { return; }
-            ls_utf32Prepend(oldRes, U"Freddo 15, Fuoco 15, "_W);
-        }
+        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 15, U"Freddo 15"_W, oldRes);
+        AppendResistanceStringIfNotPresent(orig, RES_FIRE_TYPE, 15, U"Fuoco 15"_W, oldRes);
     }
 }
 
@@ -517,12 +484,12 @@ void CompendiumApplyAllArchetypeRD(s32 hitDice, utf32 *old)
     }
 }
 
-void CompendiumApplyAllArchetypeResistances(s32 hitDice, utf32 *old)
+void CompendiumApplyAllArchetypeResistances(s32 hitDice, u64 orig, utf32 *old)
 {
     for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
     {
         ArchetypeDiff *curr = compendium.appliedArchetypes + i;
-        curr->resistances(hitDice, old);
+        curr->resistances(hitDice, orig, old);
     }
 }
 
