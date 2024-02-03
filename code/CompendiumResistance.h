@@ -29,8 +29,8 @@ b32 SearchAtLeastResistanceFromString(utf32 in, u16 inType, u16 inVal);
 b32 SearchLessThanResistanceFromString(utf32 in, u16 inType, u16 inVal, utf32 *found);
 void BuildSingleResistanceFromPacked_t(u16 type, u16 val, utf32 *out);
 void BuildResistanceFromPacked_t(u64 val, utf32 *);
-b32 PackedContainsAtLeastResistance(u64 val, u16 inType, u16 inVal);
-b32 PackedContainsLessThanResistance(u64 val, u16 inType, u16 inVal, utf32 *found);
+//b32 PackedContainsAtLeastResistance(u64 val, u16 inType, u16 inVal);
+//b32 PackedContainsLessThanResistance(u64 val, u16 inType, u16 inVal, utf32 *found);
 void AppendResistanceStringIfNotPresent(u64 orig, u16 type, u16 atLeastVal, utf32 toAdd, utf32 *oldRes);
 
 #endif //_COMPENDIUM_RESISTANCE_H

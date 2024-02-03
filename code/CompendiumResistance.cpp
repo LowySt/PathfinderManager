@@ -186,6 +186,8 @@ void BuildResistanceFromPacked_t(u64 val, utf32 *out)
     return;
 }
 
+
+/*TODO: These functions are now useless, but could become useful maybe in the future?
 b32 PackedContainsAtLeastResistance(u64 val, u16 inType, u16 inVal)
 {
     if(val == RES_SENTINEL_VALUE) { return FALSE; }
@@ -228,29 +230,17 @@ b32 PackedContainsLessThanResistance(u64 val, u16 inType, u16 inVal, utf32 *foun
     
     return FALSE;
 }
+*/
 
-//TODO: Now searching the packed seems irrelevant. I'm already searching the string anyway.
-//     Can probably remove the packed searching and just keep the string.
 void AppendResistanceStringIfNotPresent(u64 orig, u16 type, u16 atLeastVal, utf32 toAdd, utf32 *oldRes)
 {
-    if(!PackedContainsAtLeastResistance(orig, type, atLeastVal) &&
-       !SearchAtLeastResistanceFromString(*oldRes, type, atLeastVal))
+    if(!SearchAtLeastResistanceFromString(*oldRes, type, atLeastVal))
     {
         u32 buff[64] = {};
         utf32 found  = { buff, 0, 64 };
         
         if(SearchLessThanResistanceFromString(*oldRes, type, atLeastVal, &found))
-        {
-            ls_utf32RmSubstr(oldRes, found);
-        }
-        else if(PackedContainsLessThanResistance(orig, type, atLeastVal, &found))
-        {
-            utf32 foundWithComma = found;
-            ls_utf32Append(&foundWithComma, U", "_W);
-            
-            if(!ls_utf32RmSubstr(oldRes, foundWithComma))
-            { ls_utf32RmSubstr(oldRes, found); }
-        }
+        { ls_utf32RmSubstr(oldRes, found); }
         
         AssertMsg(oldRes->len + toAdd.len+2 < oldRes->size, "Insufficient space in resistances string.\n");
         if(oldRes->len != 0) { ls_utf32Append(oldRes, U", "_W); }
