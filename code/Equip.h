@@ -250,4 +250,64 @@ RangedWeapon rangedTable[rangedWeaponCount] = {
     { ls_utf32Constant(U"Shuriken"), {1, 1}, {1, 2}, {0, 2}, 2, DMG_PIERCING, RANGED_CAT_EXOTIC, RANGED_THROW },
 };
 
+Armor *findArmorInCSVString(utf32 values, s32 *index)
+{
+    uview v = ls_uviewCreate(values);
+    Armor *candidate = NULL;
+    
+    while(v.len > 0)
+    {
+        uview nextItem = ls_uviewNextDelimiter(v, (u32)',');
+        
+        for(s32 i = 0; i < armorTableCount; i++)
+        {
+            Armor *armor = armorTable + i;
+            
+            if(ls_utf32LeftFind(nextItem.s, armor->name) != -1)
+            { 
+                //NOTE: We choose the candidate based on how close the name lengths match.
+                if(!candidate || (candidate->name.len < armor->name.len))
+                {
+                    *index = i;
+                    candidate = armor;
+                }
+            }
+        }
+        
+        v = nextItem;
+    }
+    
+    return candidate;
+}
+
+Armor *findShieldInCSVString(utf32 values, s32 *index)
+{
+    uview v = ls_uviewCreate(values);
+    Armor *candidate = NULL;
+    
+    while(v.len > 0)
+    {
+        uview nextItem = ls_uviewNextDelimiter(v, (u32)',');
+        
+        for(s32 i = 0; i < shieldTableCount; i++)
+        {
+            Armor *shield = shieldTable + i;
+            
+            if(ls_utf32LeftFind(nextItem.s, shield->name) != -1)
+            { 
+                //NOTE: We choose the candidate based on how close the name lengths match.
+                if(!candidate || (candidate->name.len < shield->name.len))
+                {
+                    *index = i;
+                    candidate = shield;
+                }
+            }
+        }
+        
+        v = nextItem;
+    }
+    
+    return candidate;
+}
+
 #endif //_EQUIP_H
