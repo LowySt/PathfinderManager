@@ -614,24 +614,12 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         s32    index = -1;
         if(isNPC == TRUE)
         {
-            for(u32 i = 0; i < armorTableCount; i++)
-            {
-                Armor *armor = armorTable + i;
-                if(ls_utf32LeftFind(cachedPage->properties, armor->name) != -1)
-                { found = armor; index = i; break; }
-                
-                if(ls_utf32LeftFind(cachedPage->given_equip, armor->name) != -1)
-                { found = armor; index = i; break; }
-            }
+            found = findArmorInCSVString(cachedPage->properties, &index);
+            if(!found) { found = findArmorInCSVString(cachedPage->given_equip, &index); }
         }
         else
         {
-            for(u32 i = 0; i < armorTableCount; i++)
-            {
-                Armor *armor = armorTable + i;
-                if(ls_utf32LeftFind(cachedPage->treasure, armor->name) != -1)
-                { found = armor; index = i; break; }
-            }
+            found = findArmorInCSVString(cachedPage->treasure, &index);
         }
         
         if(found)
@@ -691,24 +679,12 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         
         if(isNPC == TRUE)
         {
-            for(u32 i = 0; i < shieldTableCount; i++)
-            {
-                Armor *shield = shieldTable + i;
-                if(ls_utf32LeftFind(cachedPage->properties, shield->name) != -1)
-                { found = shield; index = i; break; }
-                
-                if(ls_utf32LeftFind(cachedPage->given_equip, shield->name) != -1)
-                { found = shield; index = i; break; }
-            }
+            found = findShieldInCSVString(cachedPage->properties, &index);
+            if(!found) { found = findShieldInCSVString(cachedPage->given_equip, &index); }
         }
         else
         {
-            for(u32 i = 0; i < shieldTableCount; i++)
-            {
-                Armor *shield = shieldTable + i;
-                if(ls_utf32LeftFind(cachedPage->treasure, shield->name) != -1)
-                { found = shield; index = i; break; }
-            }
+            found = findShieldInCSVString(cachedPage->treasure, &index);
         }
         
         if(found)
