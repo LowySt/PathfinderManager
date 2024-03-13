@@ -70,7 +70,7 @@ struct CachedPageEntry
     utf32 INT;
     utf32 WIS;
     utf32 CHA;
-    utf32 BAB;
+    utf32 BAB; s32 BABval;
     utf32 BMC;
     utf32 DMC;
     utf32 talents[24]; s32 talentEntry[24]; //NOTE: Original talent entries to open the talent page.
@@ -273,16 +273,37 @@ b32 mainCachedPageNeedsReCaching = FALSE;
 
 const s32 NPC_PAGE_INDEX_OFFSET = 5000;
 
-//NOTE: Kinda hacky but okay.
-s32 internal_newToOldMap[] = { 
+//NOTE: Kinda hacky but okay. AS_NO_VALUE is used as a sentinel value to determine wheter the Ability Score exists
+//      or not. Certain creatures have '-' AS. We want it to be a valid entry inside the map, but still be an invalid
+//      value.
+const s32 AS_NO_VALUE = 60;
+s32 internal_oldBonusMap[AS_NO_VALUE+1] = { 
     -5, -5, -4, -4, -3, -3, -2, -2, -1, -1,
     0, 0, 1, 1, 2, 2, 3, 3, 4, 4,
     5, 5, 6, 6, 7, 7, 8, 8, 9, 9,
     10, 10, 11, 11, 12, 12, 13, 13, 14, 14,
     15, 15, 16, 16, 17, 17, 18, 18, 19, 19,
-    20, 20, 21, 21, 22, 22, 23, 23, 24, 24
+    20, 20, 21, 21, 22, 22, 23, 23, 24, 24,
+    -69
 };
-s32 *newToOldMap = internal_newToOldMap + 10;
+s32 *newToOldBonusMap = internal_oldBonusMap + 10;
+
+//TODONOTE: Do I also have to check origAS for AS_NO_VALUE? I don't think so, because modAS is initialized with origAS
+#define GET_AS_BONUS_ARRAY(oldB, newB, modAS, origAS) s32 oldB[AS_COUNT] = {}; s32 newB[AS_COUNT] = {}; \
+{ \
+if(modAS[AS_STR]!=AS_NO_VALUE) \
+{newB[AS_STR] = modAS[AS_STR]-10; oldB[AS_STR] = newToOldBonusMap[origAS[AS_STR]-10]; } \
+if(modAS[AS_DEX]!=AS_NO_VALUE) \
+{newB[AS_DEX] = modAS[AS_DEX]-10; oldB[AS_DEX] = newToOldBonusMap[origAS[AS_DEX]-10]; } \
+if(modAS[AS_CON]!=AS_NO_VALUE) \
+{newB[AS_CON] = modAS[AS_CON]-10; oldB[AS_CON] = newToOldBonusMap[origAS[AS_CON]-10]; } \
+if(modAS[AS_INT]!=AS_NO_VALUE) \
+{newB[AS_INT] = modAS[AS_INT]-10; oldB[AS_INT] = newToOldBonusMap[origAS[AS_INT]-10]; } \
+if(modAS[AS_WIS]!=AS_NO_VALUE) \
+{newB[AS_WIS] = modAS[AS_WIS]-10; oldB[AS_WIS] = newToOldBonusMap[origAS[AS_WIS]-10]; } \
+if(modAS[AS_CHA]!=AS_NO_VALUE) \
+{newB[AS_CHA] = modAS[AS_CHA]-10; oldB[AS_CHA] = newToOldBonusMap[origAS[AS_CHA]-10]; } \
+}
 
 void CachePage(PageEntry, s32, CachedPageEntry *, Status *);
 void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *);
@@ -583,6 +604,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     utf32 acExpr    = { AC.data + acExprBegin, acExprLen, acExprLen };
     
     //TODO: Golarion has "armor" and "shield" with small letters... fuck them
+    //      Normalize these values in hyperGol!
     s32 armorBonusIdx  = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Armatura"));
     if(armorBonusIdx == -1) { armorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"armatura")); }
     
@@ -592,14 +614,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     s32 natArmorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"Naturale"));
     if(natArmorBonusIdx == -1) { natArmorBonusIdx = ls_utf32LeftFind(acExpr, ls_utf32Constant(U"naturale")); }
     
-    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX]];
-    
-    s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
-    s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR]];
-    
-    s32 conBonusNew = cachedPage->modAS[AS_CON] - 10;
-    s32 conBonusOld = newToOldMap[cachedPage->origAS[AS_CON] - 10];
+    GET_AS_BONUS_ARRAY(bonusOld, bonusNew, cachedPage->modAS, cachedPage->origAS);
     
     s32 newMaxDex      = 999;
     s32 newArmorBonus  = -1;
@@ -626,7 +641,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         {
             if(found->dexMax != -1)
             {
-                s32 candidateMaxDex = found->dexMax + s32((conBonusNew + strBonusNew) / 2);
+                s32 candidateMaxDex = found->dexMax + s32((bonusNew[AS_CON] + bonusNew[AS_STR]) / 2);
                 newMaxDex           = ls_min(newMaxDex, candidateMaxDex);
             }
             oldArmorBonus = found->armorBonus;
@@ -691,7 +706,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         {
             if(found->dexMax != -1)
             {
-                s32 candidateMaxDex = found->dexMax + s32((conBonusNew + strBonusNew) / 2);
+                s32 candidateMaxDex = found->dexMax + s32((bonusNew[AS_CON] + bonusNew[AS_STR]) / 2);
                 newMaxDex           = ls_min(newMaxDex, candidateMaxDex);
             }
             oldShieldBonus = found->armorBonus;
@@ -801,13 +816,13 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     s32 flatAC  = ls_utf32ToInt({AC.data + thirdValBegin, thirdValLen, thirdValLen});
     
     //NOTE: Adjust the dex bonus
-    s32 dexBonusToAC = ls_min(dexBonusNew, newMaxDex);
-    totAC   = (totAC   - dexBonusOld) + dexBonusToAC;
-    touchAC = (touchAC - dexBonusOld) + dexBonusToAC;
+    s32 dexBonusToAC = ls_min(bonusNew[AS_DEX], newMaxDex);
+    totAC   = (totAC   - bonusOld[AS_DEX]) + dexBonusToAC;
+    touchAC = (touchAC - bonusOld[AS_DEX]) + dexBonusToAC;
     
     //NOTE: Adjust the dex MALUS on being flat footed!
-    if(dexBonusOld < 0)
-    { flatAC  = (flatAC  - dexBonusOld) + dexBonusToAC; }
+    if(bonusOld[AS_DEX] < 0)
+    { flatAC  = (flatAC  - bonusOld[AS_DEX]) + dexBonusToAC; }
     
     //NOTE: Adjust the armor bonus
     if(armorBonusIdx != -1)
@@ -833,11 +848,8 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     b32 isIncorporeal = (ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1);
     if(isIncorporeal)
     {
-        s32 chaBonusNew = cachedPage->modAS[AS_CHA] - 10;
-        s32 chaBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
-        
-        s32 chaBonusToAC     = chaBonusNew < 1 ? 1 : chaBonusNew;
-        s32 chaBonusOldToAC  = chaBonusOld < 1 ? 1 : chaBonusOld;
+        s32 chaBonusToAC     = bonusNew[AS_CHA] < 1 ? 1 : bonusNew[AS_CHA];
+        s32 chaBonusOldToAC  = bonusOld[AS_CHA] < 1 ? 1 : bonusOld[AS_CHA];
         totAC   = (totAC - chaBonusOldToAC) + chaBonusToAC;
         flatAC  = (flatAC - chaBonusOldToAC) + chaBonusToAC;
         touchAC = (touchAC - chaBonusOldToAC) + chaBonusToAC;
@@ -912,17 +924,10 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
 
 void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status = NULL)
 {
-    s32 conBonusNew = cachedPage->modAS[AS_CON] - 10;
-    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
-    s32 wisBonusNew = cachedPage->modAS[AS_WIS] - 10;
-    s32 chaBonusNew = cachedPage->modAS[AS_CHA] - 10;
-    s32 conBonusOld = newToOldMap[cachedPage->origAS[AS_CON] - 10];
-    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
-    s32 wisBonusOld = newToOldMap[cachedPage->origAS[AS_WIS] - 10];
-    s32 chaBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
+    GET_AS_BONUS_ARRAY(bonusOld, bonusNew, cachedPage->modAS, cachedPage->origAS);
     
     b32 isConstruct = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Costrutto")) != -1;
-    if(isConstruct) { conBonusNew = 0; conBonusOld = 0; }
+    if(isConstruct) { bonusNew[AS_CON] = 0; bonusOld[AS_CON] = 0; }
     
     b32 isUndead    = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Non Morto")) != -1;
     
@@ -949,12 +954,17 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
     
     if((conSaveEnd == -1) || (dexSaveEnd == -1)) { ls_utf32Set(&cachedPage->ST, ST); return; }
     
-    s32 conSave = ls_utf32ToInt({ST.data + conSaveBegin, conSaveEnd - conSaveBegin, conSaveEnd - conSaveBegin});
-    s32 dexSave = ls_utf32ToInt({ST.data + dexSaveBegin, dexSaveEnd - dexSaveBegin, dexSaveEnd - dexSaveBegin});
-    s32 wisSave = ls_utf32ToInt({ST.data + wisSaveBegin, wisSaveEnd - wisSaveBegin+1, wisSaveEnd - wisSaveBegin+1});
+    s32 st[ST_COUNT] = {};
     
-    if(isUndead) { conSave = (conSave - chaBonusOld) + chaBonusNew; }
-    else         { conSave = (conSave - conBonusOld) + conBonusNew; }
+    st[ST_CON] = ls_utf32ToInt({ST.data + conSaveBegin, conSaveEnd - conSaveBegin, conSaveEnd - conSaveBegin});
+    st[ST_DEX] = ls_utf32ToInt({ST.data + dexSaveBegin, dexSaveEnd - dexSaveBegin, dexSaveEnd - dexSaveBegin});
+    st[ST_WIS] = ls_utf32ToInt({ST.data + wisSaveBegin, wisSaveEnd - wisSaveBegin+1, wisSaveEnd - wisSaveBegin+1});
+    
+    if(isUndead) { st[ST_CON] = (st[ST_CON] - bonusOld[AS_CHA]) + bonusNew[AS_CHA]; }
+    else         { st[ST_CON] = (st[ST_CON] - bonusOld[AS_CHA]) + bonusNew[AS_CHA]; }
+    
+    st[ST_DEX] = (st[ST_DEX] - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
+    st[ST_WIS] = (st[ST_WIS] - bonusOld[AS_WIS]) + bonusNew[AS_WIS];
     
     dexSave = (dexSave - dexBonusOld) + dexBonusNew;
     wisSave = (wisSave - wisBonusOld) + wisBonusNew;
@@ -973,9 +983,9 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
                 case STATUS_SPAVENTATO:
                 case STATUS_SCOSSO:
                 {
-                    conSave -= 2;
-                    dexSave -= 2;
-                    wisSave -= 2;
+                    st[ST_CON] -= 2;
+                    st[ST_DEX] -= 2;
+                    st[ST_WIS] -= 2;
                 } break;
             }
         }
@@ -987,25 +997,25 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
     ls_utf32Clear(&cachedPage->ST);
     ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U"Tempra "));
     
-    if(conSave >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    if(st[ST_CON] >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
     
-    ls_utf32FromInt_t(&tmpString, conSave);
+    ls_utf32FromInt_t(&tmpString, st[ST_CON]);
     ls_utf32Append(&cachedPage->ST, tmpString);
     ls_utf32Clear(&tmpString);
     
     ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U", Riflessi "));
     
-    if(dexSave >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    if(st[ST_DEX] >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
     
-    ls_utf32FromInt_t(&tmpString, dexSave);
+    ls_utf32FromInt_t(&tmpString, st[ST_DEX]);
     ls_utf32Append(&cachedPage->ST, tmpString);
     ls_utf32Clear(&tmpString);
     
     ls_utf32Append(&cachedPage->ST, ls_utf32Constant(U", Volont\U000000E0 "));
     
-    if(wisSave >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
+    if(st[ST_WIS] >= 0) ls_utf32AppendChar(&cachedPage->ST, (u32)'+');
     
-    ls_utf32FromInt_t(&tmpString, wisSave);
+    ls_utf32FromInt_t(&tmpString, st[ST_WIS]);
     ls_utf32Append(&cachedPage->ST, tmpString);
     ls_utf32Clear(&tmpString);
     
@@ -1052,11 +1062,11 @@ s32 CalculateAndCacheHP(CachedPageEntry *cachedPage, u64 hp)
         if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Colossale")))    { flatVal += 40; }
     }
     else if(isUndead) { 
-        flatVal -= totalHpDice*(newToOldMap[cachedPage->origAS[AS_CHA] - 10]);
+        flatVal -= totalHpDice*(newToOldBonusMap[cachedPage->origAS[AS_CHA] - 10]);
         flatVal += totalHpDice*(cachedPage->modAS[AS_CHA] - 10);
     }
-    else { 
-        flatVal -= totalHpDice*(newToOldMap[cachedPage->origAS[AS_CON] - 10]);
+    else {
+        flatVal -= totalHpDice*(newToOldBonusMap[cachedPage->origAS[AS_CON] - 10]);
         flatVal += totalHpDice*(cachedPage->modAS[AS_CON] - 10);
     }
     
@@ -1096,10 +1106,11 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     s32 endIdx = ls_utf32LeftFind(BMC, (u32)'(');
     if(endIdx == -1) endIdx = BMC.len;
     
-    //TODO: Fuck Golarion
     b32 useDex = ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscola"));
     useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuta"));
     useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissima"));
+    
+    //NOTETODO: These should not be necessary anymore, since I now normalize size in hyperGol
     useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuscolo"));
     useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Minuto"));
     useDex |= ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccolissimo"));
@@ -1111,11 +1122,11 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     
     if(useDex == TRUE) {
         statBonusNew = cachedPage->modAS[AS_DEX] - 10;
-        statBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
+        statBonusOld = newToOldBonusMap[cachedPage->origAS[AS_DEX] - 10];
     }
     else {
         statBonusNew = cachedPage->modAS[AS_STR] - 10;
-        statBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
+        statBonusOld = newToOldBonusMap[cachedPage->origAS[AS_STR] - 10];
     }
     
     s32 bmcVal = ls_utf32ToInt({BMC.data, endIdx, endIdx});
@@ -1143,18 +1154,14 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage, Status *status
     s32 endIdx = ls_utf32LeftFind(DMC, (u32)'(');
     if(endIdx == -1) endIdx = DMC.len;
     
-    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
-    
-    s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
-    s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
+    GET_AS_BONUS_ARRAY(bonusOld, bonusNew, cachedPage->modAS, cachedPage->origAS);
     
     b32 hasSchivareProdigioso = ls_utf32LeftFind(cachedPage->defensiveCapacity,
                                                  ls_utf32Constant(U"Schivare Prodigioso"));
     
     s32 dmcVal = ls_utf32ToInt({DMC.data, endIdx, endIdx});
     
-    dmcVal = (dmcVal - dexBonusOld - strBonusOld) + dexBonusNew + strBonusNew;
+    dmcVal = (dmcVal - bonusOld[AS_DEX] - bonusOld[AS_STR]) + bonusNew[AS_DEX] + bonusNew[AS_STR];
     
     //NOTE: Apply status conditions if present
     if(status)
@@ -1164,7 +1171,7 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage, Status *status
         {
             if(!status[i].check.isActive) { continue; }
             
-            s32 dexBon = dexBonusNew > 0 ? dexBonusNew : 0;
+            s32 dexBon = bonusNew[AS_DEX] > 0 ? bonusNew[AS_DEX] : 0;
             switch(status[i].type)
             {
                 case STATUS_ACCECATO:
@@ -1226,8 +1233,7 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
     //
     if(Init.len == 0) { ls_utf32Set(&cachedPage->initiative, Init); return; }
     
-    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
+    GET_AS_BONUS_ARRAY(bonusOld, bonusNew, cachedPage->modAS, cachedPage->origAS);
     
     s32 multiToken  = ls_utf32LeftFind(Init, (u32)'/');
     //s32 mithicToken = ls_utf32LeftFind(Init, (u32)'M');
@@ -1291,8 +1297,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
                 
                 initOne = ls_utf32ToInt({Init.data, mithicToken, mithicToken});
                 initTwo = ls_utf32ToInt({Init.data + multiToken + 1, twoLen, twoLen});
-                initOne = (initOne - dexBonusOld) + dexBonusNew;
-                initTwo = (initTwo - dexBonusOld) + dexBonusNew;
+                initOne = (initOne - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
+                initTwo = (initTwo - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
                 
                 initOne += statusEffect;
                 initTwo += statusEffect;
@@ -1315,8 +1321,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
                 
                 initOne = ls_utf32ToInt({Init.data, multiToken, multiToken});
                 initTwo = ls_utf32ToInt({Init.data + multiToken + 1, twoLen, twoLen});
-                initOne = (initOne - dexBonusOld) + dexBonusNew;
-                initTwo = (initTwo - dexBonusOld) + dexBonusNew;
+                initOne = (initOne - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
+                initTwo = (initTwo - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
                 
                 initOne += statusEffect;
                 initTwo += statusEffect;
@@ -1341,8 +1347,8 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
             
             initOne = ls_utf32ToInt({Init.data, multiToken, multiToken});
             initTwo = ls_utf32ToInt({Init.data + multiToken + 1, twoLen, twoLen});
-            initOne = (initOne - dexBonusOld) + dexBonusNew;
-            initTwo = (initTwo - dexBonusOld) + dexBonusNew;
+            initOne = (initOne - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
+            initTwo = (initTwo - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
             
             initOne += statusEffect;
             initTwo += statusEffect;
@@ -1365,7 +1371,7 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
         if(mithicToken != -1) // +23M ...
         {
             initOne = ls_utf32ToInt({Init.data, mithicToken, mithicToken});
-            initOne = (initOne - dexBonusOld) + dexBonusNew;
+            initOne = (initOne - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
             
             initOne += statusEffect;
             
@@ -1380,7 +1386,7 @@ void CalculateAndCacheInitiative(utf32 Init, CachedPageEntry *cachedPage, Status
         else // +12 ...
         {
             initOne = ls_utf32ToInt({Init.data, endIdx, endIdx});
-            initOne = (initOne - dexBonusOld) + dexBonusNew;
+            initOne = (initOne - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
             
             initOne += statusEffect;
             
@@ -1406,6 +1412,7 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
     
     cachedPage->meleeError = FALSE;
     
+    //TODO: Normalize natural attack strings on hyperGol!
     const s32 naturalAttacksCount = 39;
     const utf32 naturalAttacks[naturalAttacksCount] = { 
         ls_utf32Constant(U"morso"), ls_utf32Constant(U"Morso"), ls_utf32Constant(U"morsi"),
@@ -1437,16 +1444,9 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
     if(sciame2Idx != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     if(truppaIdx  != -1) { cachedPage->meleeError = TRUE; ls_utf32Set(&cachedPage->melee, Melee); return; }
     
-    s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
-    s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
+    GET_AS_BONUS_ARRAY(bonusOld, bonusNew, cachedPage->modAS, cachedPage->origAS);
     
-    s32 dexBonusNew = cachedPage->modAS[AS_STR] - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
-    
-    s32 chaBonusNew = cachedPage->modAS[AS_CHA] - 10;
-    s32 chaBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
-    
-    s32 bab = ls_utf32ToInt(cachedPage->BAB);
+    s32 bab = cachedPage->BABval; //ls_utf32ToInt(cachedPage->BAB);
     
     b32 hasAdvancedArch  = ls_utf32LeftFind(cachedPage->archetype, ls_utf32Constant(U"Avanzato")) != -1;
     b32 isIncorporeal    = ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1;
@@ -1518,8 +1518,8 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
         {
             s32 len = bonuses[i+1] - bonuses[i];
             s32 oldBonus = ls_utf32ToInt({Melee.data + bonuses[i], len, len});
-            s32 newBonus = oldBonus - strBonusOld + strBonusNew;
-            if(hasWeaponFinesse || isIncorporeal) { newBonus = oldBonus - dexBonusOld + dexBonusNew; }
+            s32 newBonus = oldBonus - bonusOld[AS_STR] + bonusNew[AS_STR];
+            if(hasWeaponFinesse || isIncorporeal) { newBonus = oldBonus - bonusOld[AS_DEX] + bonusNew[AS_DEX]; }
             
             //NOTE: Handle status conditions
             if(status)
@@ -1625,31 +1625,31 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
                         
                         if(hasChangelingMod) { add += 1; }
                         if(hasAdvancedArch)  { add += 2; }
-                        if(isTiyanak)        { add += chaBonusOld; postAdd += chaBonusNew; }
+                        if(isTiyanak)        { add += bonusOld[AS_CHA]; postAdd += bonusNew[AS_CHA]; }
                         
                         //TODO: Felino Marino, WTF!?!?!?
                         //TODO: Mastino Ombra, WTF!?!?!?
                         //TODO: Rakshasa Mitico, WTF!?!?!? Mithic Arma Accurata
-                        s32 halfNew = strBonusNew / 2;
-                        s32 halfOld = strBonusOld / 2;
-                        if(oldDBonus == strBonusOld + add) //NOTE: It's primary
+                        s32 halfNew = bonusNew[AS_STR] / 2;
+                        s32 halfOld = bonusOld[AS_STR] / 2;
+                        if(oldDBonus == bonusOld[AS_STR] + add) //NOTE: It's primary
                         { 
-                            newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                            newDBonus = oldDBonus - bonusOld[AS_STR] + bonusNew[AS_STR];
                         }
                         else if(oldDBonus == halfOld + add)  //NOTE: It's secondary
                         { 
                             newDBonus = oldDBonus - halfOld + halfNew;
                         }
-                        else if(oldDBonus == strBonusOld + halfOld + add)  //NOTE: It's SINGLE ONLY attack
+                        else if(oldDBonus == bonusOld[AS_STR] + halfOld + add)  //NOTE: It's SINGLE ONLY attack
                         { 
-                            s32 oldBon = strBonusOld + halfOld;
-                            s32 newBon = strBonusNew + halfNew;
+                            s32 oldBon = bonusOld[AS_STR] + halfOld;
+                            s32 newBon = bonusNew[AS_STR] + halfNew;
                             newDBonus = oldDBonus - oldBon + newBon;
                         }
                         //NOTE: Many have special attacks that give them 2*STR bonus!
-                        else if(oldDBonus == strBonusOld*2 + add)
+                        else if(oldDBonus == bonusOld[AS_STR]*2 + add)
                         { 
-                            newDBonus = oldDBonus - strBonusOld*2 + strBonusNew*2;
+                            newDBonus = oldDBonus - bonusOld[AS_STR]*2 + bonusNew[AS_STR]*2;
                         }
                         else
                         {
@@ -1667,12 +1667,12 @@ void CalculateAndCacheMelee(utf32 Melee, CachedPageEntry *cachedPage, Status *st
                         if(hasMithicWeaponFinesse)
                         {
                             //TODO: Also when wearing a shield there's no penalty on damage or throw bonus.
-                            newDBonus = oldDBonus - dexBonusOld + dexBonusNew;
+                            newDBonus = oldDBonus - bonusOld[AS_DEX] + bonusNew[AS_DEX];
                         }
                         else
                         {
                             //TODO: Broken Weapons!!
-                            newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                            newDBonus = oldDBonus - bonusOld[AS_STR] + bonusNew[AS_STR];
                         }
                     }
                 }
@@ -1718,16 +1718,9 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *
 {
     cachedPage->rangedError = FALSE;
     
-    s32 strBonusNew = cachedPage->modAS[AS_STR] - 10;
-    s32 strBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
+    GET_AS_BONUS_ARRAY(bonusOld, bonusNew, cachedPage->modAS, cachedPage->origAS);
     
-    s32 dexBonusNew = cachedPage->modAS[AS_DEX] - 10;
-    s32 dexBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
-    
-    s32 chaBonusNew = cachedPage->modAS[AS_CHA] - 10;
-    s32 chaBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
-    
-    s32 bab = ls_utf32ToInt(cachedPage->BAB);
+    s32 bab = cachedPage->BABval; //ls_utf32ToInt(cachedPage->BAB);
     
     //TODO: This is unused, but it should be used.
     //      +2 to DEX should mean an increase in TxC / Dmg with certain weapons/talents
@@ -1806,7 +1799,7 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *
         {
             s32 len = bonuses[i+1] - bonuses[i];
             s32 oldBonus = ls_utf32ToInt({Ranged.data + bonuses[i], len, len});
-            s32 newBonus = oldBonus - dexBonusOld + dexBonusNew; //TODO: Is this everything??
+            s32 newBonus = oldBonus - bonusOld[AS_DEX] + bonusNew[AS_DEX]; //TODO: Is this everything??
             
             //NOTE: Handle status conditions
             if(status)
@@ -1885,16 +1878,16 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *
                 {
                     if(weapon->type == RANGED_THROW)
                     {
-                        newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                        newDBonus = oldDBonus - bonusOld[AS_STR] + bonusNew[AS_STR];
                     }
                     else if(weapon->type == RANGED_AIM_STR)
                     {
-                        if(strBonusOld < 0) { newDBonus -= strBonusOld; }
-                        if(strBonusNew < 0) { newDBonus += strBonusNew; }
+                        if(bonusOld[AS_STR] < 0) { newDBonus -= bonusOld[AS_STR]; }
+                        if(bonusNew[AS_STR] < 0) { newDBonus += bonusNew[AS_STR]; }
                     }
                     else if(weapon->type == RANGED_AIM_STR_BON)
                     {
-                        newDBonus = oldDBonus - strBonusOld + strBonusNew;
+                        newDBonus = oldDBonus - bonusOld[AS_STR] + bonusNew[AS_STR];
                     }
                 }
                 
@@ -1975,46 +1968,23 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
     
     //LogMsg(skillCat != SK_UNDEFINED, "Unable to find Skill AS Category!\n");
     
+    GET_AS_BONUS_ARRAY(bonusOld, bonusNew, cachedPage->modAS, cachedPage->origAS);
+    
+    //NOTE: The switch is technically foldable, since AS_* and SK_* match in integer value.
+    //      But it's not enforceable or checkable at compile-time. So to avoid future bugs 
+    //      by changing the order/quantity of enum value, and for clarity, we'll keep the switch.
+    //      Also, the switch protects from invalid SK_* values, by keeping the new/old bonus to 0.
     s32 asBonusNew = 0;
     s32 asBonusOld = 0;
     
     switch(skillCat)
     {
-        case SK_STR:
-        {
-            asBonusNew = cachedPage->modAS[AS_STR] - 10;
-            asBonusOld = newToOldMap[cachedPage->origAS[AS_STR] - 10];
-        } break;
-        
-        case SK_DEX:
-        {
-            asBonusNew = cachedPage->modAS[AS_DEX] - 10;
-            asBonusOld = newToOldMap[cachedPage->origAS[AS_DEX] - 10];
-        } break;
-        
-        case SK_CON:
-        {
-            asBonusNew = cachedPage->modAS[AS_CON] - 10;
-            asBonusOld = newToOldMap[cachedPage->origAS[AS_CON] - 10];
-        } break;
-        
-        case SK_INT:
-        {
-            asBonusNew = cachedPage->modAS[AS_INT] - 10;
-            asBonusOld = newToOldMap[cachedPage->origAS[AS_INT] - 10];
-        } break;
-        
-        case SK_WIS:
-        {
-            asBonusNew = cachedPage->modAS[AS_WIS] - 10;
-            asBonusOld = newToOldMap[cachedPage->origAS[AS_WIS] - 10];
-        } break;
-        
-        case SK_CHA:
-        {
-            asBonusNew = cachedPage->modAS[AS_CHA] - 10;
-            asBonusOld = newToOldMap[cachedPage->origAS[AS_CHA] - 10];
-        } break;
+        case SK_STR: { asBonusNew = bonusNew[AS_STR]; asBonusOld = bonusOld[AS_STR]; } break;
+        case SK_DEX: { asBonusNew = bonusNew[AS_DEX]; asBonusOld = bonusOld[AS_DEX]; } break;
+        case SK_CON: { asBonusNew = bonusNew[AS_CON]; asBonusOld = bonusOld[AS_CON]; } break;
+        case SK_INT: { asBonusNew = bonusNew[AS_INT]; asBonusOld = bonusOld[AS_INT]; } break;
+        case SK_WIS: { asBonusNew = bonusNew[AS_WIS]; asBonusOld = bonusOld[AS_WIS]; } break;
+        case SK_CHA: { asBonusNew = bonusNew[AS_CHA]; asBonusOld = bonusOld[AS_CHA]; } break;
     }
     
     //NOTE: Calculate Status Effect on Skill Modifier
@@ -2808,29 +2778,34 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
-    //TODO: Remember irrelevant AS (dash instead of a number)
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.STR, "str");
-    cachedPage->origAS[AS_STR] = ls_utf32ToInt(tempString);
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_STR] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_STR] = ls_utf32ToInt(tempString); }
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DEX, "dex");
-    cachedPage->origAS[AS_DEX] = ls_utf32ToInt(tempString);
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_DEX] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_DEX] = ls_utf32ToInt(tempString); }
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.CON, "con");
-    cachedPage->origAS[AS_CON] = ls_utf32ToInt(tempString);
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_CON] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_CON] = ls_utf32ToInt(tempString); }
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.INT, "int");
-    cachedPage->origAS[AS_INT] = ls_utf32ToInt(tempString);
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_INT] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_INT] = ls_utf32ToInt(tempString); }
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.WIS, "wis");
-    cachedPage->origAS[AS_WIS] = ls_utf32ToInt(tempString);
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_WIS] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_WIS] = ls_utf32ToInt(tempString); }
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.CHA, "cha");
-    cachedPage->origAS[AS_CHA] = ls_utf32ToInt(tempString);
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_CHA] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_CHA] = ls_utf32ToInt(tempString); }
     ls_utf32Clear(&tempString);
     
     ls_memcpy(cachedPage->origAS, cachedPage->modAS, AS_COUNT*sizeof(s32));
@@ -2878,6 +2853,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32FromInt_t(&cachedPage->CHA, cachedPage->modAS[AS_CHA]);
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
+    cachedPage->BABval = ls_utf32ToInt(cachedPage->BAB);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure, "treasure");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
@@ -3197,6 +3173,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS, "wis");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA, "cha");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
+    cachedPage->BABval = ls_utf32ToInt(cachedPage->BAB);
     
     cachedPage->origAS[AS_STR] = ls_utf32ToInt(cachedPage->STR);
     cachedPage->origAS[AS_DEX] = ls_utf32ToInt(cachedPage->DEX);
