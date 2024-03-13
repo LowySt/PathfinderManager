@@ -557,6 +557,21 @@ s64 leftFindDiceBonus(utf32 s, s32 off, s32 max)
     return ((s64)beginIdx << 32 | endIdx);
 };
 
+s64 leftFindNumber(utf32 s, s32 off)
+{
+    AssertMsg(s.data, "Source data is null.\n");
+    
+    if(off >= s.len)   { return -1; }
+    if(off < 0)        { return -1; }
+    if(s.data == NULL) { return -1; }
+    if(s.len  == 0)    { return -1; }
+    
+    s32 valueBegin = ls_utf32LeftFindNumber(s, off);
+    s32 valueEnd   = ls_utf32LeftFindNotNumber(s, valueBegin);
+    
+    return ((s64)valueBegin << 32 | valueEnd);
+}
+
 b32 CompendiumPageHasTalent(CachedPageEntry *page, utf32 needle)
 {
     s32 talentIndex = 0;
@@ -743,55 +758,18 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         newNatArmor          = (f32)oldNatArmor * 1.34f;
     }
     
-    //TODO: I don't really like these hardcoded offsets, would prefer to have a LeftFindNumeric() function
-    s32 firstValEnd     = ls_utf32LeftFind(AC, (u32)',');
-    s32 secondValBegin  = firstValEnd + 11;
-    s32 secondValEnd    = ls_utf32LeftFind(AC, secondValBegin, (u32)',');
-    s32 secondValLen    = secondValEnd - secondValBegin;
-    s32 thirdValBegin   = secondValEnd + 14;
-    s32 semiToken       = ls_utf32LeftFind(AC, thirdValBegin, (u32)';');
-    s32 parenToken      = ls_utf32LeftFind(AC, thirdValBegin, (u32)'(');
-    s32 spaceToken      = ls_utf32LeftFind(AC, thirdValBegin, (u32)' ');
+    s64 totACIdx        = leftFindNumber(AC, 0);
+    s32 firstValEnd     = (s32)totACIdx;
     
-    //TODO: I don't really like these hardcoded offsets, would prefer to have a LeftFindNumeric() function
-    s32 thirdValEnd = AC.len - 1;
-    if(semiToken != -1)
-    {
-        if(parenToken != -1)
-        {
-            if(semiToken < parenToken) { thirdValEnd = semiToken; }
-            else                       { thirdValEnd = parenToken - 1; }
-        }
-        else if(spaceToken != -1)
-        {
-            if(semiToken < spaceToken) { thirdValEnd = semiToken; }
-            else                       { thirdValEnd = spaceToken; }
-        }
-        else
-        {
-            thirdValEnd = semiToken - 1;
-        }
-    }
-    else
-    {
-        if(parenToken != -1)
-        {
-            if(spaceToken != -1)
-            {
-                if(parenToken < spaceToken) { thirdValEnd = parenToken; }
-                else                        { thirdValEnd = spaceToken; }
-            }
-            else
-            {
-                thirdValEnd = parenToken;
-            }
-        }
-        else
-        {
-            if(spaceToken != -1) { thirdValEnd = spaceToken; }
-        }
-    }
-    s32 thirdValLen = thirdValEnd - thirdValBegin;
+    s64 touchACIdx      = leftFindNumber(AC, firstValEnd);
+    s32 secondValBegin  = (s32)(touchACIdx >> 32);
+    s32 secondValEnd    = (s32)touchACIdx;
+    s32 secondValLen    = secondValEnd - secondValBegin;
+    
+    s64 flatACIdx       = leftFindNumber(AC, secondValEnd);
+    s32 thirdValBegin   = (s32)(flatACIdx >> 32);
+    s32 thirdValEnd     = (s32)flatACIdx;
+    s32 thirdValLen     = thirdValEnd - thirdValBegin;
     
     if((firstValEnd == -1) || (secondValEnd == -1) || (thirdValEnd == -1)
        || (secondValBegin >= AC.len) || (thirdValBegin >= AC.len))
@@ -2840,8 +2818,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         
         out_of_for_loop:
         
-        ls_utf32FromInt_t(&cachedPage->STR, str);
-        ls_utf32FromInt_t(&cachedPage->DEX, dex);
+        if(cachedPage->modAS[AS_STR] != AS_NO_VALUE) { ls_utf32FromInt_t(&cachedPage->STR, str); }
+        if(cachedPage->modAS[AS_DEX] != AS_NO_VALUE) { ls_utf32FromInt_t(&cachedPage->DEX, dex); }
     }
     
     //NOTE: Now that the statuses and archetypes have been applied, we cache the AS into strings
