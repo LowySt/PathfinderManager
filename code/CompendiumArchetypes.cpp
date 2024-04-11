@@ -3,7 +3,11 @@
 ArchetypeDiff stub = {
     U"Name"_W, archetypeGSStub, archetypeASStub, archetypeACStub, archetypeSensesStub,
     archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
-    archetypeSizeStub, archetypeMeleeStub
+    archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub,
+    archetypeSubTypeStub, archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub,
+    archetypeImmunitiesStub, archetypeBABStub, archetypeSkillsStub, archetypeTalentsStub, 
+    archetypeEnvStub, archetypeOrgStub, archetypeTreasureStub, archetypeSpecQualStub, archetypeSpecCapStub,
+    archetypeLangStub, archetypeAuraStub, archetypeWeakStub,
 };
 #endif
 
@@ -11,14 +15,14 @@ ArchetypeDiff stub = {
 //   STUBS FOR ARCHETYPE   //
 //-------------------------//
 
-void archetypeGSStub(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
-{ *gsDiff = 0; *rmDiff = 0; }
+b32 archetypeGSStub(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
+{ *gsDiff = 0; *rmDiff = 0; return FALSE; }
 
 void archetypeASStub(s32 as[AS_COUNT])
 { return; }
 
-void archetypeACStub(s32 ac[AC_TYPES_COUNT])
-{ return; }
+b32 archetypeACStub(utf32 *size, s32 ac[AC_TYPES_COUNT])
+{ return FALSE; }
 
 void archetypeSensesStub(utf32 *old)
 { return; }
@@ -32,334 +36,92 @@ void archetypeResistanceStub(s32 hitDice, u64 orig, utf32 *old)
 void archetypeRIStub(utf32 gs, utf32 *ri)
 { return; }
 
-void archetypeSpecAtkStub(utf32 *spec)
-{ return; }
+b32 archetypeSpecAtkStub(utf32 *spec)
+{ return FALSE; }
 
 void archetypeSizeStub(utf32 *size)
 { return; }
 
-void archetypeMeleeStub(utf32 *melee)
+void archetypeMeleeStub(CachedPageEntry *page, utf32 *melee)
 { return; }
 
-//-------------------------//
-//   ADVANCED ARCHETYPE    //
-//-------------------------//
+b32 archetypeAlignStub(utf32 *align)
+{ return FALSE; }
 
-void advancedCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
-{
-    *gsDiff = 1;
-    *rmDiff = 0;
-}
+void archetypeTypeStub(utf32 *type)
+{ return; }
 
-void advancedCreatureAS(s32 as[AS_COUNT])
-{
-    as[AS_STR] += 4;
-    as[AS_DEX] += 4;
-    as[AS_CON] += 4;
-    if(as[AS_INT] > 2) { as[AS_INT] += 4; }
-    as[AS_WIS] += 4;
-    as[AS_CHA] += 4;
-}
+void archetypeSubTypeStub(utf32 *subtype)
+{ return; }
 
-void advancedCreatureAC(s32 acDiff[AC_TYPES_COUNT])
-{
-    acDiff[AC_NATURAL] += 2;
-}
+void archetypeDVStub(CachedPageEntry *, utf32 *oldType, u64 *DV)
+{ return; }
 
-ArchetypeDiff AdvancedCreature = {
-    U"Avanzata"_W, advancedCreatureGS, advancedCreatureAS, advancedCreatureAC, archetypeSensesStub,
-    archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
-    archetypeSizeStub, archetypeMeleeStub
-};
+b32 archetypeSTStub(s32, s32 *)
+{ return FALSE; }
 
-//-------------------------//
-//   CELESTIAL ARCHETYPE   //
-//-------------------------//
+void archetypeDefCapStub(utf32 *old)
+{ return; }
 
-void celestialCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
-{
-    if(hitDice >= 5) { *gsDiff = 1; *rmDiff = 0; return; }
-    
-    *gsDiff = 0;
-    *rmDiff = 0;
-}
+void archetypeSpeedStub(utf32 *old)
+{ return; }
 
-//TODO: Static utf32 strings AAAAAH
-void celestialCreatureSenses(utf32 *old)
-{
-    AssertMsg(old, "Null utf32 pointer\n");
-    
-    const utf32 toAdd = U"Scurovisione 18 m"_W;
-    if(ls_utf32LeftFind(*old, toAdd) == -1)
-    {
-        AssertMsg(old->len + toAdd.len+2 < old->size, "Insufficient space in senses string.\n");
-        if(old->len + toAdd.len+2 >= old->size) { return; }
-        ls_utf32Prepend(old, U"Scurovisione 18 m, "_W);
-    }
-}
+void archetypeImmunitiesStub(utf32 *old)
+{ return; }
 
-//TODO: This actually sucks. The way it's setup now it would need parsing to properly find old rd,
-//      and replace them with better ones if necessary. Need to update hyperGol
-void celestialCreatureRD(s32 hitDice, utf32 *oldRD)
-{
-    AssertMsg(oldRD, "Null utf32 pointer\n");
-    
-    if(hitDice < 5) { return; }
-    else if(hitDice < 11)
-    {
-        const utf32 toAdd = U"5/male"_W;
-        if(ls_utf32LeftFind(*oldRD, toAdd) == -1)
-        {
-            AssertMsg(oldRD->len + toAdd.len+2 < oldRD->size, "Insufficient space in rd string.\n");
-            if(oldRD->len + toAdd.len+2 >= oldRD->size) { return; }
-            ls_utf32Prepend(oldRD, U"5/male, "_W);
-        }
-    }
-    else
-    {
-        const utf32 toAdd = U"10/male"_W;
-        if(ls_utf32LeftFind(*oldRD, toAdd) == -1)
-        {
-            AssertMsg(oldRD->len + toAdd.len+2 < oldRD->size, "Insufficient space in rd string.\n");
-            if(oldRD->len + toAdd.len+2 >= oldRD->size) { return; }
-            ls_utf32Prepend(oldRD, U"10/male, "_W);
-        }
-    }
-}
+void archetypeBABStub(utf32 *old, s32 dv)
+{ return; }
 
-void celestialCreatureResistance(s32 hitDice, u64 orig, utf32 *oldRes)
-{
-    AssertMsg(oldRes, "Null utf32 pointer\n");
-    
-    if(hitDice < 5)
-    {
-        AppendResistanceStringIfNotPresent(orig, RES_ACID_TYPE, 5, U"Acido 5"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_ELEC_TYPE, 5, U"Elettricit\U000000E0 5"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 5, U"Freddo 5"_W, oldRes);
-    }
-    else if(hitDice < 11)
-    {
-        AppendResistanceStringIfNotPresent(orig, RES_ACID_TYPE, 10, U"Acido 10"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_ELEC_TYPE, 10, U"Elettricit\U000000E0 10"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 10, U"Freddo 10"_W, oldRes);
-    }
-    else
-    {
-        AppendResistanceStringIfNotPresent(orig, RES_ACID_TYPE, 15, U"Acido 15"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_ELEC_TYPE, 15, U"Elettricit\U000000E0 15"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 15, U"Freddo 15"_W, oldRes);
-    }
-}
+void archetypeSkillsStub(utf32 *old)
+{ return; }
 
-void celestialCreatureRI(utf32 gs, utf32 *ri)
-{
-    AssertMsg(ri, "Null utf32 pointer\n");
-    
-    s32 index = ls_utf32FirstEqual(gs, (utf32 *)gsSet, gsSetCount);
-    
-    AssertMsg(((index != -1) || (index < gsSetCount)), "Invalid GS when applying Advanced archetype\n");
-    if((index == -1) || (index >= gsSetCount)) { return; }
-    
-    s64 oldRI = ls_utf32ToInt(*ri);
-    
-    s32 gsVal = (index - 4);
-    if(gsVal <= 0) {
-        const utf32 toAdd = U"5"_W;
-        if(oldRI < 5) {
-            ls_utf32Clear(ri);
-            ls_utf32Append(ri, toAdd);
-        }
-        else { return; }
-    }
-    else
-    {
-        gsVal %= 36;
-        if(oldRI < (gsVal + 5))
-        {
-            ls_utf32Clear(ri);
-            ls_utf32AppendInt(ri, gsVal+5);
-        }
-        else { return; }
-    }
-}
+void archetypeTalentsStub(CachedPageEntry *)
+{ return; }
 
-void celestialCreatureSpecAtk(utf32 *spec)
-{
-    AssertMsg(spec, "Null utf32 pointer\n");
-    
-    const utf32 toAdd = U"Punire il Male 1/giorno, "_W;
-    AssertMsg(spec->len + toAdd.len < spec->size, "Insufficient space in special attack string.\n");
-    if(spec->len + toAdd.len >= spec->size) { return; }
-    
-    ls_utf32Prepend(spec, toAdd);
-}
+void archetypeEnvStub(utf32 *old)
+{ return; }
 
-ArchetypeDiff CelestialCreature = {
-    U"Celestiale"_W, celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses,
-    celestialCreatureRD, celestialCreatureResistance, celestialCreatureRI, celestialCreatureSpecAtk,
-    archetypeSizeStub, archetypeMeleeStub
-};
+void archetypeOrgStub(utf32 *old)
+{ return; }
 
-//-------------------------//
-//   FIENDISH ARCHETYPE    //
-//-------------------------//
+void archetypeTreasureStub(utf32 *old)
+{ return; }
 
-//TODO: This actually sucks. The way it's setup now it would need parsing to properly find old rd,
-//      and replace them with better ones if necessary. Need to update hyperGol
-void fiendishCreatureRD(s32 hitDice, utf32 *oldRD)
-{
-    AssertMsg(oldRD, "Null utf32 pointer\n");
-    
-    if(hitDice < 5) { return; }
-    else if(hitDice < 11)
-    {
-        const utf32 toAdd = U"5/bene"_W;
-        if(ls_utf32LeftFind(*oldRD, toAdd) == -1)
-        {
-            AssertMsg(oldRD->len + toAdd.len+2 < oldRD->size, "Insufficient space in rd string.\n");
-            if(oldRD->len + toAdd.len+2 >= oldRD->size) { return; }
-            ls_utf32Prepend(oldRD, U"5/bene, "_W);
-        }
-    }
-    else
-    {
-        const utf32 toAdd = U"10/bene"_W;
-        if(ls_utf32LeftFind(*oldRD, toAdd) == -1)
-        {
-            AssertMsg(oldRD->len + toAdd.len+2 < oldRD->size, "Insufficient space in rd string.\n");
-            if(oldRD->len + toAdd.len+2 >= oldRD->size) { return; }
-            ls_utf32Prepend(oldRD, U"10/bene, "_W);
-        }
-    }
-}
+void archetypeSpecQualStub(utf32 *old)
+{ return; }
 
-void fiendishCreatureResistance(s32 hitDice, u64 orig, utf32 *oldRes)
-{
-    AssertMsg(oldRes, "Null utf32 pointer\n");
-    
-    if(hitDice < 5)
-    {
-        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 5, U"Freddo 5"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_FIRE_TYPE, 5, U"Fuoco 5"_W, oldRes);
-    }
-    else if(hitDice < 11)
-    {
-        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 10, U"Freddo 10"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_FIRE_TYPE, 10, U"Fuoco 10"_W, oldRes);
-    }
-    else
-    {
-        AppendResistanceStringIfNotPresent(orig, RES_COLD_TYPE, 15, U"Freddo 15"_W, oldRes);
-        AppendResistanceStringIfNotPresent(orig, RES_FIRE_TYPE, 15, U"Fuoco 15"_W, oldRes);
-    }
-}
+void archetypeSpecCapStub(utf32 *old)
+{ return; }
 
-void fiendishCreatureSpecAtk(utf32 *spec)
-{
-    AssertMsg(spec, "Null utf32 pointer\n");
-    
-    const utf32 toAdd = U"Punire il Bene 1/giorno, "_W;
-    AssertMsg(spec->len + toAdd.len < spec->size, "Insufficient space in special attack string.\n");
-    if(spec->len + toAdd.len >= spec->size) { return; }
-    
-    ls_utf32Prepend(spec, toAdd);
-}
+void archetypeLangStub(utf32 *old)
+{ return; }
 
-ArchetypeDiff FiendishCreature = {
-    U"Immonda"_W, celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses,
-    fiendishCreatureRD, fiendishCreatureResistance, celestialCreatureRI, fiendishCreatureSpecAtk,
-    archetypeSizeStub, archetypeMeleeStub
-};
+void archetypeAuraStub(utf32 *old)
+{ return; }
 
-//-------------------------//
-//     GIANT ARCHETYPE     //
-//-------------------------//
+void archetypeWeakStub(utf32 *old)
+{ return; }
 
-void giantCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
-{ *gsDiff = 1; *rmDiff = 0; }
-
-void giantCreatureAS(s32 as[AS_COUNT])
-{
-    as[AS_STR] += 4;
-    as[AS_DEX] -= 2;
-    as[AS_CON] += 4;
-}
-
-void giantCreatureAC(s32 acDiff[AC_TYPES_COUNT])
-{ acDiff[AC_NATURAL] += 3; }
-
-void giantCreatureSize(utf32 *size)
-{
-    AssertMsg(size, "Null utf32 pointer\n");
-    
-    s32 index = ls_utf32FirstEqual(*size, (utf32 *)sizeSet, SIZE_COUNT*2);
-    if((index == -1) || (index >= (SIZE_COUNT*2)-1)) { return; }
-    
-    ls_utf32Clear(size);
-    ls_utf32Set(size, sizeSet[index+1]);
-}
-
-void giantCreatureMelee(utf32 *melee)
-{
-    AssertMsg(melee, "Null utf32 pointer\n");
-    
-    const utf32 Message = U" [N.B. Avanza dado per Arch.Gigante]"_W;
-    AssertMsg(melee->len + Message.len < melee->size, "Melee archetype can't fit\n");
-    if(melee->len + Message.len >= melee->size) { return; }
-    
-    ls_utf32Append(melee, Message);
-}
-
-
-ArchetypeDiff GiantCreature = {
-    U"Gigante"_W, giantCreatureGS, giantCreatureAS, giantCreatureAC, archetypeSensesStub,
-    archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
-    giantCreatureSize, giantCreatureMelee
-};
-
-//-------------------------//
-//   SCHELETON ARCHETYPE   //
-//-------------------------//
-#if 0
-void scheletonCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
-{
-    //1/2	1/6	65
-    switch(hitDice)
-    {
-        case 1: 
-    }
-    /*
-    1	1/3	135
-    2-3	1	400
-    4-5	2	600
-    6‒7	3	800
-    8‒9	4	1.200
-    10-11	5	1.600
-    12-14	6	2.400
-    15-17	7	3.200
-    18-20	8	4.800
-*/
-}
-
-ArchetypeDiff ScheletonCreature = {
-    U"Scheletro"_W, scheletonCreatureGS, archetypeASStub, archetypeACStub, archetypeSensesStub,
-    archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
-    archetypeSizeStub, archetypeMeleeStub
-};
-#endif
-//-------------------------//
-//    ZOMBIE ARCHETYPE     //
-//-------------------------//
+//NOTE: All archetypes code is in other files, but included directly here.
+#include "CompendiumArchetypesSimple.cpp"
+#include "CompendiumArchetypesAcquired.cpp"
 
 
 //-------------------------//
 //  ARCHETYPE APPLICATION  //
 //-------------------------//
 
+//TODO: Right now there's no enforcement on this array being all initialized, which is bad.
+//      Solution would be to make a static compile time check for StaticArray that enforces size?
+//      Or make a SizedArray that enforces initialization
 ArchetypeDiff allArchetypeDiffs[MAX_ARCHETYPES] = {
-    AdvancedCreature, CelestialCreature, FiendishCreature, GiantCreature//, ScheletonCreature
+    AdvancedCreature, CelestialCreature, FiendishCreature, EntropicCreature, ResoluteCreature, 
+    GiantCreature, FungoidCreature, ShadowCreature, FleshwarpedCreature, DegenerateCreature,
+    
+    SkeletonCreature, BloodySkeletonCreature, BurningSkeletonCreature,
+    
+    ZombieCreature, FastZombieCreature,
 };
-
 
 b32 CompendiumOpenArchetypeWindow(UIContext *c, void *user)
 {
@@ -405,7 +167,9 @@ void CompendiumApplyAllArchetypeGS(u16 gsEntry, s32 hitDice, utf32 *newGS, utf32
         
         s32 gsDiff = 0;
         s32 rmDiff = 0;
-        curr->gs(hitDice, &gsDiff, &rmDiff);
+        b32 setsGS = curr->gs(hitDice, &gsDiff, &rmDiff);
+        
+        if(setsGS) { CompendiumSetGS(gsDiff, rmDiff, newGS, newPE); return; }
         
         totalGSDiff += gsDiff;
         totalRMDiff += rmDiff;
@@ -423,13 +187,16 @@ void CompendiumApplyAllArchetypeAS(s32 as[AS_COUNT])
     }
 }
 
-void CompendiumApplyAllArchetypeAC(s32 ac[AC_TYPES_COUNT])
+b32 CompendiumApplyAllArchetypeAC(utf32 *size, s32 ac[AC_TYPES_COUNT])
 {
     for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
     {
         ArchetypeDiff *curr = compendium.appliedArchetypes + i;
-        curr->armorClass(ac);
+        b32 replaces = curr->armorClass(size, ac);
+        if(replaces == TRUE) { return TRUE; }
     }
+    
+    return FALSE;
 }
 
 //TODO: Static UTF32 Strings REALLY Needed
@@ -507,7 +274,8 @@ void CompendiumApplyAllArchetypeSpecAtk(utf32 *spec)
     for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
     {
         ArchetypeDiff *curr = compendium.appliedArchetypes + i;
-        curr->specialAtk(spec);
+        b32 hasSet = curr->specialAtk(spec);
+        if(hasSet) { return; }
     }
 }
 
@@ -520,11 +288,189 @@ void CompendiumApplyAllArchetypeSize(utf32 *size)
     }
 }
 
-void CompendiumApplyAllArchetypeMelee(utf32 *melee)
+//NOTETODO: This currently applies after all melee calculations have been performed.
+//          So all values must be already computed. Maybe we want an intermediate step
+//          to know if there are any natural attacks already? And the kind of those natural attacks...
+void CompendiumApplyAllArchetypeMelee(CachedPageEntry *page, utf32 *melee)
 {
     for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
     {
         ArchetypeDiff *curr = compendium.appliedArchetypes + i;
-        curr->melee(melee);
+        curr->melee(page, melee);
+    }
+}
+
+void CompendiumApplyAllArchetypeAlign(utf32 *align)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        b32 setsAlign = curr->align(align);
+        if(setsAlign) { return; }
+    }
+}
+
+void CompendiumApplyAllArchetypeTypes(utf32 *type)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->type(type);
+    }
+}
+
+void CompendiumApplyAllArchetypeSubTypes(utf32 *subtype)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->subtype(subtype);
+    }
+}
+
+void CompendiumApplyAllArchetypeDV(CachedPageEntry *page, utf32 *oldType, u64 *DV)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->DV(page, oldType, DV);
+    }
+}
+
+b32 CompendiumApplyAllArchetypeST(s32 DV, s32 st[ST_COUNT])
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        b32 hasReplaced = curr->st(DV, st);
+        if(hasReplaced) { return TRUE; }
+    }
+    
+    return FALSE;
+}
+
+void CompendiumApplyAllArchetypeDefCap(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->defCap(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeSpeed(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->speed(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeImmunities(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->immunities(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeBAB(utf32 *old, s32 dv)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->bab(old, dv);
+    }
+}
+
+void CompendiumApplyAllArchetypeSkills(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->skills(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeTalents(CachedPageEntry *page)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->talents(page);
+    }
+}
+
+void CompendiumApplyAllArchetypeEnv(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->env(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeOrg(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->org(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeTreasure(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->treasure(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeSpecQual(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->specialQual(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeSpecCap(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->specialCap(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeLang(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->lang(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeAura(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->aura(old);
+    }
+}
+
+void CompendiumApplyAllArchetypeWeak(utf32 *old)
+{
+    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    {
+        ArchetypeDiff *curr = compendium.appliedArchetypes + i;
+        curr->weak(old);
     }
 }
