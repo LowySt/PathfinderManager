@@ -1,6 +1,21 @@
 #ifndef _COMPENDIUM_SKILLS_H
 #define _COMPENDIUM_SKILLS_H
 
+//NOTE: Here's the bit mapping of the u32 Skill Entry
+//
+//  [31]   [30]    [29..7]  [6..0]
+//    ^      ^        ^       ^
+//    |      |        |     The first 7 bits indicate the Skill Type
+//    |      |        |
+//    |      |    Skill Value as a Signed Integer
+//    |      |
+//    |   Paren Bit
+//    |        
+//  Unused
+//
+// Bit 30 is the Paren Bit, which indicates wether we are inside of parenthes and need to concat multiple skills
+// Bit 31 is currently unused, since no interning was necessary to include any possible skill.
+
 enum SkillType
 {
     Acrobazia,
