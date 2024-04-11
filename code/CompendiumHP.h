@@ -39,6 +39,8 @@ const u64 HP_OPTION_TYPE_MASK   = 0x003F800000000000;
 const s32 HP_OPTION_TYPE_OFFSET = 47;
 const u64 HP_OPTION_VAL_MASK    = 0x0FC0000000000000;
 const s32 HP_OPTION_VAL_OFFSET  = 54;
+const u64 HP_OPTION_INV_MASK    = 0xF0007FFFFFFFFFFF;
+
 
 const u64 HP_FLAT_NEGATIVE_BIT  = 0x8000000000000000;
 const u64 HP_IRA_BIT            = 0x4000000000000000;
@@ -241,5 +243,11 @@ const utf32 HpTypeToString[HP_Option_Type_Count] = {
 };
 
 void BuildHPFromPacked_t(CachedPageEntry *page, u64 entry, s32 totalHP);
+u64 ChangeRacialDVType(u64 oldHP, HP_Die_Face newType);
+u64 ClearAllDVsExceptRacial(u64 oldHP);
+u64 ReplaceRacialDVCount(u64 oldHP, u16 newCount);
+u64 ChangeRacialDVCount(u64 oldHP, s32 diff);
+u64 ChangeRacialDVTypeAndCount(u64 oldHP, HP_Die_Face newType, s32 diff);
+u64 AddHPOptionIfMissing(u64 oldHP, HP_Options_Type option, u16 optionVal);
 
 #endif //_COMPENDIUM_H_P_H

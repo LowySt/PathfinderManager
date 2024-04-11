@@ -155,3 +155,84 @@ void BuildHPFromPacked_t(CachedPageEntry *page, u64 entry, s32 totalHP)
         ls_utf32AppendInt(hp, flat-flatIraDifference);
     }
 }
+
+u64 ChangeRacialDVType(u64 oldHP, HP_Die_Face newType)
+{
+    //NOTE: Racial DVs are the very first (low 3 bits) of the packed value
+    u64 newHP = oldHP & 0xFFFFFFFFFFFFFFF8;
+    newHP |= (u64) newType;
+    return newHP;
+}
+
+u64 ClearAllDVsExceptRacial(u64 oldHP)
+{
+    //NOTE: Racial DVs are the very first (low 9 bits) of the packed value.
+    u64 newHP = oldHP & 0xFFFFFFF0000001FF;
+    return newHP;
+}
+
+u64 ReplaceRacialDVCount(u64 oldHP, u16 newCount)
+{
+    //NOTE: Racial DVs are the very first (low 9 bits) of the packed value,
+    //      And the count is stored in the 6 bits in indices [3..8]
+    u64 newHP = oldHP | (u64)(newCount << HP_DIE_FACE_BITLEN);
+    return newHP;
+}
+
+u64 ChangeRacialDVCount(u64 oldHP, s32 diff)
+{
+    //NOTE: Racial DVs are the very first (low 9 bits) of the packed value,
+    //      The count is stored in the 6 bits in indices [3..8]
+    u16 oldRaceDV = (oldHP >> ((HP_MAX_DICE_COUNT-1)*HP_DIE_BITLEN)) & HP_DIE_MASK;
+    u16 oldCount  = (oldRaceDV & HP_DIE_COUNT_MASK) >> HP_DIE_FACE_BITLEN;
+    
+    if(diff < 0 && oldCount < (diff*-1))
+    { AssertMsg(FALSE, "Can't make racial dv count smaller than zero\n"); return oldHP; }
+    
+    u16 newCount = oldCount + diff;
+    
+    //NOTE: Racial DVs are the very first (low 9 bits) of the packed value,
+    //      And the count is stored in the 6 bits in indices [3..8]
+    u64 newHP = oldHP | (u64)(newCount << HP_DIE_FACE_BITLEN);
+    return newHP;
+}
+
+u64 ChangeRacialDVTypeAndCount(u64 oldHP, HP_Die_Face newType, s32 diff)
+{
+    //NOTE: Racial DVs are the very first (low 9 bits) of the packed value,
+    //      The type is the lowest 3 bits, the count is stored in the 6 bits in indices [3..8]
+    u16 oldRaceDV = (oldHP >> ((HP_MAX_DICE_COUNT-1)*HP_DIE_BITLEN)) & HP_DIE_MASK;
+    u16 oldCount  = (oldRaceDV & HP_DIE_COUNT_MASK) >> HP_DIE_FACE_BITLEN;
+    
+    if(diff < 0 && oldCount < (diff*-1))
+    { AssertMsg(FALSE, "Can't make racial dv count smaller than zero\n"); return oldHP; }
+    
+    u16 newCount = oldCount + diff;
+    u64 newHP = oldHP & 0xFFFFFFFFFFFFFE00;
+    newHP |= (u64) newType;
+    newHP |= (u64)(newCount << HP_DIE_FACE_BITLEN);
+    return newHP;
+}
+
+u64 AddHPOptionIfMissing(u64 oldHP, HP_Options_Type option, u16 optionVal)
+{
+    //NOTE: First we check if the oldHP already has an option
+    u8 currentOption = (oldHP & HP_OPTION_TYPE_MASK) >> HP_OPTION_TYPE_OFFSET;
+    
+    if(currentOption == HP_Options_Type::HP_Invalid)
+    {
+        //NOTE: There's currently no option set, so we can easily add a new one.
+        u64 optionAdd = (u64)option << HP_OPTION_TYPE_OFFSET;
+        u64 optionAddVal = (u64)optionVal << HP_OPTION_VAL_OFFSET;
+        u64 newHP = oldHP & HP_OPTION_INV_MASK;
+        newHP |= optionAdd;
+        newHP |= optionAddVal;
+        return newHP;
+    }
+    else
+    {
+        //TODO: Gotta finish this
+        TODO;
+        return oldHP;
+    }
+}
