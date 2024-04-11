@@ -73,6 +73,9 @@ struct CachedPageEntry
     utf32 BAB; s32 BABval;
     utf32 BMC;
     utf32 DMC;
+    
+    //TODO: Right now these two arrays get desyinced, because they are not cleared together.
+    //      Should fix this.
     utf32 talents[24]; s32 talentEntry[24]; //NOTE: Original talent entries to open the talent page.
     utf32 languages;
     utf32 environment;
@@ -593,6 +596,39 @@ s32 CompendiumPageMithicalRank(utf32 gs)
     return 0;
 }
 
+void CompendiumPrependStringIfMissing(utf32 *s, utf32 check, utf32 toPrepend)
+{
+    if(ls_utf32LeftFind(*s, check) == -1)
+    {
+        if(s->len + toPrepend.len >= s->size)
+        { AssertMsg(FALSE, "Insufficient space in string.\n"); return; }
+        
+        ls_utf32Prepend(s, toPrepend);
+    }
+}
+
+void CompendiumAddTalentIfItFits(CachedPageEntry *page, utf32 talentName, b32 isBonus = FALSE, b32 isMithic = FALSE)
+{
+    s32 talentCount = 0;
+    for(s32 i = 0; i < 24; i++)
+    {
+        if(page->talents[i].len == 0) { break; } 
+        talentCount += 1;
+    }
+    
+    if(talentCount >= 24)
+    { AssertMsg(FALSE, "Not enough space in cached page talents to add more\n"); return; }
+    
+    u32 packed = GetTalentPackedFromName(talentName, isBonus, isMithic);
+    if(packed != TALENT_NOT_FOUND)
+    {
+        BuildTalentFromPacked_t(&compendium.codex, packed, &page->talents[talentCount]);
+        page->talentEntry[talentCount] = packed;
+    }
+    
+    return;
+}
+
 //
 //-------------------------------------------
 
@@ -779,14 +815,26 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
         return;
     }
     
-    s32 acDiff[AC_TYPES_COUNT] = {};
     //NOTE: Apply Archetypes
     if(compendium.appliedArchetypes.count > 0)
-    { CompendiumApplyAllArchetypeAC(acDiff); }
-    
-    //TODO: Dodge and other AC types
-    newArmorBonus += acDiff[AC_ARMOR];
-    newNatArmor   += acDiff[AC_NATURAL];
+    { 
+        s32 acDiff[AC_TYPES_COUNT] = {};
+        b32 archetypeReplacesAC = CompendiumApplyAllArchetypeAC(&cachedPage->size, acDiff);
+        
+        //TODO: Dodge and other AC types
+        if(archetypeReplacesAC == FALSE)
+        {
+            newArmorBonus += acDiff[AC_ARMOR];
+            newNatArmor   += acDiff[AC_NATURAL];
+        }
+        else
+        {
+            //NOTE: As a HACK we set the armor type idx, because a base creature might not have a type of armor
+            //      but the applied archetype sets it anyway.
+            if(acDiff[AC_ARMOR] != -99) { newArmorBonus = acDiff[AC_ARMOR]; armorBonusIdx = 999; }
+            if(acDiff[AC_NATURAL] != -99) { newNatArmor = acDiff[AC_NATURAL]; natArmorBonusIdx = 999; }
+        }
+    }
     
     
     s32 totAC   = ls_utf32ToInt({AC.data, firstValEnd, firstValEnd});
@@ -944,8 +992,9 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
     st[ST_DEX] = (st[ST_DEX] - bonusOld[AS_DEX]) + bonusNew[AS_DEX];
     st[ST_WIS] = (st[ST_WIS] - bonusOld[AS_WIS]) + bonusNew[AS_WIS];
     
-    dexSave = (dexSave - dexBonusOld) + dexBonusNew;
-    wisSave = (wisSave - wisBonusOld) + wisBonusNew;
+    //NOTE: Here we check if the archetypes modify the Saving Throws
+    if(compendium.appliedArchetypes.count > 0)
+    { b32 hasReplaced = CompendiumApplyAllArchetypeST(cachedPage->hitDice, st); }
     
     //NOTE: Handle Status Conditions
     if(status)
@@ -1000,7 +1049,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
     ls_utf32AppendBuffer(&cachedPage->ST, ST.data + wisSaveEnd+1, ST.len - (wisSaveEnd+1));
 }
 
-s32 CalculateAndCacheHP(CachedPageEntry *cachedPage, u64 hp)
+s32 CalculateAndCacheHP(CachedPageEntry *cachedPage, u64 hp, utf32 oldType, utf32 oldSize)
 {
     //TODO: Not sure if for Mithic Rank we get the sum of all HD faces, or just the race dice.
     s32 totalHpDiceFace = 0;
@@ -1031,20 +1080,44 @@ s32 CalculateAndCacheHP(CachedPageEntry *cachedPage, u64 hp)
     b32 isConstruct = ls_utf32LeftFind(cachedPage->type, ls_utf32Constant(U"Costrutto")) != -1;
     
     //TODO: Class Level can give bonus HP (seems like most monsters do.)
+    
+    //NOTE: If the creature has no archetype, we can just calculate the hp flat bonuses as normal
+    //      If instead it has applied archetypes that changed the type
+    //      the relevant Ability Score bonuses may have changed, so we need to check!
+    //      If the type didn't change, oldType and the current type will be equal, and everything still works.
+    s32 oldFlatAdd = totalHpDice*newToOldBonusMap[cachedPage->origAS[AS_CON] - 10];
+    {
+        b32 wasUndead = ls_utf32AreEqual(oldType, U"Non Morto"_W);
+        b32 wasConstruct = ls_utf32AreEqual(oldType, U"Costrutto"_W);
+        
+        if(wasUndead) { oldFlatAdd = totalHpDice*newToOldBonusMap[cachedPage->origAS[AS_CHA] - 10]; }
+        else if(wasConstruct)
+        {
+            if(ls_utf32AreEqual(oldSize, ls_utf32Constant(U"Piccola")))      { oldFlatAdd = 10; }
+            if(ls_utf32AreEqual(oldSize, ls_utf32Constant(U"Media")))        { oldFlatAdd = 20; }
+            if(ls_utf32AreEqual(oldSize, ls_utf32Constant(U"Grande")))       { oldFlatAdd = 30; }
+            if(ls_utf32AreEqual(oldSize, ls_utf32Constant(U"Enorme")))       { oldFlatAdd = 40; }
+            if(ls_utf32AreEqual(oldSize, ls_utf32Constant(U"Mastodontica"))) { oldFlatAdd = 60; }
+            if(ls_utf32AreEqual(oldSize, ls_utf32Constant(U"Colossale")))    { oldFlatAdd = 80; }
+        }
+    }
+    
     if(isConstruct) {
-        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccola")))      { flatVal += 5; }
-        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Media")))        { flatVal += 10; }
-        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Grande")))       { flatVal += 15; }
-        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Enorme")))       { flatVal += 20; }
-        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Mastodontica"))) { flatVal += 30; }
-        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Colossale")))    { flatVal += 40; }
+        flatVal -= oldFlatAdd;
+        
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Piccola")))      { flatVal += 15; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Media")))        { flatVal += 30; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Grande")))       { flatVal += 45; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Enorme")))       { flatVal += 60; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Mastodontica"))) { flatVal += 90; }
+        if(ls_utf32AreEqual(cachedPage->size, ls_utf32Constant(U"Colossale")))    { flatVal += 120; }
     }
     else if(isUndead) { 
-        flatVal -= totalHpDice*(newToOldBonusMap[cachedPage->origAS[AS_CHA] - 10]);
+        flatVal -= oldFlatAdd;
         flatVal += totalHpDice*(cachedPage->modAS[AS_CHA] - 10);
     }
     else {
-        flatVal -= totalHpDice*(newToOldBonusMap[cachedPage->origAS[AS_CON] - 10]);
+        flatVal -= oldFlatAdd;
         flatVal += totalHpDice*(cachedPage->modAS[AS_CON] - 10);
     }
     
@@ -2553,11 +2626,19 @@ void LoadCompendium(UIContext *c, string path)
     
     ls_arenaUse(globalArena);
     
+    /*
+    ls_log("Talents Buffer Size: {s32}\nTalentsModule Size: {s32}", 
+           compendium.codex.talents.size, compendium.codex.talentsModule.size);
+    */
+    
     return;
 }
 
 void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u32 index, const char *name = "")
 {
+    //NOTE: We are asking for a value that can't be part of the buffer.
+    if(index > buf->size) { AssertMsg(FALSE, "We shouldn't be here, I think?\n"); return; }
+    
     if(index == 0) { AssertMsg(FALSE, "We shouldn't be here\n"); return; } //NOTE: Index zero means no entry
     
     buf->cursor = index;
@@ -2597,14 +2678,18 @@ void AppendEntryFromBuffer(buffer *buf, utf32 *base, const char32_t *sep, u16 in
 
 void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u32 index, const char *name = "")
 {
-    if(index == 0) { toSet->len = 0; return; } //NOTE: Index zero means no entry
+    //NOTE: We are asking for a value that can't be part of the buffer.
+    if(index > buf->size) { toSet->len = 0; return; }
+    
+    //NOTE: Index zero means no entry
+    if(index == 0) { toSet->len = 0; return; }
     
     buf->cursor = index;
     
     s32 byteLen   = ls_bufferPeekWord(buf);
     u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
     
-    u32 len = ls_utf8Len(utf8_data, byteLen);
+    s32 len = ls_utf8Len(utf8_data, byteLen);
     
     LogMsgF(toSet->size >= len, "%cs: Fuck Size: %d, Len: %d, ByteLen: %d, Index: %d\n", name, toSet->size, len, byteLen, index);
     
@@ -2618,7 +2703,11 @@ void GetEntryFromBuffer_t(buffer *buf, utf32 *toSet, u16 index, const char *name
 
 utf8 GetEntryFromBuffer_8(buffer *buf, u32 index)
 {
-    if(index == 0) { return {}; } //NOTE: Index zero means no entry
+    //NOTE: We are asking for a value that can't be part of the buffer.
+    if(index > buf->size) { return {}; }
+    
+    //NOTE: Index zero means no entry
+    if(index == 0) { return {}; }
     
     buf->cursor = index;
     
@@ -2635,6 +2724,32 @@ utf8 GetEntryFromBuffer_8(buffer *buf, u32 index)
 utf8 GetEntryFromBuffer_8(buffer *buf, u16 index)
 {
     return GetEntryFromBuffer_8(buf, (u32)index);
+}
+
+b32 GetEntryFromBufferWithLen_t(buffer *buf, utf32 *tmp, u32 maxLen, u32 index)
+{
+    //NOTE: We are asking for a value that can't be part of the buffer.
+    if(index > buf->size) { return FALSE; }
+    
+    //NOTE: Index zero means no entry
+    if(index == 0) { return FALSE; }
+    
+    buf->cursor = index;
+    
+    s32 byteLen   = ls_bufferPeekWord(buf);
+    u8 *utf8_data = (u8 *)buf->data + buf->cursor + 2;
+    
+    if(!ls_utf8IsValid(utf8_data, byteLen)) { return FALSE; }
+    
+    s32 len = ls_utf8Len(utf8_data, byteLen);
+    
+    if(len > maxLen) { return FALSE; }
+    
+    ls_utf32FromUTF8_t(tmp, utf8_data, len);
+    
+    ls_bufferSeekBegin(buf);
+    
+    return TRUE;
 }
 
 void SetMonsterTable(UIContext *c)
@@ -2726,6 +2841,8 @@ void SetNPCTable(UIContext *c)
 
 void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
 {
+    //AssertMsg(FALSE, "Gongorinan has fucked up everything!\n");
+    
     u32 tempUTF32Buffer[4096] = {};
     utf32 tempString = { tempUTF32Buffer, 0, 4096 };
     
@@ -2791,9 +2908,11 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     //NOTE: Apply the archetype on the Ability Scores
     if(hasArchetype) { CompendiumApplyAllArchetypeAS(cachedPage->modAS); }
     
-    //NOTE: Apply Status Conditions on the Ability Scores
     //TODO: Perception is not being modified by statuses! :StatusPerception
     //TODO: Flat-footed doesn't update DMC
+    //NOTE: This block is used ONLY to update the displayed value of the Ability Scores
+    //      The values will be properly modified when caching each separate part of the creature.
+    //      This is why we modify the display string and not the modAS values.
     if(status)
     {
         s32 str = cachedPage->modAS[AS_STR];
@@ -2822,25 +2941,40 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         if(cachedPage->modAS[AS_DEX] != AS_NO_VALUE) { ls_utf32FromInt_t(&cachedPage->DEX, dex); }
     }
     
-    //NOTE: Now that the statuses and archetypes have been applied, we cache the AS into strings
-    ls_utf32FromInt_t(&cachedPage->STR, cachedPage->modAS[AS_STR]);
-    ls_utf32FromInt_t(&cachedPage->DEX, cachedPage->modAS[AS_DEX]);
-    ls_utf32FromInt_t(&cachedPage->CON, cachedPage->modAS[AS_CON]);
-    ls_utf32FromInt_t(&cachedPage->INT, cachedPage->modAS[AS_INT]);
-    ls_utf32FromInt_t(&cachedPage->WIS, cachedPage->modAS[AS_WIS]);
-    ls_utf32FromInt_t(&cachedPage->CHA, cachedPage->modAS[AS_CHA]);
+    //NOTE: Now that the statuses and archetypes have been applied, we update the AS display value!
+    if(cachedPage->modAS[AS_STR] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->STR); }
+    else { ls_utf32FromInt_t(&cachedPage->STR, cachedPage->modAS[AS_STR]); }
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
-    cachedPage->BABval = ls_utf32ToInt(cachedPage->BAB);
+    if(cachedPage->modAS[AS_DEX] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->DEX); }
+    else { ls_utf32FromInt_t(&cachedPage->DEX, cachedPage->modAS[AS_DEX]); }
     
+    if(cachedPage->modAS[AS_CON] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->CON); }
+    else { ls_utf32FromInt_t(&cachedPage->CON, cachedPage->modAS[AS_CON]); }
+    
+    if(cachedPage->modAS[AS_INT] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->INT); }
+    else { ls_utf32FromInt_t(&cachedPage->INT, cachedPage->modAS[AS_INT]); }
+    
+    if(cachedPage->modAS[AS_WIS] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->WIS); }
+    else { ls_utf32FromInt_t(&cachedPage->WIS, cachedPage->modAS[AS_WIS]); }
+    
+    if(cachedPage->modAS[AS_CHA] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->CHA); }
+    else { ls_utf32FromInt_t(&cachedPage->CHA, cachedPage->modAS[AS_CHA]); }
+    
+    
+    //NOTE: Continue with other unpacks.
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure, "treasure");
+    if(hasArchetype) { CompendiumApplyAllArchetypeTreasure(&cachedPage->treasure); }
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "shortDesc");
     
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
+    u32 oldSizeBuf[64] = {}; utf32 oldSize = { oldSizeBuf, 0, 64 }; ls_utf32Copy_t(cachedPage->size, &oldSize);
     if(hasArchetype) { CompendiumApplyAllArchetypeSize(&cachedPage->size); }
     
     GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type, "type");
+    u32 oldTypeBuf[64] = {}; utf32 oldType = { oldTypeBuf, 0, 64 }; ls_utf32Copy_t(cachedPage->type, &oldType);
+    if(hasArchetype) { CompendiumApplyAllArchetypeTypes(&cachedPage->type); }
     
     ls_utf32Clear(&cachedPage->subtype);
     if(page.subtype[0])
@@ -2856,6 +2990,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
     }
     
+    if(hasArchetype) { CompendiumApplyAllArchetypeSubTypes(&cachedPage->subtype); }
     
     ls_utf32Clear(&cachedPage->archetype);
     if(page.archetype[0])
@@ -2893,18 +3028,30 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         talentsIdx += 1;
     }
     
+    if(hasArchetype) { CompendiumApplyAllArchetypeTalents(cachedPage); }
+    
     //NOTE: Racial Mods, Special Qualities
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racialMods");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecQual(&cachedPage->spec_qual); }
     
     //NOTE: General Battle Stats. AC, HP, Saving Throws, BMC/DMC, Initiative, RD/RI
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "ac");
     CalculateAndCacheAC(tempString, cachedPage, FALSE, status);
     ls_utf32Clear(&tempString);
     
+    u64 hpPacked = page.HP;
+    if(hasArchetype) { CompendiumApplyAllArchetypeDV(cachedPage, &oldType, &hpPacked); }
+    //TODO: Segugio Strisciante fucks up
+    //AssertMsg(FALSE, "Fucked with skeleton archetypes\n");
+    
     ls_utf32Clear(&cachedPage->HP);
-    s32 totalHP = CalculateAndCacheHP(cachedPage, page.HP);
-    BuildHPFromPacked_t(cachedPage, page.HP, totalHP);
+    s32 totalHP = CalculateAndCacheHP(cachedPage, hpPacked, oldType, oldSize);
+    BuildHPFromPacked_t(cachedPage, hpPacked, totalHP);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
+    if(hasArchetype) { CompendiumApplyAllArchetypeBAB(&cachedPage->BAB, cachedPage->hitDice); }
+    cachedPage->BABval = ls_utf32ToInt(cachedPage->BAB);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "st");
     CalculateAndCacheST(tempString, cachedPage, status);
@@ -2929,6 +3076,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     if(hasArchetype) { CompendiumApplyAllArchetypeRI(cachedPage->gs, &cachedPage->RI); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "defensiveCapacity");
+    if(hasArchetype) { CompendiumApplyAllArchetypeDefCap(&cachedPage->defensiveCapacity); }
     
     //NOTE: GS and PE are moved here because certain archetypes need previous info to determine GS change
     ls_utf32Clear(&cachedPage->gs);
@@ -2957,7 +3105,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     CalculateAndCacheMelee(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
-    if(hasArchetype) { CompendiumApplyAllArchetypeMelee(&cachedPage->melee); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeMelee(cachedPage, &cachedPage->melee); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged, "ranged");
     CalculateAndCacheRanged(tempString, cachedPage, status);
@@ -3022,12 +3170,18 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         }
     }
     
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecCap(&cachedPage->specials); }
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->org, page.org, "org");
+    if(hasArchetype) { CompendiumApplyAllArchetypeOrg(&cachedPage->org); }
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
     
     ls_utf32Clear(&cachedPage->alignment);
     BuildAlignmentFromPacked_t(page.alignment, &cachedPage->alignment);
+    
+    if(hasArchetype) { CompendiumApplyAllArchetypeAlign(&cachedPage->alignment); }
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
@@ -3046,14 +3200,16 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     //TODO :StatusPerception
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception, "perception");
+    
     GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura, "aura");
+    if(hasArchetype) { CompendiumApplyAllArchetypeAura(&cachedPage->aura); }
     
     ls_utf32Clear(&cachedPage->immunities);
     BuildImmunityFromPacked_t(page.immunities, &cachedPage->immunities);
+    if(hasArchetype) { CompendiumApplyAllArchetypeImmunities(&cachedPage->immunities); }
     
     ls_utf32Clear(&cachedPage->resistances);
     BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
-    
     if(hasArchetype)
     { CompendiumApplyAllArchetypeResistances(cachedPage->hitDice, page.resistances, &cachedPage->resistances); }
     
@@ -3069,8 +3225,11 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
             i += 1;
         }
     }
+    if(hasArchetype) { CompendiumApplyAllArchetypeWeak(&cachedPage->weaknesses); }
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->speed, page.speed, "speed");
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpeed(&cachedPage->speed); }
+    
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space, "space");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach, "reach");
     
@@ -3092,6 +3251,12 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         i += 1;
     }
     
+    //NOTETODO: For now I'm applying archetypes after every skill has been unpacked. But it might be more 
+    //          efficient and easier to apply it explicitly for every skill during unpacking, or even on
+    //          on a separate branch. We'll see. For right now only the skeleton archetype uses it
+    //          and just clears it all. So wasted work.
+    if(hasArchetype) { CompendiumApplyAllArchetypeSkills(&cachedPage->skills); }
+    
     ls_utf32Clear(&cachedPage->languages);
     if(page.languages[0])
     {
@@ -3104,7 +3269,10 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
         }
     }
     
+    if(hasArchetype) { CompendiumApplyAllArchetypeLang(&cachedPage->languages); }
+    
     GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment, "environment");
+    if(hasArchetype) { CompendiumApplyAllArchetypeEnv(&cachedPage->environment); }
     
     ls_arenaClear(compTempArena);
     ls_arenaUse(prevArena);
@@ -3196,7 +3364,9 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "short_desc");
+    
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
+    u32 oldSizeBuf[64] = {}; utf32 oldSize = { oldSizeBuf, 0, 64 }; ls_utf32Copy_t(cachedPage->size, &oldSize);
     
     //NOTE: NPC Specific Equip, Properties, Boons
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->given_equip, page.given_equip, "given_equip");
@@ -3205,6 +3375,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     
     //NOTE: Type, SubTypes, ArcheTypes
     GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type, "type");
+    u32 oldTypeBuff[64] = {}; utf32 oldType = { oldTypeBuff, 0, 64 }; ls_utf32Copy_t(cachedPage->type, &oldType);
     
     ls_utf32Clear(&cachedPage->subtype);
     if(page.subtype[0])
@@ -3258,7 +3429,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     ls_utf32Clear(&tempString);
     
     ls_utf32Clear(&cachedPage->HP);
-    s32 totalHP = CalculateAndCacheHP(cachedPage, page.HP);
+    s32 totalHP = CalculateAndCacheHP(cachedPage, page.HP, oldType, oldSize);
     BuildHPFromPacked_t(cachedPage, page.HP, totalHP);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "ST");
@@ -4243,6 +4414,7 @@ b32 DrawCompendium(UIContext *c)
     //TODO: Put a limit to the number of archetypes that can be selected at once (probably around 4)
     //TODO: Certain archetypes can't be allowed on certain creatures. 
     //      Example: Giant can't be applied to Colossal Creatures.
+    //TODO: While choosingArchetype, disallow adding as mob or npc.
     if(compendium.arch.isChoosingArchetype == TRUE)
     {
         //NOTE: Draw the Archetype Selection Window
@@ -4251,20 +4423,22 @@ b32 DrawCompendium(UIContext *c)
         ls_uiRect(c, 0, 0, c->width, 0.935f*c->height, RGBA(0, 0, 0, 0xAA), RGBA(0, 0, 0, 0xAA), 1);
         
         //NOTE: Draw the Archetype Selection Window
-        ls_uiRect(c, 0.1f*c->width, 0.47f*c->height, 0.8f*c->width, 0.33f*c->height, 2);
+        ls_uiRect(c, 0.05f*c->width, 0.47f*c->height, 0.90*c->width, 0.33f*c->height, 2);
         
         //NOTE: Draw all the available archetype selection buttons
-        s32 baseX = 0.12f*c->width;
+        s32 baseX = 0.05f*c->width;
         s32 baseY = 0.74f*c->height;
         
+        s32 xAdv = 0.18f*c->width;
         for(s32 archIdx = 0; archIdx < MAX_ARCHETYPES; archIdx++)
         {
-            ls_uiButton(c, &compendium.arch.archetypes[archIdx], baseX, baseY, 3);
+            s32 baseXOffset = (xAdv - compendium.arch.archetypes[archIdx].w) / 2;
+            ls_uiButton(c, &compendium.arch.archetypes[archIdx], baseX+baseXOffset, baseY, 3);
             
-            baseX += 0.04f*c->width + compendium.arch.archetypes[archIdx].w;
-            if(archIdx > 5)
+            baseX += xAdv; // + compendium.arch.archetypes[archIdx].w;
+            if((archIdx+1) % 5 == 0)
             {
-                baseX  = 0.12f*c->width;
+                baseX  = 0.05f*c->width;
                 baseY -= 0.064f*c->height;
             }
         }
