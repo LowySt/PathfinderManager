@@ -811,6 +811,8 @@ b32 RollOnClick(UIContext *c, void *data)
     return TRUE;
 }
 
+//TODO: Mithic Creatures with the Double Initiative Special Capacity (Iniziativa Doppia)
+//      Get 2 turns per round, at initiatives: Init and Init-20.
 b32 SetOnClick(UIContext *c, void *data)
 {
     AssertMsg(!State.inBattle, "Clicking this should be impossible while in Battle\n");
