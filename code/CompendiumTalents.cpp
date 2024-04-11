@@ -46,6 +46,27 @@ void CacheTalentEntry(CachedTalentEntry *cachedEntry, s32 talentIndex)
     ls_arenaUse(prevArena);
 }
 
+void ShortenTalentNameByRemovingTag(utf32 *name)
+{
+    const s32 needleArrSize = 7;
+    const char32_t *needleArr[needleArrSize] = 
+    { 
+        U" (Combattimento)", U" (Combattimento, Squadra)", U" (Combattimento, Critico)", 
+        U" (Combattimento, Occhiata)", U" (Creazione Oggetto)", U" (Creazione Oggetti)", U" (Metamagia)"
+    };
+    
+    s32 toRemoveIdx = -1;
+    for(s32 nextIdx = 0; nextIdx < needleArrSize; nextIdx++)
+    {
+        toRemoveIdx = ls_utf32LeftFind(*name, ls_utf32Constant(needleArr[nextIdx]));
+        if(toRemoveIdx != -1)
+        {
+            name->len = toRemoveIdx;
+            break;
+        }
+    }
+}
+
 void BuildTalentFromPacked_t(Codex *c, u32 entry, utf32 *tmp)
 {
     u32 tempUTF32Buffer[512] = {};
@@ -91,24 +112,8 @@ void BuildTalentFromPacked_t(Codex *c, u32 entry, utf32 *tmp)
     
     
     //NOTE: Remove the talent tags from the display name.
-    const s32 needleArrSize = 7;
-    const char32_t *needleArr[needleArrSize] = 
-    { 
-        U" (Combattimento)", U" (Combattimento, Squadra)", U" (Combattimento, Critico)", 
-        U" (Combattimento, Occhiata)", U" (Creazione Oggetto)", U" (Creazione Oggetti)", U" (Metamagia)"
-    };
+    ShortenTalentNameByRemovingTag(&tempString);
     
-    s32 toRemoveIdx = -1;
-    for(s32 nextIdx = 0; nextIdx < needleArrSize; nextIdx++)
-    {
-        toRemoveIdx = ls_utf32LeftFind(tempString, ls_utf32Constant(needleArr[nextIdx]));
-        if(toRemoveIdx != -1)
-        {
-            tempString.len = toRemoveIdx;
-            break;
-        }
-        
-    }
     
     ls_utf32Set(tmp, tempString);
     
@@ -193,6 +198,46 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
     }
     
     return TSR_NORMAL;
+}
+
+u32 GetTalentPackedFromName(utf32 talentName, b32 isBonus, b32 isMithic)
+{
+    u32 tmpBuff[64] = {};
+    utf32 tempString = { tmpBuff, 0, 64 };
+    
+    //NOTE: First check the name through the "talents" buffer. If it was interned, it's here.
+    for(s32 talentIndex = 0; talentIndex < compendium.codex.talentPages.count; talentIndex++)
+    {
+        TalentEntry *entry = compendium.codex.talentPages + talentIndex;
+        
+        if(GetEntryFromBufferWithLen_t(&compendium.codex.talentsModule, &tempString, tempString.size, entry->name))
+        {
+            ShortenTalentNameByRemovingTag(&tempString);
+            
+            if(ls_utf32AreEqual(talentName, tempString))
+            {
+                u32 packed = (talentIndex & TALENT_MODULE_IDX_MASK);
+                if(isMithic) { packed |= TALENT_MITHIC_BIT_U32; }
+                if(isBonus)  { packed |= TALENT_BONUS_BIT_U32; }
+                return packed;
+            }
+        }
+        
+        if(GetEntryFromBufferWithLen_t(&compendium.codex.talents, &tempString, tempString.size, entry->name))
+        {
+            ShortenTalentNameByRemovingTag(&tempString);
+            
+            if(ls_utf32AreEqual(talentName, tempString))
+            {
+                u32 packed = TALENT_INTERN_BIT_U32 | (entry->name << TALENT_INTERN_IDX_SHIFT) | talentIndex;
+                if(isMithic) { packed |= TALENT_MITHIC_BIT_U32; }
+                if(isBonus)  { packed |= TALENT_BONUS_BIT_U32; }
+                return packed;
+            }
+        }
+    }
+    
+    return TALENT_NOT_FOUND;
 }
 
 s32 DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY, s32 width, s32 minY)

@@ -64,6 +64,8 @@ void BuildTalentFromPacked_t(struct Codex *c, u32 entry, utf32 *tmp);
 TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, struct CachedPageEntry *page, UILayoutRect oldLayout,
                                                utf32 talent, s32 talentEntry);
 
+u32 GetTalentPackedFromName(utf32 talentName, b32 isBonus = FALSE, b32 isMithic = FALSE);
+
 s32 DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY, s32 width, s32 minY);
 
 #endif //_COMPENDIUM_TALENTS_H
