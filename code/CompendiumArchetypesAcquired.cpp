@@ -225,9 +225,10 @@ void skeletonCreatureBAB(utf32 *old, s32 dv)
     ls_utf32AppendInt(old, bab);
 }
 
-void skeletonCreatureSkills(utf32 *old)
-{
-    ls_utf32Clear(old);
+u32 skeletonCreatureSkills(u32 skillEntry)
+{ 
+    //NOTE: Skeletons loose all skills
+    return 0;
 }
 
 void skeletonCreatureTalents(CachedPageEntry *page)
@@ -532,9 +533,10 @@ void zombieCreatureBAB(utf32 *old, s32 dv)
     ls_utf32AppendInt(old, bab);
 }
 
-void zombieCreatureSkills(utf32 *old)
+u32 zombieCreatureSkills(u32 skillEntry)
 {
-    ls_utf32Clear(old);
+    //NOTE: Zombies loose all skills
+    return 0;
 }
 
 void zombieCreatureTalents(CachedPageEntry *page)
@@ -827,9 +829,10 @@ void bloodySkeletonCreatureBAB(utf32 *old, s32 dv)
     ls_utf32AppendInt(old, bab);
 }
 
-void bloodySkeletonCreatureSkills(utf32 *old)
+u32 bloodySkeletonCreatureSkills(u32 skillEntry)
 {
-    ls_utf32Clear(old);
+    //NOTE: Skeletons loose all skills
+    return 0;
 }
 
 void bloodySkeletonCreatureTalents(CachedPageEntry *page)
@@ -1121,9 +1124,10 @@ void burningSkeletonCreatureBAB(utf32 *old, s32 dv)
     ls_utf32AppendInt(old, bab);
 }
 
-void burningSkeletonCreatureSkills(utf32 *old)
+u32 burningSkeletonCreatureSkills(u32 skillEntry)
 {
-    ls_utf32Clear(old);
+    //NOTE: Skeletons loose all skills
+    return 0;
 }
 
 void burningSkeletonCreatureTalents(CachedPageEntry *page)
@@ -1442,9 +1446,10 @@ void fastZombieCreatureBAB(utf32 *old, s32 dv)
     ls_utf32AppendInt(old, bab);
 }
 
-void fastZombieCreatureSkills(utf32 *old)
+u32 fastZombieCreatureSkills(u32 skillEntry)
 {
-    ls_utf32Clear(old);
+    //NOTE: Zombies loose all skills
+    return 0;
 }
 
 void fastZombieCreatureTalents(CachedPageEntry *page)
@@ -1624,7 +1629,8 @@ void vampireCreatureSubType(utf32 *subtype)
     AssertMsg(subtype, "Null subtype string pointer\n");
     
     //TODO: This requires more work. It's shit.
-    ls_utf32Append(subtype, U", Potenziato"); 
+    CompendiumPrependStringIfMissing(subtype, U"Potenziato"_W, U"Potenziato, "_W);
+    
     return;
 }
 
@@ -1644,14 +1650,20 @@ void vampireCreatureDefCap(utf32 *old)
     return;
 }
 
-void vampireCreatureSkills(utf32 *old)
+u32 vampireCreatureSkills(u32 entry)
 {
-    AssertMsg(old, "Null skills string pointer\n");
+    //NOTE: Vampires gain +8 racial bonus on those 4 skills.
     
-    //TODO: +8 Racial Bonus on skills
-    TODO;
+    SkillType entryType = SkillType(entry & SKILL_TYPE_MASK);
+    switch(entryType)
+    {
+        case SkillType::Furtivit:
+        case SkillType::Intuizione:
+        case SkillType::Percezione:
+        case SkillType::Raggirare:  { return ChangeBonusToSkill(entry, 8); } break;
+    }
     
-    return;
+    return entry;
 }
 
 void vampireCreatureTalents(CachedPageEntry *page)
@@ -1688,21 +1700,21 @@ void vampireCreatureSpecCap(utf32 *old)
 { 
     AssertMsg(old, "Null spec cap string pointer\n");
     
-    const utf32 changeForm = U"\n\nCambiare Forma (Sop)\nUn vampiro pu\U000000F2 usare "
-        "cambiare forma per assumere la forma di Pipistrello o Lupo Crudele, come Forma Ferina II"_W;
+    const utf32 changeForm = U"Cambiare Forma (Sop)\nUn vampiro pu\U000000F2 usare "
+        "cambiare forma per assumere la forma di Pipistrello o Lupo Crudele, come Forma Ferina II\n\n"_W;
     
-    const utf32 gasForm = U"\n\nForma Gassosa (Sop)\nCome azione standard, un vampiro pu\U000000F2 "
+    const utf32 gasForm = U"Forma Gassosa (Sop)\nCome azione standard, un vampiro pu\U000000F2 "
         "assumere Forma Gassosa a volont\U000000E0 (livello dell'incantatore 5), ma pu\U000000F2 rimanere "
         "gassoso indefinitamente e ha una velocit\U000000E0 di Volare di 6 metri "
-        "con manovrabilit\U000000E0 perfetta"_W;
+        "con manovrabilit\U000000E0 perfetta\n\n"_W;
     
-    const utf32 spiderMove = U"\n\nMovimenti del Ragno (Str)\nUn vampiro pu\U000000F2 Scalare "
-        "superfici verticali come se fosse sotto l'effetto dell'incantesimo Movimenti del Ragno"_W;
+    const utf32 spiderMove = U"Movimenti del Ragno (Str)\nUn vampiro pu\U000000F2 Scalare "
+        "superfici verticali come se fosse sotto l'effetto dell'incantesimo Movimenti del Ragno\n\n"_W;
     
-    const utf32 shadowless = U"\n\nSenz'Ombra (Str)\nUn vampiro non proietta ombra e "
-        "non si riflette negli specchi"_W;
+    const utf32 shadowless = U"Senz'Ombra (Str)\nUn vampiro non proietta ombra e "
+        "non si riflette negli specchi\n\n"_W;
     
-    const utf32 createChildren = U"\n\nCreare Progenie (Sop)\nUn vampiro pu\U000000F2 creare progenie "
+    const utf32 createChildren = U"Creare Progenie (Sop)\nUn vampiro pu\U000000F2 creare progenie "
         "da coloro che uccide con il risucchio di sangue o il risucchio di energia, sempre che "
         "la creatura uccisa sia dello stesso tipo della creatura base del vampiro. La vittima risorge "
         "dalla morte come vampiro in 1d4 giorni. Questo vampiro \U000000E8 sotto il comando del suo creatore e "
@@ -1710,31 +1722,31 @@ void vampireCreatureSpecCap(utf32 *old)
         "schiava un numero di individui non superiore al doppio dei suoi Dadi Vita; qualsiasi progenie "
         "creata che ecceda questo limite diventa un non morto con libero arbitrio. Un vampiro pu\U000000F2 liberare "
         "una progenie schiava per asservirne una nuova, ma una volta libero, un vampiro o una progenie "
-        "vampirica non pu\U000000F2 essere schiavizzata nuovamente"_W;
+        "vampirica non pu\U000000F2 essere schiavizzata nuovamente\n\n"_W;
     
-    const utf32 dominate = U"\n\nDominare (Sop)\nUn vampiro pu\U000000F2 piegare la volont\U000000E0 di un "
+    const utf32 dominate = U"Dominare (Sop)\nUn vampiro pu\U000000F2 piegare la volont\U000000E0 di un "
         "umanoide come azione standard. Il bersaglio deve superare un Tiro Salvezza sulla "
         "Volont\U000000E0 o cadere immediatamente sotto la sua influenza, come per l'incantesimo Dominare "
         "Persone (livello dell'incantatore 12). Questa capacit\U000000E0 ha un raggio di 9 metri. "
         "A discrezione del GM, alcuni vampiri sono in grado di influenzare tipi diversi di "
-        "creature con questo potere"_W;
+        "creature con questo potere\n\n"_W;
     
-    const utf32 childrenOfNight = U"\n\nFigli della Notte (Sop)\nUna volta al giorno, un vampiro pu\U000000F2 "
+    const utf32 childrenOfNight = U"Figli della Notte (Sop)\nUna volta al giorno, un vampiro pu\U000000F2 "
         "richiamare 1d6+1 sciami di ratti, 1d4+1 sciami di pipistrelli o 2d6 lupi come azione standard "
         "(se la creatura base non \U000000E8 terrestre, questo potere pu\U000000F2 evocare altre creature di "
-        "potere similare). Queste creature arrivano in 2d6 round e servono il vampiro per massimo 1 ora."_W;
+        "potere similare). Queste creature arrivano in 2d6 round e servono il vampiro per massimo 1 ora.\n\n"_W;
     
-    const utf32 drain = U"\n\nRisucchio di Energia (Sop)\nUna creatura colpita dallo schianto "
+    const utf32 drain = U"Risucchio di Energia (Sop)\nUna creatura colpita dallo schianto "
         "di un vampiro (o da altri attacchi naturali) ottiene due livelli negativi. "
         "Questa capacit\U000000E0 si attiva una volta per round, indipendentemente dal numero "
-        "di attacchi che un vampiro pu\U000000F2 effettuare"_W;
+        "di attacchi che un vampiro pu\U000000F2 effettuare\n\n"_W;
     
-    const utf32 bloodSuck = U"\n\nRisucchio di Sangue (Sop)\nUn vampiro pu\U000000F2 succhiare sangue "
+    const utf32 bloodSuck = U"Risucchio di Sangue (Sop)\nUn vampiro pu\U000000F2 succhiare sangue "
         "lottando col suo avversario; se il vampiro stabilisce e mantiene una presa, "
         "risucchia il sangue, infliggendo 1d4 danni alla Costituzione. Il vampiro guarisce "
         "di 5 punti ferita o ne ottiene 5 temporanei per 1 ora (fino ad un massimo di punti "
         "ferita temporanei pari al normale numero di punti ferita totali del vampiro) "
-        "ogni round in cui risucchia sangue."_W;
+        "ogni round in cui risucchia sangue.\n\n"_W;
     
     CompendiumPrependStringIfMissing(old, changeForm, changeForm);
     CompendiumPrependStringIfMissing(old, gasForm, gasForm);
@@ -1747,13 +1759,15 @@ void vampireCreatureSpecCap(utf32 *old)
     CompendiumPrependStringIfMissing(old, drain, drain);
     CompendiumPrependStringIfMissing(old, bloodSuck, bloodSuck);
     
+    ls_utf32TrimWhitespaceRight(old);
+    
     return;
 }
 
 void vampireCreatureWeak(utf32 *old)
 {
     AssertMsg(old, "Null weakness string pointer\n");
-    TODO;
+    //TODO;
     return;
 }
 
