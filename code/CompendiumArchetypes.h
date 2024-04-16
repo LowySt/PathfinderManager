@@ -6,7 +6,7 @@
 //        For example, fleshwarped makes you choose a new movement speed among 4 different kinds.
 
 const s32 MAX_CONCURRENT_ARCHETYPES = 4;
-const s32 MAX_ARCHETYPES = 15;
+const s32 MAX_ARCHETYPES = 16;
 
 const s32 RACE_SUBTYPES_COUNT = 61;
 const utf32 raceSubtypes[RACE_SUBTYPES_COUNT] = {
@@ -32,6 +32,8 @@ const char32_t *archetypeName[MAX_ARCHETYPES] = {
     U"Scheletro", U"Scheletro Insanguinato", U"Scheletro Bruciante",
     
     U"Zombi", U"Zombi Rapido",
+    
+    U"Vampiro",
 };
 
 struct ArchetypeInfo
@@ -62,7 +64,7 @@ typedef void (*ArchDefCapProc)(utf32 *);
 typedef void (*ArchSpeedProc)(utf32 *);
 typedef void (*ArchImmProc)(utf32 *);
 typedef void (*ArchBABProc)(utf32 *, s32);
-typedef void (*ArchSkillsProc)(utf32 *);
+typedef u32  (*ArchSkillsProc)(u32 skillEntry);
 typedef void (*ArchTalentsProc)(CachedPageEntry *);
 typedef void (*ArchEnvProc)(utf32 *);
 typedef void (*ArchOrgProc)(utf32 *);
@@ -191,7 +193,7 @@ void CompendiumApplyAllArchetypeDefCap(utf32 *old);
 void CompendiumApplyAllArchetypeSpeed(utf32 *old);
 void CompendiumApplyAllArchetypeImmunities(utf32 *old);
 void CompendiumApplyAllArchetypeBAB(utf32 *old, s32 dv);
-void CompendiumApplyAllArchetypeSkills(utf32 *old);
+u32  CompendiumApplyAllArchetypeSkills(u32 skillEntry);
 void CompendiumApplyAllArchetypeTalents(CachedPageEntry *);
 void CompendiumApplyAllArchetypeEnv(utf32 *old);
 void CompendiumApplyAllArchetypeOrg(utf32 *old);

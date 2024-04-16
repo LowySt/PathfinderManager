@@ -72,8 +72,8 @@ void archetypeImmunitiesStub(utf32 *old)
 void archetypeBABStub(utf32 *old, s32 dv)
 { return; }
 
-void archetypeSkillsStub(utf32 *old)
-{ return; }
+u32 archetypeSkillsStub(u32 skillEntry)
+{ return skillEntry; }
 
 void archetypeTalentsStub(CachedPageEntry *)
 { return; }
@@ -114,14 +114,19 @@ void archetypeWeakStub(utf32 *old)
 //TODO: Right now there's no enforcement on this array being all initialized, which is bad.
 //      Solution would be to make a static compile time check for StaticArray that enforces size?
 //      Or make a SizedArray that enforces initialization
-ArchetypeDiff allArchetypeDiffs[MAX_ARCHETYPES] = {
+ArchetypeDiff allArchetypeDiffs[] = {
     AdvancedCreature, CelestialCreature, FiendishCreature, EntropicCreature, ResoluteCreature, 
     GiantCreature, FungoidCreature, ShadowCreature, FleshwarpedCreature, DegenerateCreature,
     
     SkeletonCreature, BloodySkeletonCreature, BurningSkeletonCreature,
     
     ZombieCreature, FastZombieCreature,
+    
+    VampireCreature,
 };
+
+static_assert((sizeof(allArchetypeDiffs) / sizeof(ArchetypeDiff)) == MAX_ARCHETYPES,
+              "All Archetype Diffs is not exhaustive\n");
 
 b32 CompendiumOpenArchetypeWindow(UIContext *c, void *user)
 {
@@ -385,13 +390,15 @@ void CompendiumApplyAllArchetypeBAB(utf32 *old, s32 dv)
     }
 }
 
-void CompendiumApplyAllArchetypeSkills(utf32 *old)
+u32 CompendiumApplyAllArchetypeSkills(u32 skillEntry)
 {
+    u32 currEntry = skillEntry;
     for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
     {
         ArchetypeDiff *curr = compendium.appliedArchetypes + i;
-        curr->skills(old);
+        currEntry = curr->skills(currEntry);
     }
+    return currEntry;
 }
 
 void CompendiumApplyAllArchetypeTalents(CachedPageEntry *page)
