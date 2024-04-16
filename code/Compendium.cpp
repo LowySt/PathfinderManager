@@ -603,7 +603,8 @@ void CompendiumPrependStringIfMissing(utf32 *s, utf32 check, utf32 toPrepend)
         if(s->len + toPrepend.len >= s->size)
         { AssertMsg(FALSE, "Insufficient space in string.\n"); return; }
         
-        ls_utf32Prepend(s, toPrepend);
+        if(s->len > 0) { ls_utf32Prepend(s, toPrepend); }
+        else           { ls_utf32Prepend(s, check); }
     }
 }
 
@@ -1972,9 +1973,6 @@ void CalculateAndCacheRanged(utf32 Ranged, CachedPageEntry *cachedPage, Status *
     LogMsgF(Ranged.len - stringIndex == 0, "Stuff left at the end of the original string: %d\n", Ranged.len - stringIndex);
 }
 
-//NOTE: Skill map to Skill Cat
-enum SkillASCat { SK_STR, SK_DEX, SK_CON, SK_INT, SK_WIS, SK_CHA, SK_UNDEFINED };
-
 const char32_t *skillNames[] = {
     U"Acrobazia", U"Addestrare Animali", U"Artigianato", U"Artista della Fuga",
     U"Camuffare", U"Cavalcare", U"Conoscenze", U"Diplomazia", U"Disattivare Congegni",
@@ -2979,18 +2977,25 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_utf32Clear(&cachedPage->subtype);
     if(page.subtype[0])
     {
+        ls_utf32Clear(&tempString);
+        
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U" ("));
-        AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, NULL, page.subtype[0]);
+        
+        AppendEntryFromBuffer(&c->subtypes, &tempString, NULL, page.subtype[0]);
         u32 i = 1;
         while(page.subtype[i] && i < 8)
         {
-            AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, U", ", page.subtype[i]);
+            AppendEntryFromBuffer(&c->subtypes, &tempString, U", ", page.subtype[i]);
             i += 1;
         }
+        
+        if(hasArchetype) { CompendiumApplyAllArchetypeSubTypes(&tempString); }
+        
+        ls_utf32Append(&cachedPage->subtype, tempString);
+        ls_utf32Clear(&tempString);
+        
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
     }
-    
-    if(hasArchetype) { CompendiumApplyAllArchetypeSubTypes(&cachedPage->subtype); }
     
     ls_utf32Clear(&cachedPage->archetype);
     if(page.archetype[0])
@@ -3233,29 +3238,10 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space, "space");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach, "reach");
     
-    ls_utf32Clear(&cachedPage->skills);
-    s32 i = 0;
-    while(page.skills[i] && i < 24)
-    {
-        if((page.skills[i] & INTERN_BIT_U32) != 0)
-        { GetEntryFromBuffer_t(&c->skills, &tempString, (page.skills[i] & (~INTERN_BIT_U32)), "skills"); }
-        else
-        { 
-            i = BuildSkillFromPacked_t(page.skills, i, &tempString);
-            AssertMsgF(i <= 23, "When unpacking skill, got invalid index: %d\n", i);
-        }
-        
-        CalculateAndCacheSkill(tempString, cachedPage, status);
-        if(i < 23 && page.skills[i+1] != 0) { ls_utf32Append(&cachedPage->skills, ls_utf32Constant(U", ")); }
-        ls_utf32Clear(&tempString);
-        i += 1;
-    }
     
-    //NOTETODO: For now I'm applying archetypes after every skill has been unpacked. But it might be more 
-    //          efficient and easier to apply it explicitly for every skill during unpacking, or even on
-    //          on a separate branch. We'll see. For right now only the skeleton archetype uses it
-    //          and just clears it all. So wasted work.
-    if(hasArchetype) { CompendiumApplyAllArchetypeSkills(&cachedPage->skills); }
+    ls_utf32Clear(&cachedPage->skills);
+    BuildSkillsFromPacked_t(cachedPage, status, page.skills);
+    
     
     ls_utf32Clear(&cachedPage->languages);
     if(page.languages[0])
@@ -3580,7 +3566,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
         { GetEntryFromBuffer_t(&c->skills, &tempString, (page.skills[i] & (~INTERN_BIT_U32)), "skills"); }
         else
         { 
-            i = BuildSkillFromPacked_t(page.skills, i, &tempString);
+            i = BuildSkillFromPackedOld_t(page.skills, i, &tempString);
             AssertMsgF(i <= 23, "When unpacking skill, got invalid index: %d\n", i);
         }
         
