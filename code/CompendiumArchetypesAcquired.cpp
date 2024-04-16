@@ -1748,6 +1748,25 @@ void vampireCreatureSpecCap(utf32 *old)
         "ferita temporanei pari al normale numero di punti ferita totali del vampiro) "
         "ogni round in cui risucchia sangue.\n\n"_W;
     
+    const utf32 vampireWeakness = U"Debolezze del Vampiro\nI vampiri non tollerano l'odore forte dell'aglio "
+        "e non entreranno volontariamente in un'area che ne \U000000E8 impregnata. Allo stesso modo, rifuggono "
+        "gli specchi o i simboli sacri mostrati con fermezza. Queste cose non danneggiano il vampiro, "
+        "possono solo tenerlo a bada. Un vampiro deve stare ad almeno 1,5 metri da uno specchio o un "
+        "simbolo sacro, e non pu\U000000F2 toccare o sferrare attacchi in mischia contro chi li usa. Tenere a bada "
+        "un vampiro richiede un'azione standard. Dopo 1 round, un vampiro pu\U000000F2 superare la sua repulsione "
+        "per l'oggetto e pu\U000000F2 tentare di farlo ogni round superando un "
+        "Tiro Salvezza su Volont\U000000E0 con CD 25."
+        "\nI vampiri non possono entrare nelle case private a meno che non vengano invitati da qualcuno "
+        "che ne ha l'autorit\U000000E0.\nRiducendo un vampiro a 0 Punti Ferita o meno lo si rende Inabile, ma non "
+        "sempre lo si distrugge (vedi Guarigione Rapida). Tuttavia, certi attacchi \"uccidono\" i vampiri. "
+        "Un vampiro esposto alla luce solare diretta diviene Barcollante nel primo round di esposizione "
+        "e viene distrutto completamente nel round successivo se non riesce a scappare. Ogni round di "
+        "immersione in acqua corrente infligge ad un vampiro danni pari a 1/3 dei suoi punti "
+        "ferita massimi; un vampiro ridotto a 0 punti ferita in questa maniera viene distrutto. "
+        "Piantare un Paletto di Legno nel cuore di un vampiro Indifeso lo uccide sul colpo "
+        "(questa \U000000E8 un'azione di round completo). Comunque, questi pu\U000000F2 tornare in "
+        "vita se il paletto viene rimosso, a meno che la sua testa venga mozzata e cosparsa di Acqua Santa.\n\n"_W;
+    
     CompendiumPrependStringIfMissing(old, changeForm, changeForm);
     CompendiumPrependStringIfMissing(old, gasForm, gasForm);
     CompendiumPrependStringIfMissing(old, spiderMove, spiderMove);
@@ -1759,6 +1778,8 @@ void vampireCreatureSpecCap(utf32 *old)
     CompendiumPrependStringIfMissing(old, drain, drain);
     CompendiumPrependStringIfMissing(old, bloodSuck, bloodSuck);
     
+    CompendiumPrependStringIfMissing(old, vampireWeakness, vampireWeakness);
+    
     ls_utf32TrimWhitespaceRight(old);
     
     return;
@@ -1767,7 +1788,9 @@ void vampireCreatureSpecCap(utf32 *old)
 void vampireCreatureWeak(utf32 *old)
 {
     AssertMsg(old, "Null weakness string pointer\n");
-    //TODO;
+    
+    CompendiumPrependStringIfMissing(old, U"Debolezze del Vampiro"_W, U"Debolezze del Vampiro, "_W);
+    
     return;
 }
 

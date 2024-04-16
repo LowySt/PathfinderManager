@@ -240,6 +240,7 @@ u32 GetTalentPackedFromName(utf32 talentName, b32 isBonus, b32 isMithic)
     return TALENT_NOT_FOUND;
 }
 
+//TODO: Add button to go back at the top. So only mouse movement is possible.
 s32 DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY, s32 width, s32 minY)
 {
     Color originalTextColor = c->textColor;
