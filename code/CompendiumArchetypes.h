@@ -6,7 +6,7 @@
 //        For example, fleshwarped makes you choose a new movement speed among 4 different kinds.
 
 const s32 MAX_CONCURRENT_ARCHETYPES = 4;
-const s32 MAX_ARCHETYPES = 16;
+const s32 MAX_ARCHETYPES = 18;
 
 const s32 RACE_SUBTYPES_COUNT = 61;
 const utf32 raceSubtypes[RACE_SUBTYPES_COUNT] = {
@@ -25,7 +25,7 @@ const utf32 alignmentSubtypes[ALIGNMENT_SUBTYPE_COUNT] = {
     U"Buono"_W, U"Caotico"_W, U"Legale"_W, U"Malvagio"_W,
 };
 
-const char32_t *archetypeName[MAX_ARCHETYPES] = {
+const char32_t *archetypeName[] = {
     U"Avanzato", U"Celestiale", U"Immondo", U"Entropico", U"Risoluto", 
     U"Gigante", U"Fungoide", U"d'Ombra", U"Carnideformato", U"Degenerato",
     
@@ -34,7 +34,12 @@ const char32_t *archetypeName[MAX_ARCHETYPES] = {
     U"Zombi", U"Zombi Rapido",
     
     U"Vampiro",
+    
+    U"Micotico", U"Esoscheletro",
 };
+
+static_assert((sizeof(archetypeName) / sizeof(char32_t *)) == MAX_ARCHETYPES,
+              "ArchetypeName is not exhaustive\n");
 
 struct ArchetypeInfo
 {

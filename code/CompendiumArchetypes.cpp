@@ -57,7 +57,7 @@ void archetypeSubTypeStub(utf32 *subtype)
 void archetypeDVStub(CachedPageEntry *, utf32 *oldType, u64 *DV)
 { return; }
 
-b32 archetypeSTStub(s32, s32 *)
+b32 archetypeSTStub(s32 totalDV, s32 st[ST_COUNT])
 { return FALSE; }
 
 void archetypeDefCapStub(utf32 *old)
@@ -105,7 +105,7 @@ void archetypeWeakStub(utf32 *old)
 //NOTE: All archetypes code is in other files, but included directly here.
 #include "CompendiumArchetypesSimple.cpp"
 #include "CompendiumArchetypesAcquired.cpp"
-
+#include "CompendiumArchetypesInherited.cpp"
 
 //-------------------------//
 //  ARCHETYPE APPLICATION  //
@@ -123,6 +123,8 @@ ArchetypeDiff allArchetypeDiffs[] = {
     ZombieCreature, FastZombieCreature,
     
     VampireCreature,
+    
+    FungalCreature, ExoskeletonCreature
 };
 
 static_assert((sizeof(allArchetypeDiffs) / sizeof(ArchetypeDiff)) == MAX_ARCHETYPES,

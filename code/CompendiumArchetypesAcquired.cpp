@@ -1,5 +1,5 @@
 //-------------------------//
-//   SKELETON ARCHETYPE   //
+//   SKELETON ARCHETYPE    //
 //-------------------------//
 
 b32 skeletonCreatureGS(s32 hitDice, s32 *gsIndex, s32 *rm)
@@ -1271,12 +1271,16 @@ b32 fastZombieCreatureAC(utf32 *size, s32 ac[AC_TYPES_COUNT])
 
 b32 fastZombieCreatureAlign(utf32 *oldAlign)
 {
+    AssertNonNull(oldAlign);
+    
     ls_utf32Set(oldAlign, U"NM"_W);
     return TRUE;
 }
 
 void fastZombieCreatureType(utf32 *oldType)
 {
+    AssertNonNull(oldType);
+    
     ls_utf32Clear(oldType);
     ls_utf32Append(oldType, U"Non Morto");
     
@@ -1342,6 +1346,8 @@ void fastZombieCreatureDefCap(utf32 *old)
 
 void fastZombieCreatureSpeed(utf32 *old)
 {
+    AssertNonNull(old);
+    
     //TODO: Because maneuverability goes down, the bonus to the flight ability changes.
     //      Zombies loose all abilities, so I'll leave it to the GM to calculate it if necessary
     //      But showing it properly would be better.
@@ -1439,6 +1445,8 @@ void fastZombieCreatureAS(s32 as[AS_COUNT])
 
 void fastZombieCreatureBAB(utf32 *old, s32 dv)
 {
+    AssertNonNull(old);
+    
     ls_utf32Clear(old);
     
     s32 bab = (s32)(((f64)dv)*0.75);
@@ -1454,6 +1462,8 @@ u32 fastZombieCreatureSkills(u32 skillEntry)
 
 void fastZombieCreatureTalents(CachedPageEntry *page)
 {
+    AssertNonNull(page);
+    
     for(s32 i = 0; i < 24; i++)
     { ls_utf32Clear(page->talents + i); }
     
@@ -1644,6 +1654,8 @@ void vampireCreatureDV(CachedPageEntry *page, utf32 *oldType, u64 *DV)
 
 void vampireCreatureDefCap(utf32 *old)
 {
+    AssertMsg(old, "Null def cap string pointer\n");
+    
     const utf32 check = U"Tratti dei Non Morti"_W;
     const utf32 toAdd = U"Tratti dei Non Morti, "_W;
     CompendiumPrependStringIfMissing(old, check, toAdd);
