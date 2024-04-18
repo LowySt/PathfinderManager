@@ -2291,12 +2291,13 @@ b32 AddMobOnClick(UIContext *, void *);
 b32 AddAllyOnClick(UIContext *, void *);
 b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
 {
+    if(!compendium.isViewingPage)           return FALSE;
+    if(compendium.pageIndex == -1)          return FALSE;
+    if(compendium.arch.isChoosingArchetype) return FALSE;
+    
     s32 visibleMobs = State.Init->Mobs.selectedIndex;
     InitField *f = State.Init->MobFields + visibleMobs;
-    
-    if(!compendium.isViewingPage)  return FALSE;
-    if(compendium.pageIndex == -1) return FALSE;
-    if(visibleMobs == mob_count)     return FALSE;
+    if(visibleMobs == mob_count)            return FALSE;
     
     if(State.inBattle)
     {
@@ -2331,11 +2332,12 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
 
 b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
 {
-    s32 visibleAllies = State.Init->Allies.selectedIndex;
-    InitField *f = State.Init->AllyFields + visibleAllies;
-    
     if(!compendium.isViewingPage)  return FALSE;
     if(compendium.pageIndex == -1) return FALSE;
+    if(compendium.arch.isChoosingArchetype) return FALSE;
+    
+    s32 visibleAllies = State.Init->Allies.selectedIndex;
+    InitField *f = State.Init->AllyFields + visibleAllies;
     if(visibleAllies == ally_count)  return FALSE;
     
     if(State.inBattle)
@@ -4396,11 +4398,12 @@ b32 DrawCompendium(UIContext *c)
         AssertMsg(FALSE, "Unhandled page viewing in Compendium\n");
     }
     
-    //TODO: Disallow selecting the same archetype multiple times.
-    //TODO: Put a limit to the number of archetypes that can be selected at once (probably around 4)
+    //TODO: Rather than silently exiting when selecting an invalid archetype
+    //      (previously selected, max reached, incompatible with current creature)
+    //      we should "grey out" the button and show a fader error?
+    
     //TODO: Certain archetypes can't be allowed on certain creatures. 
     //      Example: Giant can't be applied to Colossal Creatures.
-    //TODO: While choosingArchetype, disallow adding as mob or npc.
     if(compendium.arch.isChoosingArchetype == TRUE)
     {
         //NOTE: Draw the Archetype Selection Window
@@ -4421,7 +4424,7 @@ b32 DrawCompendium(UIContext *c)
             s32 baseXOffset = (xAdv - compendium.arch.archetypes[archIdx].w) / 2;
             ls_uiButton(c, &compendium.arch.archetypes[archIdx], baseX+baseXOffset, baseY, 3);
             
-            baseX += xAdv; // + compendium.arch.archetypes[archIdx].w;
+            baseX += xAdv;
             if((archIdx+1) % 5 == 0)
             {
                 baseX  = 0.05f*c->width;

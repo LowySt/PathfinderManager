@@ -50,6 +50,7 @@ struct ArchetypeInfo
     s32        archetypeIndex = -1;
 };
 
+typedef b32  (*ArchIsCompatible)(CachedPageEntry *);
 typedef b32  (*ArchGSProc)(s32, s32 *, s32 *);
 typedef void (*ArchASProc)(s32 *);
 typedef b32  (*ArchACProc)(utf32 *, s32 *);
@@ -144,6 +145,8 @@ struct ArchetypeDiff
 {
     utf32 nameStr;
     
+    ArchIsCompatible isCompatible;
+    
     ArchGSProc       gs;
     ArchASProc       abilityScores;
     ArchACProc       armorClass;
@@ -177,6 +180,8 @@ struct ArchetypeDiff
 
 b32  CompendiumOpenArchetypeWindow(UIContext *c, void *user);
 b32  CompendiumSelectArchetype(UIContext *c, void *user);
+
+
 void CompendiumApplyAllArchetypeNames(utf32 *newName);
 void CompendiumApplyAllArchetypeGS(u16 gsEntry, s32 hitDice, utf32 *newGS, utf32 *newPE);
 void CompendiumApplyAllArchetypeAS(s32 as[AS_COUNT]);

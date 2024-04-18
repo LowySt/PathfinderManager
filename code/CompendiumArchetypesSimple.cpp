@@ -26,7 +26,8 @@ b32 advancedCreatureAC(utf32 *size, s32 acDiff[AC_TYPES_COUNT])
 }
 
 ArchetypeDiff AdvancedCreature = {
-    U"Avanzata"_W, advancedCreatureGS, advancedCreatureAS, advancedCreatureAC, archetypeSensesStub,
+    U"Avanzata"_W, archetypeIsCompatibleStub, 
+    advancedCreatureGS, advancedCreatureAS, advancedCreatureAC, archetypeSensesStub,
     archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub, archetypeSubTypeStub,
     archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub, 
@@ -160,7 +161,8 @@ b32 celestialCreatureSpecAtk(utf32 *spec)
 }
 
 ArchetypeDiff CelestialCreature = {
-    U"Celestiale"_W, celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses,
+    U"Celestiale"_W, archetypeIsCompatibleStub, 
+    celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses,
     celestialCreatureRD, celestialCreatureResistance, celestialCreatureRI, celestialCreatureSpecAtk,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub, archetypeSubTypeStub,
     archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub, 
@@ -236,7 +238,8 @@ b32 fiendishCreatureSpecAtk(utf32 *spec)
 }
 
 ArchetypeDiff FiendishCreature = {
-    U"Immonda"_W, celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses,
+    U"Immonda"_W, archetypeIsCompatibleStub, 
+    celestialCreatureGS, archetypeASStub, archetypeACStub, celestialCreatureSenses,
     fiendishCreatureRD, fiendishCreatureResistance, celestialCreatureRI, fiendishCreatureSpecAtk,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub, archetypeSubTypeStub,
     archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub, 
@@ -248,6 +251,15 @@ ArchetypeDiff FiendishCreature = {
 //-------------------------//
 //     GIANT ARCHETYPE     //
 //-------------------------//
+
+b32 giantIsCompatible(CachedPageEntry *page)
+{
+    AssertNonNull(page);
+    
+    if(ls_utf32AreEqual(page->size, ls_utf32Constant(U"Colossale"))) { return FALSE; }
+    
+    return TRUE;
+}
 
 b32 giantCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 { *gsDiff = 1; *rmDiff = 0; return FALSE; }
@@ -287,7 +299,7 @@ void giantCreatureMelee(CachedPageEntry *page, utf32 *melee)
 
 
 ArchetypeDiff GiantCreature = {
-    U"Gigante"_W, giantCreatureGS, giantCreatureAS, giantCreatureAC, archetypeSensesStub,
+    U"Gigante"_W, giantIsCompatible, giantCreatureGS, giantCreatureAS, giantCreatureAC, archetypeSensesStub,
     archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
     giantCreatureSize, giantCreatureMelee, archetypeAlignStub, archetypeTypeStub, archetypeSubTypeStub,
     archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub,
@@ -420,7 +432,8 @@ b32 entropicCreatureSpecAtk(utf32 *spec)
 
 
 ArchetypeDiff EntropicCreature = {
-    U"Entropico"_W, entropicCreatureGS, archetypeASStub, archetypeACStub, entropicCreatureSenses,
+    U"Entropico"_W, archetypeIsCompatibleStub, 
+    entropicCreatureGS, archetypeASStub, archetypeACStub, entropicCreatureSenses,
     entropicCreatureRD, entropicCreatureResistance, entropicCreatureRI, entropicCreatureSpecAtk,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub,
     archetypeSubTypeStub, archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub,
@@ -555,7 +568,8 @@ b32 resoluteCreatureSpecAtk(utf32 *spec)
 
 
 ArchetypeDiff ResoluteCreature = {
-    U"Risoluto"_W, resoluteCreatureGS, archetypeASStub, archetypeACStub, resoluteCreatureSenses,
+    U"Risoluto"_W, archetypeIsCompatibleStub, 
+    resoluteCreatureGS, archetypeASStub, archetypeACStub, resoluteCreatureSenses,
     resoluteCreatureRD, resoluteCreatureResistance, resoluteCreatureRI, resoluteCreatureSpecAtk,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub,
     archetypeSubTypeStub, archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub,
@@ -568,6 +582,16 @@ ArchetypeDiff ResoluteCreature = {
 //-------------------------//
 //   FUNGOID ARCHETYPE    //
 //-------------------------//
+
+b32 fungoidIsCompatible(CachedPageEntry *page)
+{
+    AssertNonNull(page);
+    
+    if(ls_utf32AreEqual(page->type, U"Non Morto"_W)) { return FALSE; }
+    if(ls_utf32AreEqual(page->type, U"Vegetale"_W))  { return FALSE; }
+    
+    return TRUE;
+}
 
 b32 fungoidCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 { *gsDiff = 1; *rmDiff = 0; return FALSE; }
@@ -610,7 +634,8 @@ void fungoidCreatureLanguage(utf32 *old)
 }
 
 ArchetypeDiff FungoidCreature = {
-    U"Fungoide"_W, fungoidCreatureGS, archetypeASStub, archetypeACStub, archetypeSensesStub,
+    U"Fungoide"_W, fungoidIsCompatible, 
+    fungoidCreatureGS, archetypeASStub, archetypeACStub, archetypeSensesStub,
     archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
     archetypeSizeStub, archetypeMeleeStub, fungoidCreatureAlign, fungoidCreatureType,
     archetypeSubTypeStub, archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub,
@@ -766,7 +791,8 @@ void shadowCreatureSpecCap(utf32 *old)
 
 
 ArchetypeDiff ShadowCreature = {
-    U"d'Ombra"_W, shadowCreatureGS, archetypeASStub, archetypeACStub, shadowCreatureSenses,
+    U"d'Ombra"_W, archetypeIsCompatibleStub, 
+    shadowCreatureGS, archetypeASStub, archetypeACStub, shadowCreatureSenses,
     shadowCreatureRD, shadowCreatureResistance, shadowCreatureRI, archetypeSpecAtkStub,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub,
     archetypeSubTypeStub, archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub,
@@ -779,6 +805,16 @@ ArchetypeDiff ShadowCreature = {
 //-------------------------//
 //  FLESHWARPED ARCHETYPE  //
 //-------------------------//
+
+b32 fleshwarpedIsCompatible(CachedPageEntry *page)
+{
+    AssertNonNull(page);
+    
+    if(ls_utf32AreEqual(page->type, U"Non Morto"_W)) { return FALSE; }
+    if(ls_utf32Contains(page->subtype, U"Incorporeo"_W)) { return FALSE; }
+    
+    return TRUE;
+}
 
 b32 fleshwarpedCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 { *gsDiff = 1; *rmDiff = 0; return FALSE; }
@@ -805,8 +841,10 @@ void fleswarpedCreatureSpeed(utf32 *old)
     return;
 }
 
+
 ArchetypeDiff FleshwarpedCreature = {
-    U"Carnideformato"_W, fleshwarpedCreatureGS, fleshwarpedCreatureAS, fleshwarpedCreatureAC, archetypeSensesStub,
+    U"Carnideformato"_W, fleshwarpedIsCompatible, 
+    fleshwarpedCreatureGS, fleshwarpedCreatureAS, fleshwarpedCreatureAC, archetypeSensesStub,
     archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub, archetypeSubTypeStub,
     archetypeDVStub, archetypeSTStub, archetypeDefCapStub, fleswarpedCreatureSpeed, 
@@ -835,7 +873,8 @@ void degenerateCreatureAS(s32 as[AS_COUNT])
 }
 
 ArchetypeDiff DegenerateCreature = {
-    U"Degenerato"_W, degenerateCreatureGS, degenerateCreatureAS, archetypeACStub, archetypeSensesStub,
+    U"Degenerato"_W, archetypeIsCompatibleStub, 
+    degenerateCreatureGS, degenerateCreatureAS, archetypeACStub, archetypeSensesStub,
     archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub, archetypeSubTypeStub,
     archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub, 

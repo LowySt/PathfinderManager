@@ -1,7 +1,7 @@
 #if 0
 //NOTE: Stubbed Archetype
 ArchetypeDiff stub = {
-    U"Name"_W, archetypeGSStub, archetypeASStub, archetypeACStub, archetypeSensesStub,
+    U"Name"_W, archetypeIsCompatibleStub, archetypeGSStub, archetypeASStub, archetypeACStub, archetypeSensesStub,
     archetypeRDStub, archetypeResistanceStub, archetypeRIStub, archetypeSpecAtkStub,
     archetypeSizeStub, archetypeMeleeStub, archetypeAlignStub, archetypeTypeStub,
     archetypeSubTypeStub, archetypeDVStub, archetypeSTStub, archetypeDefCapStub, archetypeSpeedStub,
@@ -14,6 +14,9 @@ ArchetypeDiff stub = {
 //-------------------------//
 //   STUBS FOR ARCHETYPE   //
 //-------------------------//
+
+b32 archetypeIsCompatibleStub(CachedPageEntry *page)
+{ return TRUE; }
 
 b32 archetypeGSStub(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 { *gsDiff = 0; *rmDiff = 0; return FALSE; }
@@ -139,11 +142,24 @@ b32 CompendiumOpenArchetypeWindow(UIContext *c, void *user)
 b32 CompendiumSelectArchetype(UIContext *c, void *user)
 {
     s32 index = (s32)((s64)user);
-    ls_staticArrayAppendUnique(&compendium.appliedArchetypes, allArchetypeDiffs[index]);
+    
+    ArchetypeDiff selectedDiff = allArchetypeDiffs[index];
+    
+    //NOTE: This AppendUnique makes sure the same Archetype can't be selected more than once.
+    //      And that up to 4 archetypes are selectable.
+    if(!ls_staticArrayIsFull(compendium.appliedArchetypes) && selectedDiff.isCompatible(&cachedPage))
+    { ls_staticArrayAppendUnique(&compendium.appliedArchetypes, selectedDiff); }
+    
     GetPageEntryAndCache(compendium.pageIndex, -1, &cachedPage, NULL);
     compendium.arch.isChoosingArchetype = FALSE;
     return FALSE;
 }
+
+
+
+//----------------------------//
+// ARCHETYPE DIFF APPLICATION //
+//----------------------------//
 
 void CompendiumApplyAllArchetypeNames(utf32 *name)
 {
