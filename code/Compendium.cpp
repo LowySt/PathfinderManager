@@ -4401,9 +4401,6 @@ b32 DrawCompendium(UIContext *c)
     //TODO: Rather than silently exiting when selecting an invalid archetype
     //      (previously selected, max reached, incompatible with current creature)
     //      we should "grey out" the button and show a fader error?
-    
-    //TODO: Certain archetypes can't be allowed on certain creatures. 
-    //      Example: Giant can't be applied to Colossal Creatures.
     if(compendium.arch.isChoosingArchetype == TRUE)
     {
         //NOTE: Draw the Archetype Selection Window
