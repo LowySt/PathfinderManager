@@ -14,7 +14,7 @@ void testAllCompendiumForAsserts(UIContext *c, b32 logNames = FALSE)
     for(s32 i = 0; i < compendium.codex.pages.count; i++)
     {
         PageEntry pEntry = compendium.codex.pages[i];
-        CachePage(pEntry, i, &dummy, NULL);
+        CachePage(pEntry, i, &dummy, {}, NULL);
         
         if(dummy.acError == TRUE) { failedACCount += 1; }
         
@@ -38,7 +38,7 @@ void testAllCompendiumForAsserts(UIContext *c, b32 logNames = FALSE)
     for(s32 i = 0; i < compendium.codex.npcPages.count; i++)
     {
         NPCPageEntry pEntry = compendium.codex.npcPages[i];
-        CachePage(pEntry, i, &dummy, NULL);
+        CachePage(pEntry, i, &dummy, {}, NULL);
         
         if(dummy.acError == TRUE) { failedACCount += 1; }
         

@@ -623,7 +623,7 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
 }
 
 void CheckAndFixCounterTurns();
-void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx);
+void AddToOrder(InitField *);
 b32 AddEncounterOnClick(UIContext *c, void *data)
 {
     UIListBox *b = (UIListBox *)data;
@@ -663,7 +663,7 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
         State.Init->turnsInRound       += 1;
         CheckAndFixCounterTurns();
         
-        AddToOrder(m->maxLife, m->editFields[IF_IDX_NAME].text, addID, m->compendiumIdx);
+        AddToOrder(m);
         
         State.Init->Mobs.selectedIndex += 1;
         addID                          += 1;
@@ -691,7 +691,7 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
         State.Init->turnsInRound         += 1;
         CheckAndFixCounterTurns();
         
-        AddToOrder(a->maxLife, a->editFields[IF_IDX_NAME].text, addID, a->compendiumIdx);
+        AddToOrder(a);
         
         State.Init->Allies.selectedIndex += 1;
         addID                            += 1;
@@ -1422,24 +1422,25 @@ b32 StartAddingAlly(UIContext *c, void *data)
     return FALSE;
 }
 
-void AddToOrder(s32 maxLife, utf32 name, s32 newID, s32 compendiumIdx)
+void AddToOrder(InitField *f)
 {
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
     s32 visibleAllies = State.Init->Allies.selectedIndex;
     s32 visibleOrder = visibleMobs + visibleAllies + party_count - State.Init->orderAdjust;
     Order *o = State.Init->OrderFields + visibleOrder;
     
-    ls_utf32Set(&o->field.text, name);
-    o->field.currValue = maxLife;
-    o->field.maxValue  = maxLife;
+    ls_utf32Set(&o->field.text, f->editFields[IF_IDX_NAME].text);
+    o->field.currValue = f->maxLife;
+    o->field.maxValue  = f->maxLife;
     //TODO: o->field.minValue = -CONstitution
-    o->compendiumIdx  = compendiumIdx;
+    o->compendiumIdx  = f->compendiumIdx;
+    ls_staticArrayCopy(f->appliedArchetypes, &o->appliedArchetypes);
     
     //NOTE: Because IDs in the InitFields get overwritten when removing from order 
     //      we can't reliably re-use them, unless we create a system to dispense Unique IDs.
-    //      So for simplicy we are just starting from 1000 and every single Added Init will just the next one.
+    //      So for simplicy we are just starting from 1000 and every single Added Init will just count up.
     //      AddID is reset during ResetOnClick
-    o->ID = newID;
+    o->ID = f->ID;
 }
 
 //TODO: Right now we are not allowing to give an Initiative Value and put the new 
@@ -1462,6 +1463,7 @@ b32 AddMobOnClick(UIContext *c, void *data)
     f->ID = addID;
     
     //NOTE: Set the maxLife field of the mob
+    //TODO: This is done twice if coming from CompendiumAddPageToInitMob()
     f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text);
     
     //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
@@ -1477,7 +1479,7 @@ b32 AddMobOnClick(UIContext *c, void *data)
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
     }
     
-    AddToOrder(f->maxLife, f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
+    AddToOrder(f);
     
     State.Init->Mobs.selectedIndex += 1;
     addID                          += 1;
@@ -1512,6 +1514,7 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     f->ID = addID;
     
     //NOTE: Set the maxLife field of the ally
+    //TODO: This is done twice if coming from CompendiumAddPageToInitMob()
     f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text);
     
     //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
@@ -1527,7 +1530,7 @@ b32 AddAllyOnClick(UIContext *c, void *data)
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
     }
     
-    AddToOrder(f->maxLife, f->editFields[IF_IDX_NAME].text, addID, f->compendiumIdx);
+    AddToOrder(f);
     
     State.Init->Allies.selectedIndex += 1;
     addID                            += 1;
@@ -2305,12 +2308,12 @@ b32 DrawPranaStyle(UIContext *c)
                     if(f->compendiumIdx < NPC_PAGE_INDEX_OFFSET)
                     { 
                         PageEntry pEntry = compendium.codex.pages[f->compendiumIdx];
-                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL);
+                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, f->appliedArchetypes, NULL);
                     }
                     else
                     {
                         NPCPageEntry pEntry = compendium.codex.npcPages[f->compendiumIdx - NPC_PAGE_INDEX_OFFSET];
-                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, NULL);
+                        CachePage(pEntry, f->compendiumIdx, &mainCachedPage, f->appliedArchetypes, NULL);
                     }
                     
                     initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
@@ -2373,7 +2376,7 @@ b32 DrawPranaStyle(UIContext *c)
             
             InitField *f = 0;
             if(globalSelectedIndex >= mob_count) { f = Page->AllyFields + (globalSelectedIndex - mob_count); }
-            else                               { f = Page->MobFields + globalSelectedIndex; }
+            else                                 { f = Page->MobFields + globalSelectedIndex; }
             
             inputUse |= DrawInitExtra(c, f, 66, yPos);
         }
@@ -2392,7 +2395,8 @@ b32 DrawPranaStyle(UIContext *c)
                 
                 if((mainCachedPage.pageIndex != ord->compendiumIdx) || (mainCachedPage.orderID != ord->ID))
                 { 
-                    GetPageEntryAndCache(ord->compendiumIdx, ord->ID, &mainCachedPage, ord->status);
+                    GetPageEntryAndCache(ord->compendiumIdx, ord->ID, &mainCachedPage, 
+                                         ord->appliedArchetypes, ord->status);
                     viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
                 }
                 

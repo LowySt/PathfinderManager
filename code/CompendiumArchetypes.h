@@ -1,12 +1,12 @@
 #ifndef _COMPENDIUM_ARCHETYPES_H
 #define _COMPENDIUM_ARCHETYPES_H
 
+//NOTE: MAX_CONCURRENT_ARCHETYPES and MAX_ARCHETYPES has been moved to Init.h, above the InitField struct definition
+//      for semplicity of inclusion. Because c++ compilers can't handle out of order global constants...
+
 //TODO: @ArchOptionalPrompt
 //        Add an extra optional prompt for customization when choosing an archetype
 //        For example, fleshwarped makes you choose a new movement speed among 4 different kinds.
-
-const s32 MAX_CONCURRENT_ARCHETYPES = 4;
-const s32 MAX_ARCHETYPES = 18;
 
 const s32 RACE_SUBTYPES_COUNT = 61;
 const utf32 raceSubtypes[RACE_SUBTYPES_COUNT] = {

@@ -241,7 +241,7 @@ struct Compendium
     UIButton   addAlly;
     
     ArchetypeInfo arch;
-    StaticArray<ArchetypeDiff, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes;
+    StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes;
     
     UITextBox  searchBarNameMobs;
     UITextBox  searchBarGSMobs;
@@ -308,20 +308,21 @@ if(modAS[AS_CHA]!=AS_NO_VALUE) \
 {newB[AS_CHA] = modAS[AS_CHA]-10; oldB[AS_CHA] = newToOldBonusMap[origAS[AS_CHA]-10]; } \
 }
 
-void CachePage(PageEntry, s32, CachedPageEntry *, Status *);
-void CachePage(NPCPageEntry, s32, CachedPageEntry *, Status *);
+void CachePage(PageEntry, s32, CachedPageEntry *, StaticArray<s32, MAX_CONCURRENT_ARCHETYPES>, Status *);
+void CachePage(NPCPageEntry, s32, CachedPageEntry *, StaticArray<s32, MAX_CONCURRENT_ARCHETYPES>, Status *);
 void GetPageEntryAndCache(s32 compendiumIdx, s32 ordID, CachedPageEntry *page, 
+                          StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes,
                           Status *status = NULL)
 {
     if(compendiumIdx < NPC_PAGE_INDEX_OFFSET)
     { 
         PageEntry pEntry = compendium.codex.pages[compendiumIdx];
-        CachePage(pEntry, compendiumIdx, page, status);
+        CachePage(pEntry, compendiumIdx, page, appliedArchetypes, status);
     }
     else
     { 
         NPCPageEntry pEntry = compendium.codex.npcPages[compendiumIdx - NPC_PAGE_INDEX_OFFSET];
-        CachePage(pEntry, compendiumIdx, page, status);
+        CachePage(pEntry, compendiumIdx, page, appliedArchetypes, status);
     }
     
     page->orderID = ordID;
@@ -637,7 +638,8 @@ void CompendiumAddTalentIfItFits(CachedPageEntry *page, utf32 talentName, b32 is
 //NOTE: I'm pretty sure Deviation doesn't matter, because it's a non-stacking bonus unaffected by other things
 //      in AC. Since it's not affacted by STR or DEX (Which are the quanities changing) I can ignore it.
 //      Incorporeal creatures get adjusted for free
-void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Status *status = NULL)
+void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, 
+                         StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, Status *status = NULL)
 {
     cachedPage->acError = FALSE;
     
@@ -817,7 +819,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     }
     
     //NOTE: Apply Archetypes
-    if(compendium.appliedArchetypes.count > 0)
+    if(appliedArchetypes.count > 0)
     { 
         s32 acDiff[AC_TYPES_COUNT] = {};
         b32 archetypeReplacesAC = CompendiumApplyAllArchetypeAC(&cachedPage->size, acDiff);
@@ -949,7 +951,8 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC, Statu
     ls_utf32Append(&cachedPage->AC, {AC.data + thirdValEnd, AC.len - thirdValEnd, AC.len - thirdValEnd});
 }
 
-void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status = NULL)
+void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, 
+                         StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, Status *status = NULL)
 {
     GET_AS_BONUS_ARRAY(bonusOld, bonusNew, cachedPage->modAS, cachedPage->origAS);
     
@@ -994,7 +997,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage, Status *status =
     st[ST_WIS] = (st[ST_WIS] - bonusOld[AS_WIS]) + bonusNew[AS_WIS];
     
     //NOTE: Here we check if the archetypes modify the Saving Throws
-    if(compendium.appliedArchetypes.count > 0)
+    if(appliedArchetypes.count > 0)
     { b32 hasReplaced = CompendiumApplyAllArchetypeST(cachedPage->hitDice, st); }
     
     //NOTE: Handle Status Conditions
@@ -2322,10 +2325,9 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
+    ls_staticArrayCopy(compendium.appliedArchetypes, &f->appliedArchetypes);
     
     AddMobOnClick(NULL, NULL);
-    
-    
     
     return TRUE;
 }
@@ -2363,6 +2365,7 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], cachedPage.initiative);
     f->compendiumIdx = compendium.pageIndex;
+    ls_staticArrayCopy(compendium.appliedArchetypes, &f->appliedArchetypes);
     
     AddAllyOnClick(NULL, NULL);
     
@@ -2415,7 +2418,7 @@ b32 onStatusChange(UIContext *c, void *data)
     }
     
     //NOTE: We re-cache the page to apply the changes.
-    GetPageEntryAndCache(ord->compendiumIdx, ord->ID, &mainCachedPage, ord->status);
+    GetPageEntryAndCache(ord->compendiumIdx, ord->ID, &mainCachedPage, ord->appliedArchetypes, ord->status);
     
     return TRUE;
 }
@@ -2839,7 +2842,8 @@ void SetNPCTable(UIContext *c)
     return;
 }
 
-void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
+void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, 
+               StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, Status *status = NULL)
 {
     //AssertMsg(FALSE, "Gongorinan has fucked up everything!\n");
     
@@ -2850,7 +2854,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     Codex *c = &compendium.codex;
     
-    b32 hasArchetype = compendium.appliedArchetypes.count > 0;
+    b32 hasArchetype = appliedArchetypes.count > 0;
     
     cachedPage->pageIndex    = viewIndex;
     
@@ -3044,7 +3048,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     
     //NOTE: General Battle Stats. AC, HP, Saving Throws, BMC/DMC, Initiative, RD/RI
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "ac");
-    CalculateAndCacheAC(tempString, cachedPage, FALSE, status);
+    CalculateAndCacheAC(tempString, cachedPage, FALSE, appliedArchetypes, status);
     ls_utf32Clear(&tempString);
     
     u64 hpPacked = page.HP;
@@ -3061,7 +3065,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     cachedPage->BABval = ls_utf32ToInt(cachedPage->BAB);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "st");
-    CalculateAndCacheST(tempString, cachedPage, status);
+    CalculateAndCacheST(tempString, cachedPage, appliedArchetypes, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC, "bmc");
@@ -3266,7 +3270,8 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Statu
     ls_arenaUse(prevArena);
 }
 
-void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, Status *status = NULL)
+void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, 
+               StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, Status *status = NULL)
 {
     u32 tempUTF32Buffer[4096] = {};
     utf32 tempString = { tempUTF32Buffer, 0, 4096 };
@@ -3413,7 +3418,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     
     //NOTE: General Battle Stats. AC, HP, Saving Throws, BMC/DMC, Initiative, RD/RI
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "AC");
-    CalculateAndCacheAC(tempString, cachedPage, TRUE, status);
+    CalculateAndCacheAC(tempString, cachedPage, TRUE, appliedArchetypes, status);
     ls_utf32Clear(&tempString);
     
     ls_utf32Clear(&cachedPage->HP);
@@ -3421,7 +3426,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage, St
     BuildHPFromPacked_t(cachedPage, page.HP, totalHP);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "ST");
-    CalculateAndCacheST(tempString, cachedPage, status);
+    CalculateAndCacheST(tempString, cachedPage, appliedArchetypes, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.BMC, "BMC");
@@ -4347,7 +4352,7 @@ b32 DrawCompendium(UIContext *c)
             if(cachedPage.pageIndex != compendium.pageIndex)
             { 
                 PageEntry pEntry = compendium.codex.pages[compendium.pageIndex];
-                CachePage(pEntry, compendium.pageIndex, &cachedPage);
+                CachePage(pEntry, compendium.pageIndex, &cachedPage, compendium.appliedArchetypes);
                 
                 //NOTE: Reset the page scroll for the new page (Fuck GCC)
                 pageScroll = { 0, 10, c->width-4, c->height-60, 0, 0, c->width-32, 0 };
@@ -4376,7 +4381,7 @@ b32 DrawCompendium(UIContext *c)
             if(cachedPage.pageIndex != compendium.pageIndex)
             { 
                 NPCPageEntry pEntry = compendium.codex.npcPages[npcPageIndex];
-                CachePage(pEntry, compendium.pageIndex, &cachedPage);
+                CachePage(pEntry, compendium.pageIndex, &cachedPage, compendium.appliedArchetypes);
                 
                 //NOTE: Reset the page scroll for the new page (Fuck GCC)
                 pageScroll = { 0, 10, c->width-4, c->height-60, 0, 0, c->width-32, 0 };

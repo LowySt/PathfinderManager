@@ -207,6 +207,9 @@ struct Status
     UICheck check;
 };
 
+const s32 MAX_CONCURRENT_ARCHETYPES = 4;
+const s32 MAX_ARCHETYPES = 18;
+
 struct InitField
 {
     //NOTE: This makes referring to other boxes in the same InitField much easier
@@ -219,6 +222,25 @@ struct InitField
     
     s32 compendiumIdx;
     s32 ID;
+    
+    //NOTE: This is an index into the `allArchetypeDiffs` static array.
+    StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes;
+};
+
+struct Order
+{
+    UISlider  field;
+    UITextBox pos;
+    
+    UIButton  remove;
+    
+    Status status[MAX_STATUS];
+    
+    s32 compendiumIdx;
+    s32 ID;
+    
+    //NOTE: This is an index into the `allArchetypeDiffs` static array.
+    StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes;
 };
 
 struct Counter
@@ -234,19 +256,6 @@ struct Counter
     u32 startIdxInOrder;
     u32 turnCounter;
     b32 isActive;
-};
-
-struct Order
-{
-    UISlider  field;
-    UITextBox pos;
-    
-    UIButton  remove;
-    
-    Status status[MAX_STATUS];
-    
-    s32 compendiumIdx;
-    s32 ID;
 };
 
 struct DiceThrowBox
