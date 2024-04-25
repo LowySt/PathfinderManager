@@ -270,7 +270,7 @@ struct DiceThrowBox
 };
 
 s32 globalSelectedIndex = -1;
-
+StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> globalSelectedArchetypes = {};
 
 s32 isAddingFailedSetTimer = 0;
 b32 isAddingFailedSet = FALSE;

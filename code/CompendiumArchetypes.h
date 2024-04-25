@@ -182,36 +182,45 @@ b32  CompendiumOpenArchetypeWindow(UIContext *c, void *user);
 b32  CompendiumSelectArchetype(UIContext *c, void *user);
 
 
-void CompendiumApplyAllArchetypeNames(utf32 *newName);
-void CompendiumApplyAllArchetypeGS(u16 gsEntry, s32 hitDice, utf32 *newGS, utf32 *newPE);
-void CompendiumApplyAllArchetypeAS(s32 as[AS_COUNT]);
-b32  CompendiumApplyAllArchetypeAC(utf32 *size, s32 acDiff[AC_TYPES_COUNT]);
-void CompendiumAddAllArchetypesToList(utf32 *archetypeList);
-void CompendiumApplyAllArchetypeSenses(utf32 *old);
-void CompendiumApplyAllArchetypeRD(s32 hitDice, utf32 *old);
-void CompendiumApplyAllArchetypeResistances(s32 hitDice, u64 orig, utf32 *old);
-void CompendiumApplyAllArchetypeRI(utf32 gs, utf32 *ri);
-void CompendiumApplyAllArchetypeSpecAtk(utf32 *spec);
-void CompendiumApplyAllArchetypeSize(utf32 *size);
-void CompendiumApplyAllArchetypeMelee(CachedPageEntry *page, utf32 *melee);
-void CompendiumApplyAllArchetypeAlign(utf32 *align);
-void CompendiumApplyAllArchetypeTypes(utf32 *type);
-void CompendiumApplyAllArchetypeSubTypes(utf32 *subtype);
-void CompendiumApplyAllArchetypeDV(CachedPageEntry *page, utf32 *oldType, u64 *DV);
-b32  CompendiumApplyAllArchetypeST(s32 DV, s32 st[ST_COUNT]);
-void CompendiumApplyAllArchetypeDefCap(utf32 *old);
-void CompendiumApplyAllArchetypeSpeed(utf32 *old);
-void CompendiumApplyAllArchetypeImmunities(utf32 *old);
-void CompendiumApplyAllArchetypeBAB(utf32 *old, s32 dv);
-u32  CompendiumApplyAllArchetypeSkills(u32 skillEntry);
-void CompendiumApplyAllArchetypeTalents(CachedPageEntry *);
-void CompendiumApplyAllArchetypeEnv(utf32 *old);
-void CompendiumApplyAllArchetypeOrg(utf32 *old);
-void CompendiumApplyAllArchetypeTreasure(utf32 *old);
-void CompendiumApplyAllArchetypeSpecQual(utf32 *old);
-void CompendiumApplyAllArchetypeSpecCap(utf32 *old);
-void CompendiumApplyAllArchetypeLang(utf32 *old);
-void CompendiumApplyAllArchetypeAura(utf32 *old);
-void CompendiumApplyAllArchetypeWeak(utf32 *old);
+void CompendiumApplyAllArchetypeNames(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *newName);
+void CompendiumApplyAllArchetypeGS(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, u16 gsEntry,
+                                   s32 hitDice, utf32 *newGS, utf32 *newPE);
+void CompendiumApplyAllArchetypeAS(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, s32 as[AS_COUNT]);
+b32  CompendiumApplyAllArchetypeAC(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *size,
+                                   s32 acDiff[AC_TYPES_COUNT]);
+void CompendiumAddAllArchetypesToList(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes,
+                                      utf32 *archetypeList);
+void CompendiumApplyAllArchetypeSenses(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeRD(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, s32 hitDice,
+                                   utf32 *old);
+void CompendiumApplyAllArchetypeResistances(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, s32 hitDice, u64 orig, utf32 *old);
+void CompendiumApplyAllArchetypeRI(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 gs, utf32 *ri);
+void CompendiumApplyAllArchetypeSpecAtk(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *spec);
+void CompendiumApplyAllArchetypeSize(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *size);
+void CompendiumApplyAllArchetypeMelee(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes,
+                                      CachedPageEntry *page, utf32 *melee);
+void CompendiumApplyAllArchetypeAlign(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *align);
+void CompendiumApplyAllArchetypeTypes(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *type);
+void CompendiumApplyAllArchetypeSubTypes(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes,
+                                         utf32 *subtype);
+void CompendiumApplyAllArchetypeDV(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes,
+                                   CachedPageEntry *page, utf32 *oldType, u64 *DV);
+b32  CompendiumApplyAllArchetypeST(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, s32 DV,
+                                   s32 st[ST_COUNT]);
+void CompendiumApplyAllArchetypeDefCap(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeSpeed(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeImmunities(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeBAB(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old, s32 dv);
+u32  CompendiumApplyAllArchetypeSkills(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, u32 skillEntry);
+void CompendiumApplyAllArchetypeTalents(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes,
+                                        CachedPageEntry *);
+void CompendiumApplyAllArchetypeEnv(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeOrg(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeTreasure(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeSpecQual(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeSpecCap(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeLang(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeAura(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
+void CompendiumApplyAllArchetypeWeak(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *old);
 
 #endif //_COMPENDIUM_ARCHETYPES_H

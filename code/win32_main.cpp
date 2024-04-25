@@ -563,6 +563,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 //NOTETODO: All globals that affect the state of the program have to be
                 //          Set to a valid state, otherwise it will not work.
                 globalSelectedIndex      = -1;
+                ls_staticArrayClear(&globalSelectedArchetypes);
                 mainCachedPage.pageIndex = -1; //Force a re-cache of the page
                 suppressingUndoRecord    = FALSE;
                 isAddingFailedSetTimer   = 0;
@@ -587,6 +588,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 //NOTETODO: All globals that affect the state of the program have to be
                 //          Set to a valid state, otherwise it will not work.
                 globalSelectedIndex      = -1;
+                ls_staticArrayClear(&globalSelectedArchetypes);
                 mainCachedPage.pageIndex = -1; //Force a recache of the page
                 suppressingUndoRecord    = FALSE;
                 isAddingFailedSetTimer   = 0;
@@ -595,7 +597,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob
             if(KeyPress(keyMap::Escape) && !State.Init->isAdding && (mainCachedPage.talentIndex == -1))
-            { globalSelectedIndex = -1; }
+            { globalSelectedIndex = -1; ls_staticArrayClear(&globalSelectedArchetypes); }
             
             //NOTE: If we are showing a talent, we exit out of the talent
             if(KeyPress(keyMap::Escape) && !State.Init->isAdding && (mainCachedPage.talentIndex != -1))
@@ -724,7 +726,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             if(KeyPress(keyMap::Escape) && (compendium.arch.isChoosingArchetype == TRUE))
             { compendium.arch.isChoosingArchetype = FALSE; }
             
-            //NOTE: We clear the globalSelectedIndex so that we can exit out of detail mob
+            //NOTE: We clear the talentIndex so that we can exit out of a talent Page
             if(KeyPress(keyMap::Escape) && (cachedPage.talentIndex != -1))
             { cachedPage.talentIndex = -1; }
             

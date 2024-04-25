@@ -928,7 +928,8 @@ b32 SetOnClick(UIContext *c, void *data)
     Page->currIdx       = 0;
     State.inBattle      = TRUE;
     State.playerSettingsMenuItem->isVisible = FALSE;
-    globalSelectedIndex = 0; //NOTE: Is this correct? Everywhere else resetting this means -1, not 0...
+    globalSelectedIndex = -1;
+    ls_staticArrayClear(&globalSelectedArchetypes);
     
     return TRUE;
 }
@@ -944,6 +945,7 @@ b32 ResetOnClick(UIContext *c, void *data)
     
     State.Init->isAdding       = FALSE;
     globalSelectedIndex        = -1;
+    ls_staticArrayClear(&globalSelectedArchetypes);
     
     State.inBattle = FALSE;
     State.playerSettingsMenuItem->isVisible = TRUE;
@@ -1293,7 +1295,11 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
     AssertMsg(Page->turnsInRound >= 0 && Page->turnsInRound <= 64, "Turns in Round is Fucked\n");
     
     //NOTE: We need to check if we are removing the globalSelectedIndex order, and reset it if it's the case
-    if(globalSelectedIndex == visibleOrder-1) { globalSelectedIndex = -1; }
+    if(globalSelectedIndex == visibleOrder-1)
+    {
+        globalSelectedIndex = -1;
+        ls_staticArrayClear(&globalSelectedArchetypes);
+    }
     
     //NOTE: We won't move the 'Current' field if you remove the 'Current' from the order.
     //      Because of that, Counters will be one count extra on the first lap after the remove.
@@ -1385,8 +1391,10 @@ b32 StartAddingMob(UIContext *c, void *data)
     //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
     //      The entire new mob to be undone/redone in a single action.
     suppressingUndoRecord = TRUE;
+    
     State.Init->isAdding  = TRUE;
     globalSelectedIndex   = State.Init->Mobs.selectedIndex;
+    ls_staticArrayClear(&globalSelectedArchetypes);
     
     //Clear The Extra
     InitField *f = State.Init->MobFields + State.Init->Mobs.selectedIndex;
@@ -1406,8 +1414,10 @@ b32 StartAddingAlly(UIContext *c, void *data)
     //NOTE: We suppress Undo State Recording during the addition of a new Enemy/Ally because it will allow
     //      The entire new mob to be undone/redone in a single action.
     suppressingUndoRecord = TRUE;
+    
     State.Init->isAdding  = TRUE;
     globalSelectedIndex   = State.Init->Allies.selectedIndex + mob_count;
+    ls_staticArrayClear(&globalSelectedArchetypes);
     
     //Clear The Extra
     InitField *f = State.Init->AllyFields + State.Init->Allies.selectedIndex;
@@ -1485,6 +1495,7 @@ b32 AddMobOnClick(UIContext *c, void *data)
     addID                          += 1;
     State.Init->isAdding            = FALSE;
     globalSelectedIndex             = -1;
+    ls_staticArrayClear(&globalSelectedArchetypes);
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewMob.name, ls_utf32Constant(U"+"));
@@ -1536,6 +1547,7 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     addID                            += 1;
     State.Init->isAdding              = FALSE;
     globalSelectedIndex               = -1;
+    ls_staticArrayClear(&globalSelectedArchetypes);
     
     //Update the button!
     ls_utf32Set(&State.Init->addNewAlly.name, ls_utf32Constant(U"+"));
@@ -1646,6 +1658,7 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     f->editFields[IF_IDX_FINAL].isSingleLine  = TRUE;
     
     f->compendiumIdx      = -1;
+    ls_staticArrayClear(&f->appliedArchetypes);
     
     f->ID = *currID;
     *currID += 1;
@@ -1656,6 +1669,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     InitPage *Page = PState->Init;
     
     globalSelectedIndex = -1;
+    ls_staticArrayClear(&globalSelectedArchetypes);
     
     for(u32 i = 0; i < mob_count + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Mobs, (char *)Enemies[i]); }
     for(u32 i = 0; i < ally_count + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Allies, (char *)Allies[i]); }
@@ -1723,6 +1737,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         }
         
         f->compendiumIdx  = -1;
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     for(u32 i = 0; i < COUNTER_NUM; i++)
@@ -2303,7 +2318,10 @@ b32 DrawPranaStyle(UIContext *c)
             { 
                 static UIScrollableRegion initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218 };
                 
-                if(mainCachedPage.pageIndex != f->compendiumIdx)
+                b32 recacheCondition = (mainCachedPage.pageIndex != f->compendiumIdx) || 
+                    !ls_staticArrayAreEqual(f->appliedArchetypes, globalSelectedArchetypes);
+                
+                if(recacheCondition)
                 { 
                     if(f->compendiumIdx < NPC_PAGE_INDEX_OFFSET)
                     { 
@@ -2316,6 +2334,7 @@ b32 DrawPranaStyle(UIContext *c)
                         CachePage(pEntry, f->compendiumIdx, &mainCachedPage, f->appliedArchetypes, NULL);
                     }
                     
+                    ls_staticArrayCopy(f->appliedArchetypes, &globalSelectedArchetypes);
                     initViewScroll = { 260, 218, 780, 478, 0, 0, 998, 218};
                 }
                 

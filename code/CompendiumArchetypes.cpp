@@ -163,13 +163,13 @@ b32 CompendiumSelectArchetype(UIContext *c, void *user)
 // ARCHETYPE DIFF APPLICATION //
 //----------------------------//
 
-void CompendiumApplyAllArchetypeNames(utf32 *name)
+void CompendiumApplyAllArchetypeNames(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *name)
 {
     AssertMsg(name, "Null utf32 pointer\n");
     
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         
         AssertMsg(name->len + curr->nameStr.len+1 < name->size, "Can't fit archetype name\n");
         if(name->len + curr->nameStr.len+1 > name->size) { return; }
@@ -179,16 +179,17 @@ void CompendiumApplyAllArchetypeNames(utf32 *name)
     }
 }
 
-void CompendiumApplyAllArchetypeGS(u16 gsEntry, s32 hitDice, utf32 *newGS, utf32 *newPE)
+void CompendiumApplyAllArchetypeGS(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                   u16 gsEntry, s32 hitDice, utf32 *newGS, utf32 *newPE)
 {
     if(gsEntry == GS_SENTINEL_VALUE) { return; }
     
     s32 totalGSDiff = 0;
     s32 totalRMDiff = 0;
     
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         
         s32 gsDiff = 0;
         s32 rmDiff = 0;
@@ -203,20 +204,22 @@ void CompendiumApplyAllArchetypeGS(u16 gsEntry, s32 hitDice, utf32 *newGS, utf32
     CompendiumIncreaseGS(gsEntry, totalGSDiff, totalRMDiff, newGS, newPE);
 }
 
-void CompendiumApplyAllArchetypeAS(s32 as[AS_COUNT])
+void CompendiumApplyAllArchetypeAS(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                   s32 as[AS_COUNT])
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->abilityScores(as);
     }
 }
 
-b32 CompendiumApplyAllArchetypeAC(utf32 *size, s32 ac[AC_TYPES_COUNT])
+b32 CompendiumApplyAllArchetypeAC(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                  utf32 *size, s32 ac[AC_TYPES_COUNT])
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         b32 replaces = curr->armorClass(size, ac);
         if(replaces == TRUE) { return TRUE; }
     }
@@ -225,7 +228,8 @@ b32 CompendiumApplyAllArchetypeAC(utf32 *size, s32 ac[AC_TYPES_COUNT])
 }
 
 //TODO: Static UTF32 Strings REALLY Needed
-void CompendiumAddAllArchetypesToList(utf32 *archetypeList)
+void CompendiumAddAllArchetypesToList(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                      utf32 *archetypeList)
 {
     u32 tempBuff[128] = {};
     utf32 tempString = { tempBuff, 0, 128 };
@@ -235,9 +239,9 @@ void CompendiumAddAllArchetypesToList(utf32 *archetypeList)
         ls_utf32Copy_t(*archetypeList, &tempString);
         ls_utf32Clear(archetypeList);
         
-        for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+        for(s32 i = 0; i < appliedArchetypes.count; i++)
         {
-            ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+            ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
             ls_utf32InsertSubstr(&tempString, U", ", tempString.len-2);
             ls_utf32InsertSubstr(&tempString, curr->nameStr, tempString.len-2);
         }
@@ -247,68 +251,74 @@ void CompendiumAddAllArchetypesToList(utf32 *archetypeList)
     else
     {
         ls_utf32Append(archetypeList, ls_utf32Constant(U"["));
-        for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+        for(s32 i = 0; i < appliedArchetypes.count; i++)
         {
-            ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+            ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
             ls_utf32Append(archetypeList, curr->nameStr);
-            if(i < compendium.appliedArchetypes.count - 1) { ls_utf32Append(archetypeList, U", "); }
+            if(i < appliedArchetypes.count - 1) { ls_utf32Append(archetypeList, U", "); }
         }
         
         ls_utf32Append(archetypeList, ls_utf32Constant(U"] "));
     }
 }
 
-void CompendiumApplyAllArchetypeSenses(utf32 *old)
+void CompendiumApplyAllArchetypeSenses(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                       utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->senses(old);
     }
 }
 
-void CompendiumApplyAllArchetypeRD(s32 hitDice, utf32 *old)
+void CompendiumApplyAllArchetypeRD(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                   s32 hitDice, utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->rd(hitDice, old);
     }
 }
 
-void CompendiumApplyAllArchetypeResistances(s32 hitDice, u64 orig, utf32 *old)
+void CompendiumApplyAllArchetypeResistances(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                            s32 hitDice, u64 orig, utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->resistances(hitDice, orig, old);
     }
 }
 
-void CompendiumApplyAllArchetypeRI(utf32 gs, utf32 *ri)
+void CompendiumApplyAllArchetypeRI(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                   utf32 gs, utf32 *ri)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->ri(gs, ri);
     }
 }
 
-void CompendiumApplyAllArchetypeSpecAtk(utf32 *spec)
+void CompendiumApplyAllArchetypeSpecAtk(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                        utf32 *spec)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         b32 hasSet = curr->specialAtk(spec);
         if(hasSet) { return; }
     }
 }
 
-void CompendiumApplyAllArchetypeSize(utf32 *size)
+void CompendiumApplyAllArchetypeSize(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                     utf32 *size)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->size(size);
     }
 }
@@ -316,57 +326,63 @@ void CompendiumApplyAllArchetypeSize(utf32 *size)
 //NOTETODO: This currently applies after all melee calculations have been performed.
 //          So all values must be already computed. Maybe we want an intermediate step
 //          to know if there are any natural attacks already? And the kind of those natural attacks...
-void CompendiumApplyAllArchetypeMelee(CachedPageEntry *page, utf32 *melee)
+void CompendiumApplyAllArchetypeMelee(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                      CachedPageEntry *page, utf32 *melee)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->melee(page, melee);
     }
 }
 
-void CompendiumApplyAllArchetypeAlign(utf32 *align)
+void CompendiumApplyAllArchetypeAlign(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                      utf32 *align)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         b32 setsAlign = curr->align(align);
         if(setsAlign) { return; }
     }
 }
 
-void CompendiumApplyAllArchetypeTypes(utf32 *type)
+void CompendiumApplyAllArchetypeTypes(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                      utf32 *type)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->type(type);
     }
 }
 
-void CompendiumApplyAllArchetypeSubTypes(utf32 *subtype)
+void CompendiumApplyAllArchetypeSubTypes(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                         utf32 *subtype)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->subtype(subtype);
     }
 }
 
-void CompendiumApplyAllArchetypeDV(CachedPageEntry *page, utf32 *oldType, u64 *DV)
+void CompendiumApplyAllArchetypeDV(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                   CachedPageEntry *page, utf32 *oldType, u64 *DV)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->DV(page, oldType, DV);
     }
 }
 
-b32 CompendiumApplyAllArchetypeST(s32 DV, s32 st[ST_COUNT])
+b32 CompendiumApplyAllArchetypeST(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                  s32 DV, s32 st[ST_COUNT])
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         b32 hasReplaced = curr->st(DV, st);
         if(hasReplaced) { return TRUE; }
     }
@@ -374,130 +390,144 @@ b32 CompendiumApplyAllArchetypeST(s32 DV, s32 st[ST_COUNT])
     return FALSE;
 }
 
-void CompendiumApplyAllArchetypeDefCap(utf32 *old)
+void CompendiumApplyAllArchetypeDefCap(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                       utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->defCap(old);
     }
 }
 
-void CompendiumApplyAllArchetypeSpeed(utf32 *old)
+void CompendiumApplyAllArchetypeSpeed(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                      utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->speed(old);
     }
 }
 
-void CompendiumApplyAllArchetypeImmunities(utf32 *old)
+void CompendiumApplyAllArchetypeImmunities(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                           utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->immunities(old);
     }
 }
 
-void CompendiumApplyAllArchetypeBAB(utf32 *old, s32 dv)
+void CompendiumApplyAllArchetypeBAB(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                    utf32 *old, s32 dv)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->bab(old, dv);
     }
 }
 
-u32 CompendiumApplyAllArchetypeSkills(u32 skillEntry)
+u32 CompendiumApplyAllArchetypeSkills(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                      u32 skillEntry)
 {
     u32 currEntry = skillEntry;
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         currEntry = curr->skills(currEntry);
     }
     return currEntry;
 }
 
-void CompendiumApplyAllArchetypeTalents(CachedPageEntry *page)
+void CompendiumApplyAllArchetypeTalents(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                        CachedPageEntry *page)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->talents(page);
     }
 }
 
-void CompendiumApplyAllArchetypeEnv(utf32 *old)
+void CompendiumApplyAllArchetypeEnv(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                    utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->env(old);
     }
 }
 
-void CompendiumApplyAllArchetypeOrg(utf32 *old)
+void CompendiumApplyAllArchetypeOrg(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                    utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->org(old);
     }
 }
 
-void CompendiumApplyAllArchetypeTreasure(utf32 *old)
+void CompendiumApplyAllArchetypeTreasure(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                         utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->treasure(old);
     }
 }
 
-void CompendiumApplyAllArchetypeSpecQual(utf32 *old)
+void CompendiumApplyAllArchetypeSpecQual(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                         utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->specialQual(old);
     }
 }
 
-void CompendiumApplyAllArchetypeSpecCap(utf32 *old)
+void CompendiumApplyAllArchetypeSpecCap(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                        utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->specialCap(old);
     }
 }
 
-void CompendiumApplyAllArchetypeLang(utf32 *old)
+void CompendiumApplyAllArchetypeLang(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                     utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->lang(old);
     }
 }
 
-void CompendiumApplyAllArchetypeAura(utf32 *old)
+void CompendiumApplyAllArchetypeAura(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                     utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->aura(old);
     }
 }
 
-void CompendiumApplyAllArchetypeWeak(utf32 *old)
+void CompendiumApplyAllArchetypeWeak(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, 
+                                     utf32 *old)
 {
-    for(s32 i = 0; i < compendium.appliedArchetypes.count; i++)
+    for(s32 i = 0; i < appliedArchetypes.count; i++)
     {
-        ArchetypeDiff *curr = &allArchetypeDiffs[compendium.appliedArchetypes[i]];
+        ArchetypeDiff *curr = &allArchetypeDiffs[appliedArchetypes[i]];
         curr->weak(old);
     }
 }

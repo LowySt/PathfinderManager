@@ -171,7 +171,8 @@ SkillASCat SkillTypeToCat[SkillType::SkillTypeCount] = {
 
 struct CachedPageEntry;
 
-void BuildSkillsFromPacked_t(CachedPageEntry *page, Status *status, u32 *entries);
+void BuildSkillsFromPacked_t(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, CachedPageEntry *page,
+                             Status *status, u32 *entries);
 u32 ChangeBonusToSkillIfMatching(u32 entry, SkillType skType, s32 bonusChange);
 u32 ChangeBonusToSkill(u32 entry, s32 bonusChange);
 

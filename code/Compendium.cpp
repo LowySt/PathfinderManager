@@ -272,7 +272,6 @@ UIScrollableRegion npcTableScroll = {};
 
 //NOTE: Used in Init.cpp
 CachedPageEntry mainCachedPage   = {};
-b32 mainCachedPageNeedsReCaching = FALSE;
 
 const s32 NPC_PAGE_INDEX_OFFSET = 5000;
 
@@ -822,7 +821,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC,
     if(appliedArchetypes.count > 0)
     { 
         s32 acDiff[AC_TYPES_COUNT] = {};
-        b32 archetypeReplacesAC = CompendiumApplyAllArchetypeAC(&cachedPage->size, acDiff);
+        b32 archetypeReplacesAC = CompendiumApplyAllArchetypeAC(appliedArchetypes, &cachedPage->size, acDiff);
         
         //TODO: Dodge and other AC types
         if(archetypeReplacesAC == FALSE)
@@ -998,7 +997,7 @@ void CalculateAndCacheST(utf32 ST, CachedPageEntry *cachedPage,
     
     //NOTE: Here we check if the archetypes modify the Saving Throws
     if(appliedArchetypes.count > 0)
-    { b32 hasReplaced = CompendiumApplyAllArchetypeST(cachedPage->hitDice, st); }
+    { b32 hasReplaced = CompendiumApplyAllArchetypeST(appliedArchetypes, cachedPage->hitDice, st); }
     
     //NOTE: Handle Status Conditions
     if(status)
@@ -2868,7 +2867,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     if(hasArchetype)
     {
         GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
-        CompendiumApplyAllArchetypeNames(&cachedPage->name);
+        CompendiumApplyAllArchetypeNames(appliedArchetypes, &cachedPage->name);
     }
     else
     {
@@ -2910,7 +2909,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     ls_memcpy(cachedPage->origAS, cachedPage->modAS, AS_COUNT*sizeof(s32));
     
     //NOTE: Apply the archetype on the Ability Scores
-    if(hasArchetype) { CompendiumApplyAllArchetypeAS(cachedPage->modAS); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeAS(appliedArchetypes, cachedPage->modAS); }
     
     //TODO: Perception is not being modified by statuses! :StatusPerception
     //TODO: Flat-footed doesn't update DMC
@@ -2967,18 +2966,18 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     
     //NOTE: Continue with other unpacks.
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->treasure, page.treasure, "treasure");
-    if(hasArchetype) { CompendiumApplyAllArchetypeTreasure(&cachedPage->treasure); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeTreasure(appliedArchetypes, &cachedPage->treasure); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "shortDesc");
     
     GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
     u32 oldSizeBuf[64] = {}; utf32 oldSize = { oldSizeBuf, 0, 64 }; ls_utf32Copy_t(cachedPage->size, &oldSize);
-    if(hasArchetype) { CompendiumApplyAllArchetypeSize(&cachedPage->size); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeSize(appliedArchetypes, &cachedPage->size); }
     
     GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type, "type");
     u32 oldTypeBuf[64] = {}; utf32 oldType = { oldTypeBuf, 0, 64 }; ls_utf32Copy_t(cachedPage->type, &oldType);
-    if(hasArchetype) { CompendiumApplyAllArchetypeTypes(&cachedPage->type); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeTypes(appliedArchetypes, &cachedPage->type); }
     
     ls_utf32Clear(&cachedPage->subtype);
     if(page.subtype[0])
@@ -2995,7 +2994,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
             i += 1;
         }
         
-        if(hasArchetype) { CompendiumApplyAllArchetypeSubTypes(&tempString); }
+        if(hasArchetype) { CompendiumApplyAllArchetypeSubTypes(appliedArchetypes, &tempString); }
         
         ls_utf32Append(&cachedPage->subtype, tempString);
         ls_utf32Clear(&tempString);
@@ -3015,13 +3014,13 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
             i += 1;
         }
         
-        if(hasArchetype) { CompendiumAddAllArchetypesToList(&cachedPage->archetype); }
+        if(hasArchetype) { CompendiumAddAllArchetypesToList(appliedArchetypes, &cachedPage->archetype); }
         
         ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
     }
     else if(hasArchetype)
     {
-        CompendiumAddAllArchetypesToList(&cachedPage->archetype);
+        CompendiumAddAllArchetypesToList(appliedArchetypes, &cachedPage->archetype);
     }
     
     
@@ -3039,12 +3038,12 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         talentsIdx += 1;
     }
     
-    if(hasArchetype) { CompendiumApplyAllArchetypeTalents(cachedPage); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeTalents(appliedArchetypes, cachedPage); }
     
     //NOTE: Racial Mods, Special Qualities
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racialMods");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
-    if(hasArchetype) { CompendiumApplyAllArchetypeSpecQual(&cachedPage->spec_qual); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecQual(appliedArchetypes, &cachedPage->spec_qual); }
     
     //NOTE: General Battle Stats. AC, HP, Saving Throws, BMC/DMC, Initiative, RD/RI
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "ac");
@@ -3052,7 +3051,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     ls_utf32Clear(&tempString);
     
     u64 hpPacked = page.HP;
-    if(hasArchetype) { CompendiumApplyAllArchetypeDV(cachedPage, &oldType, &hpPacked); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeDV(appliedArchetypes, cachedPage, &oldType, &hpPacked); }
     //TODO: Segugio Strisciante fucks up
     //AssertMsg(FALSE, "Fucked with skeleton archetypes\n");
     
@@ -3061,7 +3060,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     BuildHPFromPacked_t(cachedPage, hpPacked, totalHP);
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
-    if(hasArchetype) { CompendiumApplyAllArchetypeBAB(&cachedPage->BAB, cachedPage->hitDice); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeBAB(appliedArchetypes, &cachedPage->BAB, cachedPage->hitDice); }
     cachedPage->BABval = ls_utf32ToInt(cachedPage->BAB);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "st");
@@ -3081,20 +3080,21 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD, "rd");
-    if(hasArchetype) { CompendiumApplyAllArchetypeRD(cachedPage->hitDice, &cachedPage->RD); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeRD(appliedArchetypes, cachedPage->hitDice, &cachedPage->RD); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI, "ri");
-    if(hasArchetype) { CompendiumApplyAllArchetypeRI(cachedPage->gs, &cachedPage->RI); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeRI(appliedArchetypes, cachedPage->gs, &cachedPage->RI); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "defensiveCapacity");
-    if(hasArchetype) { CompendiumApplyAllArchetypeDefCap(&cachedPage->defensiveCapacity); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeDefCap(appliedArchetypes, &cachedPage->defensiveCapacity); }
     
     //NOTE: GS and PE are moved here because certain archetypes need previous info to determine GS change
     ls_utf32Clear(&cachedPage->gs);
     ls_utf32Clear(&cachedPage->pe);
     if(hasArchetype)
     {
-        CompendiumApplyAllArchetypeGS(page.gs, cachedPage->hitDice, &cachedPage->gs, &cachedPage->pe);
+        CompendiumApplyAllArchetypeGS(appliedArchetypes, page.gs, cachedPage->hitDice, &cachedPage->gs,
+                                      &cachedPage->pe);
     }
     else
     {
@@ -3116,14 +3116,14 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     CalculateAndCacheMelee(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
-    if(hasArchetype) { CompendiumApplyAllArchetypeMelee(cachedPage, &cachedPage->melee); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeMelee(appliedArchetypes, cachedPage, &cachedPage->melee); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged, "ranged");
     CalculateAndCacheRanged(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "specialAttacks");
-    if(hasArchetype) { CompendiumApplyAllArchetypeSpecAtk(&cachedPage->specialAttacks); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecAtk(appliedArchetypes, &cachedPage->specialAttacks); }
     
     //NOTE: Spells need a little of pre-processing to handle superscripts (D and S for Dominio and Stirpe)
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.psych, "psych");
@@ -3181,10 +3181,10 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         }
     }
     
-    if(hasArchetype) { CompendiumApplyAllArchetypeSpecCap(&cachedPage->specials); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecCap(appliedArchetypes, &cachedPage->specials); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->org, page.org, "org");
-    if(hasArchetype) { CompendiumApplyAllArchetypeOrg(&cachedPage->org); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeOrg(appliedArchetypes, &cachedPage->org); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->source, page.source, "source");
@@ -3192,7 +3192,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     ls_utf32Clear(&cachedPage->alignment);
     BuildAlignmentFromPacked_t(page.alignment, &cachedPage->alignment);
     
-    if(hasArchetype) { CompendiumApplyAllArchetypeAlign(&cachedPage->alignment); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeAlign(appliedArchetypes, &cachedPage->alignment); }
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
@@ -3206,23 +3206,24 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         }
     }
     
-    if(hasArchetype) { CompendiumApplyAllArchetypeSenses(&cachedPage->senses); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeSenses(appliedArchetypes, &cachedPage->senses); }
     
     
     //TODO :StatusPerception
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception, "perception");
     
     GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura, "aura");
-    if(hasArchetype) { CompendiumApplyAllArchetypeAura(&cachedPage->aura); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeAura(appliedArchetypes, &cachedPage->aura); }
     
     ls_utf32Clear(&cachedPage->immunities);
     BuildImmunityFromPacked_t(page.immunities, &cachedPage->immunities);
-    if(hasArchetype) { CompendiumApplyAllArchetypeImmunities(&cachedPage->immunities); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeImmunities(appliedArchetypes, &cachedPage->immunities); }
     
     ls_utf32Clear(&cachedPage->resistances);
     BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
     if(hasArchetype)
-    { CompendiumApplyAllArchetypeResistances(cachedPage->hitDice, page.resistances, &cachedPage->resistances); }
+    { CompendiumApplyAllArchetypeResistances(appliedArchetypes, cachedPage->hitDice, page.resistances,
+                                             &cachedPage->resistances); }
     
     
     ls_utf32Clear(&cachedPage->weaknesses);
@@ -3236,17 +3237,17 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
             i += 1;
         }
     }
-    if(hasArchetype) { CompendiumApplyAllArchetypeWeak(&cachedPage->weaknesses); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeWeak(appliedArchetypes, &cachedPage->weaknesses); }
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->speed, page.speed, "speed");
-    if(hasArchetype) { CompendiumApplyAllArchetypeSpeed(&cachedPage->speed); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpeed(appliedArchetypes, &cachedPage->speed); }
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space, "space");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach, "reach");
     
     
     ls_utf32Clear(&cachedPage->skills);
-    BuildSkillsFromPacked_t(cachedPage, status, page.skills);
+    BuildSkillsFromPacked_t(appliedArchetypes, cachedPage, status, page.skills);
     
     
     ls_utf32Clear(&cachedPage->languages);
@@ -3261,10 +3262,10 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         }
     }
     
-    if(hasArchetype) { CompendiumApplyAllArchetypeLang(&cachedPage->languages); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeLang(appliedArchetypes, &cachedPage->languages); }
     
     GetEntryFromBuffer_t(&c->environment, &cachedPage->environment, page.environment, "environment");
-    if(hasArchetype) { CompendiumApplyAllArchetypeEnv(&cachedPage->environment); }
+    if(hasArchetype) { CompendiumApplyAllArchetypeEnv(appliedArchetypes, &cachedPage->environment); }
     
     ls_arenaClear(compTempArena);
     ls_arenaUse(prevArena);

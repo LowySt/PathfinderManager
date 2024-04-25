@@ -1,6 +1,7 @@
 //NOTE: This function processes one skill entry at a time, and returns either 0 or 1.
 //      The return value represents whether an entry was written or not.
-void BuildSkillsFromPacked_t(CachedPageEntry *page, Status *status, u32 *entries)
+void BuildSkillsFromPacked_t(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, CachedPageEntry *page,
+                             Status *status, u32 *entries)
 {
     SkillASCat prevCat = SK_UNDEFINED;
     b32 wasInParen = FALSE;
@@ -10,10 +11,10 @@ void BuildSkillsFromPacked_t(CachedPageEntry *page, Status *status, u32 *entries
     {
         u32 entry = entries[i];
         
-        b32 hasArchetype = compendium.appliedArchetypes.count > 0;
+        b32 hasArchetype = appliedArchetypes.count > 0;
         
         if(hasArchetype) { 
-            entry = CompendiumApplyAllArchetypeSkills(entry);
+            entry = CompendiumApplyAllArchetypeSkills(appliedArchetypes, entry);
             
             //NOTE: Applying the archetype has removed the current skill, so we skip it
             if(entry == 0) { i += 1; continue; }
