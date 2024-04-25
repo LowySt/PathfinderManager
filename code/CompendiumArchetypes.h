@@ -1,7 +1,7 @@
 #ifndef _COMPENDIUM_ARCHETYPES_H
 #define _COMPENDIUM_ARCHETYPES_H
 
-//NOTE: MAX_CONCURRENT_ARCHETYPES and MAX_ARCHETYPES has been moved to Init.h, above the InitField struct definition
+//NOTE: MAX_CONCURRENT_ARCHETYPES and MAX_ARCHETYPES has been moved to Init.h, above the tmp_order struct definition
 //      for semplicity of inclusion. Because c++ compilers can't handle out of order global constants...
 
 //TODO: @ArchOptionalPrompt

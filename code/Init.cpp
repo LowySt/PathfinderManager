@@ -847,6 +847,8 @@ b32 SetOnClick(UIContext *c, void *data)
         ord[idx].compendiumIdx = f->compendiumIdx;
         ord[idx].ID            = f->ID;
         
+        ls_staticArrayCopy(f->appliedArchetypes, &ord[idx].appliedArchetypes);
+        
         ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
         ls_utf32Append(&tmpString, U"/"_W);
         ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
@@ -868,6 +870,8 @@ b32 SetOnClick(UIContext *c, void *data)
         ord[idx].maxLife       = f->maxLife;
         ord[idx].compendiumIdx = f->compendiumIdx;
         ord[idx].ID            = f->ID;
+        
+        ls_staticArrayCopy(f->appliedArchetypes, &ord[idx].appliedArchetypes);
         
         ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
         ls_utf32Append(&tmpString, U"/"_W);
@@ -900,6 +904,8 @@ b32 SetOnClick(UIContext *c, void *data)
         f->field.maxValue  = ord[j].maxLife;
         f->compendiumIdx   = ord[j].compendiumIdx;
         f->ID              = ord[j].ID;
+        
+        ls_staticArrayCopy(ord[j].appliedArchetypes, &f->appliedArchetypes);
         
         if(i == 0) { ls_utf32Set(&Page->Current.text, *ord[j].name); }
     }
@@ -2412,11 +2418,16 @@ b32 DrawPranaStyle(UIContext *c)
             { 
                 static UIScrollableRegion viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
                 
-                if((mainCachedPage.pageIndex != ord->compendiumIdx) || (mainCachedPage.orderID != ord->ID))
+                b32 recacheCondition = (mainCachedPage.pageIndex != ord->compendiumIdx) 
+                    || (mainCachedPage.orderID != ord->ID)
+                    || !ls_staticArrayAreEqual(ord->appliedArchetypes, globalSelectedArchetypes);
+                
+                if(recacheCondition)
                 { 
                     GetPageEntryAndCache(ord->compendiumIdx, ord->ID, &mainCachedPage, 
                                          ord->appliedArchetypes, ord->status);
                     viewScroll = { 40, 218, 760, 478, 0, 0, 758, 218};
+                    ls_staticArrayCopy(ord->appliedArchetypes, &globalSelectedArchetypes);
                 }
                 
                 ls_uiStartScrollableRegion(c, &viewScroll);
@@ -2427,7 +2438,7 @@ b32 DrawPranaStyle(UIContext *c)
                 ls_uiRect(c, 40, 218, 760, 478, RGBg(0x33), RGBg(0x11));
                 
                 if(f) {
-                    //NOTE: Draw the HP Box that we can use it to add/remove HP
+                    //NOTE: Draw the HP Box that we can use to add/remove HP
                     Color base = c->widgetColor;
                     c->widgetColor = ls_uiAlphaBlend(RGBA(0x1B, 0x18, 0x14, 150), base);
                     ls_uiLabel(c, U"PF", 307, 720);

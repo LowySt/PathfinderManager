@@ -57,6 +57,9 @@ const u32 PRANA_THROWER_NUM = 8;
 
 const char32_t *NoEncounterStr = U"No Selection";
 
+const s32 MAX_CONCURRENT_ARCHETYPES = 4;
+const s32 MAX_ARCHETYPES = 18;
+
 struct tmp_order
 {
     s32    init;
@@ -64,6 +67,8 @@ struct tmp_order
     s32    maxLife;
     
     s32    compendiumIdx;
+    StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes;
+    
     s32    ID;
 };
 
@@ -206,9 +211,6 @@ struct Status
     StatusType type;
     UICheck check;
 };
-
-const s32 MAX_CONCURRENT_ARCHETYPES = 4;
-const s32 MAX_ARCHETYPES = 18;
 
 struct InitField
 {
