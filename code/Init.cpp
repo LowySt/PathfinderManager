@@ -444,6 +444,47 @@ b32 ChangeOrder(UIContext *c, void *data)
     return inputUse;
 }
 
+void CopyEncounter(Encounter *src, Encounter *dst)
+{
+    ls_utf32Set(&dst->name, src->name);
+    
+    //NOTE: Copy all the mobs entries
+    dst->numMobs = src->numMobs;
+    for(s32 i = 0; i < dst->numMobs; i++)
+    {
+        EncounterInitEntry *srcEntry = src->mob + i;
+        EncounterInitEntry *dstEntry = dst->mob + i;
+        
+        for(s32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+        { ls_utf32Set(&dstEntry->fields[j], srcEntry->fields[j]); }
+        
+        dstEntry->compendiumIdx = srcEntry->compendiumIdx;
+        ls_staticArrayCopy(srcEntry->appliedArchetypes, &dstEntry->appliedArchetypes);
+    }
+    
+    //NOTE: Copy all the allies entries
+    dst->numAllies = src->numAllies;
+    for(s32 i = 0; i < dst->numAllies; i++)
+    {
+        EncounterInitEntry *srcEntry = src->ally + i;
+        EncounterInitEntry *dstEntry = dst->ally + i;
+        
+        for(s32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
+        { ls_utf32Set(&dstEntry->fields[j],srcEntry->fields[j]); }
+        
+        dstEntry->compendiumIdx = srcEntry->compendiumIdx;
+        ls_staticArrayCopy(srcEntry->appliedArchetypes, &dstEntry->appliedArchetypes);
+    }
+    
+    //NOTE: Copy all the throwers data
+    for(s32 i = 0; i < THROWER_NUM; i++)
+    {
+        ls_utf32Set(&dst->throwerName[i], src->throwerName[i]);
+        ls_utf32Set(&dst->throwerHit[i], src->throwerHit[i]);
+        ls_utf32Set(&dst->throwerDamage[i], src->throwerDamage[i]);
+    }
+}
+
 b32 ResetOnClick(UIContext *, void *);
 b32 OnEncounterSelect(UIContext *c, void *data)
 {
@@ -476,6 +517,8 @@ b32 OnEncounterSelect(UIContext *c, void *data)
         m->compendiumIdx = entry->compendiumIdx;
         m->ID            = addID;
         
+        ls_staticArrayCopy(entry->appliedArchetypes, &m->appliedArchetypes);
+        
         addID += 1;
     }
     
@@ -490,6 +533,8 @@ b32 OnEncounterSelect(UIContext *c, void *data)
         ls_uiTextBoxSet(c, &a->maxLifeDisplay, entry->fields[MOB_INIT_ENC_FIELDS-1]);
         a->compendiumIdx = entry->compendiumIdx;
         a->ID            = addID;
+        
+        ls_staticArrayCopy(entry->appliedArchetypes, &a->appliedArchetypes);
         
         addID += 1;
     }
@@ -536,6 +581,7 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
         
         ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currMob->maxLifeDisplay.text);
         e->compendiumIdx = currMob->compendiumIdx;
+        ls_staticArrayCopy(currMob->appliedArchetypes, &e->appliedArchetypes);
     }
     
     for(u32 i = 0; i < visibleAllies; i++)
@@ -548,6 +594,7 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
         
         ls_utf32Set(&e->fields[MOB_INIT_ENC_FIELDS-1], currAlly->maxLifeDisplay.text);
         e->compendiumIdx = currAlly->compendiumIdx;
+        ls_staticArrayCopy(currAlly->appliedArchetypes, &e->appliedArchetypes);
     }
     
     for(u32 i = 0; i < THROWER_NUM; i++)
@@ -581,12 +628,7 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
     Encounter *selected = State.encounters.Enc + (idx-1);
     Encounter *last     = State.encounters.Enc + (lastIdx-1);
     
-    //NOTE:      When idx == lastIdx we just decrease the numEncounters
-    //
-    //TODO:      Is it fine to keep the old stuff allocated? ls_unistrSet only allocates if data is null
-    //           So adding new things on it shouldn't leak memory (and it gets reset on program startup anyway)
-    //           Also everything gets overwritten, so there should be no problem of old data hanging.
-    
+    //NOTE:  When idx == lastIdx we just decrease the numEncounters
     if(idx != lastIdx)
     {
         //TODO: In this case I have to free memory, else I will leak
@@ -596,6 +638,7 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
             for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
             { ls_utf32Free(&selected->mob[i].fields[j]); }
             selected->mob[i].compendiumIdx = -1;
+            ls_staticArrayClear(&selected->mob[i].appliedArchetypes);
         }
         
         for(u32 i = 0; i < ally_count; i++)
@@ -603,6 +646,7 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
             for(u32 j = 0; j < MOB_INIT_ENC_FIELDS; j++)
             { ls_utf32Free(&selected->ally[i].fields[j]); }
             selected->ally[i].compendiumIdx = -1;
+            ls_staticArrayClear(&selected->ally[i].appliedArchetypes);
         }
         
         for(u32 i = 0; i < THROWER_NUM; i++)
@@ -612,7 +656,7 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
             ls_utf32Free(&selected->throwerDamage[i]);
         }
         
-        ls_memcpy(last, selected, sizeof(Encounter));
+        CopyEncounter(last, selected);
     }
     
     State.encounters.numEncounters -= 1;
@@ -660,6 +704,8 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
         m->compendiumIdx = entry->compendiumIdx;
         m->ID            = addID;
         
+        ls_staticArrayCopy(m->appliedArchetypes, &entry->appliedArchetypes);
+        
         State.Init->turnsInRound       += 1;
         CheckAndFixCounterTurns();
         
@@ -687,6 +733,8 @@ b32 AddEncounterOnClick(UIContext *c, void *data)
         
         a->compendiumIdx = entry->compendiumIdx;
         a->ID            = addID;
+        
+        ls_staticArrayCopy(a->appliedArchetypes, &entry->appliedArchetypes);
         
         State.Init->turnsInRound         += 1;
         CheckAndFixCounterTurns();

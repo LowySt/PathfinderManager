@@ -146,6 +146,8 @@ struct EncounterInitEntry
 {
     utf32 fields[MOB_INIT_ENC_FIELDS];
     s32 compendiumIdx;
+    
+    StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes;
 };
 
 //TODO: Keep track of how many throwers are set.
