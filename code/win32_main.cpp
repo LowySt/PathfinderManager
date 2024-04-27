@@ -14,6 +14,8 @@
 #include "lsString.h"
 #undef LS_STRING_IMPLEMENTATION
 
+#include "lsArray.h"
+
 #define LS_BUFFER_IMPLEMENTATION
 #include "lsBuffer.h"
 #undef LS_BUFFER_IMPLEMENTATION
@@ -38,8 +40,6 @@
 #define LS_LOG_IMPLEMENTATION
 #include "lsLog.h"
 #undef LS_LOG_IMPLEMENTATION
-
-#include "lsArray.h"
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #define STBTT_ifloor(x)     ls_floor(x)
@@ -368,6 +368,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Default", selectThemeDefault, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Light", selectThemeLight, NULL);
+    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Green", selectThemeGreen, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"User", selectThemeUser, NULL);
     ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Customize", openThemeColorPicker, NULL);
     
@@ -394,6 +395,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Initialize State and Undo States
     State.themePicker.wheel                = ls_uiColorPickerInit(uiContext, &State.themePicker);
     State.themePicker.wheel.pickedColor    = uiContext->backgroundColor;
+    
+    State.backgroundColor = RGBg(0x38);
+    State.borderColor     = RGBg(0x22);
+    State.menuBarColor    = RGBg(0x20);
+    State.highliteColor   = RGBg(0x65);
+    State.pressedColor    = RGBg(0x75);
+    State.widgetColor     = RGBg(0x45);
+    State.textColor       = RGBg(0xCC);
+    State.invWidgetColor  = RGBg(0xBA);
+    State.invTextColor    = RGBg(0x33);
     
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
     SetInitTab(uiContext, &State);
@@ -436,7 +447,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
-    b32 result = LoadState(uiContext);
+    if(LoadState(uiContext) == FALSE)
+    {
+        //NOTE: No Save file has been found.
+        //      As of right now this is irrelevant, as the program can always start in a valid state.
+    }
+    
     
     if(State.inBattle) { State.playerSettingsMenuItem->isVisible = FALSE; }
     

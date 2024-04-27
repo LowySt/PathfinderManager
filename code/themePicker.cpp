@@ -1,8 +1,41 @@
+#if _DEBUG
+void dumpCurrentTheme(UIContext *c)
+{
+    ls_log("backgroundColor = RGB({u8}, {u8}, {u8})",
+           c->backgroundColor.r, c->backgroundColor.g, c->backgroundColor.b);
+    
+    ls_log("menuBarColor = RGB({u8}, {u8}, {u8})",
+           c->menuBarColor.r, c->menuBarColor.g, c->menuBarColor.b);
+    
+    ls_log("highliteColor = RGB({u8}, {u8}, {u8})",
+           c->highliteColor.r, c->highliteColor.g, c->highliteColor.b);
+    
+    ls_log("pressedColor = RGB({u8}, {u8}, {u8})",
+           c->pressedColor.r, c->pressedColor.g, c->pressedColor.b);
+    
+    ls_log("widgetColor = RGB({u8}, {u8}, {u8})",
+           c->widgetColor.r, c->widgetColor.g, c->widgetColor.b);
+    
+    ls_log("borderColor = RGB({u8}, {u8}, {u8})",
+           c->borderColor.r, c->borderColor.g, c->borderColor.b);
+    
+    ls_log("textColor = RGB({u8}, {u8}, {u8})",
+           c->textColor.r, c->textColor.g, c->textColor.b);
+    
+    ls_log("invWidgetColor = RGB({u8}, {u8}, {u8})",
+           c->invWidgetColor.r, c->invWidgetColor.g, c->invWidgetColor.b);
+    
+    ls_log("invTextColor = RGB({u8}, {u8}, {u8})",
+           c->invTextColor.r, c->invTextColor.g, c->invTextColor.b);
+}
+#endif
+
 enum ProgramTheme
 {
     THEME_DEFAULT,
     THEME_DARKNIGHT,
     THEME_LIGHT,
+    THEME_GREEN,
     THEME_USER,
     
     THEME_COUNT
@@ -92,6 +125,11 @@ b32 DrawThemePicker(UIContext *c)
     
     if(theme->isShown == TRUE)
     {
+        
+#if _DEBUG
+        if(KeyPress(keyMap::F8)) { dumpCurrentTheme(c); }
+#endif
+        
         s32 pickerX = c->width/2;
         s32 pickerY = c->height/3;
         s32 pickerW = 300;
@@ -308,6 +346,23 @@ b32 selectThemeLight(UIContext *c, void *data)
     return FALSE;
 }
 
+b32 selectThemeGreen(UIContext *c, void *data)
+{
+    currentTheme = THEME_GREEN;
+    
+    c->backgroundColor = RGB(13, 63, 30);
+    c->menuBarColor    = RGB(32, 32, 32);
+    c->highliteColor   = RGB(123, 192, 84);
+    c->pressedColor    = RGB(143, 223, 97);
+    c->widgetColor     = RGB(23, 115, 55);
+    c->borderColor     = RGB(3, 15, 7);
+    c->textColor       = RGB(253, 255, 252);
+    c->invWidgetColor  = RGB(186, 186, 186);
+    c->invTextColor    = RGB(51, 51, 51);
+    
+    return FALSE;
+}
+
 b32 selectThemeUser(UIContext *c, void *data)
 {
     currentTheme = THEME_USER;
@@ -326,7 +381,8 @@ b32 selectThemeUser(UIContext *c, void *data)
 }
 
 typedef  b32(*SelectThemeProc)(UIContext *, void *);
-SelectThemeProc selectThemeProcs[THEME_COUNT] = { selectThemeDefault, selectThemeDarkNight, selectThemeLight, selectThemeUser };
+SelectThemeProc selectThemeProcs[THEME_COUNT] = { selectThemeDefault, selectThemeDarkNight, selectThemeLight,
+    selectThemeGreen, selectThemeUser };
 
 b32 openThemeColorPicker(UIContext *c, void *data)
 {
