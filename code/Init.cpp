@@ -2498,7 +2498,7 @@ b32 DrawPranaStyle(UIContext *c)
                     
                     //NOTE: Draw Non Lethal Damage
                     ls_uiLabel(c, U"NL", 442, 720);
-                    inputUse |= ls_uiTextBox(c, &f->nonLethalDisplay, 462, 715, 88, 20);
+                    inputUse |= ls_uiTextBox(c, &f->nonLethalDisplay, 462, 715, 44, 20);
                     c->widgetColor = base;
                 }
                 

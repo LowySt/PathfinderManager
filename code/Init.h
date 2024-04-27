@@ -214,6 +214,11 @@ struct Status
     UICheck check;
 };
 
+//TODO: NonLethal display (like all maxLen numerical displays) is asymmetrical in the value range
+//      it can represent.
+//
+//      I.E.  A maxLen = 4 textBox can represent: [-999, 9999]
+//            Instead of the more correct:        [-999, 999]
 struct InitField
 {
     //NOTE: This makes referring to other boxes in the same InitField much easier
