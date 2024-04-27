@@ -27,6 +27,8 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         
         ls_bufferAddDWord(buf, ally->compendiumIdx);
         ls_bufferAddDWord(buf, ally->ID);
+        
+        ls_bufferAddStaticArray(buf, ally->appliedArchetypes);
     }
     
     //532 + (64*mob_count) = 2.068
@@ -44,6 +46,8 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         
         ls_bufferAddDWord(buf, mob->compendiumIdx);
         ls_bufferAddDWord(buf, mob->ID);
+        
+        ls_bufferAddStaticArray(buf, mob->appliedArchetypes);
     }
     
     //2.068 + (36*ORDER_NUM) = 3.328
@@ -68,6 +72,8 @@ void CopyStateToBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_saveV
         
         ls_bufferAddDWord(buf, order->compendiumIdx);
         ls_bufferAddDWord(buf, order->ID);
+        
+        ls_bufferAddStaticArray(buf, order->appliedArchetypes);
     }
     
     //3.328 + 24 = 3.352
@@ -147,6 +153,14 @@ void CopyStateFromBufferV6(ProgramState *curr, buffer *buf, u32 saveV = global_s
         ls_bufferReadIntoUTF32(buf, &ally->maxLifeDisplay.text);
         ally->compendiumIdx = ls_bufferReadDWord(buf);
         ally->ID            = ls_bufferReadDWord(buf);
+        
+        // nonLethal(Display) @V10
+        ls_utf32Set(&ally->nonLethalDisplay.text, U"0"_W);
+        ally->maxLife   = 999;
+        ally->nonLethal = 0;
+        
+        // appliedArchetypes @V10
+        ls_staticArrayClear(&ally->appliedArchetypes);
     }
     
     for(u32 i = 0; i < mob_count; i++)
@@ -165,6 +179,14 @@ void CopyStateFromBufferV6(ProgramState *curr, buffer *buf, u32 saveV = global_s
         ls_bufferReadIntoUTF32(buf, &mob->maxLifeDisplay.text);
         mob->compendiumIdx = ls_bufferReadDWord(buf);
         mob->ID            = ls_bufferReadDWord(buf);
+        
+        // nonLethal(Display) @V10
+        ls_utf32Set(&mob->nonLethalDisplay.text, U"0"_W);
+        mob->maxLife   = 999;
+        mob->nonLethal = 0;
+        
+        // appliedArchetypes @V10
+        ls_staticArrayClear(&mob->appliedArchetypes);
     }
     
     for(u32 i = 0; i < order_count; i++)
@@ -186,6 +208,9 @@ void CopyStateFromBufferV6(ProgramState *curr, buffer *buf, u32 saveV = global_s
         
         order->compendiumIdx = ls_bufferReadDWord(buf);
         order->ID            = ls_bufferReadDWord(buf);
+        
+        // appliedArchetypes @V10
+        ls_staticArrayClear(&order->appliedArchetypes);
     }
     
     init->turnsInRound = ls_bufferReadDWord(buf);
@@ -268,6 +293,9 @@ void CopyStateFromBuffer7_9(ProgramState *curr, buffer *buf, u32 saveV = global_
         
         ally->compendiumIdx = ls_bufferReadDWord(buf);
         ally->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: Applied Archetypes @V10-V*
+        ls_staticArrayClear(&ally->appliedArchetypes);
     }
     
     for(u32 i = 0; i < mob_count; i++)
@@ -292,6 +320,9 @@ void CopyStateFromBuffer7_9(ProgramState *curr, buffer *buf, u32 saveV = global_
         
         mob->compendiumIdx = ls_bufferReadDWord(buf);
         mob->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: Applied Archetypes @V10-V*
+        ls_staticArrayClear(&mob->appliedArchetypes);
     }
     
     for(u32 i = 0; i < order_count; i++)
@@ -313,6 +344,9 @@ void CopyStateFromBuffer7_9(ProgramState *curr, buffer *buf, u32 saveV = global_
         
         order->compendiumIdx = ls_bufferReadDWord(buf);
         order->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: Applied Archetypes @V10-V*
+        ls_staticArrayClear(&order->appliedArchetypes);
     }
     
     init->turnsInRound = ls_bufferReadDWord(buf);
@@ -393,6 +427,8 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         
         ally->compendiumIdx = ls_bufferReadDWord(buf);
         ally->ID            = ls_bufferReadDWord(buf);
+        
+        ls_bufferReadStaticArray(buf, &ally->appliedArchetypes);
     }
     
     for(u32 i = 0; i < mob_count; i++)
@@ -415,6 +451,8 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         
         mob->compendiumIdx = ls_bufferReadDWord(buf);
         mob->ID            = ls_bufferReadDWord(buf);
+        
+        ls_bufferReadStaticArray(buf, &mob->appliedArchetypes);
     }
     
     for(u32 i = 0; i < order_count; i++)
@@ -436,6 +474,8 @@ void CopyStateFromBuffer(ProgramState *curr, buffer *buf, u32 saveV = global_sav
         
         order->compendiumIdx = ls_bufferReadDWord(buf);
         order->ID            = ls_bufferReadDWord(buf);
+        
+        ls_bufferReadStaticArray(buf, &order->appliedArchetypes);
     }
     
     init->turnsInRound = ls_bufferReadDWord(buf);
@@ -549,6 +589,9 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            
+            //NOTE: AppliedArchetypes @V10-V*
+            ls_staticArrayClear(&e->appliedArchetypes);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
@@ -560,6 +603,9 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            
+            //NOTE: AppliedArchetypes @V10-V*
+            ls_staticArrayClear(&e->appliedArchetypes);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
@@ -605,9 +651,7 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
         InitField *f = Page->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        {
-            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-        }
+        { ls_bufferReadIntoUTF32(buf, &f->editFields[j].text); }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
         //      we need to count how many lines there are, and set it.
@@ -626,6 +670,9 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     
@@ -637,9 +684,7 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
         InitField *f = Page->AllyFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        {
-            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-        }
+        { ls_bufferReadIntoUTF32(buf, &f->editFields[j].text); }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
         //      we need to count how many lines there are, and set it.
@@ -658,6 +703,9 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     //NOTE: Quick Exit if not in battle after the save.
@@ -709,6 +757,9 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
         
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
         
         //NOTE: Unserialize field.currValue V10-V*
         f->field.currValue = ls_uiSliderCalculateValueFromPosition(c, &f->field);
@@ -839,6 +890,9 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            
+            //NOTE: AppliedArchetypes @V10-V*
+            ls_staticArrayClear(&e->appliedArchetypes);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
@@ -850,6 +904,9 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            
+            //NOTE: AppliedArchetypes @V10-V*
+            ls_staticArrayClear(&e->appliedArchetypes);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
@@ -896,9 +953,7 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
         InitField *f = Page->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        {
-            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-        }
+        { ls_bufferReadIntoUTF32(buf, &f->editFields[j].text); }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
         //      we need to count how many lines there are, and set it.
@@ -917,6 +972,9 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     
@@ -949,6 +1007,9 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     //NOTE: Quick Exit if not in battle after the save.
@@ -1001,6 +1062,9 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
         
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
         
         //NOTE: Unserialize field.currValue V10-V*
         f->field.currValue = ls_uiSliderCalculateValueFromPosition(c, &f->field);
@@ -1130,6 +1194,9 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            
+            //NOTE: AppliedArchetypes @V10-V*
+            ls_staticArrayClear(&e->appliedArchetypes);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
@@ -1141,6 +1208,9 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            
+            //NOTE: AppliedArchetypes @V10-V*
+            ls_staticArrayClear(&e->appliedArchetypes);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
@@ -1187,9 +1257,7 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
         InitField *f = Page->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        {
-            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-        }
+        { ls_bufferReadIntoUTF32(buf, &f->editFields[j].text); }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
         //      we need to count how many lines there are, and set it.
@@ -1208,6 +1276,9 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     
@@ -1219,9 +1290,7 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
         InitField *f = Page->AllyFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        {
-            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-        }
+        { ls_bufferReadIntoUTF32(buf, &f->editFields[j].text); }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
         //      we need to count how many lines there are, and set it.
@@ -1240,6 +1309,9 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     //NOTE: Quick Exit if not in battle after the save.
@@ -1292,6 +1364,9 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
         
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
         
         //NOTE: Unserialize field.currValue V10-V*
         f->field.currValue = ls_uiSliderCalculateValueFromPosition(c, &f->field);
@@ -1420,6 +1495,9 @@ b32 LoadStateV9(UIContext *c, buffer *buf)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            
+            //NOTE: AppliedArchetypes @V10-V*
+            ls_staticArrayClear(&e->appliedArchetypes);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
@@ -1431,6 +1509,9 @@ b32 LoadStateV9(UIContext *c, buffer *buf)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            
+            //NOTE: AppliedArchetypes @V10-V*
+            ls_staticArrayClear(&e->appliedArchetypes);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
@@ -1498,6 +1579,9 @@ b32 LoadStateV9(UIContext *c, buffer *buf)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     
@@ -1530,6 +1614,9 @@ b32 LoadStateV9(UIContext *c, buffer *buf)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     //NOTE: Quick Exit if not in battle after the save.
@@ -1584,6 +1671,9 @@ b32 LoadStateV9(UIContext *c, buffer *buf)
         
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
+        
+        //NOTE: AppliedArchetypes @V10-V*
+        ls_staticArrayClear(&f->appliedArchetypes);
         
         //NOTE: Unserialize field.currValue V10-V*
         f->field.currValue = ls_uiSliderCalculateValueFromPosition(c, &f->field);
@@ -1705,6 +1795,7 @@ void SaveState(UIContext *c)
             { ls_bufferAddUTF32(buf, e->fields[k]); }
             
             ls_bufferAddDWord(buf, e->compendiumIdx);
+            ls_bufferAddStaticArray(buf, e->appliedArchetypes);
         }
         
         ls_bufferAddDWord(buf, curr->numAllies);
@@ -1716,6 +1807,7 @@ void SaveState(UIContext *c)
             { ls_bufferAddUTF32(buf, e->fields[k]); }
             
             ls_bufferAddDWord(buf, e->compendiumIdx);
+            ls_bufferAddStaticArray(buf, e->appliedArchetypes);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
@@ -1768,6 +1860,8 @@ void SaveState(UIContext *c)
         
         ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
+        
+        ls_bufferAddStaticArray(buf, f->appliedArchetypes);
     }
     
     
@@ -1787,6 +1881,8 @@ void SaveState(UIContext *c)
         
         ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
+        
+        ls_bufferAddStaticArray(buf, f->appliedArchetypes);
     }
     
     
@@ -1812,6 +1908,8 @@ void SaveState(UIContext *c)
         
         ls_bufferAddDWord(buf, f->compendiumIdx);
         ls_bufferAddDWord(buf, f->ID);
+        
+        ls_bufferAddStaticArray(buf, f->appliedArchetypes);
     }
     
     ls_bufferAddDWord(buf, Page->turnsInRound);
@@ -1977,6 +2075,7 @@ b32 LoadState(UIContext *c)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            ls_bufferReadStaticArray(buf, &e->appliedArchetypes);
         }
         
         curr->numAllies = ls_bufferReadDWord(buf);
@@ -1988,6 +2087,7 @@ b32 LoadState(UIContext *c)
             { e->fields[k] = ls_bufferReadUTF32(buf); }
             
             e->compendiumIdx = ls_bufferReadDWord(buf);
+            ls_bufferReadStaticArray(buf, &e->appliedArchetypes);
         }
         
         for(u32 j = 0; j < THROWER_NUM; j++)
@@ -2034,9 +2134,7 @@ b32 LoadState(UIContext *c)
         InitField *f = Page->MobFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        {
-            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-        }
+        { ls_bufferReadIntoUTF32(buf, &f->editFields[j].text); }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
         //      we need to count how many lines there are, and set it.
@@ -2053,6 +2151,8 @@ b32 LoadState(UIContext *c)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        ls_bufferReadStaticArray(buf, &f->appliedArchetypes);
     }
     
     
@@ -2064,9 +2164,7 @@ b32 LoadState(UIContext *c)
         InitField *f = Page->AllyFields + i;
         
         for(u32 j = 0; j < IF_IDX_COUNT; j++)
-        {
-            ls_bufferReadIntoUTF32(buf, &f->editFields[j].text);
-        }
+        { ls_bufferReadIntoUTF32(buf, &f->editFields[j].text); }
         
         //NOTE: For the EXTRA editField, because it is multi-line 
         //      we need to count how many lines there are, and set it.
@@ -2083,6 +2181,8 @@ b32 LoadState(UIContext *c)
         
         f->compendiumIdx = ls_bufferReadDWord(buf);
         f->ID            = ls_bufferReadDWord(buf);
+        
+        ls_bufferReadStaticArray(buf, &f->appliedArchetypes);
     }
     
     //NOTE: Quick Exit if not in battle after the save.
@@ -2135,6 +2235,8 @@ b32 LoadState(UIContext *c)
         
         f->compendiumIdx  = ls_bufferReadDWord(buf);
         f->ID             = ls_bufferReadDWord(buf);
+        
+        ls_bufferReadStaticArray(buf, &f->appliedArchetypes);
         
         s32 currVal = f->field.currValue;
         
