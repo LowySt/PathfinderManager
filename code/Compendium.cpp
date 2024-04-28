@@ -4409,31 +4409,9 @@ b32 DrawCompendium(UIContext *c)
     //      we should "grey out" the button and show a fader error?
     if(compendium.arch.isChoosingArchetype == TRUE)
     {
-        //NOTE: Draw the Archetype Selection Window
-        
-        //NOTE: Darken the Compendium Page to indicate inactiveness
-        ls_uiRect(c, 0, 0, c->width, 0.935f*c->height, RGBA(0, 0, 0, 0xAA), RGBA(0, 0, 0, 0xAA), 1);
-        
-        //NOTE: Draw the Archetype Selection Window
-        ls_uiRect(c, 0.05f*c->width, 0.47f*c->height, 0.90*c->width, 0.33f*c->height, 2);
-        
-        //NOTE: Draw all the available archetype selection buttons
-        s32 baseX = 0.05f*c->width;
-        s32 baseY = 0.74f*c->height;
-        
-        s32 xAdv = 0.18f*c->width;
-        for(s32 archIdx = 0; archIdx < MAX_ARCHETYPES; archIdx++)
-        {
-            s32 baseXOffset = (xAdv - compendium.arch.archetypes[archIdx].w) / 2;
-            ls_uiButton(c, &compendium.arch.archetypes[archIdx], baseX+baseXOffset, baseY, 3);
-            
-            baseX += xAdv;
-            if((archIdx+1) % 5 == 0)
-            {
-                baseX  = 0.05f*c->width;
-                baseY -= 0.064f*c->height;
-            }
-        }
+        //NOTE: Currently ignoring the return value, because I don't want archetype selection
+        //      to be Undo/Redo-able
+        DrawArchetypeSelection(c);
     }
     
     return userInput;

@@ -29,7 +29,7 @@ const char32_t *archetypeName[] = {
     U"Avanzato", U"Celestiale", U"Immondo", U"Entropico", U"Risoluto", 
     U"Gigante", U"Fungoide", U"d'Ombra", U"Carnideformato", U"Degenerato",
     
-    U"Scheletro", U"Scheletro Insanguinato", U"Scheletro Bruciante",
+    U"Scheletro", U"Schel. Insanguinato", U"Schel. Bruciante",
     
     U"Zombi", U"Zombi Rapido",
     
@@ -180,7 +180,7 @@ struct ArchetypeDiff
 
 b32  CompendiumOpenArchetypeWindow(UIContext *c, void *user);
 b32  CompendiumSelectArchetype(UIContext *c, void *user);
-
+b32  DrawArchetypeSelection(UIContext *c);
 
 void CompendiumApplyAllArchetypeNames(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, utf32 *newName);
 void CompendiumApplyAllArchetypeGS(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, u16 gsEntry,

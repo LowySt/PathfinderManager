@@ -157,7 +157,121 @@ b32 CompendiumSelectArchetype(UIContext *c, void *user)
     return FALSE;
 }
 
-
+//TODO: Make Window parameterised on a passed (x,y,width,height)
+b32 DrawArchetypeSelection(UIContext *c)
+{
+    b32 inputUse = FALSE;
+    
+    //NOTE: Darken the Compendium Page to indicate inactiveness
+    ls_uiRect(c, 0, 0, c->width, 0.935f*c->height, RGBA(0, 0, 0, 0xAA), RGBA(0, 0, 0, 0xAA), 1);
+    
+    //NOTE: Draw the Archetype Selection Window
+    ls_uiRect(c, 0.02f*c->width, 0.33f*c->height, 0.955*c->width, 0.47f*c->height, 2);
+    
+    //NOTE: Draw Simple Archetypes
+    s32 baseX = 0.02f*c->width;
+    s32 baseY = 0.74f*c->height;
+    
+    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiLabel(c, U"Simple", 0.03f*c->width, 0.77f*c->height, c->textColor, 3);
+    ls_uiHSeparator(c, 0.03f*c->width, 0.76f*c->height, 0.94f*c->width, 1, RGBg(0), 3);
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    
+    //NOTE: Looping over all Simple Archetypes Indices
+    s32 xAdv = 0;
+    baseX = 0.03f*c->width;
+    baseY = 0.72f*c->height;
+    
+    s32 maxWidth = 0;
+    for(s32 simpleIdx = 0; simpleIdx < 10; simpleIdx++)
+    {
+        if(compendium.arch.archetypes[simpleIdx].w > maxWidth)
+        { maxWidth = compendium.arch.archetypes[simpleIdx].w; }
+    }
+    xAdv = maxWidth + (0.02f*c->width);
+    
+    for(s32 simpleIdx = 0; simpleIdx < 10; simpleIdx++)
+    {
+        ArchetypeDiff selectedDiff = allArchetypeDiffs[simpleIdx];
+        if(!selectedDiff.isCompatible(&cachedPage))
+        {
+            compendium.arch.archetypes[simpleIdx].isInactive = TRUE;
+            inputUse |= ls_uiButton(c, &compendium.arch.archetypes[simpleIdx], baseX, baseY, 3);
+            compendium.arch.archetypes[simpleIdx].isInactive = FALSE;
+        }
+        else
+        {
+            inputUse |= ls_uiButton(c, &compendium.arch.archetypes[simpleIdx], baseX, baseY, 3);
+        }
+        
+        baseX += xAdv;
+        if((simpleIdx+1) % 5 == 0)
+        {
+            baseX  = 0.03f*c->width;
+            if(simpleIdx < 9) { baseY -= 0.058f*c->height; }
+        }
+    }
+    
+    //NOTE: Draw Acquired Archetypes
+    baseX  = 0.03f*c->width;
+    baseY -= 0.041f*c->height;
+    
+    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiLabel(c, U"Acquired", 0.03f*c->width, baseY, c->textColor, 3); baseY -= 0.010f*c->height;
+    ls_uiHSeparator(c, 0.03f*c->width, baseY, 0.94f*c->width, 1, RGBg(0), 3);
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    
+    //NOTE: Looping over all Acquired Archetypes Indices
+    baseY -= 0.042f*c->height;
+    
+    maxWidth = 0;
+    for(s32 acqIdx = 10; acqIdx < 16; acqIdx++)
+    {
+        if(compendium.arch.archetypes[acqIdx].w > maxWidth)
+        { maxWidth = compendium.arch.archetypes[acqIdx].w; }
+    }
+    xAdv = maxWidth + (0.02f*c->width);
+    
+    for(s32 acqIdx = 10; acqIdx < 16; acqIdx++)
+    {
+        ArchetypeDiff selectedDiff = allArchetypeDiffs[acqIdx];
+        if(!selectedDiff.isCompatible(&cachedPage))
+        {
+            compendium.arch.archetypes[acqIdx].isInactive = TRUE;
+            inputUse |= ls_uiButton(c, &compendium.arch.archetypes[acqIdx], baseX, baseY, 3);
+            compendium.arch.archetypes[acqIdx].isInactive = FALSE;
+        }
+        else
+        { inputUse |= ls_uiButton(c, &compendium.arch.archetypes[acqIdx], baseX, baseY, 3); }
+        
+        baseX += xAdv;
+        if((acqIdx-10+1) % 4 == 0)
+        {
+            baseX  = 0.03f*c->width;
+            if(acqIdx < 15) { baseY -= 0.058f*c->height; }
+        }
+    }
+    
+    //NOTE: Adding Exoscheletro, which is out of order.
+    inputUse |= ls_uiButton(c, &compendium.arch.archetypes[17], baseX, baseY, 3);
+    
+    //NOTE: Draw Acquired Archetypes
+    baseX  = 0.03f*c->width;
+    baseY -= 0.041f*c->height;
+    
+    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiLabel(c, U"Inherited", 0.03f*c->width, baseY, c->textColor, 3); baseY -= 0.010f*c->height;
+    ls_uiHSeparator(c, 0.03f*c->width, baseY, 0.94f*c->width, 1, RGBg(0), 3);
+    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    
+    //NOTE: Looping over all Acquired Archetypes Indices
+    baseY -= 0.042f*c->height;
+    
+    //NOTE: Adding Micotico, the only Inherited, currently.
+    inputUse |= ls_uiButton(c, &compendium.arch.archetypes[16], baseX, baseY, 3);
+    
+    return inputUse;
+}
 
 //----------------------------//
 // ARCHETYPE DIFF APPLICATION //
