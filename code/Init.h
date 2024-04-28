@@ -245,6 +245,11 @@ struct Order
     
     Status status[MAX_STATUS];
     
+    /*TODO: To be implemented after rework of InitFields/Order and CachedPage
+    UITextBox negativeLevelsPrompt;
+    s32 negativeLevels;
+    */
+    
     s32 compendiumIdx;
     s32 ID;
     

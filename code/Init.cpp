@@ -278,7 +278,7 @@ b32 CustomMobNonLethalField(UIContext *c, void *data)
         
         s32 diff = ls_utf32ToInt(f->text);
         h->mob->nonLethal += diff;
-        if(h->mob->nonLethal < 0) { h->mob->nonLethal = 0; }
+        if(h->mob->nonLethal < 0)    { h->mob->nonLethal = 0; }
         if(h->mob->nonLethal > 9001) { h->mob->nonLethal = 9001; }
         
         ls_uiTextBoxClear(c, f);
@@ -296,6 +296,71 @@ b32 CustomMobNonLethalField(UIContext *c, void *data)
     
     return inputUse;
 }
+
+/*TODO: To be implemented after rework of InitFields/Order and CachedPage
+b32 CustomMobNegLvlFieldFocusLost(UIContext *c, void *data)
+{
+    OrderHandler *h = (OrderHandler *)data;
+    
+    //NOTE: We lost focus, let's reset the box
+    if(h->isEditing) {
+        UITextBox *f = h->parent;
+        ls_uiTextBoxClear(c, f);
+        ls_uiTextBoxSet(c, f, h->previous);
+        h->isEditing = FALSE;
+        return TRUE;
+    }
+    
+    return FALSE;
+}
+
+
+b32 CustomMobNegLvlField(UIContext *c, void *data)
+{
+    Input *UserInput = &c->UserInput;
+    b32 inputUse = FALSE;
+    
+    OrderHandler *h = (OrderHandler *)data;
+    UITextBox *f = h->parent;
+    
+    AssertMsg(State.inBattle, "Can't select this outside of battle!");
+    if(!State.inBattle) { return FALSE; }
+    
+    if(LeftClick && !h->isEditing)
+    { 
+        ls_utf32Set(&h->previous, f->text);
+        ls_uiTextBoxClear(c, f);
+        
+        h->isEditing = TRUE;
+        inputUse = TRUE;
+    }
+    
+    if(h->isEditing && KeyPress(keyMap::Enter))
+    {
+        Order *order = h->order;
+        
+        s32 diff = ls_utf32ToInt(f->text);
+        order->negativeLevels += diff;
+        if(order->negativeLevels < 0)  { order->negativeLevels = 0; }
+        if(order->negativeLevels > 99) { order->negativeLevels = 99; }
+        
+        ls_uiTextBoxClear(c, f);
+        
+        u32 tmpBuf[32] = {};
+        utf32 tmpString = { tmpBuf, 0, 32 };
+        ls_utf32FromInt_t(&tmpString, order->negativeLevels);
+        ls_uiTextBoxSet(c, f, tmpString);
+        
+        h->isEditing = FALSE;
+        ls_uiFocusChange(c, NULL);
+        
+        inputUse = TRUE;
+    }
+    
+    return inputUse;
+}
+*/
+
 
 b32 OrderPositionOnFocusLost(UIContext *c, void *data)
 {
@@ -1030,8 +1095,8 @@ b32 ResetOnClick(UIContext *c, void *data)
         
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
         ls_uiTextBoxSet(c, &f->nonLethalDisplay, zeroUTF32);
-        f->maxLife   = 0;
-        f->nonLethal = 0;
+        f->maxLife        = 0;
+        f->nonLethal      = 0;
         
         f->compendiumIdx = -1;
         f->ID            = currID;
@@ -1053,8 +1118,8 @@ b32 ResetOnClick(UIContext *c, void *data)
         
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
         ls_uiTextBoxSet(c, &f->nonLethalDisplay, zeroUTF32);
-        f->maxLife = 0;
-        f->nonLethal = 0;
+        f->maxLife        = 0;
+        f->nonLethal      = 0;
         
         f->compendiumIdx = -1;
         f->ID            = currID;
@@ -1634,6 +1699,7 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     f->editFields[IF_IDX_EXTRA].callback1Data = NULL;
     f->editFields[IF_IDX_EXTRA].isSingleLine  = FALSE;
     
+    //NOTE: Max Life
     MobLifeHandler *handler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     handler->parent   = &f->maxLifeDisplay;
     handler->mob      = f;
@@ -1646,7 +1712,10 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     f->maxLifeDisplay.OnFocusLost     = CustomMobLifeFieldFocusLost;
     f->maxLifeDisplay.onFocusLostData = handler;
     f->maxLifeDisplay.isSingleLine    = TRUE;
+    f->maxLife   = 0;
     
+    
+    //NOTE: Non Lethal Damage
     MobLifeHandler *nlHandler = (MobLifeHandler *)ls_alloc(sizeof(MobLifeHandler));
     nlHandler->parent   = &f->nonLethalDisplay;
     nlHandler->mob      = f;
@@ -1659,10 +1728,9 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     f->nonLethalDisplay.OnFocusLost     = CustomMobNonLethalFieldFocusLost;
     f->nonLethalDisplay.onFocusLostData = nlHandler;
     f->nonLethalDisplay.isSingleLine    = TRUE;
-    
-    f->maxLife   = 0;
     f->nonLethal = 0;
     
+    //NOTE: Edit Fields
     ls_uiTextBoxSet(c, &f->editFields[IF_IDX_TOTALAC], zeroUTF32);
     f->editFields[IF_IDX_TOTALAC].maxLen        = 2;
     f->editFields[IF_IDX_TOTALAC].callback1     = NULL;
@@ -1790,6 +1858,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
                                                         statusActiveHeight, onStatusChange, (void *)mixedIndex);
         }
         
+        //NOTE: Compendium And Archetypes
         f->compendiumIdx  = -1;
         ls_staticArrayClear(&f->appliedArchetypes);
     }
@@ -2497,11 +2566,10 @@ b32 DrawPranaStyle(UIContext *c)
                     { c->widgetColor = ls_uiAlphaBlend(RGBA(0x33, 0x33, 0xCC, 150), base); }
                     
                     //NOTE: Draw Non Lethal Damage
-                    ls_uiLabel(c, U"NL", 442, 720);
+                    ls_uiLabel(c, U"NL", 440, 720);
                     inputUse |= ls_uiTextBox(c, &f->nonLethalDisplay, 462, 715, 44, 20);
                     c->widgetColor = base;
                 }
-                
                 
                 //NOTE: Draw the Status Check-circles
                 inputUse |= DrawStatusIcons(c, ord, 30, 750);
