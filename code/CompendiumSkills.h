@@ -176,7 +176,4 @@ void BuildSkillsFromPacked_t(StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> applied
 u32 ChangeBonusToSkillIfMatching(u32 entry, SkillType skType, s32 bonusChange);
 u32 ChangeBonusToSkill(u32 entry, s32 bonusChange);
 
-//TODO: Legacy. Kept for NPCs momentarily. To be Removed.
-s32 BuildSkillFromPackedOld_t(u32 *entries, s32 index, utf32 *tmp);
-
 #endif //_COMPENDIUM_SKILLS_H

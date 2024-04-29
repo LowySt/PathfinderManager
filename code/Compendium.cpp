@@ -2315,6 +2315,10 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, cachedPage.totHP);
     }
     
+    //NOTE: When adding to order, the life field gets double added?
+    //      8/8/8/8 instead of 8/8
+    TODO;
+    
     f->maxLife = ls_utf32ToInt(cachedPage.totHP);
     
     u32 buff[32] = {};
@@ -2847,15 +2851,12 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     //AssertMsg(FALSE, "Gongorinan has fucked up everything!\n");
     
     u32 tempUTF32Buffer[4096] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 4096 };
+    utf32 tempString          = { tempUTF32Buffer, 0, 4096 };
+    Arena prevArena           = ls_arenaUse(compTempArena);
+    Codex *c                  = &compendium.codex;
+    cachedPage->pageIndex     = viewIndex;
     
-    Arena prevArena = ls_arenaUse(compTempArena);
-    
-    Codex *c = &compendium.codex;
-    
-    b32 hasArchetype = appliedArchetypes.count > 0;
-    
-    cachedPage->pageIndex    = viewIndex;
+    b32 hasArchetype          = appliedArchetypes.count > 0;
     
     //TODO: What's missing (apart from possible bug fixes)
     //      Special Attacks
@@ -2863,19 +2864,12 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     //      Maybe DC for Channeling Energy on clerics with Carisma?
     //TODO: Perception is not being modified by statuses! :StatusPerception
     
-    //NOTE: GS and PE are moved down below because certain archetypes need those info to determine GS change
-    if(hasArchetype)
-    {
-        GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
-        CompendiumApplyAllArchetypeNames(appliedArchetypes, &cachedPage->name);
-    }
-    else
-    {
-        GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
-    }
-    
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
+    
+    GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
+    if(hasArchetype) { CompendiumApplyAllArchetypeNames(appliedArchetypes, &cachedPage->name); }
+    
     GetEntryFromBuffer_t(&c->numericValues, &tempString, page.STR, "str");
     if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_STR] = AS_NO_VALUE; }
     else { cachedPage->origAS[AS_STR] = ls_utf32ToInt(tempString); }
@@ -3019,9 +3013,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
     }
     else if(hasArchetype)
-    {
-        CompendiumAddAllArchetypesToList(appliedArchetypes, &cachedPage->archetype);
-    }
+    { CompendiumAddAllArchetypesToList(appliedArchetypes, &cachedPage->archetype); }
     
     
     //NOTE: Early talents are for attack modifiers!
@@ -3052,8 +3044,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     
     u64 hpPacked = page.HP;
     if(hasArchetype) { CompendiumApplyAllArchetypeDV(appliedArchetypes, cachedPage, &oldType, &hpPacked); }
-    //TODO: Segugio Strisciante fucks up
-    //AssertMsg(FALSE, "Fucked with skeleton archetypes\n");
     
     ls_utf32Clear(&cachedPage->HP);
     s32 totalHP = CalculateAndCacheHP(cachedPage, hpPacked, oldType, oldSize);
@@ -3191,7 +3181,6 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     
     ls_utf32Clear(&cachedPage->alignment);
     BuildAlignmentFromPacked_t(page.alignment, &cachedPage->alignment);
-    
     if(hasArchetype) { CompendiumApplyAllArchetypeAlign(appliedArchetypes, &cachedPage->alignment); }
     
     ls_utf32Clear(&cachedPage->senses);
@@ -3233,7 +3222,7 @@ void CachePage(PageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         u32 i = 1;
         while(page.weaknesses[i] && i < 16)
         {
-            AppendEntryFromBuffer(&c->weaknesses, &cachedPage->weaknesses, U", ", page.weaknesses[i]);
+            AppendEntryFromBuffer(&c->weaknesses, &cachedPage->weaknesses, U", ", page.weaknesses[i], "weaknesses");
             i += 1;
         }
     }
@@ -3275,55 +3264,61 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
                StaticArray<s32, MAX_CONCURRENT_ARCHETYPES> appliedArchetypes, Status *status = NULL)
 {
     u32 tempUTF32Buffer[4096] = {};
-    utf32 tempString = { tempUTF32Buffer, 0, 4096 };
-    
-    Arena prevArena = ls_arenaUse(compTempArena);
-    
-    Codex *c = &compendium.codex;
-    
-    cachedPage->pageIndex = viewIndex;
+    utf32 tempString          = { tempUTF32Buffer, 0, 4096 };
+    Arena prevArena           = ls_arenaUse(compTempArena);
+    Codex *c                  = &compendium.codex;
+    cachedPage->pageIndex     = viewIndex;
+    b32 hasArchetype          = appliedArchetypes.count > 0;
     
     //TODO: What's missing (apart from possible bug fixes)
     //      Special Attacks
     //      Random Fixes on Attacks/Special Attacks
     //      Maybe DC for Channeling Energy on clerics with Carisma?
+    //TODO: Perception is not being modified by statuses! :StatusPerception
     
     //NOTE: Everything tries to be ordered like the struct, to be organized
     //      But I need to have these stats earlier because other paramaters depend on them
+    
     GetEntryFromBuffer_t(&c->names, &cachedPage->name, page.name, "name");
+    if(hasArchetype) { CompendiumApplyAllArchetypeNames(appliedArchetypes, &cachedPage->name); }
     
-    ls_utf32Clear(&cachedPage->gs);
-    ls_utf32Clear(&cachedPage->pe);
-    if(page.gs != GS_SENTINEL_VALUE)
-    {
-        u16 gsValue = page.gs & 0x003F;
-        ls_utf32Set(&cachedPage->gs, CompendiumGetGSEntryFromSet(page.gs));
-        ls_utf32Set(&cachedPage->pe, peSet[gsValue]);
-    }
-    else
-    {
-        ls_utf32Set(&cachedPage->gs, U"0"_W);
-        ls_utf32Set(&cachedPage->pe, U"0"_W);
-    }
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.STR, "str");
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_STR] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_STR] = ls_utf32ToInt(tempString); }
+    ls_utf32Clear(&tempString);
     
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->STR, page.STR, "str");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->DEX, page.DEX, "dex");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CON, page.CON, "con");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->INT, page.INT, "int");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->WIS, page.WIS, "wis");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->CHA, page.CHA, "cha");
-    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
-    cachedPage->BABval = ls_utf32ToInt(cachedPage->BAB);
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.DEX, "dex");
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_DEX] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_DEX] = ls_utf32ToInt(tempString); }
+    ls_utf32Clear(&tempString);
     
-    cachedPage->origAS[AS_STR] = ls_utf32ToInt(cachedPage->STR);
-    cachedPage->origAS[AS_DEX] = ls_utf32ToInt(cachedPage->DEX);
-    cachedPage->origAS[AS_CON] = ls_utf32ToInt(cachedPage->CON);
-    cachedPage->origAS[AS_INT] = ls_utf32ToInt(cachedPage->INT);
-    cachedPage->origAS[AS_WIS] = ls_utf32ToInt(cachedPage->WIS);
-    cachedPage->origAS[AS_CHA] = ls_utf32ToInt(cachedPage->CHA);
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.CON, "con");
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_CON] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_CON] = ls_utf32ToInt(tempString); }
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.INT, "int");
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_INT] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_INT] = ls_utf32ToInt(tempString); }
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.WIS, "wis");
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_WIS] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_WIS] = ls_utf32ToInt(tempString); }
+    ls_utf32Clear(&tempString);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &tempString, page.CHA, "cha");
+    if(ls_utf32AreEqual(tempString, U"-"_W)) { cachedPage->origAS[AS_CHA] = AS_NO_VALUE; }
+    else { cachedPage->origAS[AS_CHA] = ls_utf32ToInt(tempString); }
+    ls_utf32Clear(&tempString);
     
     ls_memcpy(cachedPage->origAS, cachedPage->modAS, AS_COUNT*sizeof(s32));
     
+    //NOTE: Apply the archetype on the Ability Scores
+    if(hasArchetype) { CompendiumApplyAllArchetypeAS(appliedArchetypes, cachedPage->modAS); }
+    
+    //TODO: Perception is not being modified by statuses! :StatusPerception
+    //TODO: Flat-footed doesn't update DMC
     //NOTE: Cache Status Conditions
     if(status)
     {
@@ -3349,9 +3344,28 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         
         out_of_for_loop:
         
-        ls_utf32FromInt_t(&cachedPage->STR, str);
-        ls_utf32FromInt_t(&cachedPage->DEX, dex);
+        if(cachedPage->modAS[AS_STR] != AS_NO_VALUE) { ls_utf32FromInt_t(&cachedPage->STR, str); }
+        if(cachedPage->modAS[AS_DEX] != AS_NO_VALUE) { ls_utf32FromInt_t(&cachedPage->DEX, dex); }
     }
+    
+    //NOTE: Now that the statuses and archetypes have been applied, we update the AS display value!
+    if(cachedPage->modAS[AS_STR] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->STR); }
+    else { ls_utf32FromInt_t(&cachedPage->STR, cachedPage->modAS[AS_STR]); }
+    
+    if(cachedPage->modAS[AS_DEX] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->DEX); }
+    else { ls_utf32FromInt_t(&cachedPage->DEX, cachedPage->modAS[AS_DEX]); }
+    
+    if(cachedPage->modAS[AS_CON] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->CON); }
+    else { ls_utf32FromInt_t(&cachedPage->CON, cachedPage->modAS[AS_CON]); }
+    
+    if(cachedPage->modAS[AS_INT] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->INT); }
+    else { ls_utf32FromInt_t(&cachedPage->INT, cachedPage->modAS[AS_INT]); }
+    
+    if(cachedPage->modAS[AS_WIS] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->WIS); }
+    else { ls_utf32FromInt_t(&cachedPage->WIS, cachedPage->modAS[AS_WIS]); }
+    
+    if(cachedPage->modAS[AS_CHA] == AS_NO_VALUE) { ls_utf32Copy_t(U"-"_W, &cachedPage->CHA); }
+    else { ls_utf32FromInt_t(&cachedPage->CHA, cachedPage->modAS[AS_CHA]); }
     
     //NOTE: NPCs don't have a treasure field. We must clear to avoid pollution from the previous cachedPage
     ls_utf32Clear(&cachedPage->treasure);
@@ -3359,29 +3373,40 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->origin, page.origin, "origin");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->shortDesc, page.shortDesc, "short_desc");
     
-    GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
-    u32 oldSizeBuf[64] = {}; utf32 oldSize = { oldSizeBuf, 0, 64 }; ls_utf32Copy_t(cachedPage->size, &oldSize);
-    
     //NOTE: NPC Specific Equip, Properties, Boons
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->given_equip, page.given_equip, "given_equip");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->properties, page.properties, "properties");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->boons, page.boons, "boons");
     
+    GetEntryFromBuffer_t(&c->sizes, &cachedPage->size, page.size, "size");
+    u32 oldSizeBuf[64] = {}; utf32 oldSize = { oldSizeBuf, 0, 64 }; ls_utf32Copy_t(cachedPage->size, &oldSize);
+    if(hasArchetype) { CompendiumApplyAllArchetypeSize(appliedArchetypes, &cachedPage->size); }
+    
     //NOTE: Type, SubTypes, ArcheTypes
     GetEntryFromBuffer_t(&c->types, &cachedPage->type, page.type, "type");
     u32 oldTypeBuff[64] = {}; utf32 oldType = { oldTypeBuff, 0, 64 }; ls_utf32Copy_t(cachedPage->type, &oldType);
+    if(hasArchetype) { CompendiumApplyAllArchetypeTypes(appliedArchetypes, &cachedPage->type); }
     
     ls_utf32Clear(&cachedPage->subtype);
     if(page.subtype[0])
     {
+        ls_utf32Clear(&tempString);
+        
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U" ("));
-        AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, NULL, page.subtype[0], "subtypes");
+        
+        AppendEntryFromBuffer(&c->subtypes, &tempString, NULL, page.subtype[0]);
         u32 i = 1;
         while(page.subtype[i] && i < 8)
         {
-            AppendEntryFromBuffer(&c->subtypes, &cachedPage->subtype, U", ", page.subtype[i], "subtypes");
+            AppendEntryFromBuffer(&c->subtypes, &tempString, U", ", page.subtype[i]);
             i += 1;
         }
+        
+        if(hasArchetype) { CompendiumApplyAllArchetypeSubTypes(appliedArchetypes, &tempString); }
+        
+        ls_utf32Append(&cachedPage->subtype, tempString);
+        ls_utf32Clear(&tempString);
+        
         ls_utf32Append(&cachedPage->subtype, ls_utf32Constant(U") "));
     }
     
@@ -3389,15 +3414,20 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     if(page.archetype[0])
     {
         ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"["));
-        AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0], "archetypes");
+        AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, NULL, page.archetype[0]);
         u32 i = 1;
         while(page.archetype[i] && i < 4)
         {
-            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i], "archetypes");
+            AppendEntryFromBuffer(&c->archetypes, &cachedPage->archetype, U", ", page.archetype[i]);
             i += 1;
         }
+        
+        if(hasArchetype) { CompendiumAddAllArchetypesToList(appliedArchetypes, &cachedPage->archetype); }
+        
         ls_utf32Append(&cachedPage->archetype, ls_utf32Constant(U"] "));
     }
+    else if(hasArchetype)
+    { CompendiumAddAllArchetypesToList(appliedArchetypes, &cachedPage->archetype); }
     
     //NOTE: Early talents are for attack modifiers!
     s32 talentsIdx = 0;
@@ -3413,18 +3443,28 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         talentsIdx += 1;
     }
     
+    if(hasArchetype) { CompendiumApplyAllArchetypeTalents(appliedArchetypes, cachedPage); }
+    
     //NOTE: Racial Mods, Special Qualities
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->racialMods, page.racialMods, "racial mods");
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->spec_qual, page.spec_qual, "spec_qual");
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecQual(appliedArchetypes, &cachedPage->spec_qual); }
     
     //NOTE: General Battle Stats. AC, HP, Saving Throws, BMC/DMC, Initiative, RD/RI
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.AC, "AC");
     CalculateAndCacheAC(tempString, cachedPage, TRUE, appliedArchetypes, status);
     ls_utf32Clear(&tempString);
     
+    u64 hpPacked = page.HP;
+    if(hasArchetype) { CompendiumApplyAllArchetypeDV(appliedArchetypes, cachedPage, &oldType, &hpPacked); }
+    
     ls_utf32Clear(&cachedPage->HP);
-    s32 totalHP = CalculateAndCacheHP(cachedPage, page.HP, oldType, oldSize);
-    BuildHPFromPacked_t(cachedPage, page.HP, totalHP);
+    s32 totalHP = CalculateAndCacheHP(cachedPage, hpPacked, oldType, oldSize);
+    BuildHPFromPacked_t(cachedPage, hpPacked, totalHP);
+    
+    GetEntryFromBuffer_t(&c->numericValues, &cachedPage->BAB, page.BAB, "bab");
+    if(hasArchetype) { CompendiumApplyAllArchetypeBAB(appliedArchetypes, &cachedPage->BAB, cachedPage->hitDice); }
+    cachedPage->BABval = ls_utf32ToInt(cachedPage->BAB);
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ST, "ST");
     CalculateAndCacheST(tempString, cachedPage, appliedArchetypes, status);
@@ -3443,18 +3483,50 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RD, page.RD, "RD");
+    if(hasArchetype) { CompendiumApplyAllArchetypeRD(appliedArchetypes, cachedPage->hitDice, &cachedPage->RD); }
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->RI, page.RI, "RI");
+    if(hasArchetype) { CompendiumApplyAllArchetypeRI(appliedArchetypes, cachedPage->gs, &cachedPage->RI); }
+    
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->defensiveCapacity, page.defensiveCapacity, "Def.Cap");
+    if(hasArchetype) { CompendiumApplyAllArchetypeDefCap(appliedArchetypes, &cachedPage->defensiveCapacity); }
+    
+    //NOTE: GS and PE are moved here because certain archetypes need previous info to determine GS change
+    ls_utf32Clear(&cachedPage->gs);
+    ls_utf32Clear(&cachedPage->pe);
+    if(hasArchetype)
+    {
+        CompendiumApplyAllArchetypeGS(appliedArchetypes, page.gs, cachedPage->hitDice, &cachedPage->gs,
+                                      &cachedPage->pe);
+    }
+    else
+    {
+        //TODO: Check gsValue and rmValue are in range!
+        if(page.gs != GS_SENTINEL_VALUE)
+        {
+            u16 gsValue = page.gs & 0x003F;
+            ls_utf32Set(&cachedPage->gs, CompendiumGetGSEntryFromSet(page.gs));
+            ls_utf32Set(&cachedPage->pe, peSet[gsValue]);
+        }
+        else
+        {
+            ls_utf32Set(&cachedPage->gs, U"0"_W);
+            ls_utf32Set(&cachedPage->pe, U"0"_W);
+        }
+    }
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.melee, "Melee");
     CalculateAndCacheMelee(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
+    
+    if(hasArchetype) { CompendiumApplyAllArchetypeMelee(appliedArchetypes, cachedPage, &cachedPage->melee); }
     
     GetEntryFromBuffer_t(&c->generalStrings, &tempString, page.ranged, "Ranged");
     CalculateAndCacheRanged(tempString, cachedPage, status);
     ls_utf32Clear(&tempString);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->specialAttacks, page.specialAttacks, "Spec.Atk");
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecAtk(appliedArchetypes, &cachedPage->specialAttacks); }
     
     //NOTE: Spells need a little of pre-processing to handle superscripts (D and S for Dominio and Stirpe)
     //      All the preprocessing sould eventually become obsolete, as I replace them with packed bits
@@ -3508,7 +3580,10 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         }
     }
     
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpecCap(appliedArchetypes, &cachedPage->specials); }
+    
     //NOTE: NPCs don't have an org field. We need to clear it to avoid pollution from the previous cachedPage
+    //      Also, no archetype will be applied to org because of this.
     ls_utf32Clear(&cachedPage->org);
     
     GetEntryFromBuffer_t(&c->generalStrings, &cachedPage->desc, page.desc, "desc");
@@ -3516,6 +3591,7 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
     
     ls_utf32Clear(&cachedPage->alignment);
     BuildAlignmentFromPacked_t(page.alignment, &cachedPage->alignment);
+    if(hasArchetype) { CompendiumApplyAllArchetypeAlign(appliedArchetypes, &cachedPage->alignment); }
     
     ls_utf32Clear(&cachedPage->senses);
     if(page.senses[0])
@@ -3529,26 +3605,25 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
         }
     }
     
+    if(hasArchetype) { CompendiumApplyAllArchetypeSenses(appliedArchetypes, &cachedPage->senses); }
+    
+    
+    //TODO :StatusPerception
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->perception, page.perception, "perception");
+    
     GetEntryFromBuffer_t(&c->auras, &cachedPage->aura, page.aura, "aura");
+    if(hasArchetype) { CompendiumApplyAllArchetypeAura(appliedArchetypes, &cachedPage->aura); }
     
     ls_utf32Clear(&cachedPage->immunities);
     BuildImmunityFromPacked_t(page.immunities, &cachedPage->immunities);
-    /*
-    if(page.immunities[0])
-    {
-        GetEntryFromBuffer_t(&c->immunities, &cachedPage->immunities, page.immunities[0], "immunities");
-        u32 i = 1;
-        while(page.immunities[i] && i < 16)
-        {
-            AppendEntryFromBuffer(&c->immunities, &cachedPage->immunities, U", ", page.immunities[i], "immunities");
-            i += 1;
-        }
-    }
-    */
+    if(hasArchetype) { CompendiumApplyAllArchetypeImmunities(appliedArchetypes, &cachedPage->immunities); }
     
     ls_utf32Clear(&cachedPage->resistances);
     BuildResistanceFromPacked_t(page.resistances, &cachedPage->resistances);
+    if(hasArchetype)
+    { CompendiumApplyAllArchetypeResistances(appliedArchetypes, cachedPage->hitDice, page.resistances,
+                                             &cachedPage->resistances); }
+    
     
     ls_utf32Clear(&cachedPage->weaknesses);
     if(page.weaknesses[0])
@@ -3561,28 +3636,16 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
             i += 1;
         }
     }
+    if(hasArchetype) { CompendiumApplyAllArchetypeWeak(appliedArchetypes, &cachedPage->weaknesses); }
     
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->speed, page.speed, "speed");
+    if(hasArchetype) { CompendiumApplyAllArchetypeSpeed(appliedArchetypes, &cachedPage->speed); }
+    
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->space, page.space, "space");
     GetEntryFromBuffer_t(&c->numericValues, &cachedPage->reach, page.reach, "reach");
     
     ls_utf32Clear(&cachedPage->skills);
-    s32 i = 0;
-    while(page.skills[i] && i < 24)
-    {
-        if((page.skills[i] & INTERN_BIT_U32) != 0)
-        { GetEntryFromBuffer_t(&c->skills, &tempString, (page.skills[i] & (~INTERN_BIT_U32)), "skills"); }
-        else
-        { 
-            i = BuildSkillFromPackedOld_t(page.skills, i, &tempString);
-            AssertMsgF(i <= 23, "When unpacking skill, got invalid index: %d\n", i);
-        }
-        
-        CalculateAndCacheSkill(tempString, cachedPage, status);
-        if(i < 23 && page.skills[i+1] != 0) { ls_utf32Append(&cachedPage->skills, ls_utf32Constant(U", ")); }
-        ls_utf32Clear(&tempString);
-        i += 1;
-    }
+    BuildSkillsFromPacked_t(appliedArchetypes, cachedPage, status, page.skills);
     
     ls_utf32Clear(&cachedPage->languages);
     if(page.languages[0])
@@ -3595,8 +3658,10 @@ void CachePage(NPCPageEntry page, s32 viewIndex, CachedPageEntry *cachedPage,
             i += 1;
         }
     }
+    if(hasArchetype) { CompendiumApplyAllArchetypeLang(appliedArchetypes, &cachedPage->languages); }
     
     //NOTE: NPCs don't have an environment field. We need to clear it to avoid pollution from the previous cachedPage
+    //      So they also don't apply archetype to the environment
     ls_utf32Clear(&cachedPage->environment);
     
     ls_arenaClear(compTempArena);
@@ -4404,9 +4469,8 @@ b32 DrawCompendium(UIContext *c)
         AssertMsg(FALSE, "Unhandled page viewing in Compendium\n");
     }
     
-    //TODO: Rather than silently exiting when selecting an invalid archetype
-    //      (previously selected, max reached, incompatible with current creature)
-    //      we should "grey out" the button and show a fader error?
+    //NOTE: After clicking on the "Archetype" Button while viewing a page in the Compendium
+    //      We come here to draw the archetype selection screen.
     if(compendium.arch.isChoosingArchetype == TRUE)
     {
         //NOTE: Currently ignoring the return value, because I don't want archetype selection
