@@ -1053,7 +1053,6 @@ b32 SetOnClick(UIContext *c, void *data)
     return TRUE;
 }
 
-//TODO: Remove the redundant ls_uiTextBoxClear() before every ls_uiTextBoxSet()
 b32 ResetOnClick(UIContext *c, void *data)
 {
     InitPage *Page = State.Init;
@@ -1072,24 +1071,19 @@ b32 ResetOnClick(UIContext *c, void *data)
     utf32 zeroUTF32 = { (u32 *)U"0", 1, 1 };
     
     for(u32 i = 0; i < party_count; i++) 
-    { 
-        ls_uiTextBoxClear(c, Page->PlayerInit + i);
-        ls_utf32Set(&Page->PlayerInit[i].text, zeroUTF32);
-    }
+    {  ls_uiTextBoxSet(c, Page->PlayerInit + i, zeroUTF32); }
     
     s32 currID = party_count;
     for(u32 i = 0; i < mob_count; i++)   
     { 
         InitField *f = Page->MobFields + i;
         
-        ls_uiTextBoxClear(c, &f->editFields[IF_IDX_NAME]);
         ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], ls_utf32Constant(MobName[i]));
         
         for(u32 j = 1; j < IF_IDX_COUNT; j++)
         {
             if(j == IF_IDX_EXTRA) { ls_uiTextBoxClear(c, &f->editFields[j]); continue; }
             
-            ls_uiTextBoxClear(c, &f->editFields[j]);
             ls_uiTextBoxSet(c, &f->editFields[j], zeroUTF32);
         }
         
@@ -1107,13 +1101,8 @@ b32 ResetOnClick(UIContext *c, void *data)
     { 
         InitField *f = Page->AllyFields + i;
         
-        ls_uiTextBoxClear(c, &f->editFields[IF_IDX_NAME]);
         ls_uiTextBoxSet(c, &f->editFields[IF_IDX_NAME], ls_utf32Constant(AllyName[i]));
-        
-        ls_uiTextBoxClear(c, &f->editFields[IF_IDX_BONUS]);
         ls_uiTextBoxSet(c, &f->editFields[IF_IDX_BONUS], zeroUTF32);
-        
-        ls_uiTextBoxClear(c, &f->editFields[IF_IDX_FINAL]);
         ls_uiTextBoxSet(c, &f->editFields[IF_IDX_FINAL], zeroUTF32);
         
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, zeroUTF32);
@@ -1167,7 +1156,7 @@ b32 ResetOnClick(UIContext *c, void *data)
         ls_uiTextBoxClear(c, &f->dmgRes);
     }
     
-    // General Thrower
+    //NOTE: General Thrower
     {
         ls_uiTextBoxClear(c, &Page->GeneralThrower.toHit);
         ls_uiTextBoxClear(c, &Page->GeneralThrower.hitRes);
@@ -1305,6 +1294,8 @@ void CopyInitField(UIContext *c, InitField *From, InitField *To)
     To->ID            = From->ID;
 }
 
+//TODO: When removing an element that is currently selected, and immediately adding another
+//      one in its place (before advancing to the next in order), the same index will be re-selected.
 b32 RemoveOrderOnClick(UIContext *c, void *data)
 {
     if(State.inBattle == FALSE) { return FALSE; }

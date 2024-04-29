@@ -705,11 +705,6 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC,
             //NOTE: Look for magic items giving an armor bonus, like "Bracciali dell'Armatura"
             s32 braccialiIdx = ls_utf32LeftFind(cachedPage->properties, ls_utf32Constant(U"Bracciali dell'Armatura"));
             
-            /*TODO: Do I need this?
-                    if(braccialiIdx == -1)
-                    { braccialiIdx = ls_utf32LeftFind(cachedPage->given_equip, U"Bracciali dell'Armatura"); }
-                    */
-            
             if(braccialiIdx != -1)
             {
                 s32 nextComma = ls_utf32LeftFind(cachedPage->properties, braccialiIdx, ls_utf32Constant(U", "));
@@ -818,6 +813,8 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC,
     }
     
     //NOTE: Apply Archetypes
+    //TODO: Check how this collides with creatures that CANNOT have specific armor types applied?
+    //      I.E. Incorporeal with Natural Armor.
     if(appliedArchetypes.count > 0)
     { 
         s32 acDiff[AC_TYPES_COUNT] = {};
@@ -872,10 +869,13 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC,
         flatAC = (flatAC - oldNatArmor) + newNatArmor;
     }
     
-    //NOTETODO: Technically an incorporeal creature can't have nat armor bonus. Check?
     b32 isIncorporeal = (ls_utf32LeftFind(cachedPage->subtype, ls_utf32Constant(U"Incorporeo")) != -1);
     if(isIncorporeal)
     {
+        //NOTE: An incorporeal creature can't have nat armor bonus.
+        //      https://golarion.altervista.org/wiki/Capacit%C3%A0/Incorporeo
+        AssertMsg(natArmorBonusIdx == -1, "Incorporeal Creatures can't have Natural Armor\n");
+        
         s32 chaBonusToAC     = bonusNew[AS_CHA] < 1 ? 1 : bonusNew[AS_CHA];
         s32 chaBonusOldToAC  = bonusOld[AS_CHA] < 1 ? 1 : bonusOld[AS_CHA];
         totAC   = (totAC - chaBonusOldToAC) + chaBonusToAC;

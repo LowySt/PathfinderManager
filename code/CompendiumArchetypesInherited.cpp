@@ -19,9 +19,9 @@ b32 fungalGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 
 void fungalAS(s32 as[AS_COUNT])
 { 
-    as[AS_STR] += 4;
-    if(as[AS_DEX] < 3) { as[AS_DEX] = 1; } else { as[AS_DEX] -= 2; }
-    as[AS_CON] += 4;
+    if(as[AS_STR] != AS_NO_VALUE) { as[AS_STR] += 4; }
+    if(as[AS_DEX] != AS_NO_VALUE) { if(as[AS_DEX] < 3) { as[AS_DEX] = 1; } else { as[AS_DEX] -= 2; } }
+    if(as[AS_CON] != AS_NO_VALUE) { as[AS_CON] += 4; }
     
     return;
 }

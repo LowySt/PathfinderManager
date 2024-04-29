@@ -218,11 +218,11 @@ b32 skeletonCreatureSpecAtk(utf32 *spec)
 
 void skeletonCreatureAS(s32 as[AS_COUNT])
 {
-    as[AS_DEX] += 2;
+    if(as[AS_DEX] != AS_NO_VALUE) { as[AS_DEX] += 2; }
     as[AS_CON] = AS_NO_VALUE;
     as[AS_INT] = AS_NO_VALUE;
-    as[AS_WIS] = 10;
-    as[AS_CHA] = 10;
+    if(as[AS_WIS] != AS_NO_VALUE) { as[AS_WIS] = 10; }
+    if(as[AS_CHA] != AS_NO_VALUE) { as[AS_CHA] = 10; }
     return;
 }
 
@@ -536,12 +536,12 @@ b32 zombieCreatureSpecAtk(utf32 *spec)
 
 void zombieCreatureAS(s32 as[AS_COUNT])
 {
-    as[AS_STR] += 2;
-    if(as[AS_DEX] <= 2) { as[AS_DEX] = 1; } else { as[AS_DEX] -= 2; }
+    if(as[AS_STR] != AS_NO_VALUE) { as[AS_STR] += 2; }
+    if(as[AS_DEX] != AS_NO_VALUE) { if(as[AS_DEX] <= 2) { as[AS_DEX] = 1; } else { as[AS_DEX] -= 2; } }
     as[AS_CON] = AS_NO_VALUE;
     as[AS_INT] = AS_NO_VALUE;
-    as[AS_WIS] = 10;
-    as[AS_CHA] = 10;
+    if(as[AS_WIS] != AS_NO_VALUE) { as[AS_WIS] = 10; }
+    if(as[AS_CHA] != AS_NO_VALUE) { as[AS_CHA] = 10; }
     return;
 }
 
@@ -834,11 +834,11 @@ b32 bloodySkeletonCreatureSpecAtk(utf32 *spec)
 
 void bloodySkeletonCreatureAS(s32 as[AS_COUNT])
 {
-    as[AS_DEX] += 2;
+    if(as[AS_DEX] != AS_NO_VALUE) { as[AS_DEX] += 2; }
     as[AS_CON] = AS_NO_VALUE;
     as[AS_INT] = AS_NO_VALUE;
-    as[AS_WIS] = 10;
-    as[AS_CHA] = 14;
+    if(as[AS_WIS] != AS_NO_VALUE) { as[AS_WIS] = 10; }
+    if(as[AS_CHA] != AS_NO_VALUE) { as[AS_CHA] = 14; }
     return;
 }
 
@@ -1130,11 +1130,11 @@ b32 burningSkeletonCreatureSpecAtk(utf32 *spec)
 
 void burningSkeletonCreatureAS(s32 as[AS_COUNT])
 {
-    as[AS_DEX] += 2;
+    if(as[AS_DEX] != AS_NO_VALUE) { as[AS_DEX] += 2; }
     as[AS_CON] = AS_NO_VALUE;
     as[AS_INT] = AS_NO_VALUE;
-    as[AS_WIS] = 10;
-    as[AS_CHA] = 12;
+    if(as[AS_WIS] != AS_NO_VALUE) { as[AS_WIS] = 10; }
+    if(as[AS_CHA] != AS_NO_VALUE) { as[AS_CHA] = 12; }
     return;
 }
 
@@ -1458,12 +1458,12 @@ b32 fastZombieCreatureSpecAtk(utf32 *spec)
 
 void fastZombieCreatureAS(s32 as[AS_COUNT])
 {
-    as[AS_STR] += 2;
-    as[AS_DEX] += 2;
+    if(as[AS_STR] != AS_NO_VALUE) { as[AS_STR] += 2; }
+    if(as[AS_DEX] != AS_NO_VALUE) { as[AS_DEX] += 2; }
     as[AS_CON] = AS_NO_VALUE;
     as[AS_INT] = AS_NO_VALUE;
-    as[AS_WIS] = 10;
-    as[AS_CHA] = 10;
+    if(as[AS_WIS] != AS_NO_VALUE) { as[AS_WIS] = 10; }
+    if(as[AS_CHA] != AS_NO_VALUE) { as[AS_CHA] = 10; }
     return;
 }
 
@@ -1557,12 +1557,12 @@ b32 vampireCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 
 void vampireCreatureAS(s32 as[AS_COUNT])
 { 
-    as[AS_STR] += 6;
-    as[AS_DEX] += 4;
+    if(as[AS_STR] != AS_NO_VALUE) { as[AS_STR] += 6; }
+    if(as[AS_DEX] != AS_NO_VALUE) { as[AS_DEX] += 4; }
     as[AS_CON]  = AS_NO_VALUE;
-    as[AS_INT] += 2;
-    as[AS_WIS] += 2;
-    as[AS_CHA] += 4;
+    if(as[AS_INT] != AS_NO_VALUE) { as[AS_INT] += 2; }
+    if(as[AS_WIS] != AS_NO_VALUE) { as[AS_WIS] += 2; }
+    if(as[AS_CHA] != AS_NO_VALUE) { as[AS_CHA] += 4; }
     return;
 }
 
@@ -1919,11 +1919,11 @@ b32 exoskeletonGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 
 void exoskeletonAS(s32 as[AS_COUNT])
 {
-    as[AS_STR] += 2;
+    if(as[AS_STR] != AS_NO_VALUE) { as[AS_STR] += 2; }
     as[AS_CON] = AS_NO_VALUE;
     as[AS_INT] = AS_NO_VALUE;
-    as[AS_WIS] = 10;
-    as[AS_CHA] = 10;
+    if(as[AS_WIS] != AS_NO_VALUE) { as[AS_WIS] = 10; }
+    if(as[AS_CHA] != AS_NO_VALUE) { as[AS_CHA] = 10; }
     return;
 }
 

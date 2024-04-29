@@ -11,12 +11,12 @@ b32 advancedCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 
 void advancedCreatureAS(s32 as[AS_COUNT])
 {
-    as[AS_STR] += 4;
-    as[AS_DEX] += 4;
-    as[AS_CON] += 4;
-    if(as[AS_INT] > 2) { as[AS_INT] += 4; }
-    as[AS_WIS] += 4;
-    as[AS_CHA] += 4;
+    if(as[AS_STR] != AS_NO_VALUE) { as[AS_STR] += 4; }
+    if(as[AS_DEX] != AS_NO_VALUE) { as[AS_DEX] += 4; }
+    if(as[AS_CON] != AS_NO_VALUE) { as[AS_CON] += 4; }
+    if(as[AS_INT] != AS_NO_VALUE) { if(as[AS_INT] > 2) { as[AS_INT] += 4; } }
+    if(as[AS_WIS] != AS_NO_VALUE) { as[AS_WIS] += 4; }
+    if(as[AS_CHA] != AS_NO_VALUE) { as[AS_CHA] += 4; }
 }
 
 b32 advancedCreatureAC(utf32 *size, s32 acDiff[AC_TYPES_COUNT])
@@ -266,9 +266,9 @@ b32 giantCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 
 void giantCreatureAS(s32 as[AS_COUNT])
 {
-    as[AS_STR] += 4;
-    as[AS_DEX] -= 2;
-    as[AS_CON] += 4;
+    if(as[AS_STR] != AS_NO_VALUE) { as[AS_STR] += 4; }
+    if(as[AS_DEX] != AS_NO_VALUE) { as[AS_DEX] -= 2; }
+    if(as[AS_CON] != AS_NO_VALUE) { as[AS_CON] += 4; }
 }
 
 b32 giantCreatureAC(utf32 *size, s32 acDiff[AC_TYPES_COUNT])
@@ -821,10 +821,10 @@ b32 fleshwarpedCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 
 void fleshwarpedCreatureAS(s32 as[AS_COUNT])
 {
-    as[AS_STR] += 4;
-    as[AS_CON] += 4;
-    if(as[AS_INT] < 4) { as[AS_INT] = 1; } else { as[AS_INT] -= 4; }
-    if(as[AS_CHA] < 4) { as[AS_CHA] = 1; } else { as[AS_CHA] -= 4; }
+    if(as[AS_STR] != AS_NO_VALUE) { as[AS_STR] += 4; }
+    if(as[AS_CON] != AS_NO_VALUE) { as[AS_CON] += 4; }
+    if(as[AS_INT] != AS_NO_VALUE) { if(as[AS_INT] < 4) { as[AS_INT] = 1; } else { as[AS_INT] -= 4; } }
+    if(as[AS_CHA] != AS_NO_VALUE) { if(as[AS_CHA] < 4) { as[AS_CHA] = 1; } else { as[AS_CHA] -= 4; } }
 }
 
 b32 fleshwarpedCreatureAC(utf32 *size, s32 acDiff[AC_TYPES_COUNT])
@@ -864,12 +864,12 @@ b32 degenerateCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
 
 void degenerateCreatureAS(s32 as[AS_COUNT])
 {
-    if(as[AS_STR] < 4) { as[AS_STR] = 1; } else { as[AS_STR] -= 4; }
-    if(as[AS_DEX] < 4) { as[AS_DEX] = 1; } else { as[AS_DEX] -= 4; }
-    if(as[AS_CON] < 4) { as[AS_CON] = 1; } else { as[AS_CON] -= 4; }
-    if(as[AS_INT] < 4) { as[AS_INT] = 1; } else { as[AS_INT] -= 4; }
-    if(as[AS_WIS] < 4) { as[AS_WIS] = 1; } else { as[AS_WIS] -= 4; }
-    if(as[AS_CHA] < 4) { as[AS_CHA] = 1; } else { as[AS_CHA] -= 4; }
+    if(as[AS_STR] != AS_NO_VALUE) { if(as[AS_STR] < 4) { as[AS_STR] = 1; } else { as[AS_STR] -= 4; } }
+    if(as[AS_DEX] != AS_NO_VALUE) { if(as[AS_DEX] < 4) { as[AS_DEX] = 1; } else { as[AS_DEX] -= 4; } }
+    if(as[AS_CON] != AS_NO_VALUE) { if(as[AS_CON] < 4) { as[AS_CON] = 1; } else { as[AS_CON] -= 4; } }
+    if(as[AS_INT] != AS_NO_VALUE) { if(as[AS_INT] < 4) { as[AS_INT] = 1; } else { as[AS_INT] -= 4; } }
+    if(as[AS_WIS] != AS_NO_VALUE) { if(as[AS_WIS] < 4) { as[AS_WIS] = 1; } else { as[AS_WIS] -= 4; } }
+    if(as[AS_CHA] != AS_NO_VALUE) { if(as[AS_CHA] < 4) { as[AS_CHA] = 1; } else { as[AS_CHA] -= 4; } }
 }
 
 ArchetypeDiff DegenerateCreature = {
