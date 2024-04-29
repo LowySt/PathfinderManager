@@ -1591,21 +1591,25 @@ b32 AddMobOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
-    //NOTE: Set the maxLife field of the mob
-    //TODO: This is done twice if coming from CompendiumAddPageToInitMob()
-    f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text);
-    
-    //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
-    if(State.inBattle)
+    //NOTE: When data is NULL it comes from the `Add Mob` button
+    //      When it's TRUE(1) it's a direct call from CompendiumAddPageToInitMob()
+    if(data == NULL)
     {
-        u32 tmpBuf[32] = {};
-        utf32 tmpString = { tmpBuf, 0, 32 };
+        //NOTE: Set the maxLife field of the mob
+        f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text);
         
-        ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
-        ls_utf32Append(&tmpString, U"/"_W);
-        ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
-        
-        ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
+        //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
+        if(State.inBattle)
+        {
+            u32 tmpBuf[32] = {};
+            utf32 tmpString = { tmpBuf, 0, 32 };
+            
+            ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
+            ls_utf32Append(&tmpString, U"/"_W);
+            ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
+            
+            ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
+        }
     }
     
     AddToOrder(f);
@@ -1643,21 +1647,25 @@ b32 AddAllyOnClick(UIContext *c, void *data)
     }
     f->ID = addID;
     
-    //NOTE: Set the maxLife field of the ally
-    //TODO: This is done twice if coming from CompendiumAddPageToInitMob()
-    f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text);
-    
-    //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
-    if(State.inBattle)
+    //NOTE: When data is NULL it comes from the `Add Mob` button
+    //      When it's TRUE(1) it's a direct call from CompendiumAddPageToInitMob()
+    if(data == NULL)
     {
-        u32 tmpBuf[32] = {};
-        utf32 tmpString = { tmpBuf, 0, 32 };
+        //NOTE: Set the maxLife field of the ally
+        f->maxLife = ls_utf32ToInt(f->maxLifeDisplay.text);
         
-        ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
-        ls_utf32Append(&tmpString, U"/"_W);
-        ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
-        
-        ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
+        //NOTE: If we are already in battle, we need to update the maxLifeDisplay.
+        if(State.inBattle)
+        {
+            u32 tmpBuf[32] = {};
+            utf32 tmpString = { tmpBuf, 0, 32 };
+            
+            ls_utf32Set(&tmpString, f->maxLifeDisplay.text);
+            ls_utf32Append(&tmpString, U"/"_W);
+            ls_utf32Append(&tmpString, f->maxLifeDisplay.text);
+            
+            ls_uiTextBoxSet(c, &f->maxLifeDisplay, tmpString);
+        }
     }
     
     AddToOrder(f);

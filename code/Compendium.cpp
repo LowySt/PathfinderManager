@@ -2315,11 +2315,8 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
         ls_uiTextBoxSet(c, &f->maxLifeDisplay, cachedPage.totHP);
     }
     
-    //NOTE: When adding to order, the life field gets double added?
-    //      8/8/8/8 instead of 8/8
-    TODO;
-    
     f->maxLife = ls_utf32ToInt(cachedPage.totHP);
+    
     
     u32 buff[32] = {};
     utf32 tmp = { buff, 0, 32 };
@@ -2330,7 +2327,9 @@ b32 CompendiumAddPageToInitMob(UIContext *c, void *userData)
     f->compendiumIdx = compendium.pageIndex;
     ls_staticArrayCopy(compendium.appliedArchetypes, &f->appliedArchetypes);
     
-    AddMobOnClick(NULL, NULL);
+    //NOTE: We assing TRUE to userData, to signal that the maxLifeDisplay
+    //      has already been setup
+    AddMobOnClick(NULL, (void *)TRUE);
     
     return TRUE;
 }
@@ -2370,7 +2369,9 @@ b32 CompendiumAddPageToInitAlly(UIContext *c, void *userData)
     f->compendiumIdx = compendium.pageIndex;
     ls_staticArrayCopy(compendium.appliedArchetypes, &f->appliedArchetypes);
     
-    AddAllyOnClick(NULL, NULL);
+    //NOTE: We assing TRUE to userData, to signal that the maxLifeDisplay
+    //      has already been setup
+    AddAllyOnClick(NULL, (void *)TRUE);
     
     return TRUE;
 }
