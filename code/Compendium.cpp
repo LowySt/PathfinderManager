@@ -813,8 +813,6 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC,
     }
     
     //NOTE: Apply Archetypes
-    //TODO: Check how this collides with creatures that CANNOT have specific armor types applied?
-    //      I.E. Incorporeal with Natural Armor.
     if(appliedArchetypes.count > 0)
     { 
         s32 acDiff[AC_TYPES_COUNT] = {};
