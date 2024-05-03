@@ -208,6 +208,8 @@ enum StatusType
 
 const s32 MAX_STATUS = 32;
 
+//NOTE: In reality, `type` is kinda useless, since the status array in the Order Field
+//      Assigns the type of each element of the array to the index casted to StatusType...
 struct Status
 {
     StatusType type;

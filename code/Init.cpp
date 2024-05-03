@@ -1095,6 +1095,8 @@ b32 ResetOnClick(UIContext *c, void *data)
         f->compendiumIdx = -1;
         f->ID            = currID;
         currID          += -1;
+        
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     for(u32 i = 0; i < ally_count; i++)  
@@ -1113,6 +1115,8 @@ b32 ResetOnClick(UIContext *c, void *data)
         f->compendiumIdx = -1;
         f->ID            = currID;
         currID          += -1;
+        
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     for(u32 i = 0; i < order_count; i++)
@@ -1127,10 +1131,12 @@ b32 ResetOnClick(UIContext *c, void *data)
         f->field.currPos   = 1.0;
         f->field.currValue = 0;
         
-        for(s32 j = 0; j < MAX_STATUS; j++) { f->status->check.isActive = FALSE; }
+        for(s32 j = 0; j < MAX_STATUS; j++) { f->status[j].check.isActive = FALSE; }
         
         f->compendiumIdx  = -1;
         f->ID             = -1;
+        
+        ls_staticArrayClear(&f->appliedArchetypes);
     }
     
     for(u32 i = 0; i < COUNTER_NUM; i++)
@@ -1253,8 +1259,13 @@ void ClearOrder(Order *ToClear)
     ToClear->field.minValue  = -30;
     ToClear->field.currPos   = 1.0f;
     
+    //NOTE: Clear Status
+    for(s32 i = 0; i < MAX_STATUS; i++) { ToClear->status[i].check.isActive = FALSE; }
+    
     ToClear->compendiumIdx = -1;
     ToClear->ID            = -1; //TODO: Is it sensible to do this?
+    
+    ls_staticArrayClear(&ToClear->appliedArchetypes);
 }
 
 void CopyOrder(Order *From, Order *To)
@@ -1275,11 +1286,18 @@ void CopyOrder(Order *From, Order *To)
     To->field.lColor    = From->field.lColor;
     To->field.rColor    = From->field.rColor;
     
+    //Copy Status state of creature
+    for(s32 i = 0; i < MAX_STATUS; i++)
+    { To->status[i].check.isActive = From->status[i].check.isActive; }
+    
     //NOTE: Don't need to copy the textbox, since the position of an order field is fixed.
     //NOTE: Don't need to copy the button
     
     To->compendiumIdx = From->compendiumIdx;
     To->ID            = From->ID;
+    
+    //Copy Applied Archetypes information
+    ls_staticArrayCopy(From->appliedArchetypes, &To->appliedArchetypes);
 }
 
 void CopyInitField(UIContext *c, InitField *From, InitField *To)
@@ -1288,14 +1306,22 @@ void CopyInitField(UIContext *c, InitField *From, InitField *To)
     { ls_uiTextBoxSet(c, &To->editFields[i], From->editFields[i].text); }
     
     ls_uiTextBoxSet(c, &To->maxLifeDisplay, From->maxLifeDisplay.text);
+    ls_uiTextBoxSet(c, &To->nonLethalDisplay, From->nonLethalDisplay.text);
     To->maxLife       = From->maxLife;
+    To->nonLethal     = From->nonLethal;
     
     To->compendiumIdx = From->compendiumIdx;
     To->ID            = From->ID;
+    
+    ls_staticArrayCopy(From->appliedArchetypes, &To->appliedArchetypes);
 }
 
+//TODO: Refactor to be simpler @RemoveLastOne
+//      The problem is, if the index to remove is the last one, we just want to remove it
+//      Otherwise we want to copy all previous order forward, to empty the hole and keep
+//      the list "ordered", but still clear the last one after everything has been moved!
 //TODO: When removing an element that is currently selected, and immediately adding another
-//      one in its place (before advancing to the next in order), the same index will be re-selected.
+//      one in its place (before advancing to the next in order), the same "current index" will be re-selected.
 b32 RemoveOrderOnClick(UIContext *c, void *data)
 {
     if(State.inBattle == FALSE) { return FALSE; }
@@ -1315,15 +1341,25 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
     {
         Page->orderAdjust += 1;
         
-        for(u32 i = index; i < (visibleOrder-1); i++)
+        //TODO: @RemoveLastOne
+        if(index < (visibleOrder-1))
         {
-            Order *A = Page->OrderFields + i;
-            Order *B = Page->OrderFields + (i+1);
-            
-            CopyOrder(B, A);
-            
+            for(u32 i = index; i < (visibleOrder-1); i++)
+            {
+                Order *A = Page->OrderFields + i;
+                Order *B = Page->OrderFields + (i+1);
+                
+                CopyOrder(B, A);
+                
+                //NOTE: Last Index, Clear B
+                if(i == visibleOrder - 2) { ClearOrder(B); }
+            }
+        }
+        else
+        {
             //NOTE: Last Index, Clear B
-            if(i == visibleOrder - 2) { ClearOrder(B); }
+            Order *LastOrder = Page->OrderFields + index;
+            ClearOrder(LastOrder);
         }
         
         goto exit;
@@ -1345,19 +1381,36 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
                 ls_uiTextBoxClear(c, &B->editFields[IF_IDX_FINAL]);
                 
                 ls_uiTextBoxClear(c, &B->maxLifeDisplay);
+                ls_uiTextBoxClear(c, &B->nonLethalDisplay);
                 B->maxLife = 0;
+                B->nonLethal = 0;
                 
-                B->ID = 0;
                 B->compendiumIdx = -1;
+                B->ID = 0;
+                
+                ls_staticArrayClear(&B->appliedArchetypes);
                 
                 Page->Allies.selectedIndex -= 1;
                 
-                for(u32 i = index; i < (visibleOrder-1); i++)
+                //TODO: @RemoveLastOne
+                if(index < (visibleOrder-1))
                 {
-                    Order *A = Page->OrderFields + i;
-                    Order *B = Page->OrderFields + (i+1);
-                    
-                    CopyOrder(B, A);
+                    for(u32 i = index; i < (visibleOrder-1); i++)
+                    {
+                        Order *A = Page->OrderFields + i;
+                        Order *B = Page->OrderFields + (i+1);
+                        
+                        CopyOrder(B, A);
+                        
+                        //NOTE: Last Index, Clear B
+                        if(i == visibleOrder - 2) { ClearOrder(B); }
+                    }
+                }
+                else
+                {
+                    //NOTE: Last Index, Clear B
+                    Order *LastOrder = Page->OrderFields + index;
+                    ClearOrder(LastOrder);
                 }
                 
                 goto exit;
@@ -1378,19 +1431,36 @@ b32 RemoveOrderOnClick(UIContext *c, void *data)
                 { ls_uiTextBoxClear(c, &B->editFields[j]); }
                 
                 ls_uiTextBoxClear(c, &B->maxLifeDisplay);
+                ls_uiTextBoxClear(c, &B->nonLethalDisplay);
                 B->maxLife = 0;
+                B->nonLethal = 0;
                 
-                B->ID = 0;
                 B->compendiumIdx = -1;
+                B->ID = 0;
+                
+                ls_staticArrayClear(&B->appliedArchetypes);
                 
                 Page->Mobs.selectedIndex -= 1;
                 
-                for(u32 i = index; i < (visibleOrder-1); i++)
+                //TODO: @RemoveLastOne
+                if(index < (visibleOrder-1))
                 {
-                    Order *A = Page->OrderFields + i;
-                    Order *B = Page->OrderFields + (i+1);
-                    
-                    CopyOrder(B, A);
+                    for(u32 i = index; i < (visibleOrder-1); i++)
+                    {
+                        Order *A = Page->OrderFields + i;
+                        Order *B = Page->OrderFields + (i+1);
+                        
+                        CopyOrder(B, A);
+                        
+                        //NOTE: Last Index, Clear B
+                        if(i == visibleOrder - 2) { ClearOrder(B); }
+                    }
+                }
+                else
+                {
+                    //NOTE: Last Index, Clear B
+                    Order *LastOrder = Page->OrderFields + index;
+                    ClearOrder(LastOrder);
                 }
                 
                 goto exit;
