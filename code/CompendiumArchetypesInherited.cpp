@@ -9,7 +9,8 @@ b32 fungalIsCompatible(CachedPageEntry *page)
     if(ls_utf32AreEqual(page->type, U"Non Morto"_W))     { return FALSE; }
     if(ls_utf32Contains(page->subtype, U"Incorporeo"_W)) { return FALSE; }
     
-    //TODO: Must have CON be damageable (So probably constructs can't be turned into fungal?)
+    //NOTE: Must be able to receive CON damage
+    if(page->modAS[AS_CON] == AS_NO_VALUE) { return FALSE;}
     
     return FALSE;
 }

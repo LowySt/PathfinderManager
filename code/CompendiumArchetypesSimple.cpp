@@ -49,7 +49,6 @@ b32 celestialCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
     return FALSE; 
 }
 
-//TODO: Static utf32 strings AAAAAH
 void celestialCreatureSenses(utf32 *old)
 {
     AssertMsg(old, "Null utf32 pointer\n");
@@ -274,7 +273,6 @@ void giantCreatureAS(s32 as[AS_COUNT])
 b32 giantCreatureAC(utf32 *size, s32 acDiff[AC_TYPES_COUNT])
 { acDiff[AC_NATURAL] += 3; return FALSE; }
 
-//TODO: Changing size is not properly applying modifiers to AC and TxC
 void giantCreatureSize(utf32 *size)
 {
     AssertMsg(size, "Null utf32 pointer\n");
@@ -322,7 +320,6 @@ b32 entropicCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
     return FALSE;
 }
 
-//TODO: Static utf32 strings AAAAAH
 void entropicCreatureSenses(utf32 *old)
 {
     AssertMsg(old, "Null utf32 pointer\n");
@@ -455,7 +452,6 @@ b32 resoluteCreatureGS(s32 hitDice, s32 *gsDiff, s32 *rmDiff)
     return FALSE;
 }
 
-//TODO: Static utf32 strings AAAAAH
 void resoluteCreatureSenses(utf32 *old)
 {
     AssertMsg(old, "Null utf32 pointer\n");
