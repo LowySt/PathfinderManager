@@ -675,7 +675,7 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC,
     s32 oldArmorBonus  = -1;
     s32 oldShieldBonus = -1;
     
-    //TODO: Clear Modifiers to Armor and Shields (Like "Chiodato")
+    //TODO: Clear Modifiers to Armor and Shields (Like "Chiodato") ?
     if(armorBonusIdx != -1)
     {
         Armor *found = NULL;
@@ -727,9 +727,29 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC,
             }
             else
             {
-                cachedPage->acError = TRUE;
-                ls_utf32Set(&cachedPage->AC, AC);
-                return;
+                //NOTE: We have not found an Armor or "Bracciali dell'Armatura"
+                //      Since this is the case, in Prana Style we increase by +1,+2,+3 in the brackets
+                //      [+0,+3], [+4,+6], [+7,+9]
+                s64 armorBonusRange    = rightFindBonusEX(acExpr, armorBonusIdx, -1);
+                s32 armorBonusBegin    = armorBonusRange >> 32;
+                s32 armorBonusEnd      = (s32)armorBonusRange;
+                
+                if(armorBonusRange == -1)
+                {
+                    cachedPage->acError = TRUE;
+                    ls_utf32Set(&cachedPage->AC, AC);
+                    LogMsg(FALSE, "Can't find bonus in Armor\n");
+                    return;
+                }
+                
+                s32 rangeLen           = armorBonusEnd - armorBonusBegin;
+                utf32 armorBonusString = { acExpr.data + armorBonusBegin, rangeLen, rangeLen };
+                
+                oldArmorBonus = ls_utf32ToIntIgnoreWhitespace(armorBonusString);
+                newArmorBonus = oldArmorBonus;
+                if(newArmorBonus < 4)       { newArmorBonus += 1; }
+                else if(newArmorBonus < 7)  { newArmorBonus += 2; }
+                else if(newArmorBonus < 10) { newArmorBonus += 3; }
             }
         }
     }
@@ -840,6 +860,16 @@ void CalculateAndCacheAC(utf32 AC, CachedPageEntry *cachedPage, b32 isNPC,
     
     //NOTE: Adjust the dex bonus
     s32 dexBonusToAC = ls_min(bonusNew[AS_DEX], newMaxDex);
+    
+    b32 hasSchivare = CompendiumPageHasTalent(cachedPage, ls_utf32Constant(U"Schivare"));
+    if(hasSchivare)
+    {
+        //NOTE: We have to increase it by 1 in Prana Style
+        //      But we also want to lose it when loosing the dex bonus.
+        //      So, we add it here.
+        dexBonusToAC += 1;
+    }
+    
     totAC   = (totAC   - bonusOld[AS_DEX]) + dexBonusToAC;
     touchAC = (touchAC - bonusOld[AS_DEX]) + dexBonusToAC;
     
