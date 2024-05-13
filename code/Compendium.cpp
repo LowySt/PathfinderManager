@@ -1228,7 +1228,6 @@ void CalculateAndCacheBMC(utf32 BMC, CachedPageEntry *cachedPage)
     ls_utf32AppendBuffer(&cachedPage->BMC, BMC.data + endIdx, BMC.len - endIdx);
 }
 
-//TODO: There might still be Statuses not being applied. Re-check them!
 void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage, Status *status = NULL)
 {
     if(ls_utf32AreEqual(DMC, ls_utf32Constant(U"-"))) { ls_utf32Set(&cachedPage->DMC, DMC); return; }
