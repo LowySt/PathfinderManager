@@ -2475,7 +2475,7 @@ void initCachedPage(CachedPageEntry *cachedPage)
     const u32 maxLanguages   = 24;
     const u32 maxSpecials    = 24;
     
-    cachedPage->origin            = ls_utf32Alloc(128);
+    cachedPage->origin            = ls_utf32Alloc(256);
     cachedPage->shortDesc         = ls_utf32Alloc(768);
     cachedPage->AC                = ls_utf32Alloc(192);
     cachedPage->HP                = ls_utf32Alloc(128);
