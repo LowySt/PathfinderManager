@@ -615,7 +615,8 @@ b32 LoadStateV6(UIContext *c, buffer *buf)
             curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
         }
         
-        ls_uiListBoxAddEntry(c, &Page->EncounterSel, curr->name);
+        utf32 cloned_name = ls_utf32Copy(curr->name);
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, cloned_name);
     }
     
     //NOTE: UnSerialize Undo Chain
@@ -916,7 +917,8 @@ b32 LoadStateV7(UIContext *c, buffer *buf)
             curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
         }
         
-        ls_uiListBoxAddEntry(c, &Page->EncounterSel, curr->name);
+        utf32 cloned_name = ls_utf32Copy(curr->name);
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, cloned_name);
     }
     
     
@@ -1220,7 +1222,8 @@ b32 LoadStateV8(UIContext *c, buffer *buf)
             curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
         }
         
-        ls_uiListBoxAddEntry(c, &Page->EncounterSel, curr->name);
+        utf32 cloned_name = ls_utf32Copy(curr->name);
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, cloned_name);
     }
     
     
@@ -1521,7 +1524,8 @@ b32 LoadStateV9(UIContext *c, buffer *buf)
             curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
         }
         
-        ls_uiListBoxAddEntry(c, &Page->EncounterSel, curr->name);
+        utf32 cloned_name = ls_utf32Copy(curr->name);
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, cloned_name);
     }
     
     
@@ -1971,12 +1975,13 @@ typedef b32(*LoadFunc)(UIContext *c, buffer *buff);
 
 const LoadFunc loadFunctions[] = { 0, 0, 0, 0, 0, LoadStateV6, LoadStateV7, LoadStateV8, LoadStateV9 };
 
+//TODO: The only reason the memory management currently works with lsUI is because LoadState uses
+// the globalArena, which is shared with the lsUI widgetArena.
+// The way LoadState allocates memory for textboxes is actually wrong, because it's not asking the
+// uicontext (which holds the arena for the widget's storage) for the memory, it's poking into the
+// widget's internal containers and allocating there directly. It's a hack!
 b32 LoadState(UIContext *c)
 {
-    //NOTETODO: Changed this from saveArena. It was so stupid
-    //          I am allocating a lot of data, on an arena that will be cleared at the end of the function
-    //          It was working just out of pure luck
-    //ls_arenaUse(saveArena);
     ls_arenaUse(globalArena);
     
     char fullPathBuff[128] = {};
@@ -2097,7 +2102,8 @@ b32 LoadState(UIContext *c)
             curr->throwerDamage[j] = ls_bufferReadUTF32(buf);
         }
         
-        ls_uiListBoxAddEntry(c, &Page->EncounterSel, curr->name);
+        utf32 cloned_name = ls_utf32Copy(curr->name);
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, cloned_name);
     }
     
     

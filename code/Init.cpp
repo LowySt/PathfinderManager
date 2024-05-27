@@ -624,6 +624,8 @@ b32 OnEncounterSelect(UIContext *c, void *data)
 
 b32 SaveEncounterOnClick(UIContext *c, void *data)
 {
+    Arena prev = ls_arenaUse(globalArena);
+    
     s32 visibleMobs   = State.Init->Mobs.selectedIndex;
     s32 visibleAllies = State.Init->Allies.selectedIndex;
     s32 visibleOrder  = visibleMobs + visibleAllies + party_count - State.Init->orderAdjust;
@@ -671,16 +673,17 @@ b32 SaveEncounterOnClick(UIContext *c, void *data)
     
     State.encounters.numEncounters += 1;
     
-    //TODO: @MemoryLeak @Leak. Because list boxes allocate data when passed literals
-    //       We could be leaking memory
-    State.Init->EncounterSel.selectedIndex =
-        ls_uiListBoxAddEntry(c, &State.Init->EncounterSel, State.Init->EncounterName.text);
+    utf32 encNameInListBox = ls_utf32Copy(State.Init->EncounterName.text);
+    State.Init->EncounterSel.selectedIndex = ls_uiListBoxAddEntry(c, &State.Init->EncounterSel, encNameInListBox);
+    ls_arenaUse(prev);
     
     return FALSE;
 }
 
 b32 RemoveEncounterOnClick(UIContext *c, void *data)
 {
+    Arena prev = ls_arenaUse(globalArena);
+    
     if(State.inBattle) return FALSE;
     
     b32 inputUse = FALSE;
@@ -725,8 +728,13 @@ b32 RemoveEncounterOnClick(UIContext *c, void *data)
     }
     
     State.encounters.numEncounters -= 1;
+    utf32 encName = State.Init->EncounterSel.list[idx].name;
     ls_uiListBoxRemoveEntry(c, &State.Init->EncounterSel, idx);
+    ls_utf32Free(&encName);
+    
     inputUse |= ResetOnClick(c, NULL);
+    
+    ls_arenaUse(prev);
     
     return inputUse;
 }
@@ -1862,8 +1870,17 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     globalSelectedIndex = -1;
     ls_staticArrayClear(&globalSelectedArchetypes);
     
-    for(u32 i = 0; i < mob_count + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Mobs, (char *)Enemies[i]); }
-    for(u32 i = 0; i < ally_count + 1; i++) { ls_uiListBoxAddEntry(c, &Page->Allies, (char *)Allies[i]); }
+    Page->Mobs   = ls_uiListBoxInit(c, ls_fixedArrayAlloc<UIListBoxItem>(32));
+    Page->Allies = ls_uiListBoxInit(c, ls_fixedArrayAlloc<UIListBoxItem>(16));
+    
+    for(u32 i = 0; i < mob_count + 1; i++)  {
+        utf32 name = ls_utf32FromAscii((char *)Enemies[i]);
+        ls_uiListBoxAddEntry(c, &Page->Mobs, name);
+    }
+    for(u32 i = 0; i < ally_count + 1; i++) {
+        utf32 name = ls_utf32FromAscii((char *)Allies[i]);
+        ls_uiListBoxAddEntry(c, &Page->Allies, name);
+    }
     
     for(u32 i = 0; i < MAX_PARTY_NUM; i++) 
     { 
@@ -1899,7 +1916,7 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         
         Color lColor = ls_uiAlphaBlend(RGBA(0x10, 0xDD, 0x20, 0x99), c->widgetColor);
         Color rColor = ls_uiAlphaBlend(RGBA(0xF0, 0xFF, 0x3D, 0x99), c->widgetColor);
-        f->field     = ls_uiSliderInit(NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
+        f->field     = ls_uiSliderInit(c, NULL, 100, -30, 1.0, SL_BOX, lColor, rColor);
         
         OrderHandler *orderHandler = (OrderHandler *)ls_alloc(sizeof(OrderHandler));
         orderHandler->parent = &f->pos;
@@ -1998,11 +2015,17 @@ void SetInitTab(UIContext *c, ProgramState *PState)
     
     //Encounter Selector
     {
+        Page->EncounterSel = ls_uiListBoxInit(c, ls_fixedArrayAlloc<UIListBoxItem>(32));
+        
         Page->EncounterSel.callback1     = OnEncounterSelect;
         Page->EncounterSel.callback1Data = &Page->EncounterSel;
-        ls_uiListBoxAddEntry(c, &Page->EncounterSel, ls_utf32Constant(NoEncounterStr));
-        for(u32 i = 0; i < PState->encounters.numEncounters; i++)
-        { ls_uiListBoxAddEntry(c, &Page->EncounterSel, PState->encounters.Enc[i].name); }
+        
+        utf32 encounterName = ls_utf32FromUTF32(NoEncounterStr);
+        ls_uiListBoxAddEntry(c, &Page->EncounterSel, encounterName);
+        for(u32 i = 0; i < PState->encounters.numEncounters; i++) {
+            utf32 encName = ls_utf32Copy(PState->encounters.Enc[i].name);
+            ls_uiListBoxAddEntry(c, &Page->EncounterSel, encName);
+        }
         
         Page->EncounterName.text         = ls_utf32Alloc(16);
         Page->EncounterName.isSingleLine = TRUE;

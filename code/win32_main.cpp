@@ -272,7 +272,14 @@ void CopyState(UIContext *c, ProgramState *FromState, ProgramState *ToState)
     ls_uiTextBoxSet(c, &dest->GeneralThrower.damage, curr->GeneralThrower.damage.text);
     ls_uiTextBoxSet(c, &dest->GeneralThrower.dmgRes, curr->GeneralThrower.dmgRes.text);
     
+    //NOTE: Since the state of the encounters is separate from the state of the InitPage
+    //      We don't want the Undo System to keep a full copy of the Encounters and this needs to be
+    //      reflected in the EncounterSel. Thus, we try to go back to the previously selected index,
+    //      but if a series of operations (like additions and removals of encounters) made the selectedIndex
+    //      invalid, we just revert to the *always* valid 0 index (No Encounter)
     dest->EncounterSel.selectedIndex = curr->EncounterSel.selectedIndex;
+    if(dest->EncounterSel.selectedIndex >= dest->EncounterSel.list.count)
+    { dest->EncounterSel.selectedIndex = 0; }
     
     //NOTE: Copy General Info
     ToState->inBattle = FromState->inBattle;
@@ -332,15 +339,19 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 #endif
     
     //TODO: Hardcoded Compendium Window
+    //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int compendiumWidth  = 800;
     const int compendiumHeight = 720;
-    UIContext *compendiumContext = ls_uiInitDefaultContext(CompendiumBackBuffer, compendiumWidth, compendiumHeight);
+    UIContext *compendiumContext = ls_uiInitDefaultContext(CompendiumBackBuffer, compendiumWidth, compendiumHeight,
+                                                           compendiumArena, compTempArena, globalArena);
     CompendiumWindow = ls_uiCreateWindow(MainInstance, compendiumContext, "Compendium");
     
     //TODO Hardcoded MainWindow
+    //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int windowWidth = 1280;
     const int windowHeight = 860;
-    UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, windowWidth, windowHeight);
+    UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, windowWidth, windowHeight,
+                                                   globalArena, frameArena, globalArena);
     MainWindow = ls_uiCreateWindow(MainInstance, uiContext, "PCMan");
     
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
@@ -447,6 +458,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     //NOTE: The state HAS to be loaded after the InitTab 
     //      has ben Initialized to allow data to be properly set.
+    //TODO: The only reason the memory management currently works with lsUI is because LoadState uses
+    // the globalArena, which is shared with the lsUI widgetArena.
+    // The way LoadState allocates memory for textboxes is actually wrong, because it's not asking the
+    // uicontext (which holds the arena for the widget's storage) for the memory, it's poking into the
+    // widget's internal containers and allocating there directly. It's a hack!
     if(LoadState(uiContext) == FALSE)
     {
         //NOTE: No Save file has been found.
@@ -829,8 +845,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         //NOTE: End Compendium Frame
         //-------------------------------
-        
-        ls_arenaClear(frameArena);
         
         GetSystemTime(&endT);
         
