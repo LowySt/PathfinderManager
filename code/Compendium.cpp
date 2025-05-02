@@ -1277,6 +1277,8 @@ void CalculateAndCacheDMC(utf32 DMC, CachedPageEntry *cachedPage, Status *status
                     }
                 } break;
                 
+                //TODO: STATUS_INTRALCIATO:
+                
                 case STATUS_IMPREPARATO:
                 {
                     if(!hasSchivareProdigioso && !hasLostDexBonus) {
@@ -2098,6 +2100,8 @@ void CalculateAndCacheSkill(utf32 Skill, CachedPageEntry *cachedPage, Status *st
                 case STATUS_PANICO:
                 case STATUS_SPAVENTATO:
                 case STATUS_SCOSSO: { statusEffect += -2; } break;
+                
+                // TODO: STATUS_INTRALCIATO:
             }
         }
     }

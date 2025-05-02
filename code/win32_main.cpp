@@ -673,8 +673,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
             }
             
+            //TODO: Remove, this is now in FrameBegin()
             if(uiContext->isDragging && LeftUp) { uiContext->isDragging = FALSE; }
-            
             
             if(LeftUp || RightUp || MiddleUp)
             { uiContext->mouseCapture = 0; }
