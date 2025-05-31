@@ -270,11 +270,11 @@ s32 DrawTalentPage(UIContext *c, CachedTalentEntry *entry, s32 baseX, s32 baseY,
         baseR.startY -= offset.maxY;
     };
     
-    s32 prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    s32 prevPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
     offset = ls_uiLabelLayout(c, entry->name, baseR, pureWhite);
     ls_uiHSeparator(c, baseR.startX, baseR.startY-4, width, 1, RGB(0, 0, 0));
     
-    s32 currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+    s32 currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
     baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
     baseR.startY -= (offset.maxY + 8);
     alignR = baseR;

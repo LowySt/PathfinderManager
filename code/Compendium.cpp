@@ -2552,15 +2552,15 @@ void LoadCompendium(UIContext *c, string path)
 {
     ls_arenaUse(compendiumArena);
     
-    ls_uiButtonInit(c, &compendium.addEnemy, UIBUTTON_CLASSIC, U"Add Enemy", CompendiumAddPageToInitMob);
-    ls_uiButtonInit(c, &compendium.addAlly, UIBUTTON_CLASSIC, U"Add Ally", CompendiumAddPageToInitAlly);
+    compendium.addEnemy = ls_uiButtonInit(c, UIBUTTON_CLASSIC, U"Add Enemy", CompendiumAddPageToInitMob);
+    compendium.addAlly  = ls_uiButtonInit(c, UIBUTTON_CLASSIC, U"Add Ally", CompendiumAddPageToInitAlly);
     
-    ls_uiButtonInit(c, &compendium.arch.chooseArchetype, UIBUTTON_CLASSIC, 
+    compendium.arch.chooseArchetype = ls_uiButtonInit(c, UIBUTTON_CLASSIC, 
                     U"Archetype", CompendiumOpenArchetypeWindow);
     
     for(s32 archIdx = 0; archIdx < MAX_ARCHETYPES; archIdx++)
     { 
-        ls_uiButtonInit(c, &compendium.arch.archetypes[archIdx], UIBUTTON_CLASSIC,
+        compendium.arch.archetypes[archIdx] = ls_uiButtonInit(c, UIBUTTON_CLASSIC,
                         archetypeName[archIdx], CompendiumSelectArchetype);
         compendium.arch.archetypes[archIdx].callback1Data = (void*)((s64)archIdx);
     }
@@ -3752,7 +3752,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     //---------------//
     //    HEADER     //
     //---------------//
-    prevPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    prevPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
     ls_uiLabelLayout(c, page->name, baseR, pureWhite);
     {
         UILayoutRect headerLayout = baseR; headerLayout.startX += 465;
@@ -3762,7 +3762,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
         offset = ls_uiLabelLayout(c, page->pe, headerLayout, pureWhite);
         ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
         baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.startY -= offset.maxY;
         
@@ -3827,14 +3827,14 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     //---------------//
     //    DEFENSE    //
     //---------------//
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    currPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
     baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseR.startY -= 8;
     {
         offset = ls_uiLabelLayout(c, U"Difesa", baseR, pureWhite);
         ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
         baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.startY -= offset.maxY;
         
@@ -3897,14 +3897,14 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     //    ATTACK     //
     //---------------//
     
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    currPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
     baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseR.startY -= 8;
     {
         offset = ls_uiLabelLayout(c, U"Attacco", baseR, pureWhite);
         ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
         baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.startY -= offset.maxY;
         
@@ -3992,14 +3992,14 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     
     if(page->tactics_before.len || page->tactics_during.len || page->tactics_stats.len)
     {
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+        currPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
         baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.startY -= 8;
         {
             offset = ls_uiLabelLayout(c, U"Tattiche", baseR, pureWhite);
             ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
             
-            currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+            currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
             baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
             baseR.startY -= offset.maxY;
             
@@ -4027,14 +4027,14 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     //     STATS     //
     //---------------//
     
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    currPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
     baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseR.startY -= 8;
     {
         offset = ls_uiLabelLayout(c, U"Statistiche", baseR, pureWhite);
         ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
         baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.startY -= offset.maxY;
         
@@ -4160,14 +4160,14 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     
     if(page->specials.len)
     {
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+        currPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
         baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.startY -= 8;
         {
             offset = ls_uiLabelLayout(c, U"Capacit\U000000E0 Speciali:", baseR, pureWhite);
             ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
             
-            currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+            currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
             baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
             baseR.startY -= offset.maxY;
             baseR.startY -= 8; //NOTE: Random spacing because it feels cramped
@@ -4183,7 +4183,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     
     if(page->environment.len || page->org.len || page->treasure.len)
     {
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+        currPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
         baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
         baseR.startY -= 8;
         {
@@ -4191,7 +4191,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
             ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
             baseR.startY -= offset.maxY;
             
-            currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+            currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
             baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
             
             renderAndAlignS(U"Ambiente: ");
@@ -4208,7 +4208,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     //---------------//
     //     FINAL     //
     //---------------//
-    currPixelHeight = ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    currPixelHeight = ls_uiSelectFontByPixelHeight(c, 20);
     baseR.startY -= currPixelHeight - prevPixelHeight; prevPixelHeight = currPixelHeight;
     baseR.startY -= 8;
     {
@@ -4216,7 +4216,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
         ls_uiHSeparator(c, baseR.startX, baseR.startY-4, hSepWidth, 1, RGB(0, 0, 0));
         baseR.startY -= offset.maxY;
         
-        currPixelHeight = ls_uiSelectFontByFontSize(c, FS_SMALL);
+        currPixelHeight = ls_uiSelectFontByPixelHeight(c, 16);
         baseR.startY += prevPixelHeight - currPixelHeight; prevPixelHeight = currPixelHeight;
         
         offset = ls_uiLabelLayout(c, page->desc, baseR);

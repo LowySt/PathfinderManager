@@ -2,6 +2,10 @@
 #include "lsWindows.h"
 #undef LS_WINDOWS_IMPLEMENTATION
 
+#define LS_OPENGL_IMPLEMENTATION
+#include "OpenGL/lsOpenGL.h"
+#undef LS_OPENGL_IMPLEMENTATION
+
 #define LS_ARENA_IMPLEMENTATION
 #include "lsArena.h"
 #undef LS_ARENA_IMPLEMENTATION
@@ -72,7 +76,7 @@ static Arena frameArena;
 static Arena compendiumArena;
 static Arena compTempArena;
 
-
+#define LS_UI_OPENGL_BACKEND
 #define LS_UI_IMPLEMENTATION
 #include "lsUI.h"
 #undef LS_UI_IMPLEMENTATION
@@ -117,7 +121,7 @@ static Arena compTempArena;
 #include "FeatsTab.cpp"
 #include "SaveState.cpp"
 
-#include "AssetLoader.cpp"
+//#include "AssetLoader.cpp"
 
 #if _DEBUG
 #include "test.cpp"
@@ -296,6 +300,45 @@ void CopyState(UIContext *c, ProgramState *FromState, ProgramState *ToState)
     ToState->playerSettingsMenuItem->isVisible = !ToState->inBattle;
 }
 
+UIMenu SetupMainWindowMenu(UIContext *c)
+{
+    UIMenu WindowMenu      = {};
+    WindowMenu.closeWindow = ls_uiMenuButton(ProgramExitOnButton, closeBtnDataPremulti, closeBtnWidth, closeBtnHeight);
+    WindowMenu.minimize    = ls_uiMenuButton(ProgramMinimizeOnButton, minBtnDataPremulti, minBtnWidth, minBtnHeight);
+    WindowMenu.itemWidth   = 100;
+    
+    ls_uiMenuAddSub(c, &WindowMenu, U"Style");
+    ls_uiSubMenuAddItem(c, &WindowMenu, 0, U"Default", selectStyleDefault, NULL);
+    ls_uiSubMenuAddItem(c, &WindowMenu, 0, U"Prana", selectStylePrana, NULL);
+    
+    ls_uiMenuAddSub(c, &WindowMenu, U"Theme");
+    ls_uiSubMenuAddItem(c, &WindowMenu, 1, U"Default", selectThemeDefault, NULL);
+    ls_uiSubMenuAddItem(c, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
+    ls_uiSubMenuAddItem(c, &WindowMenu, 1, U"Light", selectThemeLight, NULL);
+    ls_uiSubMenuAddItem(c, &WindowMenu, 1, U"Green", selectThemeGreen, NULL);
+    ls_uiSubMenuAddItem(c, &WindowMenu, 1, U"User", selectThemeUser, NULL);
+    ls_uiSubMenuAddItem(c, &WindowMenu, 1, U"Customize", openThemeColorPicker, NULL);
+    
+    ls_uiMenuAddSub(c, &WindowMenu, U"Settings");
+    State.playerSettingsMenuItem = ls_uiSubMenuAddItem(c, &WindowMenu, 2, 
+                                                       U"Players", ProgramOpenPlayersSettings, NULL);
+    ls_uiSubMenuAddItem(c, &WindowMenu, 2, U"Info", ProgramOpenInfoSettings, NULL);
+    
+    ls_uiMenuAddItem(c, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
+    return WindowMenu;
+}
+
+UIMenu SetupCompendiumWindowMenu(UIContext *c)
+{
+    UIMenu CompendiumMenu = {};
+    CompendiumMenu.closeWindow  = ls_uiMenuButton(CompendiumExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
+    CompendiumMenu.itemWidth    = 120;
+    
+    ls_uiMenuAddItem(c, &CompendiumMenu, U"Monster Table", CompendiumOpenMonsterTable, NULL);
+    ls_uiMenuAddItem(c, &CompendiumMenu, U"NPC Table", CompendiumOpenNPCTable, NULL);
+    return CompendiumMenu;
+}
+
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
@@ -338,65 +381,28 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     ls_vlogRegister("UIRect", ls_vlogFormatUIRect);
 #endif
     
-    //TODO: Hardcoded Compendium Window
-    //TODO: Here we are passing the globalArena and the frameArena into the context.
-    const int compendiumWidth  = 800;
-    const int compendiumHeight = 720;
-    UIContext *compendiumContext = ls_uiInitDefaultContext(CompendiumBackBuffer, compendiumWidth, compendiumHeight,
-                                                           compendiumArena, compTempArena, globalArena);
-    CompendiumWindow = ls_uiCreateWindow(MainInstance, compendiumContext, "Compendium");
-    
-    //TODO Hardcoded MainWindow
     //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int windowWidth = 1280;
     const int windowHeight = 860;
     UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, windowWidth, windowHeight,
                                                    globalArena, frameArena, globalArena);
     MainWindow = ls_uiCreateWindow(MainInstance, uiContext, "PCMan");
-    
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
+    ls_uiLoadPackedFontAtlas(uiContext, (char *)"PackedFontAtlas.bmp");
+
+    UIMenu WindowMenu = SetupMainWindowMenu(uiContext);
     
-    loadAssetFile(uiContext, ls_strConstant("assetFile"));
-    ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
-    
-    //NOTETODOHACK:
-    compendiumContext->fonts    = uiContext->fonts;
-    compendiumContext->numFonts = uiContext->numFonts;
-    compendiumContext->currFont = uiContext->currFont;
+    //TODO: Here we are passing the globalArena and the frameArena into the context.
+    const int compendiumWidth  = 800;
+    const int compendiumHeight = 720;
+    //TODO: Change InitDefaultContext to something like InitSecondaryContext(mainContext, ....)
+    UIContext *compendiumContext = ls_uiInitDefaultContext(CompendiumBackBuffer, compendiumWidth, compendiumHeight,
+                                                           compendiumArena, compTempArena, globalArena);
+    CompendiumWindow = ls_uiCreateWindow(MainInstance, compendiumContext, "Compendium", uiContext);
     
     LoadCompendium(compendiumContext, ls_strConstant("Compendium"));
-    
-    UIMenu WindowMenu      = {};
-    WindowMenu.closeWindow = ls_uiMenuButton(ProgramExitOnButton, closeBtnDataPremulti, closeBtnWidth, closeBtnHeight);
-    WindowMenu.minimize    = ls_uiMenuButton(ProgramMinimizeOnButton, minBtnDataPremulti, minBtnWidth, minBtnHeight);
-    WindowMenu.itemWidth   = 100;
-    
-    ls_uiMenuAddSub(uiContext, &WindowMenu, U"Style");
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 0, U"Default", selectStyleDefault, NULL);
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 0, U"Prana", selectStylePrana, NULL);
-    
-    ls_uiMenuAddSub(uiContext, &WindowMenu, U"Theme");
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Default", selectThemeDefault, NULL);
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Dark Night", selectThemeDarkNight, NULL);
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Light", selectThemeLight, NULL);
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Green", selectThemeGreen, NULL);
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"User", selectThemeUser, NULL);
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 1, U"Customize", openThemeColorPicker, NULL);
-    
-    ls_uiMenuAddSub(uiContext, &WindowMenu, U"Settings");
-    State.playerSettingsMenuItem = ls_uiSubMenuAddItem(uiContext, &WindowMenu, 2, 
-                                                       U"Players", ProgramOpenPlayersSettings, NULL);
-    ls_uiSubMenuAddItem(uiContext, &WindowMenu, 2, U"Info", ProgramOpenInfoSettings, NULL);
-    
-    ls_uiMenuAddItem(uiContext, &WindowMenu, U"Compendium", ProgramOpenCompendium, NULL);
-    
-    
-    UIMenu CompendiumMenu = {};
-    CompendiumMenu.closeWindow  = ls_uiMenuButton(CompendiumExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
-    CompendiumMenu.itemWidth    = 120;
-    
-    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"Monster Table", CompendiumOpenMonsterTable, NULL);
-    ls_uiMenuAddItem(uiContext, &CompendiumMenu, U"NPC Table", CompendiumOpenNPCTable, NULL);
+
+    UIMenu CompendiumMenu = SetupCompendiumWindowMenu(uiContext);
     
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
@@ -449,8 +455,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     for(s32 i = party_count; i < MAX_PARTY_NUM; i++)
     { ls_uiTextBoxSet(uiContext, State.PartyName + i, ls_utf32Constant(U"XXXXX")); }
     
-    ls_uiButtonInit(uiContext, &State.addPartyMember, UIBUTTON_CLASSIC, U"+", OnClickAddPlayerToState);
-    ls_uiButtonInit(uiContext, &State.removePartyMember, UIBUTTON_CLASSIC, U"-", OnClickRemovePlayerFromState);
+    State.addPartyMember    = ls_uiButtonInit(uiContext, UIBUTTON_CLASSIC, U"+", OnClickAddPlayerToState);
+    State.removePartyMember = ls_uiButtonInit(uiContext, UIBUTTON_CLASSIC, U"-", OnClickRemovePlayerFromState);
     
     State.isInitialized = TRUE;
     
@@ -513,7 +519,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         ls_uiBackground(uiContext);
 #endif
         
-        ls_uiSelectFontByFontSize(uiContext, FS_SMALL);
+        ls_uiSelectFontByPixelHeight(uiContext, 16);
         //NOTE: Render The Window Menu
         userInputConsumed = ls_uiMenu(uiContext, &WindowMenu, -1, 
                                       uiContext->height-20, uiContext->width+1, 21);
@@ -550,7 +556,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         {
             externalInputReceived = FALSE;
             
-            for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
+            for(u32 i = 0; i < LS_UI_RENDER_GROUP_COUNT; i++)
             {
                 for(s32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
                 {
@@ -702,7 +708,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_uiFillRect(uiContext, 1248, 760, 20, 20, UIRect {0, (s32)uiContext->width, 0, (s32)uiContext->height},
                           uiContext->scissor, uiContext->backgroundColor);
             ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
-            ls_uiGlyphString(uiContext, uiContext->currFont, 1248, 760,
+            ls_uiGlyphString(uiContext, uiContext->currFont, 16, 0.95*uiContext->width, 0.95*uiContext->height,
                              UIRect {(s32)uiContext->width/2, 0, (s32)uiContext->width, (s32)uiContext->height},
                              uiContext->scissor, frameTimeString, RGBg(0xEE));
             
@@ -736,7 +742,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(!compendiumContext->hasReceivedInput && !compendiumContext->isDragging)
         {
-            for(u32 i = 0; i < RENDER_GROUP_COUNT; i++)
+            for(u32 i = 0; i < LS_UI_RENDER_GROUP_COUNT; i++)
             {
                 for(s32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
                 {
@@ -821,7 +827,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 ls_uiFillRect(compendiumContext, 762, 620, 20, 20, UIRect {0, (s32)compendiumContext->width, 0, (s32)compendiumContext->height},
                               compendiumContext->scissor, compendiumContext->backgroundColor);
                 ls_utf32FromInt_t(&frameTimeString, compendiumContext->dt);
-                ls_uiGlyphString(compendiumContext, compendiumContext->currFont, 762, 620,
+                ls_uiGlyphString(compendiumContext, compendiumContext->currFont, 16, 0.95*compendiumContext->width, 0.95*compendiumContext->height,
                                  UIRect {(s32)compendiumContext->width/2, 0, (s32)compendiumContext->width, (s32)compendiumContext->height},
                                  compendiumContext->scissor, frameTimeString, RGBg(0xEE));
                 

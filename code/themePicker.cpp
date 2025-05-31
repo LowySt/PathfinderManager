@@ -215,7 +215,7 @@ b32 DrawThemePicker(UIContext *c)
         //NOTE: Button for Highlite
         static UIButton buttHi = ls_uiButtonInit(c, UIBUTTON_CLASSIC, ls_utf32Constant(U"Hilight"), NULL, NULL, NULL);
         
-        rect = { previewX + 2*xMargin + (s32)(0.2f*previewW), topY - 2*yMargin - rectH-buttHi.h, buttHi.w, buttHi.h };
+        rect = { previewX + 2*xMargin + (s32)(0.2f*previewW), topY - 2*yMargin - rectH-buttHi.bmp.h, buttHi.bmp.w, buttHi.bmp.h };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
         { theme->selected = 4; theme->wheel.apply.callback1 = themeApplyToHighlite; }
         
@@ -237,7 +237,7 @@ b32 DrawThemePicker(UIContext *c)
         
         //NOTE: Button for Pressed
         static UIButton buttPr = ls_uiButtonInit(c, UIBUTTON_CLASSIC, ls_utf32Constant(U"Pressed"), NULL, NULL, NULL);
-        rect = { rect.x + (s32)(0.5f*xMargin) + buttHi.w, topY - 2*yMargin - rectH - buttPr.h, buttPr.w, buttPr.h };
+        rect = { rect.x + (s32)(0.5f*xMargin) + buttHi.bmp.w, topY - 2*yMargin - rectH - buttPr.bmp.h, buttPr.bmp.w, buttPr.bmp.h };
         if(LeftClickIn(rect.x, rect.y, rect.w, rect.h))
         { theme->selected = 5; theme->wheel.apply.callback1 = themeApplyToPressed; }
         

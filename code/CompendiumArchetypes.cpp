@@ -172,10 +172,10 @@ b32 DrawArchetypeSelection(UIContext *c)
     s32 baseX = 0.02f*c->width;
     s32 baseY = 0.74f*c->height;
     
-    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiSelectFontByPixelHeight(c, 20);
     ls_uiLabel(c, U"Simple", 0.03f*c->width, 0.77f*c->height, c->textColor, 3);
     ls_uiHSeparator(c, 0.03f*c->width, 0.76f*c->height, 0.94f*c->width, 1, RGBg(0), 3);
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiSelectFontByPixelHeight(c, 16);
     
     //NOTE: Looping over all Simple Archetypes Indices
     s32 xAdv = 0;
@@ -185,8 +185,8 @@ b32 DrawArchetypeSelection(UIContext *c)
     s32 maxWidth = 0;
     for(s32 simpleIdx = 0; simpleIdx < 10; simpleIdx++)
     {
-        if(compendium.arch.archetypes[simpleIdx].w > maxWidth)
-        { maxWidth = compendium.arch.archetypes[simpleIdx].w; }
+        if(compendium.arch.archetypes[simpleIdx].bmp.w > maxWidth)
+        { maxWidth = compendium.arch.archetypes[simpleIdx].bmp.w; }
     }
     xAdv = maxWidth + (0.02f*c->width);
     
@@ -216,10 +216,10 @@ b32 DrawArchetypeSelection(UIContext *c)
     baseX  = 0.03f*c->width;
     baseY -= 0.041f*c->height;
     
-    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiSelectFontByPixelHeight(c, 20);
     ls_uiLabel(c, U"Acquired", 0.03f*c->width, baseY, c->textColor, 3); baseY -= 0.010f*c->height;
     ls_uiHSeparator(c, 0.03f*c->width, baseY, 0.94f*c->width, 1, RGBg(0), 3);
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiSelectFontByPixelHeight(c, 16);
     
     //NOTE: Looping over all Acquired Archetypes Indices
     baseY -= 0.042f*c->height;
@@ -227,8 +227,8 @@ b32 DrawArchetypeSelection(UIContext *c)
     maxWidth = 0;
     for(s32 acqIdx = 10; acqIdx < 16; acqIdx++)
     {
-        if(compendium.arch.archetypes[acqIdx].w > maxWidth)
-        { maxWidth = compendium.arch.archetypes[acqIdx].w; }
+        if(compendium.arch.archetypes[acqIdx].bmp.w > maxWidth)
+        { maxWidth = compendium.arch.archetypes[acqIdx].bmp.w; }
     }
     xAdv = maxWidth + (0.02f*c->width);
     
@@ -259,10 +259,10 @@ b32 DrawArchetypeSelection(UIContext *c)
     baseX  = 0.03f*c->width;
     baseY -= 0.041f*c->height;
     
-    ls_uiSelectFontByFontSize(c, FS_MEDIUM);
+    ls_uiSelectFontByPixelHeight(c, 20);
     ls_uiLabel(c, U"Inherited", 0.03f*c->width, baseY, c->textColor, 3); baseY -= 0.010f*c->height;
     ls_uiHSeparator(c, 0.03f*c->width, baseY, 0.94f*c->width, 1, RGBg(0), 3);
-    ls_uiSelectFontByFontSize(c, FS_SMALL);
+    ls_uiSelectFontByPixelHeight(c, 16);
     
     //NOTE: Looping over all Acquired Archetypes Indices
     baseY -= 0.042f*c->height;

@@ -1,6 +1,6 @@
 @echo off
 
-SET VC_PATH=C:\Program Files\Microsoft Visual Studio\2022\Community
+SET VC_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools
 IF NOT DEFINED LIB (IF EXIST "%VC_PATH%" (call "%VC_PATH%\VC\Auxiliary\Build\vcvarsall.bat" amd64))
 
 SET ARG=%1
@@ -20,11 +20,14 @@ SET DBGONLY=Dbghelp.lib OneCoreUAP.lib
 
 SET CODE_HOME=%cd%
 
-SET TOOLDIR=F:\ProgrammingProjects\IncludeDir\Tools
-SET PLATDIR=F:\ProgrammingProjects\IncludeDir\Platform
+REM SET TOOLDIR=F:\ProgrammingProjects\IncludeDir\Tools
+REM SET PLATDIR=F:\ProgrammingProjects\IncludeDir\Platform
+
+SET TOOLDIR=C:\Users\Lorenzo\Documents\Programming\Projects\IncludeDir\Tools
+SET PLATDIR=C:\Users\Lorenzo\Documents\Programming\Projects\IncludeDir\Platform
 
 SET OPTS= -favor:ATOM %DEPLOY% -I %TOOLDIR% -I %PLATDIR% /MT /GR- -FC -EHa- -nologo -diagnostics:column -Zi /std:c++latest
-SET LIBS=kernel32.lib user32.lib gdi32.lib Msimg32.lib winmm.lib %DBGONLY%
+SET LIBS=kernel32.lib user32.lib gdi32.lib Msimg32.lib winmm.lib opengl32.lib %DBGONLY%
 
 REM SET ASMDIR=F:\ProgrammingProjects\AddIncludes\PlatformAndTools\tools\asm
 SET ASMDIR=%cd%\code\asm
