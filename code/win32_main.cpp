@@ -77,6 +77,7 @@ static Arena compendiumArena;
 static Arena compTempArena;
 
 #define LS_UI_OPENGL_BACKEND
+//#define LS_UI_SOFTWARE_BACKEND
 #define LS_UI_IMPLEMENTATION
 #include "lsUI.h"
 #undef LS_UI_IMPLEMENTATION
@@ -499,6 +500,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //      to make the order of function calls more obvious and less error prone!
         ls_uiFrameBeginChild(compendiumContext);
         ls_uiFrameBegin(uiContext);
+
+        ls_uiMakeRenderingContextCurrent(uiContext);
         
         //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
         //      The first frame is always registered, so the first Undo State is always valid.
@@ -684,7 +687,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             if(LeftUp || RightUp || MiddleUp)
             { uiContext->mouseCapture = 0; }
-            
+    
             // ----------------
             // Render Everything
             ls_arenaUse(renderArena);
@@ -729,6 +732,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         //-------------------------------
         //NOTE: Begin Compendium Frame
+
+        ls_uiMakeRenderingContextCurrent(compendiumContext);
         
         //TODO: Skip drawing the compendium if the window is closed
         //      But also update the window on first entry. For some reason, putting the entire
