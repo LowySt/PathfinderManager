@@ -2795,7 +2795,7 @@ void SetMonsterTable(UIContext *c)
     Codex *codex = &compendium.codex;
     
     s32 monsterTableMinY = -((codex->pages.count-30) * 19);
-    tableScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, monsterTableMinY };
+    tableScroll = { 0, 10, c->currWindow->width-4, c->currWindow->height-36, 0, 0, c->currWindow->width-32, monsterTableMinY };
     
     CompendiumSearchData *nameSearchMob = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
     nameSearchMob->searchBar            = &compendium.searchBarNameMobs;
@@ -2837,7 +2837,7 @@ void SetNPCTable(UIContext *c)
     Codex *codex = &compendium.codex;
     
     s32 npcTableMinY = -((codex->npcPages.count-30) * 19);
-    npcTableScroll = { 0, 10, c->width-4, c->height-36, 0, 0, c->width-32, npcTableMinY };
+    npcTableScroll = { 0, 10, c->currWindow->width-4, c->currWindow->height-36, 0, 0, c->currWindow->width-32, npcTableMinY };
     
     CompendiumSearchData *nameSearchNPC = (CompendiumSearchData *)ls_alloc(sizeof(CompendiumSearchData));
     nameSearchNPC->searchBar            = &compendium.searchBarNameNPCs;
@@ -3967,21 +3967,21 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
         if(page->psych.len)
         {
             renderAndAlignS(U"Magia Psichica: ");
-            alignR.minX = baseR.minX + (0.03f*c->width);
+            alignR.minX = baseR.minX + (0.03f*c->currWindow->width);
             renderAndAlign(page->psych);
         }
         
         if(page->magics.len)
         {
             renderAndAlignS(U"Capacit\U000000E0 Magiche: ");
-            alignR.minX = baseR.minX + (0.03f*c->width);
+            alignR.minX = baseR.minX + (0.03f*c->currWindow->width);
             renderAndAlign(page->magics);
         }
         
         if(page->spells.len)
         {
             renderAndAlignS(U"Incantesimi Conosciuti: ");
-            alignR.minX = baseR.minX + (0.03f*c->width);
+            alignR.minX = baseR.minX + (0.03f*c->currWindow->width);
             renderAndAlign(page->spells);
         }
     }
@@ -4059,7 +4059,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
         if(page->talents[talentIdx].len)
         {
             renderAndAlignS(U"Talenti: ");
-            alignR.minX = baseR.minX + (0.03f*c->width);
+            alignR.minX = baseR.minX + (0.03f*c->currWindow->width);
             while(TRUE)
             {
                 if(talentIdx == 23 || page->talents[talentIdx+1].len == 0)
@@ -4113,7 +4113,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
         if(page->skills.len)
         {
             renderAndAlignS(U"Abilit\U000000E0: ");
-            alignR.minX = baseR.minX + (0.03f*c->width);
+            alignR.minX = baseR.minX + (0.03f*c->currWindow->width);
             renderAndAlign(page->skills);
         }
         
@@ -4249,7 +4249,7 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
 
 void DrawNPCTable(UIContext *c)
 {
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     Codex *codex     = &compendium.codex;
     
     Color bkgColor = RGBg(0x40);
@@ -4285,9 +4285,9 @@ void DrawNPCTable(UIContext *c)
         //      Adding a scissor cuts it... but I don't like that solution a lot...
         //      What if I want automatic '...' at the end of a label??
         ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 300, 20, hoverColor, c->borderColor);
-        c->scissor = UIRect { baseX-4, 0, 298, s32(c->height) };
+        c->scissor = UIRect { baseX-4, 0, 298, s32(c->currWindow->height) };
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY+npcTableScroll.deltaY, 1);
-        c->scissor = UIRect { 0, 0, s32(c->width), s32(c->height) };
+        c->scissor = UIRect { 0, 0, s32(c->currWindow->width), s32(c->currWindow->height) };
         baseX += 299;
         
         ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 80, 20, bkgColor, c->borderColor);
@@ -4314,7 +4314,7 @@ void DrawNPCTable(UIContext *c)
 
 void DrawMonsterTable(UIContext *c)
 {
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     Codex *codex     = &compendium.codex;
     
     Color bkgColor = RGBg(0x40);
@@ -4350,9 +4350,9 @@ void DrawMonsterTable(UIContext *c)
         //      Adding a scissor cuts it... but I don't like that solution a lot...
         //      What if I want automatic '...' at the end of a label??
         ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 300, 20, hoverColor, c->borderColor);
-        c->scissor = UIRect { baseX-4, 0, 298, s32(c->height) };
+        c->scissor = UIRect { baseX-4, 0, 298, s32(c->currWindow->height) };
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY+tableScroll.deltaY, 1);
-        c->scissor = UIRect { 0, 0, s32(c->width), s32(c->height) };
+        c->scissor = UIRect { 0, 0, s32(c->currWindow->width), s32(c->currWindow->height) };
         baseX += 299;
         
         ls_uiRect(c, baseX-4, baseY+tableScroll.deltaY-4, 80, 20, bkgColor, c->borderColor);
@@ -4389,7 +4389,9 @@ b32 DrawCompendium(UIContext *c)
     ls_arenaClear(compTempArena);
     
     Codex *codex = &compendium.codex;
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
+    s32 width = c->currWindow->width;
+    s32 height = c->currWindow->height;
     
     b32 userInput = FALSE;
     
@@ -4427,16 +4429,16 @@ b32 DrawCompendium(UIContext *c)
         if(cachedPage.talentIndex == -1)
         {
             userInput |= ls_uiButton(c, &compendium.addEnemy, 
-                                     0.01f*c->width, c->height - 0.060*c->height, c->menuBarColor);
+                                     0.01f*width, height - 0.060*height, c->menuBarColor);
             userInput |= ls_uiButton(c, &compendium.addAlly, 
-                                     0.14f*c->width, c->height - 0.060*c->height, c->menuBarColor);
+                                     0.14f*width, height - 0.060*height, c->menuBarColor);
             userInput |= ls_uiButton(c, &compendium.arch.chooseArchetype, 
-                                     0.27f*c->width, c->height - 0.060*c->height, c->menuBarColor);
+                                     0.27f*width, height - 0.060*height, c->menuBarColor);
         }
         
-        ls_uiHSeparator(c, 0.01f*c->width, (c->height - 0.066*c->height)+1, c->width - 0.04f*c->width, 1, RGBg(0));
-        ls_uiHSeparator(c, 0.01f*c->width, c->height - 0.066*c->height, c->width - 0.04f*c->width, 1, RGBg(0xDD));
-        ls_uiHSeparator(c, 0.01f*c->width, (c->height - 0.066*c->height)-1, c->width - 0.04f*c->width, 1, RGBg(0));
+        ls_uiHSeparator(c, 0.01f*width, (height - 0.066*height)+1, width - 0.04f*width, 1, RGBg(0));
+        ls_uiHSeparator(c, 0.01f*width, height - 0.066*height, width - 0.04f*width, 1, RGBg(0xDD));
+        ls_uiHSeparator(c, 0.01f*width, (height - 0.066*height)-1, width - 0.04f*width, 1, RGBg(0));
         
         //NOTE: It's a Mob's Page Index
         if(compendium.pageIndex < NPC_PAGE_INDEX_OFFSET)
@@ -4453,14 +4455,14 @@ b32 DrawCompendium(UIContext *c)
                 CachePage(pEntry, compendium.pageIndex, &cachedPage, compendium.appliedArchetypes);
                 
                 //NOTE: Reset the page scroll for the new page (Fuck GCC)
-                pageScroll = { 0, 10, c->width-4, c->height-60, 0, 0, c->width-32, 0 };
+                pageScroll = { 0, 10, width-4, height-60, 0, 0, width-32, 0 };
             }
             
             //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
             //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
-            pageScroll.minY = DrawPage(c, &cachedPage, 0, 646, c->width-42, 0);
+            pageScroll.minY = DrawPage(c, &cachedPage, 0, 646, width-42, 0);
             //TODO: When the page is smaller than the viewport, it ends up flip-flopping if we don't clamp it.
             //      Kind of annoying. Can we do something like this in endscrollaberegion automatically?
             if(pageScroll.minY > -19) { pageScroll.minY = -1; }
@@ -4482,14 +4484,14 @@ b32 DrawCompendium(UIContext *c)
                 CachePage(pEntry, compendium.pageIndex, &cachedPage, compendium.appliedArchetypes);
                 
                 //NOTE: Reset the page scroll for the new page (Fuck GCC)
-                pageScroll = { 0, 10, c->width-4, c->height-60, 0, 0, c->width-32, 0 };
+                pageScroll = { 0, 10, width-4, height-60, 0, 0, width-32, 0 };
             }
             
             //NOTE: The first frame is impossible to scroll, because the minY value will be not initialized yet
             //      It's should be fine though. We run at 30FPS on the Compendium, so it should never be felt/seen.
             //      The minY is set by the DrawPage call itself
             ls_uiStartScrollableRegion(c, &pageScroll);
-            pageScroll.minY = DrawPage(c, &cachedPage, 0, 646, c->width-42, 0);
+            pageScroll.minY = DrawPage(c, &cachedPage, 0, 646, width-42, 0);
             //TODO: When the page is smaller than the viewport, it ends up flip-flopping if we don't clamp it.
             //      Kind of annoying. Can we do something like this in endscrollaberegion automatically?
             if(pageScroll.minY > -19) { pageScroll.minY = -1; }

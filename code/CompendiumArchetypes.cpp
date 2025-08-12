@@ -161,26 +161,28 @@ b32 CompendiumSelectArchetype(UIContext *c, void *user)
 b32 DrawArchetypeSelection(UIContext *c)
 {
     b32 inputUse = FALSE;
+    s32 width = c->currWindow->width;
+    s32 height = c->currWindow->height;
     
     //NOTE: Darken the Compendium Page to indicate inactiveness
-    ls_uiRect(c, 0, 0, c->width, 0.935f*c->height, RGBA(0, 0, 0, 0xAA), RGBA(0, 0, 0, 0xAA), 1);
+    ls_uiRect(c, 0, 0, width, 0.935f*height, RGBA(0, 0, 0, 0xAA), RGBA(0, 0, 0, 0xAA), 1);
     
     //NOTE: Draw the Archetype Selection Window
-    ls_uiRect(c, 0.02f*c->width, 0.33f*c->height, 0.955*c->width, 0.47f*c->height, 2);
+    ls_uiRect(c, 0.02f*width, 0.33f*height, 0.955*width, 0.47f*height, 2);
     
     //NOTE: Draw Simple Archetypes
-    s32 baseX = 0.02f*c->width;
-    s32 baseY = 0.74f*c->height;
+    s32 baseX = 0.02f*width;
+    s32 baseY = 0.74f*height;
     
     ls_uiSelectFontByPixelHeight(c, 20);
-    ls_uiLabel(c, U"Simple", 0.03f*c->width, 0.77f*c->height, c->textColor, 3);
-    ls_uiHSeparator(c, 0.03f*c->width, 0.76f*c->height, 0.94f*c->width, 1, RGBg(0), 3);
+    ls_uiLabel(c, U"Simple", 0.03f*width, 0.77f*height, c->textColor, 3);
+    ls_uiHSeparator(c, 0.03f*width, 0.76f*height, 0.94f*width, 1, RGBg(0), 3);
     ls_uiSelectFontByPixelHeight(c, 16);
     
     //NOTE: Looping over all Simple Archetypes Indices
     s32 xAdv = 0;
-    baseX = 0.03f*c->width;
-    baseY = 0.72f*c->height;
+    baseX = 0.03f*width;
+    baseY = 0.72f*height;
     
     s32 maxWidth = 0;
     for(s32 simpleIdx = 0; simpleIdx < 10; simpleIdx++)
@@ -188,7 +190,7 @@ b32 DrawArchetypeSelection(UIContext *c)
         if(compendium.arch.archetypes[simpleIdx].bmp.w > maxWidth)
         { maxWidth = compendium.arch.archetypes[simpleIdx].bmp.w; }
     }
-    xAdv = maxWidth + (0.02f*c->width);
+    xAdv = maxWidth + (0.02f*width);
     
     for(s32 simpleIdx = 0; simpleIdx < 10; simpleIdx++)
     {
@@ -207,22 +209,22 @@ b32 DrawArchetypeSelection(UIContext *c)
         baseX += xAdv;
         if((simpleIdx+1) % 5 == 0)
         {
-            baseX  = 0.03f*c->width;
-            if(simpleIdx < 9) { baseY -= 0.058f*c->height; }
+            baseX  = 0.03f*width;
+            if(simpleIdx < 9) { baseY -= 0.058f*height; }
         }
     }
     
     //NOTE: Draw Acquired Archetypes
-    baseX  = 0.03f*c->width;
-    baseY -= 0.041f*c->height;
+    baseX  = 0.03f*width;
+    baseY -= 0.041f*height;
     
     ls_uiSelectFontByPixelHeight(c, 20);
-    ls_uiLabel(c, U"Acquired", 0.03f*c->width, baseY, c->textColor, 3); baseY -= 0.010f*c->height;
-    ls_uiHSeparator(c, 0.03f*c->width, baseY, 0.94f*c->width, 1, RGBg(0), 3);
+    ls_uiLabel(c, U"Acquired", 0.03f*width, baseY, c->textColor, 3); baseY -= 0.010f*height;
+    ls_uiHSeparator(c, 0.03f*width, baseY, 0.94f*width, 1, RGBg(0), 3);
     ls_uiSelectFontByPixelHeight(c, 16);
     
     //NOTE: Looping over all Acquired Archetypes Indices
-    baseY -= 0.042f*c->height;
+    baseY -= 0.042f*height;
     
     maxWidth = 0;
     for(s32 acqIdx = 10; acqIdx < 16; acqIdx++)
@@ -230,7 +232,7 @@ b32 DrawArchetypeSelection(UIContext *c)
         if(compendium.arch.archetypes[acqIdx].bmp.w > maxWidth)
         { maxWidth = compendium.arch.archetypes[acqIdx].bmp.w; }
     }
-    xAdv = maxWidth + (0.02f*c->width);
+    xAdv = maxWidth + (0.02f*width);
     
     for(s32 acqIdx = 10; acqIdx < 16; acqIdx++)
     {
@@ -247,8 +249,8 @@ b32 DrawArchetypeSelection(UIContext *c)
         baseX += xAdv;
         if((acqIdx-10+1) % 4 == 0)
         {
-            baseX  = 0.03f*c->width;
-            if(acqIdx < 15) { baseY -= 0.058f*c->height; }
+            baseX  = 0.03f*width;
+            if(acqIdx < 15) { baseY -= 0.058f*height; }
         }
     }
     
@@ -256,16 +258,16 @@ b32 DrawArchetypeSelection(UIContext *c)
     inputUse |= ls_uiButton(c, &compendium.arch.archetypes[17], baseX, baseY, 3);
     
     //NOTE: Draw Acquired Archetypes
-    baseX  = 0.03f*c->width;
-    baseY -= 0.041f*c->height;
+    baseX  = 0.03f*width;
+    baseY -= 0.041f*height;
     
     ls_uiSelectFontByPixelHeight(c, 20);
-    ls_uiLabel(c, U"Inherited", 0.03f*c->width, baseY, c->textColor, 3); baseY -= 0.010f*c->height;
-    ls_uiHSeparator(c, 0.03f*c->width, baseY, 0.94f*c->width, 1, RGBg(0), 3);
+    ls_uiLabel(c, U"Inherited", 0.03f*width, baseY, c->textColor, 3); baseY -= 0.010f*height;
+    ls_uiHSeparator(c, 0.03f*width, baseY, 0.94f*width, 1, RGBg(0), 3);
     ls_uiSelectFontByPixelHeight(c, 16);
     
     //NOTE: Looping over all Acquired Archetypes Indices
-    baseY -= 0.042f*c->height;
+    baseY -= 0.042f*height;
     
     //NOTE: Adding Micotico, the only Inherited, currently.
     inputUse |= ls_uiButton(c, &compendium.arch.archetypes[16], baseX, baseY, 3);

@@ -129,14 +129,14 @@ b32 CustomMobLifeFieldFocusLost(UIContext *c, void *data)
 
 b32 CustomPlayerText(UIContext *c, void *data)
 {
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     b32 inputUse = FALSE;
     
     InitPage *Page = State.Init;
     
     UITextBox *f = (UITextBox *)data;
     
-    if(c->lastFocus != (u64 *)f) { ls_uiTextBoxClear(c, f); inputUse = TRUE; }
+    if(c->currWindow->lastFocus != (u64 *)f) { ls_uiTextBoxClear(c, f); inputUse = TRUE; }
     
     if(KeyPress(keyMap::Enter))
     {
@@ -153,7 +153,7 @@ b32 CustomPlayerText(UIContext *c, void *data)
 
 b32 CustomMobLifeField(UIContext *c, void *data)
 {
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     b32 inputUse = FALSE;
     
     MobLifeHandler *h = (MobLifeHandler *)data;
@@ -161,7 +161,7 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     
     if(State.Init->isAdding)
     {
-        if((c->lastFocus != (u64 *)f) && (c->currentFocus == (u64 *)f))
+        if((c->currWindow->lastFocus != (u64 *)f) && (c->currWindow->currentFocus == (u64 *)f))
         { ls_uiTextBoxClear(c, f); }
         
         return FALSE;
@@ -169,7 +169,7 @@ b32 CustomMobLifeField(UIContext *c, void *data)
     
     if(!State.inBattle)
     {
-        if((c->lastFocus != (u64 *)f) && (c->currentFocus == (u64 *)f))
+        if((c->currWindow->lastFocus != (u64 *)f) && (c->currWindow->currentFocus == (u64 *)f))
         { ls_uiTextBoxClear(c, f); }
         
         return FALSE;
@@ -247,7 +247,7 @@ b32 CustomMobNonLethalFieldFocusLost(UIContext *c, void *data)
 
 b32 CustomMobNonLethalField(UIContext *c, void *data)
 {
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     b32 inputUse = FALSE;
     
     MobLifeHandler *h = (MobLifeHandler *)data;
@@ -380,7 +380,7 @@ b32 OrderPositionOnFocusLost(UIContext *c, void *data)
 
 b32 ChangeOrder(UIContext *c, void *data)
 {
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     b32 inputUse = FALSE;
     
     OrderHandler *h = (OrderHandler *)data;
@@ -2142,7 +2142,7 @@ b32 DrawInitField(UIContext *c, InitField *F, s32 baseX, s32 y, u32 posIdx, s32 
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_BONUS], x + w     , y, 35, 20);
     inputUse |= ls_uiTextBox(c, &F->editFields[IF_IDX_FINAL], x + w + 35, y, 35, 20);
     
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     if(RightClickIn(x, y, w+26, 19)) { globalSelectedIndex = (s32)posIdx; }
     
     return inputUse;
@@ -2198,7 +2198,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
     inputUse |= ls_uiTextBox(c, &f->pos, xPos + 25, yPos, 25, 20);
     inputUse |= ls_uiButton(c, &f->remove, xPos, yPos);
     
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     if(!State.Init->isAdding && RightClickIn(xPos + 50, yPos, 166, 20)) globalSelectedIndex = (s32)posIdx;
     
     return inputUse;
@@ -2206,7 +2206,7 @@ b32 DrawOrderField(UIContext *c, Order *f, s32 xPos, s32 yPos, u32 posIdx)
 
 b32 DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
 {
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     
     s32 tooltipIndex = -1;
     s32 mouseX = -999;
@@ -2292,7 +2292,7 @@ b32 DrawStatusIcons(UIContext *c, Order *ord, s32 statusX, s32 statusY)
         
         ls_uiLabelInRect(c, label, x, y - labelRect.h, c->backgroundColor, c->borderColor, c->textColor, 3);
         
-        if(firstShow == TRUE) { c->hasReceivedInput = TRUE; }
+        if(firstShow == TRUE) { c->currWindow->hasReceivedInput = TRUE; }
         firstShow = FALSE;
     }
     
@@ -2412,7 +2412,7 @@ b32 DrawDefaultStyle(UIContext *c)
 b32 DrawPranaStyle(UIContext *c)
 {
     InitPage *Page = State.Init;
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     
     s32 visibleMobs   = Page->Mobs.selectedIndex;
     s32 visibleAllies = Page->Allies.selectedIndex;
@@ -2579,7 +2579,7 @@ b32 DrawPranaStyle(UIContext *c)
     {
         
 #if _DEBUG
-        Input *UserInput = &c->UserInput;
+        Input *UserInput = &c->currWindow->UserInput;
         if(KeyPress(keyMap::F6))
         {
             DumpOrder(Page->OrderFields);

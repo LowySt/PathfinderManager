@@ -128,24 +128,24 @@ static Arena compTempArena;
 #include "test.cpp"
 #endif
 
-b32 ProgramExitOnButton(UIContext *c, void *data) { SendMessageA(MainWindow, WM_DESTROY, 0, 0); return FALSE; }
-b32 CompendiumExitOnButton(UIContext *c, void *data){ ShowWindow(CompendiumWindow, SW_HIDE); return FALSE; }
+b32 ProgramExitOnButton(UIContext *c, void *data) { SendMessageA(MainWin.Window, WM_DESTROY, 0, 0); return FALSE; }
+b32 CompendiumExitOnButton(UIContext *c, void *data){ ShowWindow(CompendiumWin.Window, SW_HIDE); return FALSE; }
 
 //TODO: Compendium does not answer keyboard input when MainWindow is minimized. Why???
 //      Do I have a fucked up keyboard state???
 b32 ProgramMinimizeOnButton(UIContext *c, void *data) { 
     //NOTE: We have to send an LButtonUp, else our Input handling will be confused
     //      and not register the un-pressing of the left button.
-    SendMessageA(c->Window, WM_LBUTTONUP, 0, 0);
-    ShowWindow(c->Window, SW_MINIMIZE);
+    SendMessageA(MainWin.Window, WM_LBUTTONUP, 0, 0);
+    ShowWindow(MainWin.Window, SW_MINIMIZE);
     return FALSE;
 }
 
 b32 ProgramOpenCompendium(UIContext *c, void *data)
 {
-    if(CompendiumWindow)
+    if(CompendiumWin.Window)
     {
-        ShowWindow(CompendiumWindow, SW_SHOW);
+        ShowWindow(CompendiumWin.Window, SW_SHOW);
         c->renderFunc(c);
         return FALSE;
     }
@@ -385,30 +385,39 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int windowWidth = 1280;
     const int windowHeight = 860;
-    UIContext *uiContext = ls_uiInitDefaultContext(BackBuffer, windowWidth, windowHeight,
-                                                   globalArena, frameArena, globalArena);
-    MainWindow = ls_uiCreateWindow(MainInstance, uiContext, "PCMan");
+    UIContext *uiContext = ls_uiInitDefaultContext(globalArena, frameArena, stateArena);
+    MainWin = ls_uiCreateWindow(uiContext, BackBuffer, windowWidth, windowHeight, "PCMan", true);
     ls_uiAddOnDestroyCallback(uiContext, SaveState);
     ls_uiLoadPackedFontAtlas(uiContext, (char *)"PackedFontAtlas.bmp");
+
+    //TODO: Probably want to make something a little bit more sophisticated... or we just pass the actual
+    // UIWindow to the init functions? @CopyPasted
+    uiContext->currWindow = &MainWin;
 
     UIMenu WindowMenu = SetupMainWindowMenu(uiContext);
     
     //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int compendiumWidth  = 800;
     const int compendiumHeight = 720;
-    //TODO: Change InitDefaultContext to something like InitSecondaryContext(mainContext, ....)
-    UIContext *compendiumContext = ls_uiInitDefaultContext(CompendiumBackBuffer, compendiumWidth, compendiumHeight,
-                                                           compendiumArena, compTempArena, globalArena);
-    CompendiumWindow = ls_uiCreateWindow(MainInstance, compendiumContext, "Compendium", uiContext);
+    CompendiumWin = ls_uiCreateWindow(uiContext, CompendiumBackBuffer, compendiumWidth, compendiumHeight, "Compendium", false);
     
-    LoadCompendium(compendiumContext, ls_strConstant("Compendium"));
+    //TODO: Probably want to make something a little bit more sophisticated... or we just pass the actual
+    // UIWindow to the init functions? @CopyPasted
+    uiContext->currWindow = &CompendiumWin;
+    
+    LoadCompendium(uiContext, ls_strConstant("Compendium"));
 
     UIMenu CompendiumMenu = SetupCompendiumWindowMenu(uiContext);
     
+    //TODO: Abstract away this Windows-Specific thing...
     SYSTEMTIME endT, beginT;
     GetSystemTime(&beginT);
     
     ls_arenaUse(stateArena);
+    
+    //TODO: Probably want to make something a little bit more sophisticated... or we just pass the actual
+    // UIWindow to the init functions? @CopyPasted
+    uiContext->currWindow = &MainWin;
     
     //NOTE: Initialize State and Undo States
     State.themePicker.wheel                = ls_uiColorPickerInit(uiContext, &State.themePicker);
@@ -432,8 +441,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     InitCachedTalentEntry(&mainCachedTalent);
     mainCachedPage.talentPage = &mainCachedTalent;
     
-    SetMonsterTable(compendiumContext);
-    SetNPCTable(compendiumContext);
+    SetMonsterTable(uiContext);
+    SetNPCTable(uiContext);
     
     //NOTE: Single block allocation for all Init Pages.
     InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);
@@ -450,9 +459,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Set the Party Settings TextBoxes and Buttons
     for(s32 i = 0; i < MAX_PARTY_NUM; i++)
     { ls_uiTextBoxInit(uiContext, State.PartyName + i, 16); }
-    ls_uiTextBoxSet(uiContext, &State.PartyName[0], ls_utf32Constant(U"Doulos"));
-    ls_uiTextBoxSet(uiContext, &State.PartyName[1], ls_utf32Constant(U"Nick"));
-    ls_uiTextBoxSet(uiContext, &State.PartyName[2], ls_utf32Constant(U"Clovis"));
+    ls_uiTextBoxSet(uiContext, &State.PartyName[0], ls_utf32Constant(U"Adventurer 1"));
+    ls_uiTextBoxSet(uiContext, &State.PartyName[1], ls_utf32Constant(U"Adventurer 2"));
+    ls_uiTextBoxSet(uiContext, &State.PartyName[2], ls_utf32Constant(U"Adventurer 3"));
     for(s32 i = party_count; i < MAX_PARTY_NUM; i++)
     { ls_uiTextBoxSet(uiContext, State.PartyName + i, ls_utf32Constant(U"XXXXX")); }
     
@@ -489,22 +498,18 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     while(Running)
     {
+        //NOTE: Start the Main Thread frame
         u32 frameLockMain       = 16;
-        u32 frameLockCompendium = 16;
+        ls_uiStartFrameTimer(uiContext);
         
-        //NOTE: The child frame doesn't need a message pump, because windows
-        //      Pumps messages to all windows that were created by this thread.
-        //      BUT This means that we must begin the child frame before the main frame
-        //      to properly clear input.
-        //      TODO: Maybe we want to move the message pump to a separate function
-        //      to make the order of function calls more obvious and less error prone!
-        ls_uiFrameBeginChild(compendiumContext);
-        ls_uiFrameBegin(uiContext);
+        ls_uiFrameBegin(uiContext, &MainWin);
+        //NOTETODO: annoying non-global user input
+        Input *UserInput = &MainWin.UserInput;
 
-        ls_uiMakeRenderingContextCurrent(uiContext);
-        
         //NOTE: If any user input was consumed in the previous frame, than we advance the UndoStates.
         //      The first frame is always registered, so the first Undo State is always valid.
+        //TODO: Maybe I want to put this at the end of the frame, rather than the beggining?
+        //      Just for better organization...
         if(userInputConsumed == TRUE && !suppressingUndoRecord)
         {
             matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
@@ -517,32 +522,21 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             distanceFromNow = 0;
         }
         
-#if 0
-        //NOTE: Render The Frame
-        ls_uiBackground(uiContext);
-#endif
         
         ls_uiSelectFontByPixelHeight(uiContext, 16);
-        //NOTE: Render The Window Menu
-        userInputConsumed = ls_uiMenu(uiContext, &WindowMenu, -1, 
-                                      uiContext->height-20, uiContext->width+1, 21);
-        
-        //NOTE: Custom Theme Color Picker
+
+        userInputConsumed = ls_uiMenu(uiContext, &WindowMenu, -1, MainWin.height-20, MainWin.width+1, 21);
         userInputConsumed |= DrawThemePicker(uiContext);
         
         //NOTE: Player Settings
         if(State.arePlayerSettingsOpen)
         {
             userInputConsumed |= DrawPlayerSettings(uiContext);
-            
-            Input *UserInput = &uiContext->UserInput;
             if(KeyPress(keyMap::Escape)) { State.arePlayerSettingsOpen = FALSE; }
         }
         else if(State.areInfoSettingsOpen)
         {
             userInputConsumed |= DrawInfoSettings(uiContext);
-            
-            Input *UserInput = &uiContext->UserInput;
             if(KeyPress(keyMap::Escape)) { State.areInfoSettingsOpen = FALSE; }
         }
         else
@@ -555,7 +549,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //      require it.
         //
         //      isAddingFailedSet is used by the Init Page to update a fader animation, which needs to keep going.
-        if(!uiContext->hasReceivedInput && !uiContext->isDragging && !externalInputReceived && !isAddingFailedSet)
+        if(!MainWin.hasReceivedInput && !MainWin.isDragging && !externalInputReceived && !isAddingFailedSet)
         {
             externalInputReceived = FALSE;
             
@@ -572,10 +566,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         else
         {
             externalInputReceived = FALSE;
-            
-            //NOTETODO: annoying non-global user input
-            Input *UserInput = &uiContext->UserInput;
-            
+
             //TODO: If a page was open in initiative, keep it open after the undo/redo.
             //      Although that only makes sense in specific cases.
             //
@@ -646,47 +637,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             //NOTE: We close the theme selector
             if(KeyPress(keyMap::Escape) && State.themePicker.isShown) { State.themePicker.isShown = FALSE; }
-            
-            //NOTE: Right-Alt Drag, only when nothing is in focus
-            if(KeyHeld(keyMap::RAlt) && LeftClick && uiContext->currentFocus == 0)
-            { 
-                uiContext->isDragging = TRUE;
-                POINT currMouse = {};
-                GetCursorPos(&currMouse);
-                uiContext->prevMousePosX = currMouse.x;
-                uiContext->prevMousePosY = currMouse.y;
-            }
-            
-            //NOTE: Handle Dragging
-            if(uiContext->isDragging && LeftHold)
-            { 
-                MouseInput *Mouse = &uiContext->UserInput.Mouse;
-                
-                POINT currMouse = {};
-                GetCursorPos(&currMouse);
-                
-                POINT prevMouse = { uiContext->prevMousePosX, uiContext->prevMousePosY };
-                
-                SHORT newX = prevMouse.x - currMouse.x;
-                SHORT newY = prevMouse.y - currMouse.y;
-                
-                SHORT newWinX = uiContext->windowPosX - newX;
-                SHORT newWinY = uiContext->windowPosY - newY;
-                
-                uiContext->windowPosX = newWinX;
-                uiContext->windowPosY = newWinY;
-                
-                uiContext->prevMousePosX  = currMouse.x;
-                uiContext->prevMousePosY  = currMouse.y;
-                
-                SetWindowPos(MainWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-            }
-            
-            //TODO: Remove, this is now in FrameBegin()
-            if(uiContext->isDragging && LeftUp) { uiContext->isDragging = FALSE; }
-            
-            if(LeftUp || RightUp || MiddleUp)
-            { uiContext->mouseCapture = 0; }
     
             // ----------------
             // Render Everything
@@ -699,7 +649,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             //
             // ----------------
         }
+
+        //NOTE: End MainWindow Frame
+        ls_uiFrameEnd(uiContext);
         
+        //TODO: use the new debug function in lsUI
+#if 0
         //NOTETODO: just annoying non global user input bullshit.
         if(uiContext->UserInput.Keyboard.currentState.keyMap::F12 == 1 && 
            uiContext->UserInput.Keyboard.prevState.keyMap::F12 == 0) { showDebug = !showDebug; }
@@ -729,41 +684,38 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_uiFillRect(uiContext, 0, 696, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
                           uiContext->scissor, RGB(0xFF, 0, 0xFF));
         }
+#endif
         
         //-------------------------------
         //NOTE: Begin Compendium Frame
+        ls_uiFrameBegin(uiContext, &CompendiumWin);
+        //NOTETODO: annoying non-global user input
+        UserInput = &CompendiumWin.UserInput;
 
-        ls_uiMakeRenderingContextCurrent(compendiumContext);
         
         //TODO: Skip drawing the compendium if the window is closed
         //      But also update the window on first entry. For some reason, putting the entire
         //      Block between the Child Frame inside an if doesn't paint the window on first open.
-        b32 compendiumInput = ls_uiMenu(compendiumContext, &CompendiumMenu, -1,
-                                        compendiumContext->height-20, compendiumContext->width+1, 21);
+        b32 compendiumInput = ls_uiMenu(uiContext, &CompendiumMenu, -1, CompendiumWin.height-20, CompendiumWin.width+1, 21);
         
-        compendiumInput |= DrawCompendium(compendiumContext);
+        compendiumInput |= DrawCompendium(uiContext);
         
         if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
         
-        if(!compendiumContext->hasReceivedInput && !compendiumContext->isDragging)
+        if(!CompendiumWin.hasReceivedInput && !CompendiumWin.isDragging)
         {
             for(u32 i = 0; i < LS_UI_RENDER_GROUP_COUNT; i++)
             {
                 for(s32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
                 {
-                    ls_stackClear(&compendiumContext->renderGroups[i].RenderCommands[zLayer]);
+                    ls_stackClear(&uiContext->renderGroups[i].RenderCommands[zLayer]);
                 }
             }
-            
-            frameLockCompendium = 32;
         }
         else
         {
-            //NOTETODO: annoying non-global user input
-            Input *UserInput = &compendiumContext->UserInput;
-            
             //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
-            if(LeftClick && !compendiumContext->focusWasSetThisFrame) { compendiumContext->currentFocus = 0; }
+            if(LeftClick && !CompendiumWin.focusWasSetThisFrame) { CompendiumWin.currentFocus = 0; }
             
             //NOTE: Exit out of archetype selection.
             if(KeyPress(keyMap::Escape) && (compendium.arch.isChoosingArchetype == TRUE))
@@ -773,104 +725,64 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             if(KeyPress(keyMap::Escape) && (cachedPage.talentIndex != -1))
             { cachedPage.talentIndex = -1; }
             
-            //NOTE: Right-Alt Drag, only when nothing is in focus
-            if(KeyHeld(keyMap::RAlt) && LeftClick && compendiumContext->currentFocus == 0)
-            { 
-                compendiumContext->isDragging = TRUE;
-                POINT currMouse = {};
-                GetCursorPos(&currMouse);
-                compendiumContext->prevMousePosX = currMouse.x;
-                compendiumContext->prevMousePosY = currMouse.y;
-            }
-            
-            if(compendiumContext->isDragging && LeftHold)
-            { 
-                MouseInput *Mouse = &compendiumContext->UserInput.Mouse;
-                
-                POINT currMouse = {};
-                GetCursorPos(&currMouse);
-                
-                POINT prevMouse = { compendiumContext->prevMousePosX, compendiumContext->prevMousePosY };
-                
-                SHORT newX = prevMouse.x - currMouse.x;
-                SHORT newY = prevMouse.y - currMouse.y;
-                
-                SHORT newWinX = compendiumContext->windowPosX - newX;
-                SHORT newWinY = compendiumContext->windowPosY - newY;
-                
-                compendiumContext->windowPosX = newWinX;
-                compendiumContext->windowPosY = newWinY;
-                
-                compendiumContext->prevMousePosX  = currMouse.x;
-                compendiumContext->prevMousePosY  = currMouse.y;
-                
-                SetWindowPos(CompendiumWindow, 0, newWinX, newWinY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-            }
-            
-            if(compendiumContext->isDragging && LeftUp) { compendiumContext->isDragging = FALSE; }
-            
-            
-            if(LeftUp || RightUp || MiddleUp)
-            { compendiumContext->mouseCapture = 0; }
-            
             // ----------------
             // Render Everything
             ls_arenaUse(renderArena);
             
-            ls_uiRender(compendiumContext);
+            ls_uiRender(uiContext);
             
             ls_arenaUse(globalArena);
             ls_arenaClear(renderArena);
             //
             // ----------------
             
-            if(compendiumContext->UserInput.Keyboard.currentState.keyMap::F12 == 1 && 
-               compendiumContext->UserInput.Keyboard.prevState.keyMap::F12 == 0) { showDebug = !showDebug; }
+#if 0
+            if(uiContext->UserInput.Keyboard.currentState.keyMap::F12 == 1 && 
+               uiContext->UserInput.Keyboard.prevState.keyMap::F12 == 0) { showDebug = !showDebug; }
             
             if(showDebug)
             {
-                ls_uiFillRect(compendiumContext, 762, 620, 20, 20, UIRect {0, (s32)compendiumContext->width, 0, (s32)compendiumContext->height},
-                              compendiumContext->scissor, compendiumContext->backgroundColor);
-                ls_utf32FromInt_t(&frameTimeString, compendiumContext->dt);
-                ls_uiGlyphString(compendiumContext, compendiumContext->currFont, 16, 0.95*compendiumContext->width, 0.95*compendiumContext->height,
-                                 UIRect {(s32)compendiumContext->width/2, 0, (s32)compendiumContext->width, (s32)compendiumContext->height},
-                                 compendiumContext->scissor, frameTimeString, RGBg(0xEE));
+                ls_uiFillRect(uiContext, 762, 620, 20, 20, UIRect {0, (s32)uiContext->width, 0, (s32)uiContext->height},
+                              uiContext->scissor, uiContext->backgroundColor);
+                ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
+                ls_uiGlyphString(uiContext, uiContext->currFont, 16, 0.95*uiContext->width, 0.95*uiContext->height,
+                                 UIRect {(s32)uiContext->width/2, 0, (s32)uiContext->width, (s32)uiContext->height},
+                                 uiContext->scissor, frameTimeString, RGBg(0xEE));
                 
-                ls_uiFillRect(compendiumContext, compendiumWidth/2, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              compendiumContext->scissor, RGB(0xFF, 0xFF, 0));
+                ls_uiFillRect(uiContext, compendiumWidth/2, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              uiContext->scissor, RGB(0xFF, 0xFF, 0));
                 
-                ls_uiFillRect(compendiumContext, 0, compendiumHeight/2, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              compendiumContext->scissor, RGB(0xFF, 0xFF, 0));
+                ls_uiFillRect(uiContext, 0, compendiumHeight/2, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              uiContext->scissor, RGB(0xFF, 0xFF, 0));
                 
-                ls_uiFillRect(compendiumContext, compendiumWidth/4, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              compendiumContext->scissor, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(compendiumContext, 3*compendiumWidth/4, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              compendiumContext->scissor, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(compendiumContext, 0, compendiumHeight/3, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              compendiumContext->scissor, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(compendiumContext, 0, 2*compendiumHeight/3, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              compendiumContext->scissor, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(uiContext, compendiumWidth/4, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              uiContext->scissor, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(uiContext, 3*compendiumWidth/4, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              uiContext->scissor, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(uiContext, 0, compendiumHeight/3, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              uiContext->scissor, RGB(0xFF, 0, 0xFF));
+                ls_uiFillRect(uiContext, 0, 2*compendiumHeight/3, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
+                              uiContext->scissor, RGB(0xFF, 0, 0xFF));
             }
+#endif
             
         }
         
         //NOTE: End Compendium Frame
         //-------------------------------
+        ls_uiFrameEnd(uiContext);
         
         GetSystemTime(&endT);
-        
         State.timePassed += (endT.wSecond - beginT.wSecond);
         if(State.timePassed >= 30)
         {
             State.timePassed = 0;
             SaveState(NULL);
         }
-        
         beginT = endT;
         
-        const s32 frameLock = ls_min((s32)frameLockCompendium, (s32)frameLockMain);
-        ls_uiFrameEndChild(compendiumContext, frameLock);
-        ls_uiFrameEnd(uiContext, frameLock);
+        //NOTE: End the Main Thread frame
+        ls_uiEndFrameTimer(uiContext, frameLockMain);
     }
     
     return 0;

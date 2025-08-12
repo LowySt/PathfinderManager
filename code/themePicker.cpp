@@ -118,8 +118,10 @@ b32 themeApplyToInvertedWidget(UIContext *c, void *userData)
 
 b32 DrawThemePicker(UIContext *c)
 {
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     b32 usedInput = FALSE;
+    s32 width = c->currWindow->width;
+    s32 height = c->currWindow->height;
     
     ThemePicker *theme = &State.themePicker;
     
@@ -130,8 +132,8 @@ b32 DrawThemePicker(UIContext *c)
         if(KeyPress(keyMap::F8)) { dumpCurrentTheme(c); }
 #endif
         
-        s32 pickerX = c->width/2;
-        s32 pickerY = c->height/3;
+        s32 pickerX = width/2;
+        s32 pickerY = height/3;
         s32 pickerW = 300;
         s32 pickerH = 320;
         s32 pickerRadius = 100;

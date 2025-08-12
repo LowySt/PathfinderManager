@@ -134,7 +134,7 @@ TalentDisplayResult CheckTalentTooltipAndClick(UIContext *c, CachedPageEntry *pa
     newLayout.startX       = delta.x;
     newLayout.startY       = delta.y;
     
-    Input *UserInput = &c->UserInput;
+    Input *UserInput = &c->currWindow->UserInput;
     
     //NOTE: We went down a line, we need to split the region in 2 rects
     //TODO: We are assuming that it's divided in only 2 rects, and every rect is 1 font height tall

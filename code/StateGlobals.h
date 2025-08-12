@@ -50,8 +50,10 @@ struct ProgramState
 };
 
 HINSTANCE MainInstance = 0;
-HWND MainWindow        = 0;
-HWND CompendiumWindow  = 0;
+//HWND MainWindow        = 0; //TODO: Remove this nocheckin
+//HWND CompendiumWindow  = 0; //TODO: Remove this nocheckin
+UIWindow MainWin = {};
+UIWindow CompendiumWin = {};
 
 u8 *BackBuffer;
 u8 *CompendiumBackBuffer;
@@ -96,17 +98,19 @@ b32 OnClickRemovePlayerFromState(UIContext *c, void *data)
 b32 DrawPlayerSettings(UIContext *c)
 {
     b32 usedInput = FALSE;
+    s32 width = c->currWindow->width;
+    s32 height = c->currWindow->height;
     
-    s32 x = 0.37f*c->width;
-    s32 y = 0.25f*c->height;
+    s32 x = 0.37f*width;
+    s32 y = 0.25f*height;
     
-    s32 w = 0.26f*c->width;
-    s32 h = 0.5f*c->height;
+    s32 w = 0.26f*width;
+    s32 h = 0.5f*height;
     
     ls_uiRect(c, x, y, w, h, ls_uiLightenRGB(c->widgetColor, 0.25f), c->borderColor);
     
-    x = 0.39f*c->width;
-    y = 0.70f*c->height;
+    x = 0.39f*width;
+    y = 0.70f*height;
     
     ls_uiSelectFontByPixelHeight(c, 24);
     
@@ -114,19 +118,19 @@ b32 DrawPlayerSettings(UIContext *c)
     
     for(s32 i = 0; i < party_count; i++)
     {
-        ls_uiTextBox(c, &State.PartyName[i], x, y, 0.18f*c->width, boxHeight, 1);
+        ls_uiTextBox(c, &State.PartyName[i], x, y, 0.18f*width, boxHeight, 1);
         y -= boxHeight*1.2f;
     }
     
     if(party_count < MAX_PARTY_NUM)
     {
-        s32 addX = x + 0.09f*c->width;
+        s32 addX = x + 0.09f*width;
         usedInput |= ls_uiButton(c, &State.addPartyMember, addX, y, 1);
     }
     
     if(party_count > 0)
     {
-        s32 remX = x + 0.20f*c->width;
+        s32 remX = x + 0.20f*width;
         s32 remY = y + boxHeight*1.3f;
         usedInput |= ls_uiButton(c, &State.removePartyMember, remX, remY, 1);
     }
@@ -138,18 +142,21 @@ b32 DrawPlayerSettings(UIContext *c)
 
 b32 DrawInfoSettings(UIContext *c)
 {
-    s32 x = 0.15f*c->width;
-    s32 y = 0.20f*c->height;
+    s32 width = c->currWindow->width;
+    s32 height = c->currWindow->height;
+
+    s32 x = 0.15f*width;
+    s32 y = 0.20f*height;
     
-    s32 w = 0.70f*c->width;
-    s32 h = 0.60f*c->height;
+    s32 w = 0.70f*width;
+    s32 h = 0.60f*height;
     
     ls_uiRect(c, x, y, w, h, ls_uiLightenRGB(c->widgetColor, 0.25f), c->borderColor);
     
     ls_uiSelectFontByPixelHeight(c, 24);
     
-    x = 0.16f*c->width;
-    y = 0.77f*c->height;
+    x = 0.16f*width;
+    y = 0.77f*height;
     s32 boxHeight = c->currFont->pixelHeight*1.1f;
     
     ls_uiLabel(c, U"Created by Lorenzo Stramondo 2018 \u00A9", x, y, 1); 
@@ -182,7 +189,7 @@ b32 DrawInfoSettings(UIContext *c)
     ls_uiLabel(c, U"Down Arrow in Init Field Textboxes", x, y, 1); y -= boxHeight;
     ls_uiLabel(c, U"   Copy current init field down", x, y, 1);    y -= 2*boxHeight;
     
-    x = 0.53f*c->width;
+    x = 0.53f*width;
     y = shortcutStartY;
     
     ls_uiLabel(c, U"Shift + Down Arrow in Compendium Entry", x, y, 1); y -= boxHeight;
