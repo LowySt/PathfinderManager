@@ -1,3 +1,4 @@
+#define LS_EXTERNAL_CONSOLE
 #define LS_WINDOWS_IMPLEMENTATION
 #include "lsWindows.h"
 #undef LS_WINDOWS_IMPLEMENTATION
@@ -129,18 +130,19 @@ static Arena compTempArena;
 #endif
 
 b32 ProgramExitOnButton(UIContext *c, void *data) { SendMessageA(MainWin.Window, WM_DESTROY, 0, 0); return FALSE; }
-b32 CompendiumExitOnButton(UIContext *c, void *data){ ShowWindow(CompendiumWin.Window, SW_HIDE); return FALSE; }
 
 //TODO: Compendium does not answer keyboard input when MainWindow is minimized. Why???
 //      Do I have a fucked up keyboard state???
-b32 ProgramMinimizeOnButton(UIContext *c, void *data) { 
-    //NOTE: We have to send an LButtonUp, else our Input handling will be confused
-    //      and not register the un-pressing of the left button.
-    SendMessageA(MainWin.Window, WM_LBUTTONUP, 0, 0);
-    ShowWindow(MainWin.Window, SW_MINIMIZE);
-    return FALSE;
-}
+//NOTE: We have to send an LButtonUp, else our Input handling will be confused
+//      and not register the un-pressing of the left button.
+b32 ProgramMinimizeOnButton(UIContext *c, void *data) { SendMessageA(MainWin.Window, WM_LBUTTONUP, 0, 0); ShowWindow(MainWin.Window, SW_MINIMIZE); return FALSE; }
 
+//TODO: If we Maximize and Restore without other operations in between, the menu bar will then require an extra click to start dragging again!?
+b32 ProgramToggleMaxOnButton(UIContext *c, void *data) { static bool isMax = false; ShowWindow(MainWin.Window, isMax ? SW_NORMAL : SW_MAXIMIZE); isMax = !isMax; return FALSE; }
+
+b32 CompendiumExitOnButton(UIContext *c, void *data) { ShowWindow(CompendiumWin.Window, SW_HIDE); return FALSE; }
+b32 CompendiumMinimizeOnButton(UIContext *c, void *data) { SendMessageA(CompendiumWin.Window, WM_LBUTTONUP, 0, 0); ShowWindow(CompendiumWin.Window, SW_MINIMIZE); return FALSE; }
+b32 CompendiumToggleMaxOnButton(UIContext *c, void *data) { static bool isMax = false; ShowWindow(CompendiumWin.Window, isMax ? SW_NORMAL : SW_MAXIMIZE); isMax = !isMax; return FALSE; }
 b32 ProgramOpenCompendium(UIContext *c, void *data)
 {
     if(CompendiumWin.Window)
@@ -304,8 +306,9 @@ void CopyState(UIContext *c, ProgramState *FromState, ProgramState *ToState)
 UIMenu SetupMainWindowMenu(UIContext *c)
 {
     UIMenu WindowMenu      = {};
-    WindowMenu.closeWindow = ls_uiMenuButton(ProgramExitOnButton, closeBtnDataPremulti, closeBtnWidth, closeBtnHeight);
-    WindowMenu.minimize    = ls_uiMenuButton(ProgramMinimizeOnButton, minBtnDataPremulti, minBtnWidth, minBtnHeight);
+    WindowMenu.closeWindow = ls_uiMenuButton(c, ProgramExitOnButton, closeBtnDataPremulti, closeBtnWidth, closeBtnHeight);
+    WindowMenu.minimize    = ls_uiMenuButton(c, ProgramMinimizeOnButton, minBtnDataPremulti, minBtnWidth, minBtnHeight);
+    WindowMenu.maximize    = ls_uiMenuButton(c, ProgramToggleMaxOnButton, maxBtnDataPremulti, maxBtnWidth, maxBtnHeight);
     WindowMenu.itemWidth   = 100;
     
     ls_uiMenuAddSub(c, &WindowMenu, U"Style");
@@ -332,7 +335,9 @@ UIMenu SetupMainWindowMenu(UIContext *c)
 UIMenu SetupCompendiumWindowMenu(UIContext *c)
 {
     UIMenu CompendiumMenu = {};
-    CompendiumMenu.closeWindow  = ls_uiMenuButton(CompendiumExitOnButton, closeBtnData, closeBtnWidth, closeBtnHeight);
+    CompendiumMenu.closeWindow  = ls_uiMenuButton(c, CompendiumExitOnButton, closeBtnDataPremulti, closeBtnWidth, closeBtnHeight);
+    CompendiumMenu.minimize     = ls_uiMenuButton(c, CompendiumMinimizeOnButton, minBtnDataPremulti, minBtnWidth, minBtnHeight);
+    CompendiumMenu.maximize     = ls_uiMenuButton(c, CompendiumToggleMaxOnButton, maxBtnDataPremulti, maxBtnWidth, maxBtnHeight);
     CompendiumMenu.itemWidth    = 120;
     
     ls_uiMenuAddItem(c, &CompendiumMenu, U"Monster Table", CompendiumOpenMonsterTable, NULL);
@@ -360,17 +365,17 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Switch to global memory arena 
     //      for general allocations
     
-    globalArena     = ls_arenaCreate(MBytes(12));
-    fileArena       = ls_arenaCreate(MBytes(4));
-    stateArena      = ls_arenaCreate(MBytes(10));
-    saveArena       = ls_arenaCreate(MBytes(4));
-    renderArena     = ls_arenaCreate(KBytes(8));
+    globalArena     = ls_arenaCreate(MBytes(12), (char *)"global");
+    fileArena       = ls_arenaCreate(MBytes(4), (char *)"file");
+    stateArena      = ls_arenaCreate(MBytes(12), (char *)"state");
+    saveArena       = ls_arenaCreate(MBytes(4), (char *)"save");
+    renderArena     = ls_arenaCreate(KBytes(8), (char *)"render");
     
-    frameArena      = ls_arenaCreate(KBytes(8));
+    frameArena      = ls_arenaCreate(KBytes(8), (char *)"frame");
     
     //TODO: Make this much smaller. It can be reduced to at least 6 MBytes, probably smaller
-    compendiumArena = ls_arenaCreate(MBytes(16));
-    compTempArena   = ls_arenaCreate(KBytes(16));
+    compendiumArena = ls_arenaCreate(MBytes(16), (char *)"compendium");
+    compTempArena   = ls_arenaCreate(KBytes(16), (char *)"compendium temporary");
     
     ls_arenaUse(globalArena);
     //------------
