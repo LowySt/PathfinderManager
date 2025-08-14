@@ -77,8 +77,8 @@ static Arena frameArena;
 static Arena compendiumArena;
 static Arena compTempArena;
 
-#define LS_UI_OPENGL_BACKEND
-//#define LS_UI_SOFTWARE_BACKEND
+//#define LS_UI_OPENGL_BACKEND
+#define LS_UI_SOFTWARE_BACKEND
 #define LS_UI_IMPLEMENTATION
 #include "lsUI.h"
 #undef LS_UI_IMPLEMENTATION
@@ -642,6 +642,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             
             //NOTE: We close the theme selector
             if(KeyPress(keyMap::Escape) && State.themePicker.isShown) { State.themePicker.isShown = FALSE; }
+
+            //NOTE: We can toggle drawn debug info (render threads regions (which can also be used as alignment rulers)
+            // and display frame time
+            if(KeyPress(keyMap::K)) { showDebug = !showDebug; }
+            if(showDebug) { ls_uiDebugDrawInfo(uiContext); }
     
             // ----------------
             // Render Everything
@@ -657,39 +662,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 
         //NOTE: End MainWindow Frame
         ls_uiFrameEnd(uiContext);
-        
-        //TODO: use the new debug function in lsUI
-#if 0
-        //NOTETODO: just annoying non global user input bullshit.
-        if(uiContext->UserInput.Keyboard.currentState.keyMap::F12 == 1 && 
-           uiContext->UserInput.Keyboard.prevState.keyMap::F12 == 0) { showDebug = !showDebug; }
-        
-        if(showDebug)
-        {
-            //ls_uiGlyph(uiContext, 0, 3, UIRect {0, 0, (s32)uiContext->width, (s32)uiContext->height}, uiContext->scissor, &uiContext->currFont->glyph['M'], RGBg(0xFF));
-            
-            ls_uiFillRect(uiContext, 1248, 760, 20, 20, UIRect {0, (s32)uiContext->width, 0, (s32)uiContext->height},
-                          uiContext->scissor, uiContext->backgroundColor);
-            ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
-            ls_uiGlyphString(uiContext, uiContext->currFont, 16, 0.95*uiContext->width, 0.95*uiContext->height,
-                             UIRect {(s32)uiContext->width/2, 0, (s32)uiContext->width, (s32)uiContext->height},
-                             uiContext->scissor, frameTimeString, RGBg(0xEE));
-            
-            ls_uiFillRect(uiContext, windowWidth/2, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, RGB(0xFF, 0xFF, 0));
-            ls_uiFillRect(uiContext, 0, windowHeight/2, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, RGB(0xFF, 0xFF, 0));
-            
-            ls_uiFillRect(uiContext, 260, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, RGB(0xFF, 0, 0xFF));
-            ls_uiFillRect(uiContext, 1040, 0, 2, windowHeight, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, RGB(0xFF, 0, 0xFF));
-            ls_uiFillRect(uiContext, 0, 218, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, RGB(0xFF, 0, 0xFF));
-            ls_uiFillRect(uiContext, 0, 696, windowWidth, 2, UIRect {0,0,windowWidth,windowHeight},
-                          uiContext->scissor, RGB(0xFF, 0, 0xFF));
-        }
-#endif
         
         //-------------------------------
         //NOTE: Begin Compendium Frame
@@ -729,6 +701,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             //NOTE: We clear the talentIndex so that we can exit out of a talent Page
             if(KeyPress(keyMap::Escape) && (cachedPage.talentIndex != -1))
             { cachedPage.talentIndex = -1; }
+
+            //NOTE: We can toggle drawn debug info (render threads regions (which can also be used as alignment rulers)
+            // and display frame time
+            if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
+            if(showDebug) { ls_uiDebugDrawInfo(uiContext); }
             
             // ----------------
             // Render Everything
@@ -740,37 +717,6 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             ls_arenaClear(renderArena);
             //
             // ----------------
-            
-#if 0
-            if(uiContext->UserInput.Keyboard.currentState.keyMap::F12 == 1 && 
-               uiContext->UserInput.Keyboard.prevState.keyMap::F12 == 0) { showDebug = !showDebug; }
-            
-            if(showDebug)
-            {
-                ls_uiFillRect(uiContext, 762, 620, 20, 20, UIRect {0, (s32)uiContext->width, 0, (s32)uiContext->height},
-                              uiContext->scissor, uiContext->backgroundColor);
-                ls_utf32FromInt_t(&frameTimeString, uiContext->dt);
-                ls_uiGlyphString(uiContext, uiContext->currFont, 16, 0.95*uiContext->width, 0.95*uiContext->height,
-                                 UIRect {(s32)uiContext->width/2, 0, (s32)uiContext->width, (s32)uiContext->height},
-                                 uiContext->scissor, frameTimeString, RGBg(0xEE));
-                
-                ls_uiFillRect(uiContext, compendiumWidth/2, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              uiContext->scissor, RGB(0xFF, 0xFF, 0));
-                
-                ls_uiFillRect(uiContext, 0, compendiumHeight/2, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              uiContext->scissor, RGB(0xFF, 0xFF, 0));
-                
-                ls_uiFillRect(uiContext, compendiumWidth/4, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              uiContext->scissor, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(uiContext, 3*compendiumWidth/4, 0, 2, compendiumHeight, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              uiContext->scissor, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(uiContext, 0, compendiumHeight/3, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              uiContext->scissor, RGB(0xFF, 0, 0xFF));
-                ls_uiFillRect(uiContext, 0, 2*compendiumHeight/3, compendiumWidth, 2, UIRect {0,0,compendiumWidth,compendiumHeight},
-                              uiContext->scissor, RGB(0xFF, 0, 0xFF));
-            }
-#endif
-            
         }
         
         //NOTE: End Compendium Frame
