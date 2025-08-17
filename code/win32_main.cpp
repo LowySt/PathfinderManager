@@ -390,29 +390,29 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int windowWidth = 1280;
     const int windowHeight = 860;
-    UIContext *uiContext = ls_uiInitDefaultContext(globalArena, frameArena, stateArena);
-    MainWin = ls_uiCreateWindow(uiContext, BackBuffer, windowWidth, windowHeight, "PCMan", true);
-    ls_uiAddOnDestroyCallback(uiContext, SaveState);
-    ls_uiLoadPackedFontAtlas(uiContext, (char *)"PackedFontAtlas.bmp");
+    UIContext *ui = ls_uiInitDefaultContext(globalArena, frameArena, stateArena);
+    MainWin = ls_uiCreateWindow(ui, BackBuffer, windowWidth, windowHeight, "PCMan", true);
+    ls_uiAddOnDestroyCallback(ui, SaveState);
+    ls_uiLoadPackedFontAtlas(ui, (char *)"PackedFontAtlas.bmp");
 
     //TODO: Probably want to make something a little bit more sophisticated... or we just pass the actual
     // UIWindow to the init functions? @CopyPasted
-    uiContext->currWindow = &MainWin;
+    ui->currWindow = &MainWin;
 
-    UIMenu WindowMenu = SetupMainWindowMenu(uiContext);
+    UIMenu WindowMenu = SetupMainWindowMenu(ui);
     
     //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int compendiumWidth  = 800;
     const int compendiumHeight = 720;
-    CompendiumWin = ls_uiCreateWindow(uiContext, CompendiumBackBuffer, compendiumWidth, compendiumHeight, "Compendium", false);
+    CompendiumWin = ls_uiCreateWindow(ui, CompendiumBackBuffer, compendiumWidth, compendiumHeight, "Compendium", false);
     
     //TODO: Probably want to make something a little bit more sophisticated... or we just pass the actual
     // UIWindow to the init functions? @CopyPasted
-    uiContext->currWindow = &CompendiumWin;
+    ui->currWindow = &CompendiumWin;
     
-    LoadCompendium(uiContext, ls_strConstant("Compendium"));
+    LoadCompendium(ui, ls_strConstant("Compendium"));
 
-    UIMenu CompendiumMenu = SetupCompendiumWindowMenu(uiContext);
+    UIMenu CompendiumMenu = SetupCompendiumWindowMenu(ui);
     
     //TODO: Abstract away this Windows-Specific thing...
     SYSTEMTIME endT, beginT;
@@ -422,11 +422,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     //TODO: Probably want to make something a little bit more sophisticated... or we just pass the actual
     // UIWindow to the init functions? @CopyPasted
-    uiContext->currWindow = &MainWin;
+    ui->currWindow = &MainWin;
     
     //NOTE: Initialize State and Undo States
-    State.themePicker.wheel                = ls_uiColorPickerInit(uiContext, &State.themePicker);
-    State.themePicker.wheel.pickedColor    = uiContext->backgroundColor;
+    State.themePicker.wheel                = ls_uiColorPickerInit(ui, &State.themePicker);
+    State.themePicker.wheel.pickedColor    = ui->backgroundColor;
     
     State.backgroundColor = RGBg(0x38);
     State.borderColor     = RGBg(0x22);
@@ -439,15 +439,15 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     State.invTextColor    = RGBg(0x33);
     
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
-    SetInitTab(uiContext, &State);
+    SetInitTab(ui, &State);
     
     //NOTE: Initialize the mainCachedPage to display the mob page inside init.
     initCachedPage(&mainCachedPage);
     InitCachedTalentEntry(&mainCachedTalent);
     mainCachedPage.talentPage = &mainCachedTalent;
     
-    SetMonsterTable(uiContext);
-    SetNPCTable(uiContext);
+    SetMonsterTable(ui);
+    SetNPCTable(ui);
     
     //NOTE: Single block allocation for all Init Pages.
     InitPage *UndoInitPages = (InitPage *)ls_alloc(sizeof(InitPage)*MAX_UNDO_STATES);
@@ -458,20 +458,20 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     {
         UndoStates[i].Init = UndoInitPages + i;
         UndoStates[i].playerSettingsMenuItem = State.playerSettingsMenuItem;
-        SetInitTab(uiContext, UndoStates + i);
+        SetInitTab(ui, UndoStates + i);
     }
     
     //NOTE: Set the Party Settings TextBoxes and Buttons
     for(s32 i = 0; i < MAX_PARTY_NUM; i++)
-    { ls_uiTextBoxInit(uiContext, State.PartyName + i, 16); }
-    ls_uiTextBoxSet(uiContext, &State.PartyName[0], ls_utf32Constant(U"Adventurer 1"));
-    ls_uiTextBoxSet(uiContext, &State.PartyName[1], ls_utf32Constant(U"Adventurer 2"));
-    ls_uiTextBoxSet(uiContext, &State.PartyName[2], ls_utf32Constant(U"Adventurer 3"));
+    { ls_uiTextBoxInit(ui, State.PartyName + i, 16); }
+    ls_uiTextBoxSet(ui, &State.PartyName[0], ls_utf32Constant(U"Adventurer 1"));
+    ls_uiTextBoxSet(ui, &State.PartyName[1], ls_utf32Constant(U"Adventurer 2"));
+    ls_uiTextBoxSet(ui, &State.PartyName[2], ls_utf32Constant(U"Adventurer 3"));
     for(s32 i = party_count; i < MAX_PARTY_NUM; i++)
-    { ls_uiTextBoxSet(uiContext, State.PartyName + i, ls_utf32Constant(U"XXXXX")); }
+    { ls_uiTextBoxSet(ui, State.PartyName + i, ls_utf32Constant(U"XXXXX")); }
     
-    State.addPartyMember    = ls_uiButtonInit(uiContext, UIBUTTON_CLASSIC, U"+", OnClickAddPlayerToState);
-    State.removePartyMember = ls_uiButtonInit(uiContext, UIBUTTON_CLASSIC, U"-", OnClickRemovePlayerFromState);
+    State.addPartyMember    = ls_uiButtonInit(ui, UIBUTTON_CLASSIC, U"+", OnClickAddPlayerToState);
+    State.removePartyMember = ls_uiButtonInit(ui, UIBUTTON_CLASSIC, U"-", OnClickRemovePlayerFromState);
     
     State.isInitialized = TRUE;
     
@@ -484,7 +484,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     // The way LoadState allocates memory for textboxes is actually wrong, because it's not asking the
     // uicontext (which holds the arena for the widget's storage) for the memory, it's poking into the
     // widget's internal containers and allocating there directly. It's a hack!
-    if(LoadState(uiContext) == FALSE)
+    if(LoadState(ui) == FALSE)
     {
         //NOTE: No Save file has been found.
         //      As of right now this is irrelevant, as the program can always start in a valid state.
@@ -504,10 +504,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     while(Running)
     {
         //NOTE: Start the Main Thread frame
-        u32 frameLockMain       = 16;
-        ls_uiStartFrameTimer(uiContext);
+        u32 frameLockMain = 16;
+        bool noUpdatesMain = false;
+        bool noUpdatesComp = false;
+        ls_uiStartFrameTimer(ui);
         
-        ls_uiFrameBegin(uiContext, &MainWin);
+        ls_uiFrameBegin(ui, &MainWin);
         //NOTETODO: annoying non-global user input
         Input *UserInput = &MainWin.UserInput;
 
@@ -518,7 +520,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         if(userInputConsumed == TRUE && !suppressingUndoRecord)
         {
             matchingUndoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
-            CopyState(uiContext, &State, UndoStates + matchingUndoIdx);
+            CopyState(ui, &State, UndoStates + matchingUndoIdx);
             
             if(distanceFromOld < (MAX_UNDO_STATES-1)) { distanceFromOld += 1; }
             
@@ -528,26 +530,26 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
         
         
-        ls_uiSelectFontByPixelHeight(uiContext, 16);
+        ls_uiSelectFontByPixelHeight(ui, 16);
 
-        userInputConsumed = ls_uiMenu(uiContext, &WindowMenu, -1, MainWin.height-20, MainWin.width+1, 21);
-        userInputConsumed |= DrawThemePicker(uiContext);
+        userInputConsumed = ls_uiMenu(ui, &WindowMenu, -1, MainWin.height-20, MainWin.width+1, 21);
+        userInputConsumed |= DrawThemePicker(ui);
         
         //NOTE: Player Settings
         if(State.arePlayerSettingsOpen)
         {
-            userInputConsumed |= DrawPlayerSettings(uiContext);
+            userInputConsumed |= DrawPlayerSettings(ui);
             if(KeyPress(keyMap::Escape)) { State.arePlayerSettingsOpen = FALSE; }
         }
         else if(State.areInfoSettingsOpen)
         {
-            userInputConsumed |= DrawInfoSettings(uiContext);
+            userInputConsumed |= DrawInfoSettings(ui);
             if(KeyPress(keyMap::Escape)) { State.areInfoSettingsOpen = FALSE; }
         }
         else
         {
             //NOTE: The actual Init Tab
-            userInputConsumed |= DrawInitTab(uiContext);
+            userInputConsumed |= DrawInitTab(ui);
         }
         
         //NOTE: externalInputReceived is used to update the main window when other windows (like the Compendium)
@@ -562,11 +564,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             {
                 for(s32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
                 {
-                    ls_stackClear(&uiContext->renderGroups[i].RenderCommands[zLayer]);
+                    ls_stackClear(&ui->renderGroups[i].RenderCommands[zLayer]);
                 }
             }
             
-            frameLockMain = 32;
+            noUpdatesMain = true;
         }
         else
         {
@@ -591,7 +593,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                     u32 undoIdx = matchingUndoIdx - 1;
                     if(matchingUndoIdx == 0) { undoIdx = MAX_UNDO_STATES-1; }
                     
-                    CopyState(uiContext, UndoStates + undoIdx, &State);
+                    CopyState(ui, UndoStates + undoIdx, &State);
                     matchingUndoIdx  = undoIdx;
                     distanceFromOld -= 1;
                     distanceFromNow += 1;
@@ -615,7 +617,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
                 if(distanceFromNow > 0)
                 {
                     u32 redoIdx = (matchingUndoIdx + 1) % MAX_UNDO_STATES;
-                    CopyState(uiContext, UndoStates + redoIdx, &State);
+                    CopyState(ui, UndoStates + redoIdx, &State);
                     
                     matchingUndoIdx  = redoIdx;
                     distanceFromOld += 1;
@@ -645,14 +647,14 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 
             //NOTE: We can toggle drawn debug info (render threads regions (which can also be used as alignment rulers)
             // and display frame time
-            if(KeyPress(keyMap::K)) { showDebug = !showDebug; }
-            if(showDebug) { ls_uiDebugDrawInfo(uiContext); }
+            if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
+            if(showDebug) { ls_uiDebugDrawInfo(ui); }
     
             // ----------------
             // Render Everything
             ls_arenaUse(renderArena);
             
-            ls_uiRender(uiContext);
+            ls_uiRender(ui);
             
             ls_arenaUse(globalArena);
             ls_arenaClear(renderArena);
@@ -661,11 +663,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
 
         //NOTE: End MainWindow Frame
-        ls_uiFrameEnd(uiContext);
+        ls_uiFrameEnd(ui);
         
         //-------------------------------
         //NOTE: Begin Compendium Frame
-        ls_uiFrameBegin(uiContext, &CompendiumWin);
+        ls_uiFrameBegin(ui, &CompendiumWin);
         //NOTETODO: annoying non-global user input
         UserInput = &CompendiumWin.UserInput;
 
@@ -673,9 +675,9 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //TODO: Skip drawing the compendium if the window is closed
         //      But also update the window on first entry. For some reason, putting the entire
         //      Block between the Child Frame inside an if doesn't paint the window on first open.
-        b32 compendiumInput = ls_uiMenu(uiContext, &CompendiumMenu, -1, CompendiumWin.height-20, CompendiumWin.width+1, 21);
+        b32 compendiumInput = ls_uiMenu(ui, &CompendiumMenu, -1, CompendiumWin.height-20, CompendiumWin.width+1, 21);
         
-        compendiumInput |= DrawCompendium(uiContext);
+        compendiumInput |= DrawCompendium(ui);
         
         if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
         
@@ -685,9 +687,11 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             {
                 for(s32 zLayer = 0; zLayer < UI_Z_LAYERS; zLayer++)
                 {
-                    ls_stackClear(&uiContext->renderGroups[i].RenderCommands[zLayer]);
+                    ls_stackClear(&ui->renderGroups[i].RenderCommands[zLayer]);
                 }
             }
+            
+            noUpdatesComp = true;
         }
         else
         {
@@ -705,13 +709,13 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             //NOTE: We can toggle drawn debug info (render threads regions (which can also be used as alignment rulers)
             // and display frame time
             if(KeyPress(keyMap::F12)) { showDebug = !showDebug; }
-            if(showDebug) { ls_uiDebugDrawInfo(uiContext); }
+            if(showDebug) { ls_uiDebugDrawInfo(ui); }
             
             // ----------------
             // Render Everything
             ls_arenaUse(renderArena);
             
-            ls_uiRender(uiContext);
+            ls_uiRender(ui);
             
             ls_arenaUse(globalArena);
             ls_arenaClear(renderArena);
@@ -721,7 +725,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         //NOTE: End Compendium Frame
         //-------------------------------
-        ls_uiFrameEnd(uiContext);
+        ls_uiFrameEnd(ui);
         
         GetSystemTime(&endT);
         State.timePassed += (endT.wSecond - beginT.wSecond);
@@ -733,7 +737,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         beginT = endT;
         
         //NOTE: End the Main Thread frame
-        ls_uiEndFrameTimer(uiContext, frameLockMain);
+        if(noUpdatesMain && noUpdatesComp) { frameLockMain = 32; }
+        ls_uiEndFrameTimer(ui, frameLockMain);
     }
     
     return 0;
