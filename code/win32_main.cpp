@@ -143,12 +143,16 @@ b32 ProgramToggleMaxOnButton(UIContext *c, void *data) { static bool isMax = fal
 b32 CompendiumExitOnButton(UIContext *c, void *data) { ShowWindow(CompendiumWin.Window, SW_HIDE); return FALSE; }
 b32 CompendiumMinimizeOnButton(UIContext *c, void *data) { SendMessageA(CompendiumWin.Window, WM_LBUTTONUP, 0, 0); ShowWindow(CompendiumWin.Window, SW_MINIMIZE); return FALSE; }
 b32 CompendiumToggleMaxOnButton(UIContext *c, void *data) { static bool isMax = false; ShowWindow(CompendiumWin.Window, isMax ? SW_NORMAL : SW_MAXIMIZE); isMax = !isMax; return FALSE; }
+
+//TODO: I want to integrate a non-resetting toggle to force an update for a specific UIWindow.
+static b32 compendiumExternalInput = FALSE;
 b32 ProgramOpenCompendium(UIContext *c, void *data)
 {
     if(CompendiumWin.Window)
     {
         ShowWindow(CompendiumWin.Window, SW_SHOW);
         c->renderFunc(c);
+        compendiumExternalInput = TRUE;
         return FALSE;
     }
     
@@ -493,13 +497,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     
     if(State.inBattle) { State.playerSettingsMenuItem->isVisible = FALSE; }
     
-    RegionTimer frameTime     = {};
-    
-    b32 Running               = TRUE;
-    utf32 frameTimeString     = ls_utf32Alloc(8);
-    b32 showDebug             = FALSE;
-    b32 userInputConsumed     = FALSE;
-    b32 externalInputReceived = FALSE;
+    RegionTimer frameTime       = {};
+    b32 Running                 = TRUE;
+    utf32 frameTimeString       = ls_utf32Alloc(8);
+    b32 showDebug               = FALSE;
+    b32 userInputConsumed       = FALSE;
+    b32 externalInputReceived   = TRUE;
     
     while(Running)
     {
@@ -549,6 +552,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         else
         {
             //NOTE: The actual Init Tab
+            //TODO: Why is this not being used for the MainWindow!?
             userInputConsumed |= DrawInitTab(ui);
         }
         
@@ -681,7 +685,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
         
-        if(!CompendiumWin.hasReceivedInput && !CompendiumWin.isDragging)
+        if(!CompendiumWin.hasReceivedInput && !CompendiumWin.isDragging && !compendiumExternalInput)
         {
             for(u32 i = 0; i < LS_UI_RENDER_GROUP_COUNT; i++)
             {
@@ -695,6 +699,8 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         }
         else
         {
+            compendiumExternalInput = FALSE;
+
             //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
             if(LeftClick && !CompendiumWin.focusWasSetThisFrame) { CompendiumWin.currentFocus = 0; }
             
