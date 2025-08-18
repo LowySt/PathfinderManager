@@ -19,8 +19,8 @@ SET DBGONLY=Dbghelp.lib OneCoreUAP.lib
 
 SET CODE_HOME=%cd%
 
-SET TOOLDIR=F:\ProgrammingProjects\IncludeDir\Tools
-SET PLATDIR=F:\ProgrammingProjects\IncludeDir\Platform
+SET TOOLDIR=%INCLUDEDIR%\Tools
+SET PLATDIR=%INCLUDEDIR%\Platform
 
 SET OPTS=/utf-8 -favor:ATOM %DEPLOY% -I %TOOLDIR% -I %PLATDIR% /MT /GR- -FC -EHa- -nologo -diagnostics:column -Zi /std:c++latest
 SET LIBS=kernel32.lib user32.lib gdi32.lib Msimg32.lib winmm.lib opengl32.lib %DBGONLY%
