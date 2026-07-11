@@ -10,6 +10,7 @@
 *.otf
 *.ttf
 *.swp
+tags
 Compendium_old
 back*
 code/asset_main.cpp
