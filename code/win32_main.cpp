@@ -695,7 +695,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         
         if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
         
-        if(!CompendiumWin.hasReceivedInput && !CompendiumWin.isDragging && !compendiumExternalInput)
+        if(!ui->mustRender && !CompendiumWin.hasReceivedInput && !CompendiumWin.isDragging && !compendiumExternalInput)
         {
             for(u32 i = 0; i < LS_UI_RENDER_GROUP_COUNT; i++)
             {
