@@ -118,7 +118,7 @@ b32 DrawPlayerSettings(UIContext *c)
     
     for(s32 i = 0; i < party_count; i++)
     {
-        ls_uiTextBox(c, &State.PartyName[i], x, y, 0.18f*width, boxHeight, 1);
+        ls_uiTextBox(c, &State.PartyName[i], x, y, (s32)0.18f*width, boxHeight, 1);
         y -= boxHeight*1.2f;
     }
     

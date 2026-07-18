@@ -1863,7 +1863,7 @@ void InitFieldInit(UIContext *c, InitField *f, s32 *currID, const char32_t *name
     *currID += 1;
 }
 
-void SetInitTab(UIContext *c, ProgramState *PState)
+void SetInitTab(UIContext *c, UIBitmap *statusUIBmp, UIBitmap statusActiveRingBmp, ProgramState *PState)
 {
     InitPage *Page = PState->Init;
     
@@ -1938,10 +1938,12 @@ void SetInitTab(UIContext *c, ProgramState *PState)
         {
             s64 mixedIndex = ((s64)statusIdx << 32) | i;
             f->status[statusIdx].type = StatusType(statusIdx);
-            f->status[statusIdx].check = ls_uiCheckInit(c, UICHECK_BMP, statusBMPData[statusIdx],
-                                                        statusIconWidth, statusIconHeight,
-                                                        (u8 *)statusActiveRingData, statusActiveWidth,
-                                                        statusActiveHeight, onStatusChange, (void *)mixedIndex);
+
+            f->status[statusIdx].check = ls_uiCheckInit(c, UICHECK_BMP, statusUIBmp[statusIdx], statusActiveRingBmp, onStatusChange, (void *)mixedIndex);
+            //f->status[statusIdx].check = ls_uiCheckInit(c, UICHECK_BMP, statusBMPData[statusIdx],
+            //                                            statusIconWidth, statusIconHeight,
+            //                                            (u8 *)statusActiveRingData, statusActiveWidth,
+            //                                            statusActiveHeight, onStatusChange, (void *)mixedIndex);
         }
         
         //NOTE: Compendium And Archetypes
@@ -2421,24 +2423,37 @@ b32 DrawPranaStyle(UIContext *c)
     b32 inputUse = FALSE;
     
     ls_uiSelectFontByPixelHeight(c, 18);
-    
+
+    f32 winHeight = c->currWindow->height;
     s32 yPos = 780;
     s32 alliesListY = 678 - (party_count*20 + 8);
     //NOTE: Z Layer 1 Input
     {
         if(!State.inBattle)
         {
-            inputUse |= ls_uiListBox(c, &Page->EncounterSel,  495, yPos, 120, 20, 2);
-            inputUse |= ls_uiTextBox(c, &Page->EncounterName, 644, yPos, 120, 20);
-            
+            inputUse |= ls_uiListBox(c, &Page->EncounterSel, UISclPos(0.3867, 0.9069, 120, 20), 2);
+            inputUse |= ls_uiTextBox(c, &Page->EncounterName, UISclPos(0.5031, 0.9069, 120, 20));
+
+            /*
             inputUse |= ls_uiButton(c, &Page->SaveEnc, 617, yPos+22);
             inputUse |= ls_uiButton(c, &Page->RemoveEnc, 455, yPos);
-            
+            */
+
+            inputUse |= ls_uiButton(c, &Page->SaveEnc, UISclPos(0.4820, 0.9069+0.0256, 0, 0));
+            inputUse |= ls_uiButton(c, &Page->RemoveEnc, UISclPos(0.3554, 0.9069, 0, 0));
+
+            /*
             inputUse |= ls_uiListBox(c, &Page->Mobs,     50, yPos-65, 100, 20, 1);
             inputUse |= ls_uiListBox(c, &Page->Allies, 1094, alliesListY, 100, 20, 1);
-            
+
             inputUse |= ls_uiButton(c, &Page->Roll, 536, yPos-40);
-            
+            */
+
+            inputUse |= ls_uiListBox(c, &Page->Mobs, UISclPos(0.0390, 0.9069-0.0755, 100, 20), 1);
+            inputUse |= ls_uiListBox(c, &Page->Allies, UISclPos(0.8546, alliesListY/winHeight, 100, 20), 1);
+
+            inputUse |= ls_uiButton(c, &Page->Roll, UISclPos(0.4187, 0.9069-0.0465, 0, 0));
+
             if(Page->isAdding) { 
                 Color origBkg = c->widgetColor;
                 c->widgetColor = ls_uiDarkenRGB(c->widgetColor, 0.2);

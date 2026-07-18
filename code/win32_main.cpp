@@ -77,10 +77,10 @@ static Arena frameArena;
 static Arena compendiumArena;
 static Arena compTempArena;
 
-//#define LS_UI_OPENGL_BACKEND
-#define LS_UI_SOFTWARE_BACKEND
+#define LS_UI_OPENGL_BACKEND
+//#define LS_UI_SOFTWARE_BACKEND
 #define LS_UI_IMPLEMENTATION
-#include "lsUI.h"
+#include "lsUI/lsUI.h"
 #undef LS_UI_IMPLEMENTATION
 
 #include "Init.h"
@@ -392,7 +392,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 #endif
     
     //TODO: Here we are passing the globalArena and the frameArena into the context.
-    const int windowWidth = 1280;
+    const int windowWidth  = 1280;
     const int windowHeight = 860;
     UIContext *ui = ls_uiInitDefaultContext(globalArena, frameArena, stateArena);
     MainWin = ls_uiCreateWindow(ui, BackBuffer, windowWidth, windowHeight, "PCMan", true);
@@ -431,7 +431,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //NOTE: Initialize State and Undo States
     State.themePicker.wheel                = ls_uiColorPickerInit(ui, &State.themePicker);
     State.themePicker.wheel.pickedColor    = ui->backgroundColor;
-    
+
     State.backgroundColor = RGBg(0x38);
     State.borderColor     = RGBg(0x22);
     State.menuBarColor    = RGBg(0x20);
@@ -443,7 +443,18 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     State.invTextColor    = RGBg(0x33);
     
     State.Init = (InitPage *)ls_alloc(sizeof(InitPage));
-    SetInitTab(ui, &State);
+    
+    // ---------------------------
+    //TODO: Make this not stupid
+    UIBitmap statusUIBmp[STATUS_COUNT] = {};
+    for(u32 statusIdx = 0; statusIdx < STATUS_COUNT; statusIdx++)
+    {
+        statusUIBmp[statusIdx] = ls_uiBitmapFromRGBAPixelData(ui, statusIconWidth, statusIconHeight, statusBMPData[statusIdx]);
+    }
+    UIBitmap statusActiveRingBmp = ls_uiBitmapFromRGBAPixelData(ui, statusActiveWidth, statusActiveHeight, (u8 *)statusActiveRingData);
+    // ---------------------------
+
+    SetInitTab(ui, statusUIBmp, statusActiveRingBmp, &State);
     
     //NOTE: Initialize the mainCachedPage to display the mob page inside init.
     initCachedPage(&mainCachedPage);
@@ -462,7 +473,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     {
         UndoStates[i].Init = UndoInitPages + i;
         UndoStates[i].playerSettingsMenuItem = State.playerSettingsMenuItem;
-        SetInitTab(ui, UndoStates + i);
+        SetInitTab(ui, statusUIBmp, statusActiveRingBmp, UndoStates + i);
     }
     
     //NOTE: Set the Party Settings TextBoxes and Buttons
@@ -531,36 +542,12 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
             //      and no other REDOs can be performed
             distanceFromNow = 0;
         }
-        
-        
-        ls_uiSelectFontByPixelHeight(ui, 16);
 
-        userInputConsumed = ls_uiMenu(ui, &WindowMenu, -1, MainWin.height-20, MainWin.width+1, 21);
-        userInputConsumed |= DrawThemePicker(ui);
-        
-        //NOTE: Player Settings
-        if(State.arePlayerSettingsOpen)
-        {
-            userInputConsumed |= DrawPlayerSettings(ui);
-            if(KeyPress(keyMap::Escape)) { State.arePlayerSettingsOpen = FALSE; }
-        }
-        else if(State.areInfoSettingsOpen)
-        {
-            userInputConsumed |= DrawInfoSettings(ui);
-            if(KeyPress(keyMap::Escape)) { State.areInfoSettingsOpen = FALSE; }
-        }
-        else
-        {
-            //NOTE: The actual Init Tab
-            //TODO: Why is this not being used for the MainWindow!?
-            userInputConsumed |= DrawInitTab(ui);
-        }
-        
         //NOTE: externalInputReceived is used to update the main window when other windows (like the Compendium)
         //      require it.
         //
         //      isAddingFailedSet is used by the Init Page to update a fader animation, which needs to keep going.
-        if(!MainWin.hasReceivedInput && !MainWin.isDragging && !externalInputReceived && !isAddingFailedSet)
+        if(!ui->mustRender && !MainWin.hasReceivedInput && !MainWin.isDragging && !externalInputReceived && !isAddingFailedSet)
         {
             externalInputReceived = FALSE;
             
@@ -577,6 +564,29 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         else
         {
             externalInputReceived = FALSE;
+        
+            ls_uiSelectFontByPixelHeight(ui, 16);
+
+            userInputConsumed = ls_uiMenu(ui, &WindowMenu, -1, MainWin.height-20, MainWin.width+1, 21);
+            userInputConsumed |= DrawThemePicker(ui);
+            
+            //NOTE: Player Settings
+            if(State.arePlayerSettingsOpen)
+            {
+                userInputConsumed |= DrawPlayerSettings(ui);
+                if(KeyPress(keyMap::Escape)) { State.arePlayerSettingsOpen = FALSE; }
+            }
+            else if(State.areInfoSettingsOpen)
+            {
+                userInputConsumed |= DrawInfoSettings(ui);
+                if(KeyPress(keyMap::Escape)) { State.areInfoSettingsOpen = FALSE; }
+            }
+            else
+            {
+                //NOTE: The actual Init Tab
+                //TODO: Why is this not being used for the MainWindow!?
+                userInputConsumed |= DrawInitTab(ui);
+            }
 
             //TODO: If a page was open in initiative, keep it open after the undo/redo.
             //      Although that only makes sense in specific cases.

@@ -21,7 +21,7 @@ SET DBGONLY=Dbghelp.lib OneCoreUAP.lib
 
 SET CODE_HOME=%cd%
 
-SET INCLUDEDIR=F:\ProgrammingProjects\IncludeDir
+SET INCLUDEDIR=C:\Users\Lorenzo\Documents\Programming\Projects\IncludeDir
 SET TOOLDIR=%INCLUDEDIR%\Tools
 SET PLATDIR=%INCLUDEDIR%\Platform
 
