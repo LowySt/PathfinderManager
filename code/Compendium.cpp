@@ -4247,6 +4247,74 @@ s32 DrawPage(UIContext *c, CachedPageEntry *page, s32 baseX, s32 baseY, s32 widt
     return baseR.startY;
 }
 
+s32 DrawPage(UIContext *c, CachedPageEntry *page, f32 fX, f32 fY, s32 width, f32 fMinY)
+{
+    s32 baseX = fX*c->currWindow->width;
+    s32 baseY = fY*c->currWindow->height;
+    s32 minY  = fMinY*c->currWindow->height;
+    return DrawPage(c, page, baseX, baseY, width, minY);
+}
+
+void DrawNPCEntityEntry(UIContext *c, UIScrollableRegion scroll, NPCPageEntry entry, s32 npcViewIndex, f32 *origX, f32 *origY, s32 width, s32 entryHeight, Color bkgColor)
+{
+    Input *UserInput = &c->currWindow->UserInput;
+    Codex *codex     = &compendium.codex;
+
+    Color hoverColor = bkgColor;
+
+    f32 baseX = *origX;
+    f32 baseY = *origY;
+    f32 xPad  = 0.005;
+    f32 yPad  = 0.005556;
+    f32 yDelta = (f32)scroll.deltaY / (f32)c->currWindow->height;
+    const s32 gs_width = 80;
+    const s32 types_width = 180;
+    const s32 subtypes_width = 188;
+
+    //TODO: Maybe make a widget that handles something like this... I'm not sure...
+    s32 rectXBegin = (baseX*c->currWindow->width) - 4;
+    s32 rectYBegin = (baseY*c->currWindow->height) - 4;
+    if(MouseInRect(rectXBegin, rectYBegin, width, entryHeight-2)) //TODONOTE: I don't like it...
+    {
+        hoverColor = RGBg(0x66); 
+        if(LeftClick) {
+            compendium.isViewingPage     = TRUE;
+            compendium.isViewingNPCTable = FALSE;
+            compendium.pageIndex         = npcViewIndex + NPC_PAGE_INDEX_OFFSET;
+        }
+    }
+
+    //NOTE: Matriarca delle Scimmie Cappuccine Corallo is too long...
+    //      Adding a scissor cuts it... but I don't like that solution a lot...
+    //      What if I want automatic '...' at the end of a label??
+    ls_uiRect(c, UISclPos(baseX-xPad, baseY+yDelta-yPad, width, entryHeight), hoverColor, c->borderColor);
+
+    c->scissor = UIRect { rectXBegin, 0, width-2, s32(c->currWindow->height) };
+    ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), UISclPos(baseX, baseY+yDelta, 0,0), c->textColor, 1);
+    c->scissor = UIRect { 0, 0, s32(c->currWindow->width), s32(c->currWindow->height) };
+    baseX += 0.37375;
+
+    ls_uiRect(c, UISclPos(baseX-xPad, baseY+yDelta-yPad, gs_width, entryHeight), bkgColor, c->borderColor);
+    ls_uiLabel(c, CompendiumGetGSEntryFromSet(entry.gs), UISclPos(baseX, baseY+yDelta,0,0), c->textColor, 1);
+    baseX += 0.09875;
+    
+    ls_uiRect(c, UISclPos(baseX-xPad, baseY+yDelta-yPad, types_width, entryHeight), bkgColor, c->borderColor);
+    ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), UISclPos(baseX, baseY+yDelta,0,0), c->textColor, 1);
+    baseX += 0.22375;
+
+    //TODO: Show all subtypes. Right now we only grab one.
+    //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
+    ls_uiRect(c, UISclPos(baseX-xPad, baseY+yDelta-yPad, subtypes_width, entryHeight), bkgColor, c->borderColor);
+    ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), UISclPos(baseX, baseY+yDelta,0,0), c->textColor, 1);
+    baseX += 0.23375;
+    
+    baseY -= (f32)(entryHeight-1)/c->currWindow->height;
+    baseX = 0.025;
+
+    *origX = baseX;
+    *origY = baseY;
+}
+
 void DrawNPCTable(UIContext *c)
 {
     Input *UserInput = &c->currWindow->UserInput;
@@ -4254,24 +4322,38 @@ void DrawNPCTable(UIContext *c)
     
     Color bkgColor = RGBg(0x40);
     
+    //const s32 width = 800;
+    //const s32 height = 720;
     s32 baseX = 20;
     s32 baseY = 630;
-    
-    ls_uiTextBox(c, &compendium.searchBarNameNPCs, baseX, baseY + 40, 200, 20);
-    ls_uiTextBox(c, &compendium.searchBarGSNPCs,   baseX + 295, baseY + 40, 60, 20);
-    ls_uiTextBox(c, &compendium.searchBarTypeNPCs, baseX + 375, baseY + 40, 160, 20);
-    
+    f32 fX    = 0.025;
+    f32 fY    = 0.875;
+    const s32 entryWidth = 300;
+    const s32 entryHeight = 20;
+
+    //ls_uiTextBox(c, &compendium.searchBarNameNPCs, baseX, baseY + 40, 200, entryHeight);
+    //ls_uiTextBox(c, &compendium.searchBarGSNPCs,   baseX + 295, baseY + 40, 60, entryHeight);
+    //ls_uiTextBox(c, &compendium.searchBarTypeNPCs, baseX + 375, baseY + 40, 160, entryHeight);
+    ls_uiTextBox(c, &compendium.searchBarNameNPCs, UISclPos(fX, fY + 0.0555f, 200, entryHeight));
+    ls_uiTextBox(c, &compendium.searchBarGSNPCs,   UISclPos(fX + 0.3687f, fY + 0.0555f, 60, entryHeight));
+    ls_uiTextBox(c, &compendium.searchBarTypeNPCs, UISclPos(fX + 0.4687f, fY + 0.0555f, 160, entryHeight));
+
     ls_uiStartScrollableRegion(c, &npcTableScroll);
-    
-    s32 startI = -(npcTableScroll.deltaY / 19);
+
+    s32 startI = -(npcTableScroll.deltaY / (entryHeight-1));
     s32 endI   = startI+36 < compendium.npcViewIndices.count ? startI+36 : compendium.npcViewIndices.count;
     endI       = endI < codex->npcPages.count ? endI : codex->npcPages.count;
     
     for(s32 i = startI; i < endI; i++)
     {
-        NPCPageEntry entry = codex->npcPages[compendium.npcViewIndices[i]];
+        s32 npcViewIndex = compendium.npcViewIndices[i];
+        NPCPageEntry entry = codex->npcPages[npcViewIndex];
+#if 1
+        DrawNPCEntityEntry(c, npcTableScroll, entry, npcViewIndex, &fX, &fY, entryWidth, entryHeight, bkgColor);
+#else
         Color hoverColor = bkgColor;
-        
+        //NOTE: Below is replaced by DrawEntityEntry(...);
+        //TODO: Maybe make a widget that handles something like this... I'm not sure...
         if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
         {
             compendium.isViewingPage = TRUE;
@@ -4284,32 +4366,93 @@ void DrawNPCTable(UIContext *c)
         //NOTE: Matriarca delle Scimmie Cappuccine Corallo is too long...
         //      Adding a scissor cuts it... but I don't like that solution a lot...
         //      What if I want automatic '...' at the end of a label??
-        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 300, 20, hoverColor, c->borderColor);
+        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 300, entryHeight, hoverColor, c->borderColor);
         c->scissor = UIRect { baseX-4, 0, 298, s32(c->currWindow->height) };
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), baseX, baseY+npcTableScroll.deltaY, 1);
         c->scissor = UIRect { 0, 0, s32(c->currWindow->width), s32(c->currWindow->height) };
         baseX += 299;
         
-        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 80, 20, bkgColor, c->borderColor);
+        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 80, entryHeight, bkgColor, c->borderColor);
         ls_uiLabel(c, CompendiumGetGSEntryFromSet(entry.gs), baseX, baseY+npcTableScroll.deltaY, 1);
         baseX += 79;
         
-        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 180, 20, bkgColor, c->borderColor);
+        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 180, entryHeight, bkgColor, c->borderColor);
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), baseX, baseY+npcTableScroll.deltaY, 1);
         baseX += 179;
         
         //TODO: Show all subtypes. Right now we only grab one.
         //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
-        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 188, 20, bkgColor, c->borderColor);
+        ls_uiRect(c, baseX-4, baseY+npcTableScroll.deltaY-4, 188, entryHeight, bkgColor, c->borderColor);
         ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), baseX, baseY+npcTableScroll.deltaY, 1);
         baseX += 187;
         
         baseY -= 19;
         baseX = 20;
+#endif
     }
     
     ls_uiEndScrollableRegion(c);
     
+}
+
+void DrawEntityEntry(UIContext *c, UIScrollableRegion scroll, PageEntry entry, s32 viewIndex, f32 *origX, f32 *origY, s32 width, s32 entryHeight, Color bkgColor)
+{
+    Input *UserInput = &c->currWindow->UserInput;
+    Codex *codex     = &compendium.codex;
+
+    Color hoverColor = bkgColor;
+
+    f32 baseX = *origX;
+    f32 baseY = *origY;
+    f32 xPad  = 0.005;
+    f32 yPad  = 0.005556;
+    f32 yDelta = (f32)scroll.deltaY / (f32)c->currWindow->height;
+    const s32 gs_width = 80;
+    const s32 types_width = 180;
+    const s32 subtypes_width = 188;
+
+    //TODO: Maybe make a widget that handles something like this... I'm not sure...
+    s32 rectXBegin = (baseX*c->currWindow->width) - 4;
+    s32 rectYBegin = (baseY*c->currWindow->height) - 4;
+    if(MouseInRect(rectXBegin, rectYBegin, width, entryHeight-2)) //TODONOTE: I don't like it...
+    {
+        hoverColor = RGBg(0x66); 
+        if(LeftClick) {
+            compendium.isViewingPage     = TRUE;
+            compendium.isViewingMobTable = FALSE;
+            compendium.pageIndex         = viewIndex;
+        }
+    }
+
+    //NOTE: Matriarca delle Scimmie Cappuccine Corallo is too long...
+    //      Adding a scissor cuts it... but I don't like that solution a lot...
+    //      What if I want automatic '...' at the end of a label??
+    ls_uiRect(c, UISclPos(baseX-xPad, baseY+yDelta-yPad, width, entryHeight), hoverColor, c->borderColor);
+
+    c->scissor = UIRect { rectXBegin, 0, width-2, s32(c->currWindow->height) };
+    ls_uiLabel(c, GetEntryFromBuffer_8(&codex->names, entry.name), UISclPos(baseX, baseY+yDelta, 0,0), c->textColor, 1);
+    c->scissor = UIRect { 0, 0, s32(c->currWindow->width), s32(c->currWindow->height) };
+    baseX += 0.37375;
+
+    ls_uiRect(c, UISclPos(baseX-xPad, baseY+yDelta-yPad, gs_width, entryHeight), bkgColor, c->borderColor);
+    ls_uiLabel(c, CompendiumGetGSEntryFromSet(entry.gs), UISclPos(baseX, baseY+yDelta,0,0), c->textColor, 1);
+    baseX += 0.09875;
+    
+    ls_uiRect(c, UISclPos(baseX-xPad, baseY+yDelta-yPad, types_width, entryHeight), bkgColor, c->borderColor);
+    ls_uiLabel(c, GetEntryFromBuffer_8(&codex->types, entry.type), UISclPos(baseX, baseY+yDelta,0,0), c->textColor, 1);
+    baseX += 0.22375;
+
+    //TODO: Show all subtypes. Right now we only grab one.
+    //      We can do this by overloading the function GetEntryFromBuffer and passing the array itself.
+    ls_uiRect(c, UISclPos(baseX-xPad, baseY+yDelta-yPad, subtypes_width, entryHeight), bkgColor, c->borderColor);
+    ls_uiLabel(c, GetEntryFromBuffer_8(&codex->subtypes, entry.subtype[0]), UISclPos(baseX, baseY+yDelta,0,0), c->textColor, 1);
+    baseX += 0.23375;
+    
+    baseY -= (f32)(entryHeight-1)/c->currWindow->height;
+    baseX = 0.025;
+
+    *origX = baseX;
+    *origY = baseY;
 }
 
 void DrawMonsterTable(UIContext *c)
@@ -4319,22 +4462,35 @@ void DrawMonsterTable(UIContext *c)
     
     Color bkgColor = RGBg(0x40);
     
+    //const s32 width = 800;
+    //const s32 height = 720;
     s32 baseX = 20;
     s32 baseY = 630;
-    
-    ls_uiTextBox(c, &compendium.searchBarNameMobs, baseX, baseY + 40, 200, 20);
-    ls_uiTextBox(c, &compendium.searchBarGSMobs,   baseX + 295, baseY + 40, 60, 20);
-    ls_uiTextBox(c, &compendium.searchBarTypeMobs, baseX + 375, baseY + 40, 160, 20);
+    f32 fX    = 0.025;
+    f32 fY    = 0.875;
+    const s32 entryWidth = 300;
+    const s32 entryHeight = 20;
+
+    //ls_uiTextBox(c, &compendium.searchBarNameMobs, baseX, baseY + 40, 200, 20);
+    //ls_uiTextBox(c, &compendium.searchBarGSMobs,   baseX + 295, baseY + 40, 60, 20);
+    //ls_uiTextBox(c, &compendium.searchBarTypeMobs, baseX + 375, baseY + 40, 160, 20);
+    ls_uiTextBox(c, &compendium.searchBarNameMobs, UISclPos(fX, fY + 0.0555f, 200, entryHeight));
+    ls_uiTextBox(c, &compendium.searchBarGSMobs,   UISclPos(fX + 0.3687f, fY + 0.0555f, 60, entryHeight));
+    ls_uiTextBox(c, &compendium.searchBarTypeMobs, UISclPos(fX + 0.4687f, fY + 0.0555f, 160, entryHeight));
     
     ls_uiStartScrollableRegion(c, &tableScroll);
     
-    s32 startI = -(tableScroll.deltaY / 19);
+    s32 startI = -(tableScroll.deltaY / (entryHeight-1));
     s32 endI   = startI+36 < compendium.viewIndices.count ? startI+36 : compendium.viewIndices.count;
     endI       = endI < codex->pages.count ? endI : codex->pages.count;
-    
+
     for(s32 i = startI; i < endI; i++)
     {
-        PageEntry entry = codex->pages[compendium.viewIndices[i]];
+        s32 viewIndex = compendium.viewIndices[i];
+        PageEntry entry = codex->pages[viewIndex];
+#if 1
+        DrawEntityEntry(c, tableScroll, entry, viewIndex, &fX, &fY, entryWidth, entryHeight, bkgColor);
+#else
         Color hoverColor = bkgColor;
         
         if(LeftClickIn(baseX-4, baseY-4, 300, 18)) //TODONOTE: I don't like it...
@@ -4371,6 +4527,7 @@ void DrawMonsterTable(UIContext *c)
         
         baseY -= 19;
         baseX = 20;
+#endif
     }
     
     ls_uiEndScrollableRegion(c);
@@ -4425,6 +4582,7 @@ b32 DrawCompendium(UIContext *c)
     }*/
     else if(compendium.isViewingPage)
     {
+
         //NOTE: We draw the buttons only when on an actual creature page.
         if(cachedPage.talentIndex == -1)
         {
@@ -4443,6 +4601,11 @@ b32 DrawCompendium(UIContext *c)
         //NOTE: It's a Mob's Page Index
         if(compendium.pageIndex < NPC_PAGE_INDEX_OFFSET)
         {
+            if(KeyPress(keyMap::Escape)) {
+                compendium.isViewingPage = FALSE;
+                compendium.isViewingMobTable = TRUE;
+            }
+
             if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && compendium.pageIndex < (codex->pages.count-1))
             { compendium.pageIndex += 1; ls_staticArrayClear(&compendium.appliedArchetypes); }
             
@@ -4470,6 +4633,10 @@ b32 DrawCompendium(UIContext *c)
         }
         else
         {
+            if(KeyPress(keyMap::Escape)) {
+                compendium.isViewingPage = FALSE;
+                compendium.isViewingNPCTable = TRUE;
+            }
             s32 npcPageIndex = compendium.pageIndex - NPC_PAGE_INDEX_OFFSET;
             
             if(KeyHeld(keyMap::Shift) && KeyPressOrRepeat(keyMap::DArrow) && npcPageIndex < (codex->npcPages.count-1))

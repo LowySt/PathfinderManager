@@ -349,6 +349,38 @@ UIMenu SetupCompendiumWindowMenu(UIContext *c)
     return CompendiumMenu;
 }
 
+//TODO: WHERE TO PUT THIS?
+s32 ls_vlogFormatUIRect(char *dst, va_list *argList)
+{
+    UIRect rect = va_arg(*argList, UIRect);
+    
+    const s32 buffSize = 256;
+    char buff[buffSize] = {};
+    
+    s32 bytesWritten = ls_slog(buff, buffSize, "[ x: {s32}, y: {s32}, w: {s32}, h: {s32} ]",
+                               rect.x, rect.y, rect.w, rect.h);
+    
+    ls_memcpy(buff, dst, bytesWritten);
+    return bytesWritten;
+}
+
+s32 ls_vlogFormatRenderCommand(char *dst, va_list *argList)
+{
+    RenderCommand rc = va_arg(*argList, RenderCommand);
+    
+    const s32 buffSize = 256;
+    char buff[buffSize] = {};
+
+    
+    
+    s32 bytesWritten = ls_slog(buff, buffSize, "RenderCommand {char*}\n\rect: {UIRect}",
+                                RenderCommandTypeAsString[rc.type], rc.rect);
+    
+    ls_memcpy(buff, dst, bytesWritten);
+    return bytesWritten;
+}
+
+
 int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 {
     MainInstance = hInst;
@@ -389,11 +421,13 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
 #if _DEBUG
     ls_vlogRegister("Order", ls_vlogFormatOrder);
     ls_vlogRegister("UIRect", ls_vlogFormatUIRect);
+    ls_vlogRegister("RenderCommand", ls_vlogFormatRenderCommand);
 #endif
     
     //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int windowWidth  = 1280;
     const int windowHeight = 860;
+    //const int windowHeight = 760;
     UIContext *ui = ls_uiInitDefaultContext(globalArena, frameArena, stateArena);
     MainWin = ls_uiCreateWindow(ui, BackBuffer, windowWidth, windowHeight, "PCMan", true);
     ls_uiAddOnDestroyCallback(ui, SaveState);
@@ -408,6 +442,7 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
     //TODO: Here we are passing the globalArena and the frameArena into the context.
     const int compendiumWidth  = 800;
     const int compendiumHeight = 720;
+    ui->currWindow = NULL;
     CompendiumWin = ls_uiCreateWindow(ui, CompendiumBackBuffer, compendiumWidth, compendiumHeight, "Compendium", false);
     
     //TODO: Probably want to make something a little bit more sophisticated... or we just pass the actual
@@ -682,19 +717,10 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         //-------------------------------
         //NOTE: Begin Compendium Frame
         ls_uiFrameBegin(ui, &CompendiumWin);
+
         //NOTETODO: annoying non-global user input
         UserInput = &CompendiumWin.UserInput;
 
-        
-        //TODO: Skip drawing the compendium if the window is closed
-        //      But also update the window on first entry. For some reason, putting the entire
-        //      Block between the Child Frame inside an if doesn't paint the window on first open.
-        b32 compendiumInput = ls_uiMenu(ui, &CompendiumMenu, -1, CompendiumWin.height-20, CompendiumWin.width+1, 21);
-        
-        compendiumInput |= DrawCompendium(ui);
-        
-        if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
-        
         if(!ui->mustRender && !CompendiumWin.hasReceivedInput && !CompendiumWin.isDragging && !compendiumExternalInput)
         {
             for(u32 i = 0; i < LS_UI_RENDER_GROUP_COUNT; i++)
@@ -710,6 +736,16 @@ int WinMain(HINSTANCE hInst, HINSTANCE prevInst, LPSTR cmdLine, int nCmdShow)
         else
         {
             compendiumExternalInput = FALSE;
+
+            //TODO: Skip drawing the compendium if the window is closed
+            //      But also update the window on first entry. For some reason, putting the entire
+            //      Block between the Child Frame inside an if doesn't paint the window on first open.
+            b32 compendiumInput = ls_uiMenu(ui, &CompendiumMenu, -1, CompendiumWin.height-20, CompendiumWin.width+1, 21);
+            
+            compendiumInput |= DrawCompendium(ui);
+            
+            if(compendiumInput) { externalInputReceived = TRUE; userInputConsumed |= compendiumInput; }
+        
 
             //NOTE: If user clicked somewhere, but nothing set the focus, then we should reset the focus
             if(LeftClick && !CompendiumWin.focusWasSetThisFrame) { CompendiumWin.currentFocus = 0; }
